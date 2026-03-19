@@ -23,7 +23,7 @@ const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const Profile     = lazy(() => import("./pages/Profile"));
 const Support     = lazy(() => import("./pages/Support"));
 const Wallet      = lazy(() => import("./pages/Wallet"));
-const GlobalChat  = lazy(() => import("./pages/Globalchat"));
+import GlobalChat from "./pages/GlobalChat";
 const Store       = lazy(() => import("./pages/Store"));
 const News        = lazy(() => import("./pages/News"));
 const PlayerStats = lazy(() => import("./pages/Playerstats"));
