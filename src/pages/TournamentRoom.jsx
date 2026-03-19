@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import SubmitResultPanel from "../components/room/SubmitResultPanel";
 import { MatchStartOverlay, SubmitReminder } from "../components/room/MatchInstructions";
 import RoomStatusBar from "../components/room/RoomStatusBar";
-import StartMatchModal from "../components/room/Startmatchmodal";
+import StartMatchModal from "../components/room/StartMatchModal";
 
 export default function TournamentRoom() {
   const { id } = useParams();

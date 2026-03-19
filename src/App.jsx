@@ -23,15 +23,15 @@ const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const Profile     = lazy(() => import("./pages/Profile"));
 const Support     = lazy(() => import("./pages/Support"));
 const Wallet      = lazy(() => import("./pages/Wallet"));
-import GlobalChat from "./pages/GlobalChat";
+const GlobalChat  = lazy(() => import("./pages/GlobalChat"));
 const Store       = lazy(() => import("./pages/Store"));
 const News        = lazy(() => import("./pages/News"));
-const PlayerStats = lazy(() => import("./pages/Playerstats"));
+const PlayerStats = lazy(() => import("./pages/PlayerStats"));
 const Achievements= lazy(() => import("./pages/Achievements"));
-const DailyRewards= lazy(() => import("./pages/Dailyrewards"));
+const DailyRewards= lazy(() => import("./pages/DailyRewards"));
 
 const Teams       = lazy(() => import("./pages/Teams"));
-const TeamProfile = lazy(() => import("./pages/Teamprofile"));
+const TeamProfile = lazy(() => import("./pages/TeamProfile"));
 
 const TournamentDetails = lazy(() => import("./pages/TournamentDetails"));
 const TournamentWaiting = lazy(() => import("./pages/TournamentWaiting"));
@@ -44,10 +44,10 @@ const FounderRequests   = lazy(() => import("./pages/FounderRequests"));
 
 const AdminDashboard    = lazy(() => import("./pages/AdminDashboard"));
 const AdminSupport      = lazy(() => import("./pages/AdminSupport"));
-const Adminresults      = lazy(() => import("./pages/Adminresults"));
-const Adminnews         = lazy(() => import("./pages/Adminnews"));
-const AdminStorePanel = lazy(() => import("./pages/AdminStorePanel"));
-const DesignerPanel     = lazy(() => import("./pages/Designerpanel"));
+const AdminResults      = lazy(() => import("./pages/AdminResults"));
+const AdminNews         = lazy(() => import("./pages/AdminNews"));
+const AdminStorePanel   = lazy(() => import("./pages/AdminStorePanel"));
+const DesignerPanel     = lazy(() => import("./pages/DesignerPanel"));
 
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const AdminGrant = lazy(() => import("./pages/AdminGrant"));
@@ -97,14 +97,14 @@ export default function App() {
           {/* FOUNDER */}
           <Route path="/founder"           element={<Lazy><FounderDashboard/></Lazy>}/>
           <Route path="/founder/requests"  element={<Lazy><FounderRequests/></Lazy>}/>
-          <Route path="/founder/results"   element={<Lazy><Adminresults/></Lazy>}/>
+          <Route path="/founder/results"   element={<Lazy><AdminResults/></Lazy>}/>
           <Route path="/create-tournament" element={<Lazy><CreateTournament/></Lazy>}/>
 
           {/* ADMIN */}
           <Route path="/admin"         element={<Lazy><AdminDashboard/></Lazy>}/>
           <Route path="/admin/support" element={<Lazy><AdminSupport/></Lazy>}/>
-          <Route path="/admin/results" element={<Lazy><Adminresults/></Lazy>}/>
-          <Route path="/admin/news"    element={<Lazy><Adminnews/></Lazy>}/>
+          <Route path="/admin/results" element={<Lazy><AdminResults/></Lazy>}/>
+          <Route path="/admin/news"    element={<Lazy><AdminNews/></Lazy>}/>
           <Route path="/admin-store"   element={<Lazy><AdminStorePanel/></Lazy>}/>
 
           {/* DESIGNER */}
