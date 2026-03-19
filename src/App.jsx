@@ -46,7 +46,7 @@ const AdminDashboard    = lazy(() => import("./pages/AdminDashboard"));
 const AdminSupport      = lazy(() => import("./pages/AdminSupport"));
 const Adminresults      = lazy(() => import("./pages/Adminresults"));
 const Adminnews         = lazy(() => import("./pages/Adminnews"));
-const AdminStorePanel   = lazy(() => import("./pages/Adminstorepanel"));
+const AdminStorePanel = lazy(() => import("./pages/AdminStorePanel"));
 const DesignerPanel     = lazy(() => import("./pages/Designerpanel"));
 
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
