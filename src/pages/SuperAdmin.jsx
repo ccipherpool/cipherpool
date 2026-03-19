@@ -515,7 +515,7 @@ export default function SuperAdmin() {
         </AnimatePresence>
 
         {/* ─── Stats Cards ─── */}
-        <div className="grid grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
           {[
             { label: "UTILISATEURS",  value: stats.totalUsers,           color: "from-blue-600 to-cyan-600",    icon: "👥" },
             { label: "EN LIGNE",      value: stats.onlineUsers,          color: "from-green-600 to-emerald-600",icon: "🟢" },
@@ -638,7 +638,7 @@ export default function SuperAdmin() {
                   ANALYTIQUES EN TEMPS RÉEL
                   {lastRefresh && <span className="text-white/20 text-xs font-normal ml-2">↻ auto 30s</span>}
                 </h2>
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     { label:"NOUVEAUX AUJOURD'HUI", value:`+${stats.newToday}`,          sub:"inscrits",       color:"text-green-400" },
                     { label:"MATCHES EN COURS",      value:stats.liveMatches,             sub:"⚡ Live",         color:"text-blue-400" },
@@ -872,7 +872,7 @@ export default function SuperAdmin() {
             <motion.div key="economy" initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}>
               <div className="bg-[#0a0a1a] border border-purple-500/20 rounded-2xl p-6">
                 <h2 className="text-sm font-bold text-white mb-4">ÉCONOMIE</h2>
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                   {[
                     { label:"TOTAL COINS EN CIRCULATION", value: stats.totalCoins.toLocaleString(), color:"text-yellow-400" },
                     { label:"COINS ÉCHANGÉS AUJOURD'HUI", value: stats.todayRevenue.toLocaleString(), color:"text-green-400" },

@@ -192,7 +192,7 @@ export default function ManageTournament() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-5 gap-4 mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
             <div className="bg-[#1A1F2B] rounded-xl p-6">
               <p className="text-sm text-white/40 mb-2">Total Requests</p>
               <p className="text-3xl font-bold text-white">{tournamentStats.totalRequests}</p>

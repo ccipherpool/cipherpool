@@ -319,7 +319,7 @@ export default function FounderRequests() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
           <div className="bg-[#11151C] border border-white/5 rounded-xl p-6">
             <p className="text-sm text-white/40 mb-2">Total Requests</p>
             <p className="text-3xl font-bold text-white">{stats.total}</p>

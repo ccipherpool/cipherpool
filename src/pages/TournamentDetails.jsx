@@ -152,7 +152,7 @@ export default function TournamentDetails() {
       <div className="max-w-7xl mx-auto px-8 py-12">
         
         {/* Tournament Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-12">
           <div className="bg-[#11151C] border border-white/5 rounded-xl p-6">
             <p className="text-sm text-white/40 mb-2">Game Type</p>
             <p className="text-xl font-bold text-white">

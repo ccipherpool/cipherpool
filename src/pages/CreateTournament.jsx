@@ -360,7 +360,7 @@ export default function CreateTournament() {
           {formData.game_type === "cs" && (
             <div>
               <label className="block text-sm text-white/40 mb-3">Format Clash Squad *</label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {Object.entries(CS_FORMATS).map(([fmt, info]) => (
                   <button key={fmt} type="button"
                     onClick={() => handleCsFormatChange(fmt)}
@@ -410,7 +410,7 @@ export default function CreateTournament() {
           )}
 
           {/* Numbers Grid */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {formData.game_type !== "cs" ? (
               <div>
                 <label className="block text-sm text-white/40 mb-2">Max Players *</label>

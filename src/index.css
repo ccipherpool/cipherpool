@@ -1415,3 +1415,36 @@ input:checked + .slider:before {
     border: 1px solid #ccc;
   }
 }
+/* ═══════════════════════════════════════════
+   MOBILE PATCH — overflow + font-size fix
+   ═══════════════════════════════════════════ */
+:root {
+  --cp-mobile-side-padding: 14px;
+}
+
+html, body, #root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+input, select, textarea {
+  font-size: 16px;
+}
+
+@media (max-width: 767px) {
+  .container, .max-w-7xl, .max-w-6xl, .max-w-5xl, .max-w-4xl {
+    width: 100%;
+  }
+
+  [class*="grid-cols-5"],
+  [class*="grid-cols-6"],
+  [class*="grid-cols-7"],
+  [class*="grid-cols-8"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  table {
+    min-width: 640px;
+  }
+}

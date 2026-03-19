@@ -571,7 +571,7 @@ function BackButton() {
   if (isRoot) return null;
 
   return (
-    <div style={{padding:"16px 24px 0", maxWidth:1200}}>
+    <div style={{padding:"16px clamp(14px,4vw,24px) 0", maxWidth:1200, width:"100%"}}>
       <button
         onClick={() => navigate(-1)}
         style={{
@@ -942,7 +942,7 @@ export default function MainLayout() {
       <NewsPopup profile={profile} />
 
       {/* MAIN CONTENT — full width, no sidebar */}
-      <main style={{flex:1,overflowY:"auto",minWidth:0,position:"relative",zIndex:1,
+      <main style={{flex:1,overflowY:"auto",minWidth:0,position:"relative",zIndex:1,width:"100%",
         paddingBottom:"var(--bottom-nav-h,0px)"}}>
         <BackButton/>
         <NotifyInjector profile={profile} setProfile={setProfile} balance={balance}
@@ -963,6 +963,8 @@ export default function MainLayout() {
         button{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
         ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(124,58,237,0.3);border-radius:4px;}
         .cp-bottom-nav{display:none;}
+        main > *{max-width:100%;}
+        @media(max-width:767px){ main{padding-left:0;padding-right:0;} }
         @media(max-width:1023px){
           .cp-bottom-nav{display:block;}
           :root{--bottom-nav-h:64px;}

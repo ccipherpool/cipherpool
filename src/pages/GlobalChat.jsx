@@ -1041,7 +1041,7 @@ export default function GlobalChat() {
               transition={{ duration: 0.2 }}
               className="flex-shrink-0 border-l border-white/5 bg-[#06071a] overflow-hidden"
             >
-              <div className="w-[200px] h-full flex flex-col">
+              <div className="w-full md:w-[200px] h-full flex flex-col">
                 <div className="p-3 border-b border-white/5">
                   <p className="text-[10px] text-white/25 tracking-[2px] font-semibold">MEMBRES EN LIGNE — {onlineUsers.length}</p>
                 </div>

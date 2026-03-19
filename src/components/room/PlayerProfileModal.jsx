@@ -7,7 +7,7 @@ export default function PlayerProfileModal({ player, currentUser, onClose }) {
       onClick={onClose}
     >
       <div 
-        className="w-[400px] bg-[#11151C] border border-purple-500/30 rounded-2xl p-6 shadow-[0_0_40px_rgba(139,92,246,0.3)] animate-scaleIn"
+        className="w-full max-w-[400px] mx-4 bg-[#11151C] border border-purple-500/30 rounded-2xl p-4 sm:p-6 shadow-[0_0_40px_rgba(139,92,246,0.3)] animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-center">

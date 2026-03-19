@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CipherPool — Design System Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cp-bg:#06060f; --cp-bg-2:#0c0c1a; --cp-bg-3:#111127;
+  --cp-surface:rgba(255,255,255,0.04); --cp-surface-2:rgba(255,255,255,0.07);
+  --cp-cyan:#00e5ff; --cp-cyan-dim:rgba(0,229,255,0.12); --cp-cyan-glow:rgba(0,229,255,0.35); --cp-cyan-border:rgba(0,229,255,0.25);
+  --cp-purple:#8b3dff; --cp-purple-dim:rgba(139,61,255,0.12); --cp-purple-glow:rgba(139,61,255,0.4); --cp-purple-border:rgba(139,61,255,0.25);
+  --cp-green:#00ff87; --cp-green-dim:rgba(0,255,135,0.10); --cp-green-glow:rgba(0,255,135,0.3);
+  --cp-orange:#ff6b35; --cp-gold:#ffd700; --cp-gold-dim:rgba(255,215,0,0.10); --cp-gold-glow:rgba(255,215,0,0.35);
+  --cp-text:rgba(255,255,255,0.95); --cp-text-mid:rgba(255,255,255,0.55); --cp-text-low:rgba(255,255,255,0.25); --cp-text-hint:rgba(255,255,255,0.12);
+  --cp-border:rgba(255,255,255,0.08); --cp-border-md:rgba(255,255,255,0.14);
+  --font-display:'Barlow Condensed',sans-serif; --font-ui:'Rajdhani',sans-serif; --font-body:'Outfit',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-xl:24px;
+  --ease-out:cubic-bezier(0.22,1,0.36,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--cp-bg);color:var(--cp-text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* ANIMATIONS */
+@keyframes cp-spin{to{transform:rotate(360deg)}}
+@keyframes cp-pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,68,68,0.4)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(255,68,68,0)}}
+@keyframes cp-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes cp-glow-pulse{0%,100%{box-shadow:0 0 20px var(--cp-cyan-glow)}50%{box-shadow:0 0 40px var(--cp-cyan-glow),0 0 60px rgba(0,229,255,0.15)}}
+@keyframes cp-shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes cp-scan{0%{top:-2px}100%{top:100%}}
+@keyframes cp-fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes orb1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-60px) scale(1.1)}66%{transform:translate(-30px,30px) scale(0.9)}}
+@keyframes orb2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-50px,40px) scale(0.9)}66%{transform:translate(30px,-20px) scale(1.1)}}
+@keyframes orb3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,40px) scale(1.05)}}
+@keyframes char-hover{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.01)}}
+
+/* BG */
+.bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.6}
+.orb1{width:500px;height:500px;top:-100px;left:-100px;background:radial-gradient(circle,rgba(139,61,255,0.25),transparent 70%);animation:orb1 18s ease-in-out infinite}
+.orb2{width:400px;height:400px;bottom:-80px;right:-80px;background:radial-gradient(circle,rgba(0,229,255,0.2),transparent 70%);animation:orb2 22s ease-in-out infinite}
+.orb3{width:300px;height:300px;top:40%;left:50%;background:radial-gradient(circle,rgba(0,255,135,0.1),transparent 70%);animation:orb3 15s ease-in-out infinite}
+
+.cyber-grid{
+  background-image:linear-gradient(rgba(0,229,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.025) 1px,transparent 1px);
+  background-size:52px 52px;
+}
+
+/* LAYOUT */
+.page{position:relative;z-index:1;padding:40px 32px;max-width:1200px;margin:0 auto}
+.section{margin-bottom:60px}
+.section-title{font-family:var(--font-mono);font-size:9px;letter-spacing:3px;color:var(--cp-cyan);margin-bottom:4px;text-transform:uppercase}
+.section-h{font-family:var(--font-display);font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#fff;margin:0 0 24px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
+@media(max-width:768px){.grid2,.grid3,.grid4{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+.flex{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.mb16{margin-bottom:16px}
+
+/* HERO */
+.hero{
+  position:relative;border-radius:24px;overflow:hidden;min-height:380px;
+  background:linear-gradient(135deg,var(--cp-bg-3),var(--cp-bg-2));
+  border:1px solid var(--cp-border);margin-bottom:60px;
+  display:flex;align-items:center;
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 50% 80% at 70% 50%, rgba(0,229,255,0.07), transparent),
+    radial-gradient(ellipse 40% 60% at 20% 50%, rgba(139,61,255,0.12), transparent);
+}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.hero-content{position:relative;z-index:2;padding:48px}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);
+  border-radius:6px;padding:4px 12px;margin-bottom:16px;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--cp-cyan);
+}
+.hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--cp-cyan);animation:cp-pulse 1.5s infinite}
+.hero-title{
+  font-family:var(--font-display);font-size:clamp(40px,7vw,80px);font-weight:800;
+  letter-spacing:4px;text-transform:uppercase;line-height:0.9;margin:0 0 16px;
+}
+.hero-title span{
+  background:linear-gradient(135deg,var(--cp-cyan),var(--cp-purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{font-family:var(--font-body);font-size:16px;color:var(--cp-text-mid);margin:0 0 28px;line-height:1.5}
+
+/* CHARACTER SILHOUETTE */
+.hero-char{
+  position:absolute;right:0;top:0;bottom:0;width:45%;
+  display:flex;align-items:flex-end;justify-content:center;
+  animation:char-hover 4s ease-in-out infinite;
+}
+.char-glow{
+  position:absolute;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,229,255,0.15) 0%,transparent 70%);
+  filter:blur(30px);top:50%;left:50%;transform:translate(-50%,-50%);
+  animation:cp-glow-pulse 3s ease-in-out infinite;
+}
+.char-svg{position:relative;z-index:2;width:280px;height:340px;opacity:0.9}
+
+/* CARDS */
+.card{background:var(--cp-bg-2);border:1px solid var(--cp-border);border-radius:var(--r-lg);padding:20px;transition:all 0.2s var(--ease-out)}
+.card:hover{border-color:var(--cp-cyan-border);box-shadow:0 0 24px var(--cp-cyan-glow),0 8px 32px rgba(0,0,0,0.4)}
+.card-accent{position:relative;background:var(--cp-bg-2);border:1px solid var(--cp-border);border-radius:var(--r-lg);padding:20px;overflow:hidden}
+.card-accent::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cp-purple),var(--cp-cyan));opacity:0.8}
+.card-gold{border-color:rgba(255,215,0,0.2)}
+.card-gold:hover{border-color:rgba(255,215,0,0.5);box-shadow:0 0 24px var(--cp-gold-glow),0 8px 32px rgba(0,0,0,0.4)}
+
+/* STAT */
+.stat{background:var(--cp-bg-3);border:1px solid var(--cp-border);border-radius:var(--r-lg);padding:20px;position:relative;overflow:hidden;transition:all 0.2s}
+.stat:hover{border-color:var(--cp-cyan-border)}
+.stat-val{font-family:var(--font-display);font-size:40px;font-weight:800;letter-spacing:1px;line-height:1;margin-bottom:4px}
+.stat-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:2.5px;color:var(--cp-text-low);text-transform:uppercase}
+.stat-icon{position:absolute;top:16px;right:16px;font-size:28px;opacity:0.25}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 22px;border-radius:var(--r-md);border:none;font-family:var(--font-ui);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.18s var(--ease-out)}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:linear-gradient(135deg,var(--cp-cyan),#0099cc);color:#000;box-shadow:0 4px 20px rgba(0,229,255,0.35)}
+.btn-primary:hover{box-shadow:0 6px 28px rgba(0,229,255,0.55);transform:translateY(-2px)}
+.btn-secondary{background:linear-gradient(135deg,var(--cp-purple),#6022cc);color:#fff;box-shadow:0 4px 20px var(--cp-purple-glow)}
+.btn-secondary:hover{box-shadow:0 6px 28px rgba(139,61,255,0.6);transform:translateY(-2px)}
+.btn-ghost{background:var(--cp-surface);border:1px solid var(--cp-border-md);color:var(--cp-text-mid)}
+.btn-ghost:hover{background:var(--cp-surface-2);color:var(--cp-text)}
+.btn-gold{background:linear-gradient(135deg,var(--cp-gold),#cc9900);color:#000;box-shadow:0 4px 20px var(--cp-gold-glow)}
+.btn-gold:hover{box-shadow:0 6px 28px rgba(255,215,0,0.5);transform:translateY(-2px)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;font-weight:600;text-transform:uppercase}
+.badge-cyan{background:var(--cp-cyan-dim);border:1px solid var(--cp-cyan-border);color:var(--cp-cyan)}
+.badge-purple{background:var(--cp-purple-dim);border:1px solid var(--cp-purple-border);color:var(--cp-purple)}
+.badge-green{background:var(--cp-green-dim);border:1px solid rgba(0,255,135,0.2);color:var(--cp-green)}
+.badge-gold{background:var(--cp-gold-dim);border:1px solid rgba(255,215,0,0.25);color:var(--cp-gold)}
+.badge-orange{background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.25);color:var(--cp-orange)}
+.badge-live{background:rgba(255,68,68,0.12);border:1px solid rgba(255,68,68,0.3);color:#ff4444}
+.badge-live::before{content:'';width:6px;height:6px;border-radius:50%;background:#ff4444;animation:cp-pulse 1.5s infinite}
+
+/* TYPOGRAPHY */
+.t-cyan{background:linear-gradient(135deg,var(--cp-cyan),#80f5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.t-purple{background:linear-gradient(135deg,var(--cp-purple),#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.t-gold{background:linear-gradient(135deg,var(--cp-gold),#ffad00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* PROGRESS */
+.progress{height:6px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;margin:8px 0}
+.progress-bar{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--cp-purple),var(--cp-cyan));box-shadow:0 0 10px var(--cp-cyan-glow);transition:width 1s var(--ease-out)}
+
+/* AVATAR */
+.avatar{border-radius:10px;overflow:hidden;background:var(--cp-purple-dim);border:1.5px solid var(--cp-purple-border);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;color:var(--cp-purple);flex-shrink:0}
+.av-md{width:44px;height:44px;font-size:16px}
+.av-lg{width:64px;height:64px;font-size:22px;border-radius:14px}
+.av-gold{border-color:var(--cp-gold);box-shadow:0 0 16px var(--cp-gold-glow),0 0 0 3px rgba(255,215,0,0.1)}
+
+/* PLAYER ROW */
+.player-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:var(--r-md);background:var(--cp-surface);border:1px solid var(--cp-border);transition:all 0.15s;margin-bottom:8px}
+.player-row:hover{background:var(--cp-surface-2);border-color:var(--cp-border-md)}
+.player-rank{font-family:var(--font-display);font-size:22px;font-weight:800;width:36px;text-align:center}
+.rank1{color:var(--cp-gold);text-shadow:0 0 20px var(--cp-gold-glow)}
+.rank2{color:#c0c0c0}
+.rank3{color:#cd7f32}
+.rankn{color:var(--cp-text-low);font-size:14px}
+.player-name{flex:1;font-family:var(--font-ui);font-size:15px;font-weight:600;letter-spacing:0.5px}
+.player-ff{font-family:var(--font-mono);font-size:9px;color:var(--cp-text-low);letter-spacing:1px}
+.player-stat{text-align:center}
+.player-stat-val{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:0.5px}
+.player-stat-lbl{font-family:var(--font-mono);font-size:8px;color:var(--cp-text-low);letter-spacing:1px;text-transform:uppercase}
+
+/* TOURNAMENT CARD */
+.tourney-card{
+  background:var(--cp-bg-2);border:1px solid var(--cp-border);border-radius:var(--r-lg);
+  overflow:hidden;transition:all 0.2s var(--ease-out);cursor:pointer;
+  position:relative;
+}
+.tourney-card:hover{border-color:var(--cp-cyan-border);box-shadow:0 0 30px var(--cp-cyan-glow),0 8px 32px rgba(0,0,0,0.5);transform:translateY(-3px)}
+.tourney-banner{height:120px;background:linear-gradient(135deg,var(--cp-bg-3),rgba(0,229,255,0.05));display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.tourney-banner-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(0,229,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.04) 1px,transparent 1px);background-size:24px 24px}
+.tourney-badge{position:absolute;top:10px;left:10px}
+.tourney-prize{position:absolute;bottom:10px;right:10px;font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--cp-gold)}
+.tourney-info{padding:16px}
+.tourney-name{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fff;margin-bottom:6px}
+.tourney-meta{display:flex;gap:12px;flex-wrap:wrap}
+.tourney-meta span{font-family:var(--font-mono);font-size:9px;color:var(--cp-text-low);letter-spacing:1px;display:flex;align-items:center;gap:4px}
+
+/* SCAN EFFECT */
+.scan-wrap{position:relative;overflow:hidden}
+.scan-wrap::after{content:'';position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cp-cyan),transparent);opacity:0.5;animation:cp-scan 4s linear infinite}
+
+/* DIVIDER */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--cp-border-md),transparent);border:none;margin:0}
+
+/* SKELETON */
+.skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 0%,rgba(255,255,255,0.10) 50%,rgba(255,255,255,0.04) 100%);background-size:200% auto;animation:cp-shimmer 1.6s linear infinite;border-radius:var(--r-sm)}
+</style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<div class="page cyber-grid">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-content">
+      <div class="hero-badge">🔴 LIVE — SAISON 4</div>
+      <h1 class="hero-title">CIPHER<span>POOL</span></h1>
+      <p class="hero-sub">منصة Esports Free Fire المغرب<br>بطولات · فرق · ترتيب اللاعبين</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button class="btn btn-primary">⚡ REJOINDRE</button>
+        <button class="btn btn-ghost">📊 CLASSEMENT</button>
+      </div>
+    </div>
+    <!-- Character silhouette -->
+    <div class="hero-char">
+      <div class="char-glow"></div>
+      <svg class="char-svg" viewBox="0 0 280 340" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Soldier/warrior silhouette stylisé -->
+        <defs>
+          <linearGradient id="charGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.9"/>
+            <stop offset="50%" stop-color="#8b3dff" stop-opacity="0.7"/>
+            <stop offset="100%" stop-color="#00e5ff" stop-opacity="0.3"/>
+          </linearGradient>
+          <linearGradient id="charGlow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.6"/>
+            <stop offset="100%" stop-color="#8b3dff" stop-opacity="0"/>
+          </linearGradient>
+          <filter id="glow"><feGaussianBlur stdDeviation="3" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <!-- Ground glow -->
+        <ellipse cx="140" cy="328" rx="90" ry="12" fill="url(#charGlow)" opacity="0.6"/>
+        <!-- Body shadow -->
+        <path d="M90 280 L80 338 L200 338 L190 280Z" fill="rgba(0,229,255,0.03)"/>
+        <!-- Legs -->
+        <path d="M105 240 L95 338 L120 338 L130 260Z" fill="url(#charGrad)" opacity="0.7"/>
+        <path d="M175 240 L185 338 L160 338 L150 260Z" fill="url(#charGrad)" opacity="0.7"/>
+        <!-- Boots glow -->
+        <rect x="90" y="318" width="32" height="20" rx="4" fill="rgba(0,229,255,0.3)"/>
+        <rect x="158" y="318" width="32" height="20" rx="4" fill="rgba(0,229,255,0.3)"/>
+        <!-- Torso -->
+        <path d="M95 140 L85 242 L195 242 L185 140Z" fill="url(#charGrad)" opacity="0.85"/>
+        <!-- Chest armor detail -->
+        <path d="M115 160 L140 155 L165 160 L165 200 L140 210 L115 200Z" fill="rgba(0,229,255,0.15)" stroke="rgba(0,229,255,0.4)" stroke-width="1"/>
+        <path d="M125 175 L140 170 L155 175 L155 195 L140 202 L125 195Z" fill="rgba(139,61,255,0.2)" stroke="rgba(139,61,255,0.5)" stroke-width="0.5"/>
+        <!-- Arms -->
+        <path d="M95 145 L65 225 L85 235 L105 165Z" fill="url(#charGrad)" opacity="0.7"/>
+        <path d="M185 145 L215 225 L195 235 L175 165Z" fill="url(#charGrad)" opacity="0.7"/>
+        <!-- Weapon (right hand) -->
+        <path d="M210 200 L240 175 L248 183 L218 208Z" fill="rgba(0,229,255,0.5)" stroke="rgba(0,229,255,0.8)" stroke-width="1"/>
+        <rect x="215" y="182" width="36" height="8" rx="2" fill="rgba(0,229,255,0.6)" transform="rotate(-30 215 182)"/>
+        <!-- Muzzle flash hint -->
+        <ellipse cx="246" cy="170" rx="8" ry="5" fill="rgba(0,229,255,0.3)" transform="rotate(-30 246 170)"/>
+        <!-- Shoulders -->
+        <circle cx="95" cy="145" r="18" fill="url(#charGrad)" opacity="0.85"/>
+        <circle cx="185" cy="145" r="18" fill="url(#charGrad)" opacity="0.85"/>
+        <!-- Shoulder armor -->
+        <path d="M78 132 L95 120 L112 132 L108 152 L95 158 L82 152Z" fill="rgba(0,229,255,0.2)" stroke="rgba(0,229,255,0.5)" stroke-width="1"/>
+        <path d="M168 132 L185 120 L202 132 L198 152 L185 158 L172 152Z" fill="rgba(0,229,255,0.2)" stroke="rgba(0,229,255,0.5)" stroke-width="1"/>
+        <!-- Neck -->
+        <rect x="128" y="105" width="24" height="40" rx="8" fill="url(#charGrad)" opacity="0.8"/>
+        <!-- Head -->
+        <ellipse cx="140" cy="88" rx="35" ry="40" fill="url(#charGrad)" opacity="0.9" filter="url(#glow)"/>
+        <!-- Helmet visor -->
+        <path d="M112 80 Q140 60 168 80 L165 95 Q140 82 115 95Z" fill="rgba(0,229,255,0.4)" stroke="rgba(0,229,255,0.8)" stroke-width="1"/>
+        <!-- Visor glow line -->
+        <line x1="115" y1="87" x2="165" y2="87" stroke="rgba(0,229,255,0.9)" stroke-width="1.5"/>
+        <!-- Helmet top -->
+        <path d="M120 68 Q140 50 160 68 L158 80 Q140 65 122 80Z" fill="url(#charGrad)" opacity="0.9"/>
+        <!-- Antenna/device -->
+        <line x1="158" y1="58" x2="168" y2="40" stroke="rgba(0,229,255,0.6)" stroke-width="1.5"/>
+        <circle cx="170" cy="38" r="4" fill="var(--cp-cyan)" opacity="0.8"/>
+        <!-- Edge light lines -->
+        <path d="M112 95 L90 145" stroke="rgba(0,229,255,0.3)" stroke-width="0.8"/>
+        <path d="M168 95 L190 145" stroke="rgba(0,229,255,0.3)" stroke-width="0.8"/>
+        <!-- HUD elements floating -->
+        <rect x="20" y="180" width="55" height="24" rx="4" fill="rgba(0,229,255,0.06)" stroke="rgba(0,229,255,0.2)" stroke-width="0.5"/>
+        <text x="24" y="196" fill="rgba(0,229,255,0.6)" font-size="8" font-family="JetBrains Mono">HP 98%</text>
+        <rect x="205" y="150" width="60" height="24" rx="4" fill="rgba(139,61,255,0.06)" stroke="rgba(139,61,255,0.2)" stroke-width="0.5"/>
+        <text x="209" y="166" fill="rgba(139,61,255,0.7)" font-size="8" font-family="JetBrains Mono">K/D 4.2</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- FONTS SECTION -->
+  <div class="section">
+    <p class="section-title">TYPOGRAPHY SYSTEM</p>
+    <h2 class="section-h">خطوط النظام الجديد</h2>
+    
+    <div class="card" style="padding:28px;margin-bottom:12px">
+      <p style="font-family:'Barlow Condensed',sans-serif;font-size:64px;font-weight:800;letter-spacing:4px;text-transform:uppercase;line-height:0.9;margin:0 0 8px">BARLOW CONDENSED</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.3);margin:0">DISPLAY FONT — POUR LES TITRES H1/H2 — GAMING AGGRESSIVE</p>
+    </div>
+    
+    <div class="grid2">
+      <div class="card" style="padding:20px">
+        <p style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin:0 0 4px">RAJDHANI</p>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.3);margin:0">UI LABELS — BUTTONS — NAV</p>
+        <p style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:500;color:rgba(255,255,255,0.5);margin:12px 0 0">REJOINDRE LE TOURNOI • 500 COINS • CLASSEMENT</p>
+      </div>
+      <div class="card" style="padding:20px">
+        <p style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:500;margin:0 0 4px">Outfit — Corps du texte</p>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.3);margin:0 0 12px">BODY TEXT — DESCRIPTIONS — CONTENU</p>
+        <p style="font-family:'Outfit',sans-serif;font-size:14px;color:rgba(255,255,255,0.55);line-height:1.6;margin:0">منصة CipherPool مخصصة للاعبي Free Fire في المغرب. بطولات، فرق، ترتيب اللاعبين وأكثر.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap;align-items:baseline">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:800;letter-spacing:3px;background:linear-gradient(135deg,#00e5ff,#80f5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent">CYAN</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:800;letter-spacing:3px;background:linear-gradient(135deg,#8b3dff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent">PURPLE</span>
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:800;letter-spacing:3px;background:linear-gradient(135deg,#ffd700,#ffad00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">GOLD</span>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="section">
+    <p class="section-title">COMPONENTS</p>
+    <h2 class="section-h">STAT CARDS</h2>
+    <div class="grid4">
+      <div class="stat">
+        <div class="stat-icon">👥</div>
+        <div class="stat-val" style="color:var(--cp-cyan)">2,847</div>
+        <div class="stat-lbl">JOUEURS</div>
+      </div>
+      <div class="stat">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-val" style="color:var(--cp-purple)">124</div>
+        <div class="stat-lbl">TOURNOIS</div>
+      </div>
+      <div class="stat">
+        <div class="stat-icon">💎</div>
+        <div class="stat-val" style="color:var(--cp-gold)">50K</div>
+        <div class="stat-lbl">PRIZE POOL</div>
+      </div>
+      <div class="stat">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-val" style="color:var(--cp-green)">8</div>
+        <div class="stat-lbl">EN DIRECT</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUTTONS + BADGES -->
+  <div class="section">
+    <h2 class="section-h">BUTTONS & BADGES</h2>
+    <div class="flex mb16">
+      <button class="btn btn-primary">⚡ REJOINDRE</button>
+      <button class="btn btn-secondary">🏆 CRÉER TOURNOI</button>
+      <button class="btn btn-gold">💎 BOUTIQUE</button>
+      <button class="btn btn-ghost">← RETOUR</button>
+    </div>
+    <div class="flex">
+      <span class="badge badge-cyan">OPEN</span>
+      <span class="badge badge-purple">SQUAD</span>
+      <span class="badge badge-green">VÉRIFIÉ</span>
+      <span class="badge badge-gold">LÉGENDAIRE</span>
+      <span class="badge badge-orange">URGENT</span>
+      <span class="badge badge-live">LIVE</span>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="section">
+    <h2 class="section-h">CLASSEMENT</h2>
+    <div class="card-accent" style="padding:0">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--cp-border)">
+        <p style="font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--cp-text-low);margin:0">TOP JOUEURS · CETTE SEMAINE</p>
+      </div>
+      <div style="padding:16px">
+        <!-- Rank 1 -->
+        <div class="player-row" style="border-color:rgba(255,215,0,0.2);background:rgba(255,215,0,0.04)">
+          <div class="player-rank rank1">🥇</div>
+          <div class="avatar av-md av-gold">KH</div>
+          <div style="flex:1">
+            <div class="player-name" style="color:var(--cp-gold)">KhalidFF_PRO</div>
+            <div class="player-ff">FF: 123456789</div>
+          </div>
+          <div class="player-stat"><div class="player-stat-val" style="color:var(--cp-gold)">4,820</div><div class="player-stat-lbl">PTS</div></div>
+          <div class="player-stat"><div class="player-stat-val" style="color:#ff4444">248</div><div class="player-stat-lbl">KILLS</div></div>
+          <span class="badge badge-gold">LEGEND</span>
+        </div>
+        <!-- Rank 2 -->
+        <div class="player-row">
+          <div class="player-rank rank2">🥈</div>
+          <div class="avatar av-md">YA</div>
+          <div style="flex:1">
+            <div class="player-name">Yassine_Alpha</div>
+            <div class="player-ff">FF: 987654321</div>
+          </div>
+          <div class="player-stat"><div class="player-stat-val" style="color:var(--cp-cyan)">3,640</div><div class="player-stat-lbl">PTS</div></div>
+          <div class="player-stat"><div class="player-stat-val" style="color:#ff4444">196</div><div class="player-stat-lbl">KILLS</div></div>
+          <span class="badge badge-cyan">ELITE</span>
+        </div>
+        <!-- Rank 3 -->
+        <div class="player-row">
+          <div class="player-rank rank3">🥉</div>
+          <div class="avatar av-md" style="border-color:rgba(205,127,50,0.5)">AZ</div>
+          <div style="flex:1">
+            <div class="player-name">AzizSniper</div>
+            <div class="player-ff">FF: 456789123</div>
+          </div>
+          <div class="player-stat"><div class="player-stat-val" style="color:var(--cp-purple)">3,120</div><div class="player-stat-lbl">PTS</div></div>
+          <div class="player-stat"><div class="player-stat-val" style="color:#ff4444">178</div><div class="player-stat-lbl">KILLS</div></div>
+          <span class="badge badge-purple">PRO</span>
+        </div>
+        <!-- Rank 4 -->
+        <div class="player-row">
+          <div class="player-rank"><span class="rankn">#4</span></div>
+          <div class="avatar av-md">MN</div>
+          <div style="flex:1">
+            <div class="player-name">Mohamed_N</div>
+            <div class="player-ff">FF: 321654987</div>
+          </div>
+          <div class="player-stat"><div class="player-stat-val" style="color:var(--cp-text-mid)">2,890</div><div class="player-stat-lbl">PTS</div></div>
+          <div class="player-stat"><div class="player-stat-val" style="color:#ff4444">154</div><div class="player-stat-lbl">KILLS</div></div>
+          <span class="badge" style="background:rgba(255,255,255,0.05);border:1px solid var(--cp-border);color:var(--cp-text-low)">MEMBRE</span>
+        </div>
+      </div>
+      <!-- Progress examples -->
+      <div style="padding:16px 20px;border-top:1px solid var(--cp-border)">
+        <p style="font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:var(--cp-text-low);margin:0 0 12px">PROGRESSION XP</p>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-family:var(--font-ui);font-size:12px;font-weight:600;letter-spacing:1px;color:var(--cp-gold)">KHALIDFF_PRO</span>
+            <span style="font-family:var(--font-mono);font-size:9px;color:var(--cp-text-low)">82%</span>
+          </div>
+          <div class="progress"><div class="progress-bar" style="width:82%;background:linear-gradient(90deg,var(--cp-gold),#ffad00)"></div></div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-family:var(--font-ui);font-size:12px;font-weight:600;letter-spacing:1px;color:var(--cp-cyan)">YASSINE_ALPHA</span>
+            <span style="font-family:var(--font-mono);font-size:9px;color:var(--cp-text-low)">65%</span>
+          </div>
+          <div class="progress"><div class="progress-bar" style="width:65%"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-family:var(--font-ui);font-size:12px;font-weight:600;letter-spacing:1px;color:var(--cp-purple)">AZIZSNIPER</span>
+            <span style="font-family:var(--font-mono);font-size:9px;color:var(--cp-text-low)">48%</span>
+          </div>
+          <div class="progress"><div class="progress-bar" style="width:48%;background:linear-gradient(90deg,var(--cp-purple),var(--cp-cyan))"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOURNAMENT CARDS -->
+  <div class="section">
+    <h2 class="section-h">TOURNOIS EN COURS</h2>
+    <div class="grid3">
+      <div class="tourney-card">
+        <div class="tourney-banner" style="background:linear-gradient(135deg,#0a0515,rgba(139,61,255,0.15))">
+          <div class="tourney-banner-bg"></div>
+          <span style="font-size:48px">🏆</span>
+          <div class="tourney-badge"><span class="badge badge-live">LIVE</span></div>
+          <div class="tourney-prize">5,000 💎</div>
+        </div>
+        <div class="tourney-info">
+          <div class="tourney-name">CIPHER CUP S4</div>
+          <div class="tourney-meta">
+            <span>⚔️ BATTLE ROYALE</span>
+            <span>👥 48/50</span>
+            <span>🆓 GRATUIT</span>
+          </div>
+          <div style="margin-top:12px">
+            <div class="progress"><div class="progress-bar" style="width:96%"></div></div>
+            <p style="font-family:var(--font-mono);font-size:8px;color:var(--cp-text-low);margin:4px 0 0;letter-spacing:1px">2 PLACES RESTANTES</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tourney-card">
+        <div class="tourney-banner" style="background:linear-gradient(135deg,#050a15,rgba(0,229,255,0.1))">
+          <div class="tourney-banner-bg"></div>
+          <span style="font-size:48px">🛡️</span>
+          <div class="tourney-badge"><span class="badge badge-cyan">OPEN</span></div>
+          <div class="tourney-prize">2,500 💎</div>
+        </div>
+        <div class="tourney-info">
+          <div class="tourney-name">CLASH SQUAD 2V2</div>
+          <div class="tourney-meta">
+            <span>🛡️ CLASH SQUAD</span>
+            <span>👥 6/8</span>
+            <span>💎 100 COINS</span>
+          </div>
+          <div style="margin-top:12px">
+            <div class="progress"><div class="progress-bar" style="width:75%;background:linear-gradient(90deg,var(--cp-cyan),#0099cc)"></div></div>
+            <p style="font-family:var(--font-mono);font-size:8px;color:var(--cp-text-low);margin:4px 0 0;letter-spacing:1px">2 ÉQUIPES RESTANTES</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tourney-card" style="border-color:rgba(255,215,0,0.15)">
+        <div class="tourney-banner" style="background:linear-gradient(135deg,#0f0a00,rgba(255,215,0,0.08))">
+          <div class="tourney-banner-bg" style="background-image:linear-gradient(rgba(255,215,0,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,215,0,0.04) 1px,transparent 1px)"></div>
+          <span style="font-size:48px">👑</span>
+          <div class="tourney-badge"><span class="badge badge-gold">PREMIUM</span></div>
+          <div class="tourney-prize">15,000 💎</div>
+        </div>
+        <div class="tourney-info">
+          <div class="tourney-name" style="color:var(--cp-gold)">GRAND FINAL</div>
+          <div class="tourney-meta">
+            <span>⚔️ SOLO</span>
+            <span>👥 24/25</span>
+            <span>💎 500 COINS</span>
+          </div>
+          <div style="margin-top:12px">
+            <div class="progress"><div class="progress-bar" style="width:96%;background:linear-gradient(90deg,var(--cp-gold),#ffad00)"></div></div>
+            <p style="font-family:var(--font-mono);font-size:8px;color:var(--cp-gold);margin:4px 0 0;letter-spacing:1px;opacity:0.6">1 PLACE RESTANTE !</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SKELETONS -->
+  <div class="section">
+    <h2 class="section-h">LOADING STATES</h2>
+    <div class="grid3">
+      <div class="card" style="padding:20px">
+        <div class="skeleton" style="height:12px;width:60%;margin-bottom:12px"></div>
+        <div class="skeleton" style="height:36px;width:40%;margin-bottom:8px"></div>
+        <div class="skeleton" style="height:8px;width:80%;margin-bottom:6px"></div>
+        <div class="skeleton" style="height:8px;width:55%"></div>
+      </div>
+      <div class="card" style="padding:20px">
+        <div style="display:flex;gap:12px;margin-bottom:16px">
+          <div class="skeleton" style="width:44px;height:44px;border-radius:10px;flex-shrink:0"></div>
+          <div style="flex:1">
+            <div class="skeleton" style="height:12px;margin-bottom:8px"></div>
+            <div class="skeleton" style="height:8px;width:60%"></div>
+          </div>
+        </div>
+        <div class="skeleton" style="height:6px;margin-bottom:8px;border-radius:99px"></div>
+        <div class="skeleton" style="height:6px;width:70%;border-radius:99px"></div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="skeleton" style="height:100px;border-radius:0"></div>
+        <div style="padding:16px">
+          <div class="skeleton" style="height:14px;margin-bottom:10px"></div>
+          <div class="skeleton" style="height:8px;width:75%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLOR PALETTE -->
+  <div class="section">
+    <h2 class="section-h">COLOR SYSTEM</h2>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div style="text-align:center">
+        <div style="width:64px;height:64px;border-radius:12px;background:var(--cp-cyan);box-shadow:0 0 24px var(--cp-cyan-glow);margin:0 auto 6px"></div>
+        <p style="font-family:var(--font-mono);font-size:8px;color:var(--cp-text-low);letter-spacing:1px">CYAN</p>
+      </div>
+      <div style="text-align:center">
+        <div style="width:64px;height:64px;border-radius:12px;background:var(--cp-purple);box-shadow:0 0 24px var(--cp-purple-glow);margin:0 auto 6px"></div>
+        <p style="font-family:var(--font-mono);font-size:8px;color:var(--cp-text-low);letter-spacing:1px">PURPLE</p>
+      </div>
+      <div style="text-align:center">
+        <div style="width:64px;height:64px;border-radius:12px;background:var(--cp-green);box-shadow:0 0 24px var(--cp-green-glow);margin:0 auto 6px"></div>
+        <p style="font-family:var(--font-mono);font-size:8px;color:var(--cp-text-low);letter-spacing:1px">GREEN</p>
+      </div>
+      <div style="text-align:center">
+        <div style="width:64px;height:64px;border-radius:12px;background:var(--cp-gold);box-shadow:0 0 24px var(--cp-gold-glow);margin:0 auto 6px"></div>
+        <p style="font-family:var(--font-mono);font-size:8px;color:var(--cp-text-low);letter-spacing:1px">GOLD</p>
+      </div>
+      <div style="text-align:center">
+        <div style="width:64px;height:64px;border-radius:12px;background:var(--cp-orange);box-shadow:0 0 20px rgba(255,107,53,0.4);margin:0 auto 6px"></div>
+        <p style="font-family:var(--font-mono);font-size:8px;color:var(--cp-text-low);letter-spacing:1px">ORANGE</p>
+      </div>
+      <div style="text-align:center">
+        <div style="width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--cp-cyan),var(--cp-purple));box-shadow:0 0 24px var(--cp-purple-glow);margin:0 auto 6px"></div>
+        <p style="font-family:var(--font-mono);font-size:8px;color:var(--cp-text-low);letter-spacing:1px">GRADIENT</p>
+      </div>
+      <div style="text-align:center">
+        <div style="width:64px;height:64px;border-radius:12px;background:var(--cp-bg-3);border:1px solid var(--cp-border-md);margin:0 auto 6px"></div>
+        <p style="font-family:var(--font-mono);font-size:8px;color:var(--cp-text-low);letter-spacing:1px">BG-3</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER NOTE -->
+  <div style="text-align:center;padding:32px 0;border-top:1px solid var(--cp-border)">
+    <p style="font-family:var(--font-mono);font-size:9px;letter-spacing:3px;color:var(--cp-text-low)">CIPHERPOOL DESIGN SYSTEM v3 · BARLOW CONDENSED + RAJDHANI + OUTFIT</p>
+    <p style="font-family:var(--font-mono);font-size:8px;letter-spacing:2px;color:rgba(255,255,255,0.1);margin-top:4px">NEON DARK ESPORTS · FREE FIRE MAROC</p>
+  </div>
+
+</div>
+</body>
+</html>
