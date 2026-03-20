@@ -189,10 +189,79 @@ const GLOBAL_CSS = `
   ::-webkit-scrollbar-track { background: #050508; }
   ::-webkit-scrollbar-thumb { background: #dc2626; border-radius: 2px; }
 
-  @media (max-width: 768px) {
+  /* ── TABLET ────────────────────────────────────────── */
+  /* ── TABLET ──────────────────────────────────────── */
+  @media (max-width: 1024px) {
     .cp-nav-links { display: none !important; }
-    .footer-grid { grid-template-columns: 1fr !important; }
+  }
+
+  /* ── MOBILE ──────────────────────────────────────── */
+  @media (max-width: 768px) {
+
+    /* Nav */
+    .cp-nav {
+      padding: 0 16px !important;
+      height: 56px !important;
+    }
+
+    /* Auth buttons in nav: hide text, keep buttons small */
+    .cp-nav .btn-primary { padding: 8px 14px !important; font-size: 11px !important; clip-path: none !important; border-radius: 8px !important; }
+    .cp-nav .btn-outline { padding: 8px 12px !important; font-size: 11px !important; clip-path: none !important; border-radius: 8px !important; }
+
+    /* Online badge: hide text */
+    .cp-nav [style*="EN LIGNE"] span:last-child { display: none; }
+
+    /* Hero: center text */
+    section:first-of-type > div > div[style*="zIndex: 2"] {
+      text-align: center !important;
+      padding: 0 20px !important;
+      max-width: 100% !important;
+    }
+
+    /* Section padding */
+    section { padding: 48px 16px !important; }
+
+    /* Buttons: full width + no clip-path on mobile */
+    .btn-primary, .btn-outline {
+      padding: 13px 24px !important;
+      font-size: 13px !important;
+      clip-path: none !important;
+      border-radius: 8px !important;
+    }
+
+    /* Section titles */
+    .section-title { font-size: clamp(22px, 7vw, 36px) !important; }
+
+    /* News 2-col → 1-col */
     .news-grid { grid-template-columns: 1fr !important; }
+
+    /* Footer */
+    .footer-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+
+    /* Section headers: stack */
+    .section-header-row {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 12px !important;
+    }
+
+    /* Live stats: 2 cols */
+    .live-stats-grid { grid-template-columns: 1fr 1fr !important; }
+
+    /* Stat box in hero */
+    .stat-box {
+      padding: 2px 0 2px 12px !important;
+    }
+    .stat-box > div:first-child {
+      font-size: 28px !important;
+    }
+  }
+
+  /* ── SMALL MOBILE (< 480px) ──────────────────────── */
+  @media (max-width: 480px) {
+    .cp-nav .btn-outline { display: none !important; }
+    .live-stats-grid { grid-template-columns: 1fr 1fr !important; }
+    .footer-grid { grid-template-columns: 1fr !important; }
   }
 `;
 
@@ -374,7 +443,7 @@ function Hero({ stats, user }) {
           Rejoins la plateforme ultime pour les gamers. Tournois Free Fire, classements, équipes et cash prizes.
         </p>
 
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", animation: "fadeUp .8s .5s ease both", marginBottom: 60 }}>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", animation: "fadeUp .8s .5s ease both", marginBottom: 60, justifyContent: "center" }}>
           <button className="btn-primary" onClick={() => nav(user ? "/tournaments" : "/register")} style={{ fontSize: 14 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -386,7 +455,7 @@ function Hero({ stats, user }) {
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: 40, flexWrap: "wrap", animation: "fadeUp .8s .7s ease both", paddingTop: 32, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ display: "flex", gap: 40, flexWrap: "wrap", animation: "fadeUp .8s .7s ease both", paddingTop: 32, borderTop: "1px solid rgba(255,255,255,0.06)", justifyContent: "center" }}>
           {[
             { label: "JOUEURS",  value: fmt(stats.players) },
             { label: "TOURNOIS", value: fmt(stats.tournaments) },
@@ -422,7 +491,7 @@ function LiveStats({ stats, onlineCount }) {
 
   return (
     <section style={{ padding: "48px clamp(20px,5vw,80px)", background: "rgba(255,255,255,0.01)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 1, background: "rgba(255,255,255,0.05)" }}>
+      <div className="live-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 1, background: "rgba(255,255,255,0.05)" }}>
         {items.map((item, i) => (
           <div key={item.label} style={{ padding: "32px 28px", background: "#050508", display: "flex", flexDirection: "column", gap: 8, position: "relative", overflow: "hidden", animation: `fadeUp .5s ${i * 0.1}s ease both` }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: item.color, opacity: 0.4 }} />
@@ -522,7 +591,7 @@ function TournamentsSection({ tournaments, user }) {
   const nav = useNavigate();
   return (
     <section style={{ padding: "100px clamp(20px,5vw,80px)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, flexWrap: "wrap", gap: 20 }}>
+      <div className="section-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, flexWrap: "wrap", gap: 16 }}>
         <div>
           <div className="section-label">Compétitions actives</div>
           <h2 className="section-title">TOURNOIS <span>EN VEDETTE</span></h2>
@@ -534,7 +603,7 @@ function TournamentsSection({ tournaments, user }) {
           <p style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 11, letterSpacing: 3, color: "rgba(255,255,255,0.2)" }}>AUCUN TOURNOI ACTIF — REVENEZ BIENTÔT</p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 20 }}>
           {tournaments.map((t) => <TournamentCard key={t.id} t={t} user={user} />)}
         </div>
       )}
@@ -550,14 +619,14 @@ function TeamsSection({ teams }) {
   if (!teams.length) return null;
   return (
     <section style={{ padding: "100px clamp(20px,5vw,80px)", background: "rgba(255,255,255,0.01)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, flexWrap: "wrap", gap: 20 }}>
+      <div className="section-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, flexWrap: "wrap", gap: 20 }}>
         <div>
           <div className="section-label">Les meilleures</div>
           <h2 className="section-title">MEILLEURES <span>ÉQUIPES</span></h2>
         </div>
         <button className="btn-outline" onClick={() => nav("/leaderboard")}>CLASSEMENT →</button>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 16 }}>
         {teams.slice(0, 6).map((team, i) => (
           <div key={team.id} className="cp-card" onClick={() => nav(`/teams/${team.id}`)} style={{ padding: "20px 16px" }}>
             <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: 2, color: i < 3 ? "#dc2626" : "rgba(255,255,255,0.2)", marginBottom: 12 }}>#{i + 1}</div>
@@ -585,7 +654,7 @@ function NewsSection({ news }) {
   const [main, ...rest] = news;
   return (
     <section style={{ padding: "100px clamp(20px,5vw,80px)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, flexWrap: "wrap", gap: 20 }}>
+      <div className="section-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, flexWrap: "wrap", gap: 20 }}>
         <div>
           <div className="section-label">Infos & Updates</div>
           <h2 className="section-title">DERNIÈRES <span>ACTUALITÉS</span></h2>
@@ -649,7 +718,7 @@ function HowItWorks({ user }) {
         <div className="section-label" style={{ justifyContent: "center" }}>Simple & rapide</div>
         <h2 className="section-title">COMMENT ÇA <span>MARCHE</span> ?</h2>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 32, maxWidth: 1000, margin: "0 auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 32, maxWidth: 1000, margin: "0 auto" }}>
         {steps.map((s) => (
           <div key={s.n} style={{ position: "relative", padding: "28px 24px", borderLeft: "2px solid rgba(220,38,38,0.3)" }}>
             <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 72, fontWeight: 900, lineHeight: 1, color: "rgba(220,38,38,0.08)", position: "absolute", top: 12, right: 16, letterSpacing: -2 }}>{s.n}</div>
