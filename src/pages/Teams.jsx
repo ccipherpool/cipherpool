@@ -477,7 +477,7 @@ export default function Teams() {
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${cx(.22)};border-radius:99px}
       `}</style>
 
-      <div className="tm" style={{ padding: "32px" }}>
+      <div className="tm" style={{ padding:"clamp(14px,4vw,32px)" }}>
 
         {/* HERO */}
         <div style={{
@@ -734,7 +734,7 @@ export default function Teams() {
 
         {/* TEAMS GRID */}
         {tab === "all" && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(300px,100%),1fr))", gap: 14 }}>
             {filteredTeams.map((team, i) => (
               <motion.div
                 key={team.id}
@@ -1118,7 +1118,7 @@ export default function Teams() {
                 </div>
 
                 {/* REGION + TYPE + MAX */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
                   <div>
                     <p style={{ fontFamily: "JetBrains Mono,monospace", fontSize: 9, color: "rgba(255,255,255,.3)", letterSpacing: 1.5, marginBottom: 6 }}>
                       RÉGION

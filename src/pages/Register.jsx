@@ -230,7 +230,7 @@ export default function Register() {
         {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">{error}</div>}
         {success && <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400">{success}</div>}
 
-        <div className="bg-slate-900/80 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-8">
+        <div className="bg-slate-900/80 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-4 md:p-8">
 
           {/* ── STEP 1 ── */}
           {step === 1 ? (

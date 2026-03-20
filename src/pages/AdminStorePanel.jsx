@@ -308,7 +308,7 @@ export default function AdminStorePanel() {
             background: "#08031a", border: "1px solid rgba(255,255,255,0.07)",
           }}>
             <label className="field-label">SÉLECTIONNER UN JOUEUR</label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap: 16 }}>
               <div>
                 <input
                   className="field-input"
@@ -533,10 +533,10 @@ export default function AdminStorePanel() {
 
           {/* ════════ TAB: COINS ════════ */}
           {tab === "coins" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, maxWidth: 900 }}>
+            <div style={{ display: "grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap: 24, maxWidth: 900 }}>
 
               {/* Add coins */}
-              <div style={{ padding: "24px", borderRadius: 14, background: "#08031a", border: "1px solid rgba(16,185,129,0.15)" }}>
+              <div style={{ padding:"clamp(12px,3vw,24px)", borderRadius: 14, background: "#08031a", border: "1px solid rgba(16,185,129,0.15)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
                   <span style={{ fontSize: 24 }}>💚</span>
                   <h3 style={{ fontFamily: "Orbitron", fontSize: 14, color: "#10b981", margin: 0 }}>AJOUTER COINS</h3>
@@ -589,7 +589,7 @@ export default function AdminStorePanel() {
               </div>
 
               {/* Remove coins */}
-              <div style={{ padding: "24px", borderRadius: 14, background: "#08031a", border: "1px solid rgba(239,68,68,0.15)" }}>
+              <div style={{ padding:"clamp(12px,3vw,24px)", borderRadius: 14, background: "#08031a", border: "1px solid rgba(239,68,68,0.15)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
                   <span style={{ fontSize: 24 }}>🔴</span>
                   <h3 style={{ fontFamily: "Orbitron", fontSize: 14, color: "#ef4444", margin: 0 }}>RETIRER COINS</h3>

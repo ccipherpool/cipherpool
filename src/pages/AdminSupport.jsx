@@ -173,7 +173,7 @@ export default function AdminSupport(){
   const BB={fontFamily:"'Bebas Neue',cursive"};
 
   return(
-    <div style={{minHeight:"100vh",background:BG,...S,color:"rgba(255,255,255,.88)",padding:"32px"}}>
+    <div style={{minHeight:"100vh",background:BG,...S,color:"rgba(255,255,255,.88)",padding:"clamp(16px,4vw,32px)"}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
       .sp-in{background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.18);border-radius:9px;color:#fff;padding:9px 13px;font-family:Space Grotesk,sans-serif;font-size:13px;outline:none;transition:border .2s;width:100%}
       .sp-in:focus{border-color:#00d4ff;box-shadow:0 0 10px rgba(0,212,255,.12)}
@@ -342,7 +342,7 @@ export default function AdminSupport(){
         {/* ═══ TAB PLANNING ═══ */}
         {tab==="schedule"&&(
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
-            <G ac={CYAN} style={{padding:"20px 24px"}}>
+            <G ac={CYAN} style={{padding:"clamp(12px,3vw,20px) clamp(12px,3vw,24px)"}}>
               <p style={{...M,fontSize:10,letterSpacing:2.5,color:CYAN,marginBottom:16}}>⏰ FENÊTRES DE MODIFICATION PLANIFIÉES</p>
               {schedules.length===0?(
                 <div style={{textAlign:"center",padding:"48px 0"}}><motion.div animate={{opacity:[.3,.7,.3]}} transition={{duration:2.5,repeat:Infinity}} style={{fontSize:50,marginBottom:12}}>📅</motion.div><p style={{...M,fontSize:10,letterSpacing:4,color:"rgba(255,255,255,.2)"}}>AUCUNE PLANIFICATION</p></div>

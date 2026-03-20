@@ -118,7 +118,7 @@ export default function SubmitResult() {
   };
 
   return (
-    <div style={{ minHeight:"100vh", background:BG, padding:"32px 24px", fontFamily:"Space Grotesk,sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:BG, padding:"clamp(14px,4vw,32px) clamp(12px,3vw,24px)", fontFamily:"Space Grotesk,sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }

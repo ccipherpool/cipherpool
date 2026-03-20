@@ -192,13 +192,13 @@ export default function Wallet() {
         </motion.div>
 
         {/* ── QUICK ACTIONS ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap: 12 }}>
           <motion.a
             href="/tournaments"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             style={{
-              display: "block", padding: "20px 24px", borderRadius: 14, textDecoration: "none",
+              display: "block", padding:"clamp(10px,3vw,20px) clamp(12px,3vw,24px)", borderRadius: 14, textDecoration: "none",
               background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)",
               cursor: "pointer", transition: "border-color 0.2s",
             }}
@@ -215,7 +215,7 @@ export default function Wallet() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             style={{
-              display: "block", padding: "20px 24px", borderRadius: 14, textDecoration: "none",
+              display: "block", padding:"clamp(10px,3vw,20px) clamp(12px,3vw,24px)", borderRadius: 14, textDecoration: "none",
               background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.15)",
               cursor: "pointer",
             }}

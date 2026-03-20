@@ -89,7 +89,37 @@ export default function TournamentWaiting() {
   return (
     <div className="min-h-screen bg-[#0B0F19] text-white">
       
-      <div className="max-w-3xl mx-auto px-8 py-12 text-center">
+      <div className="max-w-3xl mx-auto px-4 md:px-8 py-8 md:py-12 text-center">
+      <style>{`
+        @media (max-width: 768px) {
+          .max-w-7xl, .max-w-3xl { padding-left: 12px !important; padding-right: 12px !important; }
+          .px-8 { padding-left: 14px !important; padding-right: 14px !important; }
+          .py-12 { padding-top: 24px !important; padding-bottom: 24px !important; }
+          .p-8 { padding: 16px !important; }
+          .p-6 { padding: 14px !important; }
+          .grid-cols-2 { grid-template-columns: 1fr !important; }
+          .md\:grid-cols-2 { grid-template-columns: 1fr !important; }
+          .md\:grid-cols-3 { grid-template-columns: 1fr !important; }
+          .lg\:grid-cols-5 { grid-template-columns: 1fr 1fr !important; }
+          .sm\:grid-cols-2 { grid-template-columns: 1fr 1fr !important; }
+          .text-5xl { font-size: 28px !important; }
+          .text-4xl { font-size: 22px !important; }
+          .text-3xl { font-size: 20px !important; }
+          .h-96 { height: 200px !important; }
+          .p-12 { padding: 16px !important; }
+          .gap-8 { gap: 14px !important; }
+          .mb-12 { margin-bottom: 24px !important; }
+          .mb-8 { margin-bottom: 16px !important; }
+          table { font-size: 12px !important; }
+          th, td { padding: 6px 8px !important; }
+          .overflow-x-auto { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+        }
+        @media (max-width: 480px) {
+          .lg\:grid-cols-5 { grid-template-columns: 1fr 1fr !important; }
+          .grid-cols-2 { grid-template-columns: 1fr !important; }
+        }
+`}</style>
+
         
         {/* Status Icon */}
         <div className="text-8xl mb-8 animate-pulse">

@@ -192,8 +192,35 @@ export default function AdminGrant() {
   }
 
   return (
-    <div className="min-h-screen bg-[#030014] text-white cyber-grid p-8">
+    <div className="min-h-screen bg-[#030014] text-white cyber-grid p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
+
+      <style>{`
+        @media (max-width: 768px) {
+          .max-w-7xl { padding-left: 12px !important; padding-right: 12px !important; }
+          .p-8 { padding: 16px !important; }
+          .p-6 { padding: 14px !important; }
+          .gap-8 { gap: 16px !important; }
+          .gap-6 { gap: 12px !important; }
+          .grid-cols-7, .lg\:grid-cols-7 { grid-template-columns: repeat(4,1fr) !important; }
+          .md\:grid-cols-3 { grid-template-columns: 1fr !important; }
+          .md\:grid-cols-2 { grid-template-columns: 1fr !important; }
+          .md\:grid-cols-4 { grid-template-columns: 1fr 1fr !important; }
+          .lg\:grid-cols-8 { grid-template-columns: repeat(4,1fr) !important; }
+          .text-3xl { font-size: 20px !important; }
+          .text-4xl { font-size: 24px !important; }
+          .mb-8 { margin-bottom: 16px !important; }
+          .overflow-x-auto { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+          table { font-size: 12px !important; }
+          th, td { padding: 6px 8px !important; }
+        }
+        @media (max-width: 480px) {
+          .grid-cols-7, .lg\:grid-cols-7, .lg\:grid-cols-8 { grid-template-columns: repeat(2,1fr) !important; }
+          .md\:grid-cols-4 { grid-template-columns: 1fr 1fr !important; }
+          .flex-row { flex-direction: column !important; }
+        }
+      `}</style>
+
         
         <div className="flex justify-between items-center mb-8">
           <div>

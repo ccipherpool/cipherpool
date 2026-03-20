@@ -97,7 +97,7 @@ export default function News() {
       {featured && (
         <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} whileHover={{ y:-3 }}
           onClick={() => openArticle(featured)}
-          style={{ cursor:"pointer", marginBottom:28, position:"relative", overflow:"hidden", borderRadius:18, background:`linear-gradient(135deg,${CARD},rgba(0,212,255,.06))`, border:`1px solid ${cx(.18)}`, boxShadow:`0 0 40px ${cx(.08)},0 24px 60px rgba(0,0,0,.5)`, padding:"36px 36px" }}>
+          style={{ cursor:"pointer", marginBottom:28, position:"relative", overflow:"hidden", borderRadius:18, background:`linear-gradient(135deg,${CARD},rgba(0,212,255,.06))`, border:`1px solid ${cx(.18)}`, boxShadow:`0 0 40px ${cx(.08)},0 24px 60px rgba(0,0,0,.5)`, padding:"clamp(18px,4vw,36px)" }}>
           <div style={{ position:"absolute", top:0, left:0, right:0, height:3, background:`linear-gradient(90deg,${CYAN},${INDIGO},${VIOLET})` }}/>
           <div style={{ position:"absolute", top:16, right:20 }}>
             <span style={{ fontFamily:"JetBrains Mono,monospace", fontSize:8, color:"#000", background:`linear-gradient(135deg,${CYAN},${INDIGO})`, padding:"4px 12px", borderRadius:99, fontWeight:700, letterSpacing:1 }}>★ À LA UNE</span>
@@ -134,11 +134,11 @@ export default function News() {
           ))}
         </div>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..."
-          style={{ flex:1, minWidth:180, padding:"10px 16px", borderRadius:10, background:cx(.05), border:`1px solid ${cx(.1)}`, color:"#fff", fontFamily:"Space Grotesk,sans-serif", fontSize:13, outline:"none" }}/>
+          style={{ flex:1, minWidth:"min(180px,100%)", padding:"10px 16px", borderRadius:10, background:cx(.05), border:`1px solid ${cx(.1)}`, color:"#fff", fontFamily:"Space Grotesk,sans-serif", fontSize:13, outline:"none" }}/>
       </div>
 
       {/* GRID */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:14 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(300px,100%),1fr))", gap:14 }}>
         {filtered.map((a, i) => {
           const cat = CAT[a.category] || CAT.general;
           return (
@@ -183,7 +183,7 @@ export default function News() {
             onClick={e => e.stopPropagation()}
             style={{ maxWidth:700, margin:"0 auto", background:CARD, border:`1px solid ${cx(.14)}`, borderRadius:20, boxShadow:`0 0 60px ${cx(.1)},0 32px 80px rgba(0,0,0,.7)`, overflow:"hidden" }}>
             <div style={{ height:3, background:`linear-gradient(90deg,${CYAN},${INDIGO},${VIOLET})` }}/>
-            <div style={{ padding:"28px 32px" }}>
+            <div style={{ padding:"clamp(14px,4vw,28px) clamp(14px,4vw,32px)" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
                 {CAT[selected.category] && (
                   <span style={{ fontFamily:"JetBrains Mono,monospace", fontSize:9, color:CAT[selected.category].color, background:CAT[selected.category].bg, padding:"4px 12px", borderRadius:6, letterSpacing:1 }}>

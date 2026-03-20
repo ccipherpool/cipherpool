@@ -141,7 +141,7 @@ export default function Login() {
         style={{ width:"100%", maxWidth:420, position:"relative", zIndex:1 }}
       >
         {/* Logo */}
-        <div style={{ textAlign:"center", marginBottom:36 }}>
+        <div style={{ textAlign:"center", marginBottom:"clamp(20px,5vw,36px)" }}>
           <motion.div whileHover={{ rotate:5, scale:1.08 }}
             style={{ width:52, height:52, borderRadius:15, background:`linear-gradient(135deg,${C.primary},#4f46e5)`, display:"inline-flex", alignItems:"center", justifyContent:"center", boxShadow:`0 8px 32px ${C.primaryGlow}`, marginBottom:14 }}>
             <span style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:"#fff", letterSpacing:1 }}>CP</span>
@@ -153,7 +153,7 @@ export default function Login() {
         </div>
 
         {/* Card */}
-        <div style={{ background:"rgba(15,15,23,0.92)", backdropFilter:"blur(24px)", border:`1px solid ${C.border}`, borderRadius:22, padding:"32px 30px", boxShadow:"0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)" }}>
+        <div style={{ background:"rgba(15,15,23,0.92)", backdropFilter:"blur(24px)", border:`1px solid ${C.border}`, borderRadius:22, padding:"clamp(20px,5vw,32px) clamp(16px,4vw,30px)", boxShadow:"0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)" }}>
 
           {/* Lockout banner */}
           {isLocked && (
@@ -229,6 +229,7 @@ export default function Login() {
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
         * { box-sizing:border-box; }
         input::placeholder { color:rgba(255,255,255,0.2); }
+        input { font-size: 16px !important; }
       `}</style>
     </div>
   );

@@ -767,7 +767,7 @@ export default function Store() {
         </div>
 
         {/* ── ITEMS GRID ── */}
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 32px" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding:"clamp(14px,4vw,28px) clamp(14px,4vw,32px)" }}>
 
           {/* ── INVENTORY TAB ── */}
           {tab === "inventory" ? (

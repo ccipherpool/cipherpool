@@ -255,7 +255,7 @@ export default function AdminNews() {
             return (
               <motion.div key={article.id}
                 initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay: i * 0.04 }}
-                style={{ background:CARD, borderRadius:14, border:"1px solid rgba(255,255,255,.06)", padding:"20px 24px", display:"flex", gap:20, alignItems:"center" }}>
+                style={{ background:CARD, borderRadius:14, border:"1px solid rgba(255,255,255,.06)", padding:"clamp(12px,3vw,20px) clamp(12px,3vw,24px)", display:"flex", gap:20, alignItems:"center" }}>
 
                 {/* Cover thumbnail */}
                 {article.cover_url ? (

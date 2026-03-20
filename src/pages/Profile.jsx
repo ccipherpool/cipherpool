@@ -567,7 +567,7 @@ export default function Profile() {
 
               {/* Balance */}
               <motion.div initial={{opacity:0,scale:.88}} animate={{opacity:1,scale:1}} transition={{delay:.18,type:"spring",stiffness:220,damping:22}} whileHover={{y:-5}} style={{flexShrink:0,minWidth:168}}>
-                <G ac={CYAN} style={{ padding:"20px 24px",textAlign:"center" }}>
+                <G ac={CYAN} style={{ padding:"clamp(10px,3vw,20px) clamp(12px,3vw,24px)",textAlign:"center" }}>
                   <div style={{ position:"absolute",top:-28,right:-28,width:90,height:90,borderRadius:"50%",background:`radial-gradient(circle,${cx(.18)},transparent)`,pointerEvents:"none" }} />
                   <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.22)",marginBottom:7,position:"relative" }}>SOLDE</p>
                   <p style={{ fontFamily:"'Bebas Neue',cursive",fontSize:34,letterSpacing:2,color:CYAN,lineHeight:1,textShadow:`0 0 32px ${cx(.55)}`,position:"relative" }}><N v={balance} /></p>
@@ -713,7 +713,7 @@ export default function Profile() {
                 <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.2)",marginBottom:18 }}>SUCCÈS DÉBLOQUÉS — <span style={{color:INDIGO}}>{achievements.length}</span></p>
                 {achievements.length===0
                   ? <div style={{textAlign:"center",padding:"80px 0"}}><motion.div animate={{rotate:[0,10,-10,0]}} transition={{duration:2,repeat:Infinity}} style={{fontSize:56,marginBottom:14}}>🎖️</motion.div><p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:10,letterSpacing:4,color:"rgba(255,255,255,.15)" }}>AUCUN SUCCÈS</p></div>
-                  : <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:11}}>
+                  : <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(280px,100%),1fr))",gap:11}}>
                       {achievements.map((a,i)=>(
                         <motion.div key={a.id} initial={{opacity:0,scale:.9}} animate={{opacity:1,scale:1}} transition={{delay:i*.06}} whileHover={{scale:1.03,y:-4}}>
                           <G ac={INDIGO} style={{ padding:"20px",display:"flex",gap:14,alignItems:"flex-start" }}>

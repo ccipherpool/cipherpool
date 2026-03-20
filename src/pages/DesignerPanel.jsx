@@ -411,7 +411,7 @@ export default function DesignerPanel() {
                 )}
 
                 {/* Nom + Type */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap: 16 }}>
                   <div>
                     <label className="field-label">NOM DE L'ITEM *</label>
                     <input
@@ -445,10 +445,10 @@ export default function DesignerPanel() {
                 </div>
 
                 {/* Rarity + Price */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap: 16 }}>
                   <div>
                     <label className="field-label">RARETÉ *</label>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <div style={{ display: "grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap: 8 }}>
                       {RARITIES.map(r => (
                         <button
                           key={r.value}
@@ -546,7 +546,7 @@ export default function DesignerPanel() {
                     onClick={() => fileRef.current?.click()}
                     style={{
                       border: "2px dashed rgba(124,58,237,0.3)", borderRadius: 12,
-                      padding: "24px", textAlign: "center", cursor: "pointer",
+                      padding:"clamp(12px,3vw,24px)", textAlign: "center", cursor: "pointer",
                       background: "rgba(124,58,237,0.04)", transition: "all 0.2s",
                     }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(124,58,237,0.6)"}
@@ -574,7 +574,7 @@ export default function DesignerPanel() {
                 </div>
 
                 {/* Options */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap: 16 }}>
                   <div>
                     <label className="field-label">OPTIONS</label>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

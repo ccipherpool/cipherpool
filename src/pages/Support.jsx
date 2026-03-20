@@ -443,7 +443,7 @@ export default function Support() {
           <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
             style={{position:"fixed",inset:0,background:"rgba(5,5,8,0.9)",backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:50,padding:20}}>
             <motion.div initial={{opacity:0,scale:.96,y:20}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:.96}}
-              style={{background:"#0a0a12",border:"1px solid rgba(220,38,38,0.2)",padding:"28px 32px",maxWidth:540,width:"100%",maxHeight:"90vh",overflowY:"auto"}}>
+              style={{background:"#0a0a12",border:"1px solid rgba(220,38,38,0.2)",padding:"clamp(14px,4vw,28px) clamp(14px,4vw,32px)",maxWidth:540,width:"100%",maxHeight:"90vh",overflowY:"auto"}}>
 
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
                 <h2 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:22,fontWeight:900,letterSpacing:1}}>
@@ -458,7 +458,7 @@ export default function Support() {
                   <input className="sp-input" value={form.subject} onChange={e=>setForm({...form,subject:e.target.value})} placeholder="Décrivez votre problème en une ligne…"/>
                 </div>
 
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:12}}>
                   <div>
                     <p style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,letterSpacing:2,color:"rgba(255,255,255,0.3)",marginBottom:7}}>CATÉGORIE</p>
                     <select className="sp-input" value={form.category} onChange={e=>setForm({...form,category:e.target.value})} style={{cursor:"pointer"}}>

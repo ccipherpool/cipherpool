@@ -104,6 +104,8 @@ export default function DailyRewards(){
 
   return(<>
     <style>{`
+        @media(max-width:640px){.dr-wrap{padding:14px!important}}
+
       @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
       .dr{font-family:Space Grotesk,sans-serif;color:rgba(255,255,255,.88);min-height:100vh;background:${BG};padding:32px}
       ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${cx(.22)};border-radius:99px}

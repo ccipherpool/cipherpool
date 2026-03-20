@@ -61,7 +61,7 @@ export default function Achievements(){
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
       .ach{font-family:Space Grotesk,sans-serif;color:rgba(255,255,255,.88);min-height:100vh;background:${BG};padding:32px}
-      ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${cx(.22)};border-radius:99px}
+      @media(max-width:640px){.ach{padding:14px!important}.ach h1{font-size:32px!important}}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${cx(.22)};border-radius:99px}
     `}</style>
 
     <div className="ach">
@@ -110,7 +110,7 @@ export default function Achievements(){
       </div>
 
       {/* GRID */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))",gap:12}}>
         {filtered.map((ach,i)=>{
           const isEarned=earnedIds.has(ach.id);
           const r=RARITY[ach.rarity]||RARITY.common;

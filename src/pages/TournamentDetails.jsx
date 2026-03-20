@@ -93,11 +93,40 @@ export default function TournamentDetails() {
     <div className="min-h-screen bg-[#0B0F19] text-white">
 
       {/* Hero */}
-      <div className="h-96 bg-cover bg-center relative"
-        style={{ backgroundImage: tournament?.banner_url ? `url(${tournament.banner_url})` : `linear-gradient(135deg,${tournament?.background_color||"#6D28D9"},#4C1D95)` }}>
+      <div className="bg-cover bg-center relative" style={{ height:"clamp(140px,30vw,384px)", backgroundImage: tournament?.banner_url ? `url(${tournament.banner_url})` : `linear-gradient(135deg,${tournament?.background_color||"#6D28D9"},#4C1D95)` }}>
         <div className="absolute inset-0 bg-black/60" />
         <div className="absolute bottom-0 left-0 right-0 p-12">
           <div className="max-w-7xl mx-auto">
+      <style>{`
+        @media (max-width: 768px) {
+          .max-w-7xl, .max-w-3xl { padding-left: 12px !important; padding-right: 12px !important; }
+          .px-8 { padding-left: 14px !important; padding-right: 14px !important; }
+          .py-12 { padding-top: 24px !important; padding-bottom: 24px !important; }
+          .p-8 { padding: 16px !important; }
+          .p-6 { padding: 14px !important; }
+          .grid-cols-2 { grid-template-columns: 1fr !important; }
+          .md\:grid-cols-2 { grid-template-columns: 1fr !important; }
+          .md\:grid-cols-3 { grid-template-columns: 1fr !important; }
+          .lg\:grid-cols-5 { grid-template-columns: 1fr 1fr !important; }
+          .sm\:grid-cols-2 { grid-template-columns: 1fr 1fr !important; }
+          .text-5xl { font-size: 28px !important; }
+          .text-4xl { font-size: 22px !important; }
+          .text-3xl { font-size: 20px !important; }
+          .h-96 { height: 200px !important; }
+          .p-12 { padding: 16px !important; }
+          .gap-8 { gap: 14px !important; }
+          .mb-12 { margin-bottom: 24px !important; }
+          .mb-8 { margin-bottom: 16px !important; }
+          table { font-size: 12px !important; }
+          th, td { padding: 6px 8px !important; }
+          .overflow-x-auto { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+        }
+        @media (max-width: 480px) {
+          .lg\:grid-cols-5 { grid-template-columns: 1fr 1fr !important; }
+          .grid-cols-2 { grid-template-columns: 1fr !important; }
+        }
+`}</style>
+
             <h1 className="text-5xl font-bold text-white mb-3">{tournament?.name}</h1>
             <p className="text-xl text-white/80 max-w-3xl">{tournament?.description}</p>
           </div>
