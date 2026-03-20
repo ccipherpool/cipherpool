@@ -1,1143 +1,475 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+// src/pages/Dashboard.jsx — CipherPool eSports — Mobile Responsive
+import { useOutletContext, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "../lib/supabase";
-import { motion, AnimatePresence } from "framer-motion";
-import { useVerification } from "../hooks/useVerification";
 
-// Security: sanitize text to prevent XSS
-const sanitize = (str) => {
-  if (!str) return "";
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;")
-    .trim()
-    .slice(0, 500);
-};
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-// ─── CONSTANTS ────────────────────────────────────────────────────────────────
-const CHANNELS = [
-  { id: "general",     label: "général",     icon: "⚡", desc: "Discussion libre" },
-  { id: "tournaments", label: "tournois",    icon: "🏆", desc: "Infos & résultats" },
-  { id: "recrutement", label: "recrutement", icon: "🎯", desc: "Cherche équipe" },
-  { id: "off-topic",   label: "off-topic",   icon: "💬", desc: "Hors-sujet" },
+  .db-wrap {
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    background:#050508;
+    color:#fff;
+    padding:24px clamp(12px,4vw,60px) 80px;
+    position:relative;
+  }
+  .db-wrap::before {
+    content:'';
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 4px);
+  }
+  .db-content { position:relative; z-index:1; }
+
+  .stat-card {
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.07);
+    padding:20px 16px;
+    cursor:pointer;
+    transition:border-color .25s,transform .25s,box-shadow .25s;
+    position:relative;
+    overflow:hidden;
+  }
+  .stat-card:hover { border-color:rgba(124,58,237,0.4); transform:translateY(-3px); box-shadow:0 12px 40px rgba(124,58,237,0.1); }
+  .stat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent,#7c3aed); transform:scaleX(0); transform-origin:left; transition:transform .3s; }
+  .stat-card:hover::after { transform:scaleX(1); }
+
+  .trn-card {
+    background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.06);
+    transition:all .25s;
+    cursor:pointer;
+    overflow:hidden;
+  }
+  .trn-card:hover { border-color:rgba(124,58,237,0.35); box-shadow:0 8px 32px rgba(124,58,237,0.08); }
+
+  .db-lbl {
+    font-family:'Inter',sans-serif;
+    font-size:10px;
+    letter-spacing:4px;
+    color:#7c3aed;
+    text-transform:uppercase;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:16px;
+  }
+  .db-lbl::before { content:''; width:20px; height:2px; background:#7c3aed; flex-shrink:0; }
+
+  .ql {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 16px;
+    background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.05);
+    cursor:pointer;
+    transition:all .2s;
+  }
+  .ql:hover { background:rgba(124,58,237,0.06); border-color:rgba(124,58,237,0.25); transform:translateX(4px); }
+
+  .db-btn {
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:#7c3aed;
+    color:#fff;
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    padding:11px 24px;
+    border:none;
+    cursor:pointer;
+    border-radius:6px;
+    transition:all .2s;
+  }
+  .db-btn:hover { background:#6d28d9; transform:translateY(-2px); }
+
+  .db-btn-ghost {
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:transparent;
+    color:rgba(255,255,255,0.5);
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    padding:10px 22px;
+    border:1px solid rgba(255,255,255,0.12);
+    cursor:pointer;
+    border-radius:6px;
+    transition:all .2s;
+  }
+  .db-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,0.3); }
+
+  /* ── MAIN GRID ─────────────────────────────────── */
+  .db-main-grid {
+    display:grid;
+    grid-template-columns:1fr minmax(240px,280px);
+    gap:28px;
+    align-items:start;
+  }
+
+  /* ── STATS GRID ────────────────────────────────── */
+  .db-stats-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+    gap:10px;
+  }
+
+  @keyframes spin  { to{transform:rotate(360deg)} }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ═══════════════════════════════════
+     MOBILE
+  ═══════════════════════════════════ */
+  @media (max-width: 768px) {
+
+    .db-wrap {
+      padding: 16px 12px 100px;
+    }
+
+    /* 1 col layout */
+    .db-main-grid {
+      grid-template-columns: 1fr !important;
+      gap: 24px;
+    }
+
+    /* Stats: 2x2 */
+    .db-stats-grid {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px;
+    }
+
+    .stat-card {
+      padding: 14px 12px !important;
+    }
+
+    /* Header: stack */
+    .db-header-row {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 12px !important;
+    }
+
+    .db-header-row h1 {
+      font-size: clamp(28px,8vw,48px) !important;
+    }
+
+    .db-header-actions {
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+      width: 100%;
+    }
+
+    .db-btn {
+      flex: 1;
+      justify-content: center;
+      padding: 12px 16px !important;
+      font-size: 11px !important;
+    }
+
+    /* Rank block: smaller */
+    .db-rank-num {
+      font-size: 48px !important;
+    }
+
+    /* Quick links: 2 columns on mobile */
+    .db-quick-grid {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .ql {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      padding: 12px !important;
+      gap: 4px;
+    }
+
+    .ql > span:last-child { display: none; }
+  }
+
+  @media (max-width: 400px) {
+    .db-stats-grid {
+      grid-template-columns: 1fr 1fr !important;
+    }
+    .db-quick-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+`;
+
+const fmt = n => n >= 1000 ? (n/1000).toFixed(1)+"K" : String(n ?? 0);
+
+function StatCard({ icon, label, value, suffix="", accent, delay=0, onClick }) {
+  return (
+    <motion.div className="stat-card" style={{"--accent":accent}}
+      initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay,duration:.4}} onClick={onClick}>
+      <div style={{position:"absolute",top:-20,right:-20,width:80,height:80,borderRadius:"50%",background:accent,opacity:.07,filter:"blur(24px)",pointerEvents:"none"}}/>
+      <div style={{fontSize:18,marginBottom:10,width:36,height:36,background:`${accent}15`,border:`1px solid ${accent}30`,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:6}}>{icon}</div>
+      <div style={{fontFamily:"'Inter',sans-serif",fontSize:"clamp(24px,4vw,40px)",fontWeight:900,lineHeight:1,color:"#fff",marginBottom:4}}>
+        {fmt(value)}<span style={{fontSize:"50%",color:accent,marginLeft:2}}>{suffix}</span>
+      </div>
+      <div style={{fontFamily:"'Inter',sans-serif",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,0.3)"}}>{label}</div>
+    </motion.div>
+  );
+}
+
+function TrnCard({ t, index }) {
+  const nav = useNavigate();
+  const pct = t.max_players > 0 ? Math.round((t.current_players/t.max_players)*100) : 0;
+  return (
+    <motion.div className="trn-card" initial={{opacity:0,x:-16}} animate={{opacity:1,x:0}} transition={{delay:index*.08,duration:.3}} onClick={() => nav(`/tournaments/${t.id}`)}>
+      <div style={{display:"flex",height:64}}>
+        <div style={{width:3,flexShrink:0,background:t.status==="in_progress"?"#7c3aed":"#22c55e"}}/>
+        <div style={{width:64,flexShrink:0,overflow:"hidden",background:"#0d0d12"}}>
+          {t.banner_url
+            ? <img src={t.banner_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",opacity:.6}} loading="lazy"/>
+            : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:20,opacity:.15}}>🎮</span></div>}
+        </div>
+        <div style={{flex:1,padding:"8px 12px",display:"flex",flexDirection:"column",justifyContent:"space-between",minWidth:0}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+            <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:800,lineHeight:1.1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.name}</p>
+            {t.status==="in_progress"&&<span style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,fontFamily:"'Inter',sans-serif",fontSize:7,letterSpacing:0.5,color:"#7c3aed"}}><span style={{width:5,height:5,borderRadius:"50%",background:"#7c3aed",animation:"blink 1s infinite"}}/> LIVE</span>}
+          </div>
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:"rgba(255,255,255,0.25)",letterSpacing:0.3}}>{t.current_players??0}/{t.max_players}</span>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:8,color:pct>=80?"#7c3aed":"rgba(255,255,255,0.25)",letterSpacing:0.3}}>{pct}%</span>
+            </div>
+            <div style={{height:2,background:"rgba(255,255,255,0.06)"}}>
+              <div style={{height:"100%",width:`${pct}%`,background:pct>=80?"#7c3aed":"#22c55e",transition:"width .5s"}}/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+const QUICK_LINKS = [
+  {icon:"🏆",label:"Tournois",    sub:"Compétitions",   path:"/tournaments"},
+  {icon:"📊",label:"Classement",  sub:"Ton rang",       path:"/leaderboard"},
+  {icon:"📈",label:"Mes Stats",   sub:"Kills · Wins",   path:"/stats"},
+  {icon:"🎁",label:"Récompenses", sub:"Bonus quotidiens",path:"/daily-rewards"},
+  {icon:"🏅",label:"Achievements",sub:"Succès",         path:"/achievements"},
+  {icon:"🛍️",label:"Boutique",    sub:"Items exclusifs",path:"/store"},
 ];
 
-const REACTIONS = ["🔥", "💀", "👑", "⚡", "🎯", "💪", "😂", "🤝"];
+export default function Dashboard() {
+  const nav = useNavigate();
+  const { profile, balance, notify } = useOutletContext() || {};
+  const [tournaments, setTournaments] = useState([]);
+  const [messages,    setMessages]    = useState([]);
+  const [stats,       setStats]       = useState({played:0,wins:0,kills:0,winRate:0,rank:null});
+  const [loading,     setLoading]     = useState(true);
 
-const ROLE_CONFIG = {
-  super_admin: { label: "SUPER ADMIN", color: "#f59e0b", bg: "rgba(245,158,11,0.15)", icon: "👑" },
-  admin:       { label: "ADMIN",       color: "#06b6d4", bg: "rgba(6,182,212,0.15)",  icon: "🛡️" },
-  founder:     { label: "FOUNDER",     color: "#a855f7", bg: "rgba(168,85,247,0.15)", icon: "⚡" },
-  user:        { label: "JOUEUR",      color: "#6b7280", bg: "rgba(107,114,128,0.1)", icon: "🎮" },
-};
+  const firstName = profile?.full_name?.split(" ")[0] ?? "JOUEUR";
+  const coins     = balance ?? profile?.coins ?? 0;
+  const timeStr   = new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-const getRoleConfig = (role) => ROLE_CONFIG[role] || ROLE_CONFIG.user;
-
-const formatTime = (ts) => {
-  const d = new Date(ts);
-  const now = new Date();
-  const diff = now - d;
-  if (diff < 60000) return "maintenant";
-  if (diff < 3600000) return `il y a ${Math.floor(diff / 60000)}min`;
-  if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-};
-
-const getAvatar = (name) => {
-  if (!name) return "?";
-  return name.trim()[0].toUpperCase();
-};
-
-const AVATAR_COLORS = [
-  "linear-gradient(135deg,#7c3aed,#06b6d4)",
-  "linear-gradient(135deg,#f59e0b,#ef4444)",
-  "linear-gradient(135deg,#10b981,#06b6d4)",
-  "linear-gradient(135deg,#ec4899,#8b5cf6)",
-  "linear-gradient(135deg,#f97316,#eab308)",
-];
-const avatarColor = (name) => AVATAR_COLORS[(name?.charCodeAt(0) || 0) % AVATAR_COLORS.length];
-
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-export default function GlobalChat() {
-  const navigate = useNavigate();
-  const { requireVerified } = useVerification();
-  const [profile, setProfile]         = useState(null);
-  const [loading, setLoading]         = useState(true);
-  const [channel, setChannel]         = useState("general");
-  const [messages, setMessages]       = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState([]);
-  const [input, setInput]             = useState("");
-  const [recording,   setRecording]   = useState(false);
-  const [audioBlob,   setAudioBlob]   = useState(null);
-  const [audioURL,    setAudioURL]    = useState(null);
-  const [recSecs,     setRecSecs]     = useState(0);
-  const [sendingAudio,setSendingAudio]= useState(false);
-  const mediaRecRef  = useRef(null);
-  const audioChunks  = useRef([]);
-  const recTimer     = useRef(null);
-  const [sending, setSending]         = useState(false);
-  const [typingUsers, setTypingUsers] = useState([]);
-  const [reactionPicker, setReactionPicker] = useState(null); // msgId
-  const [hoveredMsg, setHoveredMsg]   = useState(null);
-  const [showMembers, setShowMembers] = useState(false);
-  const [showChannels, setShowChannels] = useState(false);
-  const [unread, setUnread]           = useState({});
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch]   = useState(false);
-
-  const bottomRef   = useRef(null);
-  const inputRef    = useRef(null);
-  const typingTimer = useRef(null);
-  const channelSub  = useRef(null);
-  const presenceSub = useRef(null);
-
-  // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate("/login"); return; }
+    if (!profile?.id) return;
+    fetchData();
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      setProfile(data);
-
-      // Update last_seen
-      await supabase
-        .from("profiles")
-        .update({ last_seen: new Date().toISOString() })
-        .eq("id", user.id);
-
-      setLoading(false);
-    };
-    init();
-  }, [navigate]);
-
-  // ── Fetch messages ─────────────────────────────────────────────────────────
-  const fetchMessages = useCallback(async (ch) => {
-    const { data } = await supabase
-      .from("chat_messages")
-      .select(`
-        id, content, audio_url, channel, created_at, sender_id,
-        sender:profiles!chat_messages_sender_id_fkey (
-          id, full_name, role, avatar_url, free_fire_id
-        ),
-        reactions:chat_reactions (
-          emoji, user_id
-        )
-      `)
-      .eq("channel", ch)
-      .order("created_at", { ascending: true })
-      .limit(100);
-
-    setMessages(data || []);
-  }, []);
-
-  // ── Fetch online users ─────────────────────────────────────────────────────
-  const fetchOnlineUsers = useCallback(async () => {
-    const threshold = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, full_name, role, avatar_url")
-      .gte("last_seen", threshold)
-      .order("full_name");
-
-    setOnlineUsers(data || []);
-  }, []);
-
-  // ── Realtime subscription ─────────────────────────────────────────────────
-  useEffect(() => {
-    if (!profile) return;
-
-    fetchMessages(channel);
-    fetchOnlineUsers();
-
-    // Cleanup old sub
-    if (channelSub.current) supabase.removeChannel(channelSub.current);
-
-    channelSub.current = supabase
-      .channel(`chat:${channel}`)
-
-      // ── INSERT رسالة جديدة ──────────────────────────────────────
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "chat_messages",
-        filter: `channel=eq.${channel}`
-      }, async (payload) => {
-        const { data: fullMsg } = await supabase
-          .from("chat_messages")
-          .select(`
-            id, content, audio_url, channel, created_at, sender_id,
-            sender:profiles!chat_messages_sender_id_fkey (
-              id, full_name, role, avatar_url, free_fire_id
-            ),
-            reactions:chat_reactions ( emoji, user_id )
-          `)
-          .eq("id", payload.new.id)
-          .single();
-        if (fullMsg) setMessages(prev => [...prev, fullMsg]);
+    const channel = supabase
+      .channel(`dashboard-${profile.id}`)
+      .on("postgres_changes",{event:"*",schema:"public",table:"tournaments"},(payload)=>{
+        if(payload.eventType==="INSERT"){
+          setTournaments(prev=>{
+            const t=payload.new;
+            if(!["open","in_progress"].includes(t.status))return prev;
+            return [t,...prev].slice(0,5);
+          });
+        }else if(payload.eventType==="UPDATE"){
+          setTournaments(prev=>prev.map(t=>t.id===payload.new.id?payload.new:t).filter(t=>["open","in_progress"].includes(t.status)));
+        }
       })
-
-      // ── DELETE رسالة ────────────────────────────────────────────
-      .on("postgres_changes", {
-        event: "DELETE",
-        schema: "public",
-        table: "chat_messages",
-        filter: `channel=eq.${channel}`
-      }, (payload) => {
-        setMessages(prev => prev.filter(m => m.id !== payload.old.id));
-      })
-
-      // ── UPDATE رسالة (تعديل content) ────────────────────────────
-      .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "chat_messages",
-        filter: `channel=eq.${channel}`
-      }, async (payload) => {
-        const { data: fullMsg } = await supabase
-          .from("chat_messages")
-          .select(`
-            id, content, audio_url, channel, created_at, sender_id,
-            sender:profiles!chat_messages_sender_id_fkey (
-              id, full_name, role, avatar_url, free_fire_id
-            ),
-            reactions:chat_reactions ( emoji, user_id )
-          `)
-          .eq("id", payload.new.id)
-          .single();
-        if (fullMsg) setMessages(prev => prev.map(m => m.id === fullMsg.id ? fullMsg : m));
-      })
-
-      // ── Reactions INSERT ─────────────────────────────────────────
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "chat_reactions"
-      }, async (payload) => {
-        const msgId = payload.new.message_id;
-        const { data: reactions } = await supabase
-          .from("chat_reactions")
-          .select("emoji, user_id")
-          .eq("message_id", msgId);
-        if (reactions) setMessages(prev => prev.map(m =>
-          m.id === msgId ? { ...m, reactions } : m
-        ));
-      })
-
-      // ── Reactions DELETE ─────────────────────────────────────────
-      .on("postgres_changes", {
-        event: "DELETE",
-        schema: "public",
-        table: "chat_reactions"
-      }, async (payload) => {
-        const msgId = payload.old.message_id;
-        const { data: reactions } = await supabase
-          .from("chat_reactions")
-          .select("emoji, user_id")
-          .eq("message_id", msgId);
-        if (reactions) setMessages(prev => prev.map(m =>
-          m.id === msgId ? { ...m, reactions } : m
-        ));
-      })
-
-      // ── Typing indicator ─────────────────────────────────────────
-      .on("broadcast", { event: "typing" }, ({ payload }) => {
-        if (payload.user_id === profile.id) return;
-        setTypingUsers(prev => {
-          const filtered = prev.filter(u => u.id !== payload.user_id);
-          if (payload.typing) return [...filtered, { id: payload.user_id, name: payload.name }];
-          return filtered;
-        });
+      .on("postgres_changes",{event:"UPDATE",schema:"public",table:"player_stats",filter:`user_id=eq.${profile.id}`},(payload)=>{
+        const st=payload.new;
+        setStats({played:st.tournaments_played??0,wins:st.wins??0,kills:st.kills??0,winRate:st.wins>0&&st.tournaments_played>0?Math.round((st.wins/st.tournaments_played)*100):0,rank:st.rank??null});
       })
       .subscribe();
 
-    // Online presence
-    if (presenceSub.current) supabase.removeChannel(presenceSub.current);
-    presenceSub.current = supabase
-      .channel("online-users")
-      .on("presence", { event: "sync" }, () => fetchOnlineUsers())
-      .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "profiles"
-      }, (payload) => {
-        // تبدل صورة + اسم المرسل فالرسايل مباشرة
-        setMessages(prev => prev.map(m =>
-          m.sender_id === payload.new.id
-            ? { ...m, sender: { ...m.sender, ...payload.new } }
-            : m
-        ));
-      })
-      .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          await presenceSub.current.track({
-            user_id: profile.id,
-            name: profile.full_name,
-            online_at: new Date().toISOString()
-          });
-        }
-      });
+    return()=>supabase.removeChannel(channel);
+  }, [profile?.id]);
 
-    return () => {
-      if (channelSub.current) supabase.removeChannel(channelSub.current);
-      if (presenceSub.current) supabase.removeChannel(presenceSub.current);
-    };
-  }, [profile, channel, fetchMessages, fetchOnlineUsers]);
-
-  // ── Auto-scroll ────────────────────────────────────────────────────────────
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // ── Send message ───────────────────────────────────────────────────────────
-  // Rate limit: max 1 message per second
-  const lastMsgTime = useRef(0);
-
-  const sendMessage = async () => {
-    if (!requireVerified(() => _doSendMessage())) return;
-  };
-
-  const _doSendMessage = async () => {
-    if (!input || sending || !profile) return;
-
-    // Rate limit check
-    const now = Date.now();
-    if (now - lastMsgTime.current < 1000) return; // 1 msg/sec max
-    lastMsgTime.current = now;
-
-    // Sanitize content
-    const safeText = sanitize(input);
-    if (!safeText) return;
-
-    setSending(true);
-    setInput("");
-
-    const { error } = await supabase
-      .from("chat_messages")
-      .insert([{
-        sender_id: profile.id,
-        channel,
-        content: safeText
-      }]);
-
-    if (error) {
-      console.error("Send error:", error);
-      setInput(input);
-    }
-
-    setSending(false);
-    inputRef.current?.focus();
-
-    // Stop typing indicator
-    broadcastTyping(false);
-  };
-
-  // ── AUDIO RECORDING ──────────────────────────────────────────────────────
-  const startRecording = async () => {
+  const fetchData = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      mediaRecRef.current = mr;
-      audioChunks.current = [];
-      mr.ondataavailable = e => { if (e.data.size > 0) audioChunks.current.push(e.data); };
-      mr.onstop = () => {
-        const blob = new Blob(audioChunks.current, { type: "audio/webm" });
-        setAudioBlob(blob);
-        setAudioURL(URL.createObjectURL(blob));
-        stream.getTracks().forEach(t => t.stop());
-      };
-      mr.start(100);
-      setRecording(true);
-      setRecSecs(0);
-      recTimer.current = setInterval(() => setRecSecs(s => s + 1), 1000);
-    } catch (e) {
-      alert("Microphone non disponible — vérifiez les permissions.");
-    }
+      const [{data:msgs},{data:all},{data:st}]=await Promise.all([
+        supabase.from("admin_messages").select("*").order("created_at",{ascending:false}).limit(3),
+        supabase.from("tournaments").select("id,name,status,max_players,current_players,banner_url").in("status",["open","in_progress"]).order("created_at",{ascending:false}).limit(5),
+        supabase.from("player_stats").select("*").eq("user_id",profile.id).maybeSingle(),
+      ]);
+      setMessages(msgs??[]);
+      setTournaments(all??[]);
+      if(st)setStats({played:st.tournaments_played??0,wins:st.wins??0,kills:st.kills??0,winRate:st.wins>0&&st.tournaments_played>0?Math.round((st.wins/st.tournaments_played)*100):0,rank:st.rank??null});
+    } finally { setLoading(false); }
   };
 
-  const stopRecording = () => {
-    mediaRecRef.current?.stop();
-    setRecording(false);
-    clearInterval(recTimer.current);
-  };
-
-  const cancelAudio = () => {
-    setAudioBlob(null);
-    setAudioURL(null);
-    setRecSecs(0);
-  };
-
-  const sendAudio = async () => {
-    if (!audioBlob || !profile) return;
-    requireVerified(() => _doSendAudio());
-  };
-
-  const _doSendAudio = async () => {
-    if (!audioBlob || !profile) return;
-    try {
-      const fileName = `audio_${profile.id}_${Date.now()}.webm`;
-      const { error: upErr } = await supabase.storage
-        .from("chat-audio")
-        .upload(fileName, audioBlob, { contentType: "audio/webm" });
-      if (upErr) throw upErr;
-      const { data: { publicUrl } } = supabase.storage.from("chat-audio").getPublicUrl(fileName);
-      await supabase.from("chat_messages").insert([{
-        sender_id: profile.id,
-        channel,
-        content: "[vocal]",
-        audio_url: publicUrl,
-      }]);
-      cancelAudio();
-    } catch (e) {
-      console.error("Audio send error:", e);
-    }
-    setSendingAudio(false);
-  };
-
-  const fmtSecs = s => `${Math.floor(s/60).toString().padStart(2,"0")}:${(s%60).toString().padStart(2,"0")}`;
-
-  // ── Typing indicator ───────────────────────────────────────────────────────
-  const broadcastTyping = (typing) => {
-    if (!channelSub.current) return;
-    channelSub.current.send({
-      type: "broadcast",
-      event: "typing",
-      payload: { user_id: profile.id, name: profile.full_name?.split(" ")[0], typing }
-    });
-  };
-
-  const handleInputChange = (e) => {
-    setInput(e.target.value);
-    broadcastTyping(true);
-    clearTimeout(typingTimer.current);
-    typingTimer.current = setTimeout(() => broadcastTyping(false), 2000);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  // ── Reactions ──────────────────────────────────────────────────────────────
-  const toggleReaction = async (msgId, emoji) => {
-    if (!profile) return;
-
-    const msg = messages.find(m => m.id === msgId);
-    const existing = msg?.reactions?.find(r => r.emoji === emoji && r.user_id === profile.id);
-
-    if (existing) {
-      await supabase
-        .from("chat_reactions")
-        .delete()
-        .eq("message_id", msgId)
-        .eq("user_id", profile.id)
-        .eq("emoji", emoji);
-    } else {
-      await supabase
-        .from("chat_reactions")
-        .insert([{ message_id: msgId, user_id: profile.id, emoji }]);
-    }
-
-    setReactionPicker(null);
-  };
-
-  // ── Delete message ─────────────────────────────────────────────────────────
-  const deleteMessage = async (msgId) => {
-    const isAdmin = ["admin","super_admin"].includes(profile?.role);
-    const msg = messages.find(m => m.id === msgId);
-    if (!msg) return;
-    if (msg.sender_id !== profile.id && !isAdmin) return;
-
-    await supabase.from("chat_messages").delete().eq("id", msgId);
-    setMessages(prev => prev.filter(m => m.id !== msgId));
-  };
-
-  // ── Channel switch ─────────────────────────────────────────────────────────
-  const switchChannel = (ch) => {
-    setChannel(ch);
-    setMessages([]);
-    setUnread(prev => ({ ...prev, [ch]: 0 }));
-  };
-
-  // ── Filtered messages ──────────────────────────────────────────────────────
-  const displayMessages = searchQuery
-    ? messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.sender?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()))
-    : messages;
-
-  // ── Group messages by sender + time ───────────────────────────────────────
-  const groupedMessages = displayMessages.reduce((acc, msg, i) => {
-    const prev = displayMessages[i - 1];
-    const isGrouped = prev &&
-      prev.sender_id === msg.sender_id &&
-      new Date(msg.created_at) - new Date(prev.created_at) < 120000;
-    return [...acc, { ...msg, isGrouped }];
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="h-screen bg-[#030014] flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative w-16 h-16 mx-auto mb-4">
-            <div className="absolute inset-0 rounded-full border-2 border-[#7c3aed]/20 border-t-[#7c3aed] animate-spin"></div>
-            <div className="absolute inset-2 rounded-full border-2 border-[#06b6d4]/20 border-b-[#06b6d4] animate-spin" style={{animationDirection:"reverse",animationDuration:"0.8s"}}></div>
-          </div>
-          <p className="text-white/30 text-sm tracking-widest">CONNEXION AU CHAT...</p>
-        </div>
+  if (loading) return (
+    <div style={{minHeight:"100vh",background:"#050508",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{textAlign:"center"}}>
+        <div style={{width:40,height:40,border:"2px solid rgba(124,58,237,0.2)",borderTopColor:"#7c3aed",borderRadius:"50%",margin:"0 auto 16px",animation:"spin 1s linear infinite"}}/>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        <p style={{fontFamily:"'Inter',sans-serif",fontSize:10,letterSpacing:0.5,color:"rgba(124,58,237,0.6)"}}>CHARGEMENT</p>
       </div>
-    );
-  }
-
-  const currentChannel = CHANNELS.find(c => c.id === channel);
-  const isAdmin = ["admin", "super_admin"].includes(profile?.role);
+    </div>
+  );
 
   return (
-    <div className="h-screen bg-[#030014] text-white flex flex-col overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="db-wrap">
+      <style>{CSS}</style>
+      <div className="db-content">
 
-      {/* ── Google Fonts ── */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Orbitron:wght@700;900&display=swap');
-        
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.3); border-radius: 99px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(124,58,237,0.6); }
-
-        .chat-input::placeholder { color: rgba(255,255,255,0.2); }
-        .chat-input:focus { outline: none; }
-
-        .msg-hover:hover .msg-actions { opacity: 1; pointer-events: all; }
-        .msg-actions { opacity: 0; pointer-events: none; transition: opacity 0.15s; }
-
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .msg-enter { animation: slideUp 0.2s ease forwards; }
-
-        @keyframes pulse-dot {
-          0%,100% { transform: scale(1); opacity: 1; }
-          50%      { transform: scale(1.4); opacity: 0.7; }
-        }
-        .typing-dot { animation: pulse-dot 1.2s ease infinite; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-        .glow-border { box-shadow: 0 0 0 1px rgba(124,58,237,0.3), inset 0 0 20px rgba(124,58,237,0.03); }
-        .neon-text { text-shadow: 0 0 20px currentColor; }
-
-        .channel-active { background: linear-gradient(90deg, rgba(124,58,237,0.2), transparent); border-left: 2px solid #7c3aed; }
-        .channel-hover:hover { background: rgba(255,255,255,0.04); }
-      `}</style>
-
-      {/* ── TOP BAR ─────────────────────────────────────────────────────────── */}
-      <header className="flex-shrink-0 flex items-center justify-between px-3 py-3 border-b border-white/5 bg-[#08091a]">
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Hamburger — mobile only */}
-          <button
-            onClick={() => setShowChannels(p => !p)}
-            className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 text-white/50 hover:text-white hover:bg-white/10 transition"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-          </button>
-
-          <div className="hidden md:flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#06b6d4] flex items-center justify-center">
-              <span className="text-sm font-bold" style={{fontFamily:"Orbitron,sans-serif"}}>C</span>
-            </div>
-            <div>
-              <p className="text-xs font-bold tracking-widest text-white/80" style={{fontFamily:"Orbitron,sans-serif"}}>CIPHERPOOL</p>
-              <p className="text-[10px] text-white/30 tracking-wider">CHAT CENTRAL</p>
-            </div>
+        {/* HEADER */}
+        <motion.div initial={{opacity:0,y:-16}} animate={{opacity:1,y:0}}
+          className="db-header-row"
+          style={{marginBottom:32,display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:16}}>
+          <div>
+            <p style={{fontFamily:"'Inter',sans-serif",fontSize:10,letterSpacing:0.5,color:"rgba(255,255,255,0.3)",marginBottom:6,textTransform:"uppercase"}}>
+              BONJOUR · {timeStr}
+            </p>
+            <h1 style={{fontFamily:"'Inter',sans-serif",fontSize:"clamp(32px,6vw,64px)",fontWeight:900,lineHeight:.95,textTransform:"uppercase",letterSpacing:-1}}>
+              BIENVENUE, <span style={{color:"#7c3aed"}}>{firstName.toUpperCase()}</span>
+            </h1>
           </div>
-
-          <div className="hidden md:block w-px h-8 bg-white/5"></div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{currentChannel?.icon}</span>
-            <div>
-              <p className="text-sm font-semibold text-white">#{currentChannel?.label}</p>
-              <p className="text-[10px] text-white/30 hidden sm:block">{currentChannel?.desc}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Search */}
-          <AnimatePresence>
-            {showSearch && (
-              <motion.input
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 200, opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Rechercher..."
-                className="chat-input bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white"
-                autoFocus
-              />
+          <div className="db-header-actions" style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+            {profile?.verification_status==="approved"&&(
+              <div style={{display:"flex",alignItems:"center",gap:6,fontFamily:"'Inter',sans-serif",fontSize:10,letterSpacing:0.5,color:"#22c55e",padding:"6px 12px",background:"rgba(34,197,94,0.06)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:6}}>
+                ✓ VÉRIFIÉ
+              </div>
             )}
-          </AnimatePresence>
-
-          <button
-            onClick={() => { setShowSearch(p => !p); setSearchQuery(""); }}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${showSearch ? "bg-[#7c3aed]/30 text-[#7c3aed]" : "bg-white/5 text-white/40 hover:text-white hover:bg-white/10"}`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-          </button>
-
-          <button
-            onClick={() => setShowMembers(p => !p)}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${showMembers ? "bg-[#7c3aed]/30 text-[#7c3aed]" : "bg-white/5 text-white/40 hover:text-white hover:bg-white/10"}`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-          </button>
-
-          {/* Profile chip */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/5">
-            <div
-              className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0"
-              style={{ background: avatarColor(profile?.full_name) }}
-            >
-              {getAvatar(profile?.full_name)}
+            <div style={{display:"flex",alignItems:"center",gap:8,fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:800,padding:"8px 14px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:6}}>
+              <span style={{color:"#fbbf24"}}>💎</span>
+              {coins.toLocaleString()}
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,0.3)",letterSpacing:0.3}}>CP</span>
             </div>
-            <span className="text-xs font-medium text-white/70 hidden sm:block max-w-[100px] truncate">
-              {profile?.full_name?.split(" ")[0]}
-            </span>
+            <button className="db-btn" onClick={()=>nav("/tournaments")}>🏆 TOURNOIS</button>
           </div>
-        </div>
-      </header>
+        </motion.div>
 
-      {/* ── MAIN LAYOUT ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden relative">
+        {/* DIVIDER */}
+        <div style={{height:1,background:"linear-gradient(90deg,#7c3aed,rgba(124,58,237,0.2),transparent)",marginBottom:32}}/>
 
-        {/* Backdrop mobile */}
-        {(showChannels || showMembers) && (
-          <div
-            className="md:hidden fixed inset-0 bg-black/60 z-20"
-            onClick={() => { setShowChannels(false); setShowMembers(false); }}
-          />
-        )}
+        {/* MAIN GRID */}
+        <div className="db-main-grid">
 
-        {/* ── CHANNELS SIDEBAR ── overlay mobile, static desktop ── */}
-        <aside className={`
-          fixed md:static top-0 left-0 h-full z-30
-          w-52 flex-shrink-0 border-r border-white/5 bg-[#06071a] flex flex-col
-          transition-transform duration-200
-          ${showChannels ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-        `}>
-          <div className="px-3 pt-4 pb-2">
-            <p className="text-[10px] text-white/25 tracking-[2px] font-semibold px-2 mb-2">CANAUX</p>
-            <div className="space-y-0.5">
-              {CHANNELS.map(ch => (
-                <button
-                  key={ch.id}
-                  onClick={() => { switchChannel(ch.id); setShowChannels(false); }}
-                  className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left transition-all channel-hover
-                    ${channel === ch.id ? "channel-active text-white" : "text-white/40 hover:text-white/70"}`}
-                >
-                  <span className="text-base w-5 text-center">{ch.icon}</span>
-                  <span className="text-sm font-medium truncate">#{ch.label}</span>
-                  {unread[ch.id] > 0 && (
-                    <span className="ml-auto bg-[#7c3aed] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                      {unread[ch.id]}
-                    </span>
-                  )}
-                </button>
-              ))}
+          {/* LEFT */}
+          <div style={{display:"flex",flexDirection:"column",gap:32}}>
+
+            {/* Stats */}
+            <div>
+              <div className="db-lbl">Mes Performances</div>
+              <div className="db-stats-grid">
+                <StatCard icon="🎮" label="TOURNOIS JOUÉS" value={stats.played}  accent="#06b6d4" delay={0}    onClick={()=>nav("/stats")}/>
+                <StatCard icon="🏆" label="VICTOIRES"       value={stats.wins}    accent="#fbbf24" delay={.08}  onClick={()=>nav("/stats")}/>
+                <StatCard icon="🎯" label="KILLS TOTAUX"    value={stats.kills}   accent="#7c3aed" delay={.16}  onClick={()=>nav("/stats")}/>
+                <StatCard icon="📈" label="WIN RATE"        value={stats.winRate} accent="#22c55e" delay={.24}  suffix="%" onClick={()=>nav("/stats")}/>
+              </div>
             </div>
-          </div>
 
-          <div className="px-3 py-2 mt-2 border-t border-white/5">
-            <p className="text-[10px] text-white/25 tracking-[2px] font-semibold px-2 mb-2">EN LIGNE — {onlineUsers.length}</p>
-            <div className="space-y-1 max-h-40 overflow-y-auto">
-              {onlineUsers.slice(0, 15).map(u => {
-                const rc = getRoleConfig(u.role);
-                return (
-                  <div key={u.id}
-                    onClick={() => navigate(`/profile?id=${u.id}`)}
-                    className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/5 transition cursor-pointer"
-                    title={u.full_name}
-                  >
-                    <div className="relative flex-shrink-0">
-                      <div
-                        className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold overflow-hidden"
-                        style={{ background: u.avatar_url ? "transparent" : avatarColor(u.full_name) }}
-                      >
-                        {u.avatar_url
-                          ? <img src={u.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                          : getAvatar(u.full_name)}
-                      </div>
-                      <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-[#06071a]"></span>
-                    </div>
-                    <span className="text-xs text-white/60 truncate hover:text-white transition">{u.full_name?.split(" ")[0]}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Role badge */}
-          <div className="mt-auto p-3 border-t border-white/5">
-            {(() => {
-              const rc = getRoleConfig(profile?.role);
-              return (
-                <div className="flex items-center gap-2 px-2 py-2 rounded-lg" style={{ background: rc.bg }}>
-                  <span>{rc.icon}</span>
-                  <div>
-                    <p className="text-[10px] font-bold tracking-wider" style={{ color: rc.color }}>{rc.label}</p>
-                    <p className="text-[9px] text-white/30 truncate max-w-[100px]">{profile?.full_name?.split(" ")[0]}</p>
-                  </div>
+            {/* Tournaments */}
+            <div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
+                <div className="db-lbl" style={{marginBottom:0}}>Tournois Actifs</div>
+                <button className="db-btn-ghost" style={{fontSize:10}} onClick={()=>nav("/tournaments")}>VOIR TOUT →</button>
+              </div>
+              {tournaments.length===0?(
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} style={{textAlign:"center",padding:"48px 16px",border:"1px solid rgba(255,255,255,0.04)",background:"rgba(255,255,255,0.01)",borderRadius:8}}>
+                  <p style={{fontSize:32,marginBottom:10,opacity:.3}}>🏟️</p>
+                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:16,fontWeight:800,color:"rgba(255,255,255,0.2)",letterSpacing:0.5,marginBottom:12}}>ARÈNE EN VEILLE</p>
+                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:10,color:"rgba(255,255,255,0.2)",letterSpacing:0.3,marginBottom:20}}>Aucun tournoi actif</p>
+                  <button className="db-btn" onClick={()=>nav("/tournaments")}>PARCOURIR →</button>
+                </motion.div>
+              ):(
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {tournaments.map((t,i)=><TrnCard key={t.id} t={t} index={i}/>)}
                 </div>
-              );
-            })()}
-          </div>
-        </aside>
+              )}
+            </div>
 
-        {/* ── MESSAGE AREA ─────────────────────────────────────────────────── */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-[#030014] relative">
-
-          {/* Subtle bg pattern */}
-          <div className="absolute inset-0 pointer-events-none opacity-[0.015]"
-            style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "32px 32px" }}>
-          </div>
-
-          {/* Messages list */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0.5 relative z-10">
-
-            {/* Welcome banner */}
-            {messages.length === 0 && !searchQuery && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center h-full text-center py-16"
-              >
-                <div className="text-6xl mb-4">{currentChannel?.icon}</div>
-                <h3 className="text-xl font-bold text-white mb-2" style={{fontFamily:"Orbitron,sans-serif"}}>
-                  BIENVENUE SUR #{currentChannel?.label.toUpperCase()}
-                </h3>
-                <p className="text-white/30 text-sm max-w-xs">{currentChannel?.desc} — Soyez le premier à écrire !</p>
+            {/* Announcements */}
+            {messages.length>0&&(
+              <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:.5}}>
+                <div className="db-lbl">Annonces</div>
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {messages.map(m=>(
+                    <div key={m.id} style={{padding:"12px 14px",background:"rgba(124,58,237,0.04)",border:"1px solid rgba(124,58,237,0.15)",borderLeft:"3px solid #7c3aed",borderRadius:4}}>
+                      <p style={{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:800,marginBottom:4}}>{m.title??"ANNONCE"}</p>
+                      <p style={{fontSize:13,color:"rgba(255,255,255,0.5)",lineHeight:1.5}}>{m.content??m.message??"—"}</p>
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             )}
-
-            {searchQuery && displayMessages.length === 0 && (
-              <div className="flex items-center justify-center h-32 text-white/30 text-sm">
-                Aucun résultat pour "{searchQuery}"
-              </div>
-            )}
-
-            {groupedMessages.map((msg, idx) => {
-              const rc = getRoleConfig(msg.sender?.role);
-              const isOwn = msg.sender_id === profile?.id;
-              const canDelete = isOwn || isAdmin;
-
-              // Group reactions by emoji
-              const reactionGroups = (msg.reactions || []).reduce((acc, r) => {
-                acc[r.emoji] = (acc[r.emoji] || []);
-                acc[r.emoji].push(r.user_id);
-                return acc;
-              }, {});
-
-              return (
-                <div
-                  key={msg.id}
-                  className={`msg-hover group relative flex gap-3 rounded-xl px-3 py-1 transition-colors hover:bg-white/[0.02] msg-enter
-                    ${msg.isGrouped ? "pt-0.5" : "pt-2"}
-                    ${isOwn ? "flex-row-reverse" : "flex-row"}`}
-                  onMouseEnter={() => setHoveredMsg(msg.id)}
-                  onMouseLeave={() => { setHoveredMsg(null); if (reactionPicker === msg.id) setReactionPicker(null); }}
-                >
-                  {/* Avatar column */}
-                  <div className="w-9 flex-shrink-0 flex items-start justify-center pt-0.5">
-                    {!msg.isGrouped ? (
-                      <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shadow-lg overflow-hidden"
-                        style={{ background: msg.sender?.avatar_url ? "transparent" : avatarColor(msg.sender?.full_name) }}
-                      >
-                        {msg.sender?.avatar_url
-                          ? <img src={msg.sender.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                          : getAvatar(msg.sender?.full_name)}
-                      </div>
-                    ) : (
-                      <span className="text-[10px] text-white/15 opacity-0 group-hover:opacity-100 transition-opacity pt-1">
-                        {new Date(msg.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className={`flex-1 min-w-0 flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
-                    {!msg.isGrouped && (
-                      <div className={`flex items-center gap-2 mb-1 ${isOwn ? "flex-row-reverse" : ""}`}>
-                        <span className="text-sm font-semibold text-white/90 hover:text-white cursor-pointer transition">
-                          {isOwn ? "Vous" : (msg.sender?.full_name || "Inconnu")}
-                        </span>
-                        <span
-                          className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded"
-                          style={{ color: rc.color, background: rc.bg }}
-                        >
-                          {rc.icon} {rc.label}
-                        </span>
-                        {!isOwn && msg.sender?.free_fire_id && (
-                          <span className="text-[10px] text-white/20 font-mono">FF:{msg.sender.free_fire_id}</span>
-                        )}
-                        <span className="text-[10px] text-white/20">{formatTime(msg.created_at)}</span>
-                      </div>
-                    )}
-
-                    <div
-                      className="max-w-[75%] px-3 py-2 rounded-2xl"
-                      style={{
-                        background: isOwn
-                          ? "linear-gradient(135deg, #7c3aed, #6d28d9)"
-                          : "rgba(255,255,255,0.06)",
-                        borderRadius: isOwn ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                        border: isOwn ? "none" : "1px solid rgba(255,255,255,0.06)",
-                      }}
-                    >
-                      {msg.audio_url ? (
-                        <div style={{
-                          display:"flex",alignItems:"center",gap:10,
-                          padding:"10px 14px",minWidth:220,
-                        }}>
-                          <span style={{fontSize:18,flexShrink:0}}>🎙️</span>
-                          <audio
-                            src={msg.audio_url}
-                            controls
-                            style={{flex:1,height:32,accentColor:"#7c3aed",outline:"none",minWidth:160}}
-                          />
-                        </div>
-                      ) : (
-                        <p className="text-[0.875rem] text-white/90 leading-relaxed break-words">
-                          {msg.content}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Reactions display */}
-                    {Object.keys(reactionGroups).length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                        {Object.entries(reactionGroups).map(([emoji, users]) => {
-                          const hasReacted = users.includes(profile?.id);
-                          return (
-                            <button
-                              key={emoji}
-                              onClick={() => toggleReaction(msg.id, emoji)}
-                              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all border
-                                ${hasReacted
-                                  ? "bg-[#7c3aed]/20 border-[#7c3aed]/40 text-white"
-                                  : "bg-white/5 border-white/10 text-white/60 hover:border-white/20 hover:text-white"
-                                }`}
-                            >
-                              <span>{emoji}</span>
-                              <span className="font-semibold">{users.length}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Action buttons on hover */}
-                  <div className="msg-actions absolute right-3 top-1 flex items-center gap-1 bg-[#0d0f24] border border-white/10 rounded-lg p-1 shadow-xl">
-                    <button
-                      onClick={() => setReactionPicker(p => p === msg.id ? null : msg.id)}
-                      className="w-7 h-7 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition text-sm"
-                      title="Réagir"
-                    >
-                      😊
-                    </button>
-                    {canDelete && (
-                      <button
-                        onClick={() => deleteMessage(msg.id)}
-                        className="w-7 h-7 rounded-md flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition text-sm"
-                        title="Supprimer"
-                      >
-                        🗑️
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Reaction picker */}
-                  <AnimatePresence>
-                    {reactionPicker === msg.id && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 4 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 4 }}
-                        className="absolute right-3 top-10 flex items-center gap-1 bg-[#0d0f24] border border-white/10 rounded-xl p-2 shadow-2xl z-30"
-                      >
-                        {REACTIONS.map(emoji => (
-                          <button
-                            key={emoji}
-                            onClick={() => toggleReaction(msg.id, emoji)}
-                            className="text-xl w-9 h-9 rounded-lg flex items-center justify-center hover:bg-white/10 transition hover:scale-125"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
-
-            {/* Typing indicator */}
-            <AnimatePresence>
-              {typingUsers.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 4 }}
-                  className="flex items-center gap-3 px-3 py-2"
-                >
-                  <div className="w-9 flex-shrink-0"></div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1 items-center bg-white/5 px-3 py-2 rounded-xl rounded-bl-sm">
-                      <span className="typing-dot w-1.5 h-1.5 bg-white/40 rounded-full"></span>
-                      <span className="typing-dot w-1.5 h-1.5 bg-white/40 rounded-full"></span>
-                      <span className="typing-dot w-1.5 h-1.5 bg-white/40 rounded-full"></span>
-                    </div>
-                    <span className="text-[11px] text-white/30 italic">
-                      {typingUsers.map(u => u.name).join(", ")} {typingUsers.length === 1 ? "écrit" : "écrivent"}...
-                    </span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div ref={bottomRef}></div>
           </div>
 
-          {/* ── INPUT BAR ──────────────────────────────────────────────────── */}
-          <div className="flex-shrink-0 px-4 pb-4 pt-2 relative z-10">
+          {/* RIGHT */}
+          <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
-            {/* PREVIEW before sending */}
-            <AnimatePresence>
-              {audioURL && !recording && (
-                <motion.div
-                  initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:8}}
-                  className="mb-2 flex items-center gap-3 bg-[#0d0f24] border border-purple-500/30 rounded-xl px-4 py-2"
-                >
-                  <span style={{fontSize:18}}>🎙️</span>
-                  <audio src={audioURL} controls
-                    style={{flex:1,height:32,accentColor:"#7c3aed",outline:"none"}}/>
-                  <button onClick={cancelAudio}
-                    className="text-white/30 hover:text-red-400 transition text-lg px-1">✕</button>
-                  <button onClick={sendAudio} disabled={sendingAudio}
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold tracking-wider transition"
-                    style={{background:"linear-gradient(135deg,#7c3aed,#06b6d4)",color:"#fff",
-                      opacity:sendingAudio?0.5:1}}>
-                    {sendingAudio
-                      ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
-                      : "ENVOYER"}
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className={`flex items-end gap-2 bg-[#0d0f24] border rounded-xl p-2 transition-colors ${
-              recording
-                ? "border-red-500/50 shadow-[0_0_16px_rgba(239,68,68,0.2)]"
-                : "border-white/8 glow-border focus-within:border-[#7c3aed]/40"
-            }`}>
-
-              {/* Recording indicator OR textarea */}
-              {recording ? (
-                <div className="flex-1 flex items-center gap-3 py-2 px-2">
-                  <motion.span
-                    animate={{scale:[1,1.4,1],opacity:[1,.4,1]}}
-                    transition={{duration:.8,repeat:Infinity}}
-                    style={{width:10,height:10,borderRadius:"50%",background:"#ef4444",
-                      display:"block",boxShadow:"0 0 10px rgba(239,68,68,0.8)"}}
-                  />
-                  <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,
-                    color:"rgba(239,68,68,0.9)",letterSpacing:1,fontWeight:700}}>
-                    {fmtSecs(recSecs)}
-                  </span>
-                  <span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:12,
-                    color:"rgba(255,255,255,0.4)"}}>
-                    Enregistrement en cours...
-                  </span>
-                </div>
-              ) : (
-                <textarea
-                  ref={inputRef}
-                  value={input}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder={`Message #${currentChannel?.label}...`}
-                  rows={1}
-                  className="chat-input flex-1 bg-transparent text-white text-sm resize-none py-2 px-2 max-h-32 leading-relaxed"
-                  style={{ scrollbarWidth: "none" }}
-                />
-              )}
-
-              <div className="flex items-center gap-1 flex-shrink-0 pb-1">
-                {/* Quick reactions — hide while recording */}
-                {!recording && (
-                  <div className="hidden md:flex gap-0.5">
-                    {["🔥", "💀", "👑"].map(e => (
-                      <button
-                        key={e}
-                        onClick={() => setInput(p => p + e)}
-                        className="text-base w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-white/80 hover:bg-white/5 transition"
-                      >{e}</button>
-                    ))}
-                  </div>
-                )}
-
-                {/* MIC BUTTON */}
-                {!input.trim() && (
-                  <button
-                    onClick={recording ? stopRecording : startRecording}
-                    disabled={!!audioURL}
-                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
-                    style={{
-                      background: recording
-                        ? "rgba(239,68,68,0.15)"
-                        : "rgba(255,255,255,0.05)",
-                      border: recording
-                        ? "1px solid rgba(239,68,68,0.4)"
-                        : "1px solid rgba(255,255,255,0.08)",
-                    }}
-                    title={recording ? "Arrêter l'enregistrement" : "Message vocal"}
-                  >
-                    {recording ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(239,68,68,0.9)">
-                        <rect x="6" y="6" width="12" height="12" rx="2"/>
-                      </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
-                      </svg>
-                    )}
-                  </button>
-                )}
-
-                {/* SEND BUTTON */}
-                {!recording && (
-                  <button
-                    onClick={sendMessage}
-                    disabled={!input.trim() || sending}
-                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-all disabled:opacity-20"
-                    style={{
-                      background: input.trim()
-                        ? "linear-gradient(135deg, #7c3aed, #06b6d4)"
-                        : "rgba(255,255,255,0.05)"
-                    }}
-                  >
-                    {sending ? (
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
-                    ) : (
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                      </svg>
-                    )}
-                  </button>
-                )}
+            {/* Rank block */}
+            <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:.35}}
+              style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",padding:"20px 16px",borderRadius:4}}>
+              <div className="db-lbl">Mon Classement</div>
+              <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:16}}>
+                <span className="db-rank-num" style={{fontFamily:"'Inter',sans-serif",fontSize:60,fontWeight:900,lineHeight:1,color:stats.rank?"#fff":"rgba(255,255,255,0.08)"}}>
+                  {stats.rank?`#${stats.rank}`:"—"}
+                </span>
+                <span style={{fontFamily:"'Inter',sans-serif",fontSize:10,letterSpacing:0.5,color:stats.rank?"#7c3aed":"rgba(255,255,255,0.2)"}}>GLOBAL</span>
               </div>
-            </div>
+              <div style={{marginBottom:20}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,0.3)"}}>WIN RATE</span>
+                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:800,color:"#22c55e"}}>{stats.winRate}%</span>
+                </div>
+                <div style={{height:3,background:"rgba(255,255,255,0.06)",overflow:"hidden",borderRadius:2}}>
+                  <motion.div initial={{width:0}} animate={{width:`${stats.winRate}%`}} transition={{delay:.8,duration:1,ease:"easeOut"}} style={{height:"100%",background:"linear-gradient(90deg,#22c55e,#16a34a)"}}/>
+                </div>
+              </div>
+              {(()=>{
+                const roles={super_admin:{label:"SUPER ADMIN",color:"#06b6d4"},admin:{label:"ADMIN",color:"#818cf8"},founder:{label:"FONDATEUR",color:"#7c3aed"},fondateur:{label:"FONDATEUR",color:"#7c3aed"},user:{label:"JOUEUR",color:"rgba(255,255,255,0.35)"}};
+                const r=roles[profile?.role]??roles.user;
+                return(
+                  <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${r.color}10`,border:`1px solid ${r.color}30`,padding:"6px 12px",fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:800,letterSpacing:0.5,color:r.color,borderRadius:4}}>
+                    {r.label}
+                  </div>
+                );
+              })()}
+            </motion.div>
 
-            <p className="text-[10px] text-white/15 text-center mt-1.5">
-              Entrée pour envoyer · Shift+Entrée pour nouvelle ligne · Règles: respect & fair-play
-            </p>
-
-            {/* ── MOBILE BOTTOM CHANNEL TABS ── */}
-            <div className="md:hidden flex border-t border-white/5 bg-[#08091a]">
-              {CHANNELS.map(ch => (
-                <button
-                  key={ch.id}
-                  onClick={() => { switchChannel(ch.id); setShowChannels(false); }}
-                  className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition-colors relative
-                    ${channel === ch.id ? "text-[#7c3aed]" : "text-white/30"}`}
-                >
-                  <span className="text-base leading-none">{ch.icon}</span>
-                  <span className="text-[9px] font-semibold truncate max-w-[50px]">#{ch.label}</span>
-                  {unread[ch.id] > 0 && (
-                    <span className="absolute top-1 right-2 w-2 h-2 bg-[#7c3aed] rounded-full"></span>
-                  )}
-                </button>
-              ))}
+            {/* Quick links */}
+            <div>
+              <div className="db-lbl">Navigation Rapide</div>
+              <div className="db-quick-grid" style={{display:"flex",flexDirection:"column",gap:6}}>
+                {QUICK_LINKS.map((l,i)=>(
+                  <motion.div key={l.label} className="ql"
+                    initial={{opacity:0,x:16}} animate={{opacity:1,x:0}} transition={{delay:i*.06,duration:.3}}
+                    onClick={()=>nav(l.path)}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{fontSize:18}}>{l.icon}</span>
+                      <div>
+                        <p style={{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:800,letterSpacing:.5,margin:0}}>{l.label}</p>
+                        <p style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,0.3)",letterSpacing:0.3,margin:0}}>{l.sub}</p>
+                      </div>
+                    </div>
+                    <span style={{color:"rgba(124,58,237,0.5)",fontSize:16}}>›</span>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
-        </main>
-
-        {/* ── MEMBERS SIDEBAR ──────────────────────────────────────────────── */}
-        <AnimatePresence>
-          {showMembers && (
-            <motion.aside
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 200, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed md:static right-0 top-0 h-full z-30 w-[200px] flex-shrink-0 border-l border-white/5 bg-[#06071a] overflow-hidden"
-            >
-              <div className="w-[200px] h-full flex flex-col">
-                <div className="p-3 border-b border-white/5">
-                  <p className="text-[10px] text-white/25 tracking-[2px] font-semibold">MEMBRES EN LIGNE — {onlineUsers.length}</p>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-                  {/* Group by role */}
-                  {["super_admin", "admin", "founder", "user"].map(roleKey => {
-                    const group = onlineUsers.filter(u => (u.role || "user") === roleKey);
-                    if (group.length === 0) return null;
-                    const rc = getRoleConfig(roleKey);
-
-                    return (
-                      <div key={roleKey} className="mb-3">
-                        <p className="text-[9px] font-bold tracking-widest px-2 pb-1 pt-1" style={{ color: rc.color }}>
-                          {rc.icon} {rc.label} — {group.length}
-                        </p>
-                        {group.map(u => (
-                          <div key={u.id}
-                            onClick={() => navigate(`/profile?id=${u.id}`)}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/6 transition cursor-pointer group"
-                          >
-                            <div className="relative flex-shrink-0">
-                              <div
-                                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold overflow-hidden"
-                                style={{ background: u.avatar_url ? "transparent" : avatarColor(u.full_name) }}
-                              >
-                                {u.avatar_url
-                                  ? <img src={u.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                                  : getAvatar(u.full_name)}
-                              </div>
-                              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#06071a]"></span>
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs text-white/70 font-medium truncate group-hover:text-white transition">{u.full_name?.split(" ")[0]}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.aside>
-          )}
-        </AnimatePresence>
+        </div>
       </div>
     </div>
   );
