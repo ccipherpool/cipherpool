@@ -12,45 +12,45 @@ import GuestRoute     from "./components/GuestRoute";
 // Skeleton
 import { PageSkeleton } from "./components/SkeletonLoaders";
 
-/* ═══ LAZY LOADING ═══ */
-const HomePage = lazy(() => import("./pages/Homepage"));  // ← seule landing page
-const Login    = lazy(() => import("./pages/Login"));
-const Register = lazy(() => import("./pages/Register"));
+/* ═══ LAZY LOADING — imports case-sensitive (Vercel/Linux) ═══ */
+const HomePage = lazy(() => import("./pages/Homepage"));        // Homepage.jsx
+const Login    = lazy(() => import("./pages/Login"));           // Login.jsx
+const Register = lazy(() => import("./pages/Register"));        // Register.jsx
 
-const Dashboard   = lazy(() => import("./pages/Dashboard"));
-const Tournaments = lazy(() => import("./pages/Tournaments"));
-const Leaderboard = lazy(() => import("./pages/Leaderboard"));
-const Profile     = lazy(() => import("./pages/Profile"));
-const Support     = lazy(() => import("./pages/Support"));
-const Wallet      = lazy(() => import("./pages/Wallet"));
-const GlobalChat  = lazy(() => import("./pages/Globalchat"));
-const Store       = lazy(() => import("./pages/Store"));
-const News        = lazy(() => import("./pages/News"));
-const PlayerStats = lazy(() => import("./pages/Playerstats"));
-const Achievements= lazy(() => import("./pages/Achievements"));
-const DailyRewards= lazy(() => import("./pages/Dailyrewards"));
+const Dashboard   = lazy(() => import("./pages/Dashboard"));    // Dashboard.jsx
+const Tournaments = lazy(() => import("./pages/Tournaments"));  // Tournaments.jsx
+const Leaderboard = lazy(() => import("./pages/Leaderboard"));  // Leaderboard.jsx
+const Profile     = lazy(() => import("./pages/Profile"));      // Profile.jsx
+const Support     = lazy(() => import("./pages/Support"));      // Support.jsx
+const Wallet      = lazy(() => import("./pages/Wallet"));       // Wallet.jsx
+const GlobalChat  = lazy(() => import("./pages/GlobalChat"));   // ✅ GlobalChat.jsx (capital C)
+const Store       = lazy(() => import("./pages/Store"));        // Store.jsx
+const News        = lazy(() => import("./pages/News"));         // News.jsx
+const PlayerStats = lazy(() => import("./pages/PlayerStats"));  // ✅ PlayerStats.jsx (capital S)
+const Achievements= lazy(() => import("./pages/Achievements")); // Achievements.jsx
+const DailyRewards= lazy(() => import("./pages/DailyRewards")); // ✅ DailyRewards.jsx (capital R)
 
-const Teams       = lazy(() => import("./pages/Teams"));
-const TeamProfile = lazy(() => import("./pages/Teamprofile"));
+const Teams       = lazy(() => import("./pages/Teams"));        // Teams.jsx
+const TeamProfile = lazy(() => import("./pages/TeamProfile"));  // ✅ TeamProfile.jsx (capital P)
 
-const TournamentDetails = lazy(() => import("./pages/TournamentDetails"));
-const TournamentWaiting = lazy(() => import("./pages/TournamentWaiting"));
-const TournamentRoom    = lazy(() => import("./pages/TournamentRoom"));
-const ManageTournament  = lazy(() => import("./pages/ManageTournament"));
-const CreateTournament  = lazy(() => import("./pages/CreateTournament"));
+const TournamentDetails = lazy(() => import("./pages/TournamentDetails")); // TournamentDetails.jsx
+const TournamentWaiting = lazy(() => import("./pages/TournamentWaiting")); // TournamentWaiting.jsx
+const TournamentRoom    = lazy(() => import("./pages/TournamentRoom"));    // TournamentRoom.jsx
+const ManageTournament  = lazy(() => import("./pages/ManageTournament"));  // ManageTournament.jsx
+const CreateTournament  = lazy(() => import("./pages/CreateTournament"));  // CreateTournament.jsx
 
-const FounderDashboard  = lazy(() => import("./pages/FounderDashboard"));
-const FounderRequests   = lazy(() => import("./pages/FounderRequests"));
+const FounderDashboard  = lazy(() => import("./pages/FounderDashboard")); // FounderDashboard.jsx
+const FounderRequests   = lazy(() => import("./pages/FounderRequests"));  // FounderRequests.jsx
 
-const AdminDashboard    = lazy(() => import("./pages/AdminDashboard"));
-const AdminSupport      = lazy(() => import("./pages/AdminSupport"));
-const Adminresults      = lazy(() => import("./pages/Adminresults"));
-const Adminnews         = lazy(() => import("./pages/Adminnews"));
-const AdminStorePanel   = lazy(() => import("./pages/Adminstorepanel"));
-const DesignerPanel     = lazy(() => import("./pages/Designerpanel"));
+const AdminDashboard    = lazy(() => import("./pages/AdminDashboard"));    // AdminDashboard.jsx
+const AdminSupport      = lazy(() => import("./pages/AdminSupport"));      // AdminSupport.jsx
+const AdminResults      = lazy(() => import("./pages/AdminResults"));      // ✅ AdminResults.jsx (capital R)
+const AdminNews         = lazy(() => import("./pages/AdminNews"));         // ✅ AdminNews.jsx (capital N)
+const AdminStorePanel   = lazy(() => import("./pages/AdminStorePanel"));   // ✅ AdminStorePanel.jsx (capital S+P)
+const DesignerPanel     = lazy(() => import("./pages/DesignerPanel"));     // ✅ DesignerPanel.jsx (capital P)
 
-const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
-const AdminGrant = lazy(() => import("./pages/AdminGrant"));
+const SuperAdmin = lazy(() => import("./pages/SuperAdmin")); // SuperAdmin.jsx
+const AdminGrant = lazy(() => import("./pages/AdminGrant")); // AdminGrant.jsx
 
 function Lazy({ children }) {
   return <Suspense fallback={<PageSkeleton />}>{children}</Suspense>;
@@ -61,20 +61,18 @@ export default function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* ── PUBLIC / GUEST ─────────────────────────────────── */}
-        {/* Landing page — accessible à tous */}
+        {/* ── PUBLIC ───────────────────────────────────────── */}
         <Route path="/" element={<Lazy><HomePage /></Lazy>} />
 
-        {/* Auth pages — redirige vers /dashboard si déjà connecté */}
         <Route element={<AuthLayout />}>
           <Route path="/login"    element={<Lazy><GuestRoute><Login /></GuestRoute></Lazy>} />
           <Route path="/register" element={<Lazy><GuestRoute><Register /></GuestRoute></Lazy>} />
         </Route>
 
-        {/* /home → redirect vers / (ancien chemin gardé pour compat) */}
+        {/* /home redirige vers / */}
         <Route path="/home" element={<Navigate to="/" replace />} />
 
-        {/* ── PAGES AUTHENTIFIÉES ────────────────────────────── */}
+        {/* ── PAGES AUTHENTIFIÉES ──────────────────────────── */}
         <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
 
           {/* USER */}
@@ -102,14 +100,14 @@ export default function App() {
           {/* FOUNDER */}
           <Route path="/founder"           element={<Lazy><FounderDashboard /></Lazy>} />
           <Route path="/founder/requests"  element={<Lazy><FounderRequests /></Lazy>} />
-          <Route path="/founder/results"   element={<Lazy><Adminresults /></Lazy>} />
+          <Route path="/founder/results"   element={<Lazy><AdminResults /></Lazy>} />
           <Route path="/create-tournament" element={<Lazy><CreateTournament /></Lazy>} />
 
           {/* ADMIN */}
           <Route path="/admin"         element={<Lazy><AdminDashboard /></Lazy>} />
           <Route path="/admin/support" element={<Lazy><AdminSupport /></Lazy>} />
-          <Route path="/admin/results" element={<Lazy><Adminresults /></Lazy>} />
-          <Route path="/admin/news"    element={<Lazy><Adminnews /></Lazy>} />
+          <Route path="/admin/results" element={<Lazy><AdminResults /></Lazy>} />
+          <Route path="/admin/news"    element={<Lazy><AdminNews /></Lazy>} />
           <Route path="/admin-store"   element={<Lazy><AdminStorePanel /></Lazy>} />
 
           {/* DESIGNER */}
@@ -121,17 +119,13 @@ export default function App() {
 
         </Route>
 
-        {/* ── 404 ─────────────────────────────────────────────── */}
+        {/* ── 404 ─────────────────────────────────────────── */}
         <Route path="*" element={
           <div style={{ minHeight:"100vh", background:"#0a0a0f", display:"flex", alignItems:"center", justifyContent:"center" }}>
             <div style={{ textAlign:"center" }}>
               <h1 style={{ fontSize:80, fontFamily:"monospace", color:"#8b3dff", margin:0 }}>404</h1>
-              <p style={{ color:"rgba(255,255,255,.3)", fontFamily:"monospace", letterSpacing:4, fontSize:12, marginBottom:32 }}>
-                PAGE NON TROUVÉE
-              </p>
-              <a href="/" style={{ padding:"13px 32px", borderRadius:12, background:"linear-gradient(135deg,#8b3dff,#4f46e5)", color:"#fff", fontFamily:"monospace", fontSize:11, letterSpacing:2, textDecoration:"none" }}>
-                ← ACCUEIL
-              </a>
+              <p style={{ color:"rgba(255,255,255,.3)", fontFamily:"monospace", letterSpacing:4, fontSize:12, marginBottom:32 }}>PAGE NON TROUVÉE</p>
+              <a href="/" style={{ padding:"13px 32px", borderRadius:12, background:"linear-gradient(135deg,#8b3dff,#4f46e5)", color:"#fff", fontFamily:"monospace", fontSize:11, letterSpacing:2, textDecoration:"none" }}>← ACCUEIL</a>
             </div>
           </div>
         } />
