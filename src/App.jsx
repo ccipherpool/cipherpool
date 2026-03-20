@@ -8,7 +8,7 @@ import GuestRoute     from "./components/GuestRoute";
 import { PageSkeleton } from "./components/SkeletonLoaders";
 
 /* ═══ LAZY PAGES ═══════════════════════════════════════════════ */
-const Homepage      = lazy(() => import("./pages/Homepage"));        // landing page
+const Home = lazy(() => import("./pages/Home"));        // landing page
 const Login         = lazy(() => import("./pages/Login"));
 const Register      = lazy(() => import("./pages/Register"));
 
@@ -55,7 +55,7 @@ export default function App() {
       <Routes>
 
         {/* ── LANDING PAGE ──────────────────────────────────── */}
-        <Route path="/"     element={<Lazy><Homepage /></Lazy>} />
+        <Route path="/"     element={<Lazy><Home /></Lazy>} />
         <Route path="/home" element={<Navigate to="/" replace />} />
 
         {/* ── AUTH ──────────────────────────────────────────── */}

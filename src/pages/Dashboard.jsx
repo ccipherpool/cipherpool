@@ -10,17 +10,17 @@ const CSS = `
   .db-wrap::before { content:''; position:fixed; inset:0; z-index:0; pointer-events:none; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 4px); }
   .db-content { position:relative; z-index:1; }
   .stat-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); padding:24px 20px; cursor:pointer; transition:border-color .25s,transform .25s,box-shadow .25s; position:relative; overflow:hidden; }
-  .stat-card:hover { border-color:rgba(220,38,38,0.4); transform:translateY(-3px); box-shadow:0 12px 40px rgba(220,38,38,0.1); }
-  .stat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent,#dc2626); transform:scaleX(0); transform-origin:left; transition:transform .3s; }
+  .stat-card:hover { border-color:rgba(124,58,237,0.4); transform:translateY(-3px); box-shadow:0 12px 40px rgba(124,58,237,0.1); }
+  .stat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent,#7c3aed); transform:scaleX(0); transform-origin:left; transition:transform .3s; }
   .stat-card:hover::after { transform:scaleX(1); }
   .trn-card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); transition:all .25s; cursor:pointer; overflow:hidden; }
-  .trn-card:hover { border-color:rgba(220,38,38,0.35); box-shadow:0 8px 32px rgba(220,38,38,0.08); }
-  .db-lbl { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:4px; color:#dc2626; text-transform:uppercase; display:flex; align-items:center; gap:10px; margin-bottom:20px; }
-  .db-lbl::before { content:''; width:20px; height:2px; background:#dc2626; flex-shrink:0; }
+  .trn-card:hover { border-color:rgba(124,58,237,0.35); box-shadow:0 8px 32px rgba(124,58,237,0.08); }
+  .db-lbl { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:4px; color:#7c3aed; text-transform:uppercase; display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+  .db-lbl::before { content:''; width:20px; height:2px; background:#7c3aed; flex-shrink:0; }
   .ql { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); cursor:pointer; transition:all .2s; }
-  .ql:hover { background:rgba(220,38,38,0.06); border-color:rgba(220,38,38,0.25); transform:translateX(4px); }
-  .db-btn { display:inline-flex; align-items:center; gap:8px; background:#dc2626; color:#fff; font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:800; letter-spacing:2px; text-transform:uppercase; padding:11px 24px; border:none; cursor:pointer; clip-path:polygon(0 0,calc(100% - 10px) 0,100% 100%,10px 100%); transition:all .2s; }
-  .db-btn:hover { background:#ef4444; transform:translateY(-2px); }
+  .ql:hover { background:rgba(124,58,237,0.06); border-color:rgba(124,58,237,0.25); transform:translateX(4px); }
+  .db-btn { display:inline-flex; align-items:center; gap:8px; background:#7c3aed; color:#fff; font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:800; letter-spacing:2px; text-transform:uppercase; padding:11px 24px; border:none; cursor:pointer; clip-path:polygon(0 0,calc(100% - 10px) 0,100% 100%,10px 100%); transition:all .2s; }
+  .db-btn:hover { background:#06b6d4; transform:translateY(-2px); }
   .db-btn-ghost { display:inline-flex; align-items:center; gap:8px; background:transparent; color:rgba(255,255,255,0.5); font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase; padding:10px 22px; border:1px solid rgba(255,255,255,0.12); cursor:pointer; clip-path:polygon(0 0,calc(100% - 10px) 0,100% 100%,10px 100%); transition:all .2s; }
   .db-btn-ghost:hover { color:#fff; border-color:rgba(255,255,255,0.3); }
   @keyframes spin { to{transform:rotate(360deg)} }
@@ -49,22 +49,22 @@ function TrnCard({ t, index }) {
   return (
     <motion.div className="trn-card" initial={{opacity:0,x:-16}} animate={{opacity:1,x:0}} transition={{delay:index*.08,duration:.3}} onClick={() => nav(`/tournaments/${t.id}`)}>
       <div style={{display:"flex",height:72}}>
-        <div style={{width:3,flexShrink:0,background:t.status==="in_progress"?"#dc2626":"#22c55e"}}/>
+        <div style={{width:3,flexShrink:0,background:t.status==="in_progress"?"#7c3aed":"#22c55e"}}/>
         <div style={{width:72,flexShrink:0,overflow:"hidden",background:"#0d0d12"}}>
           {t.banner_url ? <img src={t.banner_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover",opacity:.6}}/> : <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:24,opacity:.15}}>🎮</span></div>}
         </div>
         <div style={{flex:1,padding:"10px 14px",display:"flex",flexDirection:"column",justifyContent:"space-between",minWidth:0}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
             <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,lineHeight:1.1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.name}</p>
-            {t.status==="in_progress" && <span style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,fontFamily:"'Share Tech Mono',monospace",fontSize:8,letterSpacing:2,color:"#dc2626"}}><span style={{width:5,height:5,borderRadius:"50%",background:"#dc2626",animation:"blink 1s infinite"}}/> LIVE</span>}
+            {t.status==="in_progress" && <span style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,fontFamily:"'Share Tech Mono',monospace",fontSize:8,letterSpacing:2,color:"#7c3aed"}}><span style={{width:5,height:5,borderRadius:"50%",background:"#7c3aed",animation:"blink 1s infinite"}}/> LIVE</span>}
           </div>
           <div>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
               <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:"rgba(255,255,255,0.25)",letterSpacing:1}}>{t.current_players??0}/{t.max_players} JOUEURS</span>
-              <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:pct>=80?"#dc2626":"rgba(255,255,255,0.25)",letterSpacing:1}}>{pct}%</span>
+              <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:pct>=80?"#7c3aed":"rgba(255,255,255,0.25)",letterSpacing:1}}>{pct}%</span>
             </div>
             <div style={{height:2,background:"rgba(255,255,255,0.06)"}}>
-              <div style={{height:"100%",width:`${pct}%`,background:pct>=80?"#dc2626":"#22c55e",transition:"width .5s"}}/>
+              <div style={{height:"100%",width:`${pct}%`,background:pct>=80?"#7c3aed":"#22c55e",transition:"width .5s"}}/>
             </div>
           </div>
         </div>
@@ -152,9 +152,9 @@ export default function Dashboard() {
   if (loading) return (
     <div style={{minHeight:"100vh",background:"#050508",display:"flex",alignItems:"center",justifyContent:"center"}}>
       <div style={{textAlign:"center"}}>
-        <div style={{width:40,height:40,border:"2px solid rgba(220,38,38,0.2)",borderTopColor:"#dc2626",borderRadius:"50%",margin:"0 auto 16px",animation:"spin 1s linear infinite"}}/>
+        <div style={{width:40,height:40,border:"2px solid rgba(124,58,237,0.2)",borderTopColor:"#7c3aed",borderRadius:"50%",margin:"0 auto 16px",animation:"spin 1s linear infinite"}}/>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-        <p style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,letterSpacing:4,color:"rgba(220,38,38,0.6)"}}>CHARGEMENT</p>
+        <p style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,letterSpacing:4,color:"rgba(124,58,237,0.6)"}}>CHARGEMENT</p>
       </div>
     </div>
   );
@@ -169,7 +169,7 @@ export default function Dashboard() {
           <div>
             <p style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,letterSpacing:3,color:"rgba(255,255,255,0.3)",marginBottom:6,textTransform:"uppercase"}}>BONJOUR · {timeStr}</p>
             <h1 style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(36px,6vw,64px)",fontWeight:900,lineHeight:.95,textTransform:"uppercase",letterSpacing:-1}}>
-              BIENVENUE, <span style={{color:"#dc2626"}}>{firstName.toUpperCase()}</span>
+              BIENVENUE, <span style={{color:"#7c3aed"}}>{firstName.toUpperCase()}</span>
             </h1>
           </div>
           <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
@@ -184,7 +184,7 @@ export default function Dashboard() {
         </motion.div>
 
         {/* DIVIDER */}
-        <div style={{height:1,background:"linear-gradient(90deg,#dc2626,rgba(220,38,38,0.2),transparent)",marginBottom:40}}/>
+        <div style={{height:1,background:"linear-gradient(90deg,#7c3aed,rgba(124,58,237,0.2),transparent)",marginBottom:40}}/>
 
         {/* GRID */}
         <div style={{display:"grid",gridTemplateColumns:"1fr minmax(260px,300px)",gap:32,alignItems:"start"}}>
@@ -198,7 +198,7 @@ export default function Dashboard() {
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:12}}>
                 <StatCard icon="🎮" label="TOURNOIS JOUÉS"  value={stats.played}  accent="#00e5ff" delay={0}    onClick={() => nav("/stats")}/>
                 <StatCard icon="🏆" label="VICTOIRES"        value={stats.wins}    accent="#fbbf24" delay={.08}  onClick={() => nav("/stats")}/>
-                <StatCard icon="🎯" label="KILLS TOTAUX"     value={stats.kills}   accent="#dc2626" delay={.16}  onClick={() => nav("/stats")}/>
+                <StatCard icon="🎯" label="KILLS TOTAUX"     value={stats.kills}   accent="#7c3aed" delay={.16}  onClick={() => nav("/stats")}/>
                 <StatCard icon="📈" label="WIN RATE"         value={stats.winRate} accent="#22c55e" delay={.24}  suffix="%" onClick={() => nav("/stats")}/>
               </div>
             </div>
@@ -229,7 +229,7 @@ export default function Dashboard() {
                 <div className="db-lbl">Annonces</div>
                 <div style={{display:"flex",flexDirection:"column",gap:10}}>
                   {messages.map(m => (
-                    <div key={m.id} style={{padding:"14px 16px",background:"rgba(220,38,38,0.04)",border:"1px solid rgba(220,38,38,0.15)",borderLeft:"3px solid #dc2626"}}>
+                    <div key={m.id} style={{padding:"14px 16px",background:"rgba(124,58,237,0.04)",border:"1px solid rgba(124,58,237,0.15)",borderLeft:"3px solid #7c3aed"}}>
                       <p style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:14,fontWeight:800,marginBottom:4}}>{m.title??"ANNONCE"}</p>
                       <p style={{fontSize:13,color:"rgba(255,255,255,0.5)",lineHeight:1.5}}>{m.content??m.message??"—"}</p>
                     </div>
@@ -249,7 +249,7 @@ export default function Dashboard() {
                 <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:64,fontWeight:900,lineHeight:1,color:stats.rank?"#fff":"rgba(255,255,255,0.08)"}}>
                   {stats.rank?`#${stats.rank}`:"—"}
                 </span>
-                <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,letterSpacing:2,color:stats.rank?"#dc2626":"rgba(255,255,255,0.2)"}}>GLOBAL</span>
+                <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,letterSpacing:2,color:stats.rank?"#7c3aed":"rgba(255,255,255,0.2)"}}>GLOBAL</span>
               </div>
               <div style={{marginBottom:24}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
@@ -265,7 +265,7 @@ export default function Dashboard() {
                 </div>
               </div>
               {(() => {
-                const roles = {super_admin:{label:"SUPER ADMIN",color:"#00e5ff"},admin:{label:"ADMIN",color:"#818cf8"},founder:{label:"FONDATEUR",color:"#dc2626"},fondateur:{label:"FONDATEUR",color:"#dc2626"},user:{label:"JOUEUR",color:"rgba(255,255,255,0.35)"}};
+                const roles = {super_admin:{label:"SUPER ADMIN",color:"#00e5ff"},admin:{label:"ADMIN",color:"#818cf8"},founder:{label:"FONDATEUR",color:"#7c3aed"},fondateur:{label:"FONDATEUR",color:"#7c3aed"},user:{label:"JOUEUR",color:"rgba(255,255,255,0.35)"}};
                 const r = roles[profile?.role]??roles.user;
                 return (
                   <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${r.color}10`,border:`1px solid ${r.color}30`,padding:"6px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontSize:12,fontWeight:800,letterSpacing:2,color:r.color}}>
@@ -288,7 +288,7 @@ export default function Dashboard() {
                         <p style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:"rgba(255,255,255,0.3)",letterSpacing:1}}>{l.sub}</p>
                       </div>
                     </div>
-                    <span style={{color:"rgba(220,38,38,0.5)",fontSize:16}}>›</span>
+                    <span style={{color:"rgba(124,58,237,0.5)",fontSize:16}}>›</span>
                   </motion.div>
                 ))}
               </div>
