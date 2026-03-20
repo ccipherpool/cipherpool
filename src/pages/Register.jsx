@@ -102,26 +102,17 @@ export default function Register() {
       const user = data.user;
       if (!user) throw new Error("Échec de la création du compte");
 
-      // ✅ ÉTAPE 2 — Créer le profil IMMÉDIATEMENT (avant tout upload)
-      // Si ça fail ici → on throw et on informe l'utilisateur
+      // ✅ ÉTAPE 2 — RPC SECURITY DEFINER (bypass RLS garanti)
       setSuccess("Enregistrement du profil...");
-      const { error: profileErr } = await supabase
-        .from("profiles")
-        .upsert(
-          {
-            id:                  user.id,
-            full_name:           formData.fullName,
-            age:                 parseInt(formData.age),
-            city:                formData.city,
-            country:             formData.country,
-            free_fire_id:        formData.freeFireId,
-            email:               formData.email,
-            role:                "user",
-            verification_status: "pending",
-            coins:               0,
-          },
-          { onConflict: "id" }
-        );
+      const { error: profileErr } = await supabase.rpc("create_profile_on_signup", {
+        user_id:      user.id,
+        user_email:   formData.email,
+        full_name:    formData.fullName,
+        age:          parseInt(formData.age),
+        city:         formData.city,
+        country:      formData.country,
+        free_fire_id: formData.freeFireId,
+      });
 
       if (profileErr) throw profileErr;
 
