@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Layouts
 import AuthLayout from "./layouts/AuthLayout";
@@ -16,7 +16,8 @@ import { PageSkeleton } from "./components/SkeletonLoaders";
 const Home     = lazy(() => import("./pages/Home"));
 const Login    = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
-const HomePage = lazy(() => import("./pages/Homepage"));
+
+const HomePage    = lazy(() => import("./pages/HomePage"));
 const Dashboard   = lazy(() => import("./pages/Dashboard"));
 const Tournaments = lazy(() => import("./pages/Tournaments"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
@@ -26,12 +27,12 @@ const Wallet      = lazy(() => import("./pages/Wallet"));
 const GlobalChat  = lazy(() => import("./pages/GlobalChat"));
 const Store       = lazy(() => import("./pages/Store"));
 const News        = lazy(() => import("./pages/News"));
-const PlayerStats = lazy(() => import("./pages/PlayerStats"));
+const PlayerStats = lazy(() => import("./pages/Playerstats"));
 const Achievements= lazy(() => import("./pages/Achievements"));
-const DailyRewards= lazy(() => import("./pages/DailyRewards"));
+const DailyRewards= lazy(() => import("./pages/Dailyrewards"));
 
 const Teams       = lazy(() => import("./pages/Teams"));
-const TeamProfile = lazy(() => import("./pages/TeamProfile"));
+const TeamProfile = lazy(() => import("./pages/Teamprofile"));
 
 const TournamentDetails = lazy(() => import("./pages/TournamentDetails"));
 const TournamentWaiting = lazy(() => import("./pages/TournamentWaiting"));
@@ -44,10 +45,10 @@ const FounderRequests   = lazy(() => import("./pages/FounderRequests"));
 
 const AdminDashboard    = lazy(() => import("./pages/AdminDashboard"));
 const AdminSupport      = lazy(() => import("./pages/AdminSupport"));
-const AdminResults      = lazy(() => import("./pages/AdminResults"));
-const AdminNews         = lazy(() => import("./pages/AdminNews"));
+const Adminresults      = lazy(() => import("./pages/Adminresults"));
+const Adminnews         = lazy(() => import("./pages/Adminnews"));
 const AdminStorePanel   = lazy(() => import("./pages/AdminStorePanel"));
-const DesignerPanel     = lazy(() => import("./pages/DesignerPanel"));
+const DesignerPanel     = lazy(() => import("./pages/Designerpanel"));
 
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const AdminGrant = lazy(() => import("./pages/AdminGrant"));
@@ -63,7 +64,7 @@ export default function App() {
 
         {/* PUBLIC */}
         <Route element={<AuthLayout />}>
-          <Route path="/"         element={<Lazy><GuestRoute><Home/></GuestRoute></Lazy>}/>
+          <Route path="/" element={<Navigate to="/home" replace />}/>
           <Route path="/login"    element={<Lazy><GuestRoute><Login/></GuestRoute></Lazy>}/>
           <Route path="/register" element={<Lazy><GuestRoute><Register/></GuestRoute></Lazy>}/>
         </Route>
@@ -97,14 +98,14 @@ export default function App() {
           {/* FOUNDER */}
           <Route path="/founder"           element={<Lazy><FounderDashboard/></Lazy>}/>
           <Route path="/founder/requests"  element={<Lazy><FounderRequests/></Lazy>}/>
-          <Route path="/founder/results"   element={<Lazy><AdminResults/></Lazy>}/>
+          <Route path="/founder/results"   element={<Lazy><Adminresults/></Lazy>}/>
           <Route path="/create-tournament" element={<Lazy><CreateTournament/></Lazy>}/>
 
           {/* ADMIN */}
           <Route path="/admin"         element={<Lazy><AdminDashboard/></Lazy>}/>
           <Route path="/admin/support" element={<Lazy><AdminSupport/></Lazy>}/>
-          <Route path="/admin/results" element={<Lazy><AdminResults/></Lazy>}/>
-          <Route path="/admin/news"    element={<Lazy><AdminNews/></Lazy>}/>
+          <Route path="/admin/results" element={<Lazy><Adminresults/></Lazy>}/>
+          <Route path="/admin/news"    element={<Lazy><Adminnews/></Lazy>}/>
           <Route path="/admin-store"   element={<Lazy><AdminStorePanel/></Lazy>}/>
 
           {/* DESIGNER */}

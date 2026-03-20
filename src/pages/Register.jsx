@@ -193,7 +193,7 @@ export default function Register() {
             free_fire_id: formData.freeFireId,
             id_card_url: idCardUrl,
             selfie_url: selfieUrl,
-            role: "pending_verification",
+            role: "user",
             verification_status: "pending",
             coins: 0
           },
