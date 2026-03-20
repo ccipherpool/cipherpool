@@ -1786,26 +1786,22 @@ export default function HomePage() {
       } = await supabase.auth.getUser();
       setUser(u);
 
-      presenceCh = supabase
-        .channel("home-presence", {
-          config: {
-            presence: {
-              key: u?.id || "guest-" + Math.random().toString(36).slice(2),
-            },
-          },
-        })
-        .on("presence", { event: "sync" }, () => {
-          const state = presenceCh.presenceState();
-          setOnlineCount(Object.keys(state).length);
-        })
-        .subscribe(async (status) => {
-          if (status === "SUBSCRIBED") {
-            await presenceCh.track({
-              user_id: u?.id || null,
-              at: Date.now(),
-            });
-          }
-        });
+      // Only create presence channel for authenticated users
+      if (u) {
+        presenceCh = supabase
+          .channel("home-presence", {
+            config: { presence: { key: u.id } },
+          })
+          .on("presence", { event: "sync" }, () => {
+            const state = presenceCh.presenceState();
+            setOnlineCount(Object.keys(state).length);
+          })
+          .subscribe(async (status) => {
+            if (status === "SUBSCRIBED") {
+              await presenceCh.track({ user_id: u.id, at: Date.now() });
+            }
+          });
+      }
 
       const { data: trn } = await supabase
         .from("tournaments")
