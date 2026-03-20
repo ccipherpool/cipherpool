@@ -1,71 +1,111 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 
 /**
- * useVerification
- * ---------------
- * isVerified   : bool   — compte approuvé
- * checking     : bool   — en cours de vérification
- * requireVerified(cb)   — exécute cb() si approuvé, sinon toast
+ * useVerification(profileOverride?)
+ * ----------------------------------
+ * Retourne l'état de vérification du user connecté.
+ *
+ * isApproved    : compte approuvé par admin
+ * isPending     : en attente de validation
+ * isRejected    : demande refusée
+ * isBanned      : banni
+ * canInteract   : peut faire des actions (join, chat, upload…)
+ * readOnly      : mode lecture seule
+ * status        : valeur brute de verification_status
+ * requireVerified(cb) : exécute cb() si approuvé, sinon toast d'avertissement
  */
-export function useVerification() {
-  const [isVerified, setIsVerified] = useState(false);
-  const [checking,   setChecking]   = useState(true);
+export function useVerification(profileOverride = null) {
+  const [profile, setProfile] = useState(profileOverride);
+  const [loading, setLoading] = useState(!profileOverride);
 
   useEffect(() => {
+    // Si on a un profile passé en paramètre, pas besoin de fetch
+    if (profileOverride) {
+      setProfile(profileOverride);
+      setLoading(false);
+      return;
+    }
+
     let mounted = true;
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { if (mounted) { setIsVerified(false); setChecking(false); } return; }
+    const loadProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { if (mounted) setLoading(false); return; }
 
-      supabase
+      const { data } = await supabase
         .from("profiles")
-        .select("verification_status")
+        .select("id, verification_status, role")
         .eq("id", user.id)
-        .single()
-        .then(({ data }) => {
-          if (!mounted) return;
-          setIsVerified(data?.verification_status === "approved");
-          setChecking(false);
-        });
-    });
+        .single();
 
+      if (mounted) {
+        setProfile(data);
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
     return () => { mounted = false; };
+  }, [profileOverride]);
+
+  // ── Dériver l'état depuis profile ──────────────────────────────
+  const state = useMemo(() => {
+    const status     = profile?.verification_status || "pending";
+    const role       = profile?.role || "user";
+    const isApproved = status === "approved";
+    const isRejected = status === "rejected";
+    const isBanned   = role === "banned" || status === "banned";
+    const isPending  = !isApproved && !isRejected && !isBanned;
+    const canInteract = isApproved && !isBanned;
+
+    return { status, role, isApproved, isRejected, isBanned, isPending, canInteract, readOnly: !canInteract };
+  }, [profile]);
+
+  // ── Toast affiché quand l'action est bloquée ───────────────────
+  const showBlockedToast = useCallback((msg) => {
+    const existing = document.getElementById("kyc-toast");
+    if (existing) existing.remove();
+
+    const messages = {
+      pending:  { title:"Compte en attente",   body:"Ton compte doit être validé par un admin avant d'effectuer cette action.", color:"#f59e0b" },
+      rejected: { title:"Compte refusé",       body:"Ta demande de vérification a été refusée. Contacte le support.",          color:"#ef4444" },
+      banned:   { title:"Compte suspendu",     body:"Ton compte a été suspendu. Contacte le support.",                         color:"#ef4444" },
+      default:  { title:"Action non autorisée",body:"Tu n'es pas autorisé à effectuer cette action.",                          color:"#ef4444" },
+    };
+
+    const m = messages[msg] || messages.default;
+
+    const toast = document.createElement("div");
+    toast.id = "kyc-toast";
+    toast.innerHTML = `
+      <div style="
+        position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+        background:#1a1a2e;border:1px solid ${m.color}55;border-radius:14px;
+        padding:16px 22px;display:flex;align-items:flex-start;gap:12px;
+        z-index:99999;box-shadow:0 8px 32px ${m.color}22;
+        max-width:420px;width:90vw;animation:kycUp .3s ease;
+      ">
+        <span style="font-size:22px;flex-shrink:0">${msg === "banned" ? "🚫" : msg === "rejected" ? "❌" : "🔒"}</span>
+        <div>
+          <div style="color:${m.color};font-weight:700;font-size:13px;margin-bottom:4px">${m.title}</div>
+          <div style="color:#9ca3af;font-size:12px;line-height:1.5">${m.body}</div>
+        </div>
+      </div>
+      <style>@keyframes kycUp{from{opacity:0;transform:translateX(-50%) translateY(16px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}</style>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => { const t = document.getElementById("kyc-toast"); if (t) t.remove(); }, 4500);
   }, []);
 
-  const requireVerified = useCallback(
-    (callback) => {
-      if (isVerified) { callback(); return true; }
+  // ── requireVerified : exécute callback ou affiche toast ─────────
+  const requireVerified = useCallback((callback) => {
+    if (state.isBanned)   { showBlockedToast("banned");   return false; }
+    if (state.isRejected) { showBlockedToast("rejected"); return false; }
+    if (!state.isApproved){ showBlockedToast("pending");  return false; }
+    callback();
+    return true;
+  }, [state, showBlockedToast]);
 
-      // ── Toast KYC ──────────────────────────────────────────
-      const existing = document.getElementById("kyc-toast");
-      if (existing) existing.remove();
-
-      const toast = document.createElement("div");
-      toast.id = "kyc-toast";
-      toast.innerHTML = `
-        <div style="
-          position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-          background:#1a1a2e;border:1px solid #ef4444;border-radius:12px;
-          padding:14px 22px;display:flex;align-items:center;gap:12px;
-          z-index:99999;box-shadow:0 8px 32px rgba(239,68,68,.3);
-          max-width:420px;width:90vw;animation:kycUp .3s ease;
-        ">
-          <span style="font-size:20px">🔒</span>
-          <div>
-            <div style="color:#ef4444;font-weight:700;font-size:13px;margin-bottom:2px">Vérification requise</div>
-            <div style="color:#9ca3af;font-size:12px">Votre compte doit être vérifié par un admin avant d'effectuer cette action.</div>
-          </div>
-        </div>
-        <style>@keyframes kycUp{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}</style>
-      `;
-      document.body.appendChild(toast);
-      setTimeout(() => { const t = document.getElementById("kyc-toast"); if (t) t.remove(); }, 4000);
-
-      return false;
-    },
-    [isVerified]
-  );
-
-  return { isVerified, checking, requireVerified };
+  return { ...state, loading, requireVerified };
 }

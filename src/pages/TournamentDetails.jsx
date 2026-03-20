@@ -2,142 +2,100 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useVerification } from "../hooks/useVerification";
+import VerificationBanner from "../components/VerificationBanner";
 
 export default function TournamentDetails() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { requireVerified } = useVerification();
+  const { id }     = useParams();
+  const navigate   = useNavigate();
   const [tournament, setTournament] = useState(null);
   const [userRequest, setUserRequest] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [requesting, setRequesting] = useState(false);
-  const [profile, setProfile] = useState(null);
+  const [loading,  setLoading]    = useState(true);
+  const [requesting,setRequesting]= useState(false);
+  const [profile,  setProfile]    = useState(null);
   const [isApproved, setIsApproved] = useState(false);
 
-  useEffect(() => {
-    console.log("TournamentDetails mounted, id:", id);
-    fetchData();
-  }, [id]);
+  // ── Vérification ──────────────────────────────────────────────
+  const { canInteract, requireVerified } = useVerification(profile);
+
+  useEffect(() => { fetchData(); }, [id]);
 
   const fetchData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (user) {
       const { data: userData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
+        .from("profiles").select("*").eq("id", user.id).single();
       setProfile(userData);
     }
 
-    const { data: tournamentData, error: tournamentError } = await supabase
-      .from("tournaments")
-      .select("*")
-      .eq("id", id)
-      .single();
+    const { data: t, error } = await supabase
+      .from("tournaments").select("*").eq("id", id).single();
 
-    if (tournamentError || !tournamentData) {
-      navigate("/tournaments");
-      return;
-    }
-
-    setTournament(tournamentData);
+    if (error || !t) { navigate("/tournaments"); return; }
+    setTournament(t);
 
     if (user) {
-      const { data: requestData } = await supabase
+      const { data: req } = await supabase
         .from("tournament_participants")
-        .select("*")
-        .eq("tournament_id", id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-      
-      setUserRequest(requestData);
-      
-      // ✅ التحقق إذا كان المستخدم مقبولاً
-      setIsApproved(requestData?.status === "approved");
+        .select("*").eq("tournament_id", id).eq("user_id", user.id).maybeSingle();
+      setUserRequest(req);
+      setIsApproved(req?.status === "approved");
     }
 
     setLoading(false);
   };
 
+  // ── Join ──────────────────────────────────────────────────────
   const requestToJoin = () => {
     if (!profile) { navigate("/login"); return; }
+    // ✅ Bloque si compte non approuvé
     requireVerified(() => _doJoin());
   };
 
   const _doJoin = async () => {
-
-    if (tournament.status !== "open") {
-      alert("❌ This tournament is not open for registration.");
-      return;
-    }
-
-    if (tournament.current_players >= tournament.max_players) {
-      alert("❌ This tournament is full.");
-      return;
-    }
+    if (tournament.status !== "open")                          { alert("❌ Ce tournoi n'est pas ouvert."); return; }
+    if (tournament.current_players >= tournament.max_players)  { alert("❌ Ce tournoi est complet."); return; }
 
     setRequesting(true);
-
     const { data: { user } } = await supabase.auth.getUser();
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("tournament_participants")
-        .insert([{
-          tournament_id: id,
-          user_id: user.id,
-          status: "pending"
-        }])
+        .insert([{ tournament_id: id, user_id: user.id, status: "pending" }])
         .select();
 
       if (error) {
-        console.error("Join error:", error);
-        if (error.code === '23505') {
-          alert("You have already requested to join this tournament.");
-        } else {
-          alert("Error requesting to join: " + error.message);
-        }
+        if (error.code === "23505") alert("Tu as déjà demandé à rejoindre ce tournoi.");
+        else alert("Erreur: " + error.message);
       } else {
-        alert("✅ Join request sent successfully!");
+        alert("✅ Demande envoyée !");
         navigate(`/tournaments/${id}/waiting`);
       }
     } catch (err) {
-      console.error("Unexpected error:", err);
-      alert("An unexpected error occurred.");
+      alert("Erreur inattendue.");
     }
-
     setRequesting(false);
   };
 
-  // ✅ دالة للدخول إلى الغرفة
-  const goToRoom = () => {
-    console.log("🔄 Navigating to room...", `/tournaments/${id}/room`);
-    navigate(`/tournaments/${id}/room`);
-  };
+  const goToRoom = () => navigate(`/tournaments/${id}/room`);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center">
-        <div className="text-white/40">Loading tournament...</div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center">
+      <div className="text-white/40">Chargement...</div>
+    </div>
+  );
+
+  const isOrganizer = tournament?.created_by === profile?.id ||
+    ["admin", "fondateur", "super_admin", "founder"].includes(profile?.role);
 
   return (
     <div className="min-h-screen bg-[#0B0F19] text-white">
-      
-      {/* Hero Section with Banner */}
-      <div 
-        className="h-96 bg-cover bg-center relative"
-        style={{
-          backgroundImage: tournament?.banner_url 
-            ? `url(${tournament.banner_url})` 
-            : `linear-gradient(135deg, ${tournament?.background_color || '#6D28D9'}, #4C1D95)`
-        }}
-      >
-        <div className="absolute inset-0 bg-black/60"></div>
+
+      {/* Hero */}
+      <div className="h-96 bg-cover bg-center relative"
+        style={{ backgroundImage: tournament?.banner_url ? `url(${tournament.banner_url})` : `linear-gradient(135deg,${tournament?.background_color||"#6D28D9"},#4C1D95)` }}>
+        <div className="absolute inset-0 bg-black/60" />
         <div className="absolute bottom-0 left-0 right-0 p-12">
           <div className="max-w-7xl mx-auto">
             <h1 className="text-5xl font-bold text-white mb-3">{tournament?.name}</h1>
@@ -146,204 +104,174 @@ export default function TournamentDetails() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-8 py-12">
-        
-        {/* Tournament Stats Grid */}
+
+        {/* ✅ Bannière de vérification pour les non-approuvés */}
+        <VerificationBanner profile={profile} />
+
+        {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-12">
-          <div className="bg-[#11151C] border border-white/5 rounded-xl p-6">
-            <p className="text-sm text-white/40 mb-2">Game Type</p>
-            <p className="text-xl font-bold text-white">
-              {tournament?.game_type === "battle_royale" ? "Battle Royale" : "Clash Squad"}
-            </p>
-          </div>
-          <div className="bg-[#11151C] border border-white/5 rounded-xl p-6">
-            <p className="text-sm text-white/40 mb-2">Mode</p>
-            <p className="text-xl font-bold text-white">{tournament?.mode}</p>
-          </div>
-          <div className="bg-[#11151C] border border-white/5 rounded-xl p-6">
-            <p className="text-sm text-white/40 mb-2">Players</p>
-            <p className="text-xl font-bold text-white">{tournament?.current_players}/{tournament?.max_players}</p>
-          </div>
-          <div className="bg-[#11151C] border border-white/5 rounded-xl p-6">
-            <p className="text-sm text-white/40 mb-2">Prize Pool</p>
-            <p className="text-xl font-bold" style={{ color: tournament?.background_color || '#6D28D9' }}>
-              {tournament?.prize_coins} Coins
-            </p>
-          </div>
-          <div className="bg-[#11151C] border border-white/5 rounded-xl p-6">
-            <p className="text-sm text-white/40 mb-2">Entry Fee</p>
-            <p className="text-xl font-bold text-white">{tournament?.entry_fee} Coins</p>
-          </div>
+          {[
+            { label:"Type",       value: tournament?.game_type === "battle_royale" ? "Battle Royale" : "Clash Squad" },
+            { label:"Mode",       value: tournament?.mode },
+            { label:"Joueurs",    value: `${tournament?.current_players}/${tournament?.max_players}` },
+            { label:"Prix",       value: `${tournament?.prize_coins} Coins`, colored: true },
+            { label:"Inscription",value: `${tournament?.entry_fee} Coins` },
+          ].map(s => (
+            <div key={s.label} className="bg-[#11151C] border border-white/5 rounded-xl p-6">
+              <p className="text-sm text-white/40 mb-2">{s.label}</p>
+              <p className={`text-xl font-bold ${s.colored ? "" : "text-white"}`}
+                style={s.colored ? { color: tournament?.background_color || "#6D28D9" } : {}}>
+                {s.value}
+              </p>
+            </div>
+          ))}
         </div>
 
-        {/* Join Section */}
         <div className="grid md:grid-cols-3 gap-8 mb-12">
-          
-          {/* Join Button / Rejoin Card */}
+
+          {/* Zone action principale */}
           <div className="md:col-span-2">
             <div className="bg-[#11151C] border border-white/5 rounded-xl p-8">
-              
-              {profile ? (
-                <>
-                  {/* ✅ Organizer / Admin / Fondateur — direct access */}
-                  {(tournament?.created_by === profile?.id ||
-                    ["admin","fondateur","super_admin","founder"].includes(profile?.role)) ? (
-                    <div className="rounded-xl p-8 text-center border-2" style={{ borderColor: "#7c3aed" }}>
-                      <div className="text-6xl mb-4">🛡️</div>
-                      <h2 className="text-2xl font-bold text-white mb-2">Accès Organisateur</h2>
-                      <p className="text-white/40 mb-6">Vous gérez ce tournoi. Accédez directement à la salle.</p>
-                      <button onClick={goToRoom}
-                        className="px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium text-lg transition">
-                        ⚡ Gérer la salle
-                      </button>
-                    </div>
-                  ) : isApproved ? (
-                    <div 
-                      className="rounded-xl p-8 text-center border-2"
-                      style={{ borderColor: tournament?.background_color || '#6D28D9' }}
-                    >
-                      <div className="text-6xl mb-4">🎮</div>
-                      <h2 className="text-2xl font-bold text-white mb-2">Votre demande est approuvée !</h2>
-                      <p className="text-white/40 mb-6">Votre place est réservée. Rejoignez la salle de tournoi dès maintenant.</p>
-                      
-                      {/* ✅ زر Rejoin مع onClick مباشر (بدون Link) */}
-                      <button
-                        onClick={goToRoom}
-                        className="inline-block px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium text-lg transition transform hover:scale-105 cursor-pointer"
-                        style={{ backgroundColor: tournament?.background_color }}
-                      >
-                        🔥 Rejoindre la salle
-                      </button>
+              {profile ? (<>
 
-                      {/* رابط احتياطي للتحقق */}
-                      <div className="mt-2 text-xs text-white/40">
-                        <Link to={`/tournaments/${id}/room`} className="underline hover:text-white">
-                          Lien direct
-                        </Link>
+                {/* Organisateur */}
+                {isOrganizer && (
+                  <div className="rounded-xl p-8 text-center border-2" style={{ borderColor:"#7c3aed" }}>
+                    <div className="text-6xl mb-4">🛡️</div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Accès Organisateur</h2>
+                    <p className="text-white/40 mb-6">Vous gérez ce tournoi.</p>
+                    <button onClick={goToRoom} className="px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium text-lg transition">
+                      ⚡ Gérer la salle
+                    </button>
+                  </div>
+                )}
+
+                {/* Approuvé dans ce tournoi */}
+                {!isOrganizer && isApproved && (
+                  <div className="rounded-xl p-8 text-center border-2" style={{ borderColor: tournament?.background_color || "#6D28D9" }}>
+                    <div className="text-6xl mb-4">🎮</div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Votre place est réservée !</h2>
+                    <p className="text-white/40 mb-6">Rejoignez la salle dès maintenant.</p>
+                    <button onClick={goToRoom}
+                      className="inline-block px-8 py-4 rounded-lg font-medium text-lg transition hover:scale-105"
+                      style={{ backgroundColor: tournament?.background_color || "#7c3aed", color:"#fff" }}>
+                      🔥 Rejoindre la salle
+                    </button>
+                  </div>
+                )}
+
+                {/* Pas encore de demande */}
+                {!isOrganizer && !isApproved && !userRequest && tournament?.current_players < tournament?.max_players && (
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-4">Rejoindre le tournoi</h2>
+                    {/* ✅ Bouton bloqué si non-vérifié */}
+                    <button
+                      onClick={requestToJoin}
+                      disabled={requesting}
+                      className="px-8 py-4 rounded-lg font-medium text-lg transition bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50"
+                    >
+                      {requesting ? "Envoi..." : "Demander à rejoindre"}
+                    </button>
+                    {/* Message si compte en attente */}
+                    {!canInteract && (
+                      <p className="mt-3 text-sm" style={{ color:"#f59e0b" }}>
+                        ⏳ Ton compte doit être validé par un admin pour rejoindre des tournois.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Tournoi complet */}
+                {!isOrganizer && !isApproved && !userRequest && tournament?.current_players >= tournament?.max_players && (
+                  <div className="p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <p className="text-yellow-400">❌ Ce tournoi est complet.</p>
+                  </div>
+                )}
+
+                {/* Demande existante */}
+                {!isOrganizer && !isApproved && userRequest && (
+                  <div className={`p-6 rounded-lg ${
+                    userRequest.status === "pending"  ? "bg-yellow-500/10 border border-yellow-500/30" :
+                    userRequest.status === "approved" ? "bg-green-500/10 border border-green-500/30" :
+                    "bg-red-500/10 border border-red-500/30"
+                  }`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`text-4xl ${
+                        userRequest.status === "pending"  ? "text-yellow-400" :
+                        userRequest.status === "approved" ? "text-green-400" :
+                        "text-red-400"
+                      }`}>
+                        {userRequest.status === "pending" ? "⏳" : userRequest.status === "approved" ? "✅" : "❌"}
                       </div>
-                    </div>
-                  ) : !userRequest ? (
-                    // لم يطلب بعد
-                    tournament?.current_players < tournament?.max_players ? (
                       <div>
-                        <h2 className="text-2xl font-bold text-white mb-6">Join Tournament</h2>
-                        <button
-                          onClick={requestToJoin}
-                          disabled={requesting}
-                          className="px-8 py-4 rounded-lg font-medium text-lg transition bg-purple-600 hover:bg-purple-700 text-white"
-                        >
-                          {requesting ? "Requesting..." : "Request to Join"}
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                        <p className="text-yellow-400">❌ This tournament is full.</p>
-                      </div>
-                    )
-                  ) : (
-                    // حالة الطلب (pending/rejected)
-                    <div className={`p-6 rounded-lg ${
-                      userRequest.status === "pending" ? "bg-yellow-500/10 border border-yellow-500/30" :
-                      userRequest.status === "approved" ? "bg-green-500/10 border border-green-500/30" :
-                      "bg-red-500/10 border border-red-500/30"
-                    }`}>
-                      <div className="flex items-center gap-4">
-                        <div className={`text-4xl ${
-                          userRequest.status === "pending" ? "text-yellow-400" :
-                          userRequest.status === "approved" ? "text-green-400" :
-                          "text-red-400"
+                        <h3 className={`text-xl font-bold mb-1 ${
+                          userRequest.status === "pending"  ? "text-yellow-400" :
+                          userRequest.status === "approved" ? "text-green-400" : "text-red-400"
                         }`}>
-                          {userRequest.status === "pending" ? "⏳" :
-                           userRequest.status === "approved" ? "✅" : "❌"}
-                        </div>
-                        <div>
-                          <h3 className={`text-xl font-bold mb-2 ${
-                            userRequest.status === "pending" ? "text-yellow-400" :
-                            userRequest.status === "approved" ? "text-green-400" :
-                            "text-red-400"
-                          }`}>
-                            {userRequest.status === "pending" && "Request Pending"}
-                            {userRequest.status === "approved" && "Approved!"}
-                            {userRequest.status === "rejected" && "Request Rejected"}
-                          </h3>
-                          <p className="text-white/60">
-                            {userRequest.status === "pending" && "Your request has been sent to the tournament organizer."}
-                            {userRequest.status === "approved" && "You can now participate in this tournament."}
-                            {userRequest.status === "rejected" && "Your request was declined by the organizer."}
-                          </p>
-                        </div>
+                          {userRequest.status === "pending" && "Demande en attente"}
+                          {userRequest.status === "approved" && "Approuvé !"}
+                          {userRequest.status === "rejected" && "Demande refusée"}
+                        </h3>
+                        <p className="text-white/60 text-sm">
+                          {userRequest.status === "pending" && "En attente de validation par l'organisateur."}
+                          {userRequest.status === "approved" && "Tu peux maintenant participer."}
+                          {userRequest.status === "rejected" && "Ta demande a été déclinée."}
+                        </p>
                       </div>
                     </div>
-                  )}
-                </>
-              ) : (
+                  </div>
+                )}
+
+              </>) : (
                 <div className="text-center">
-                  <p className="text-white/60 mb-4">Please login to join this tournament</p>
-                  <Link
-                    to="/login"
-                    className="inline-block px-8 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition"
-                  >
-                    Login
+                  <p className="text-white/60 mb-4">Connecte-toi pour rejoindre ce tournoi</p>
+                  <Link to="/login" className="inline-block px-8 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition">
+                    Connexion
                   </Link>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Quick Info */}
+          {/* Info rapide */}
           <div className="bg-[#11151C] border border-white/5 rounded-xl p-8">
-            <h3 className="text-lg font-bold text-white mb-4">Informations sur le tournoi</h3>
+            <h3 className="text-lg font-bold text-white mb-4">Informations</h3>
             <div className="space-y-4">
-              <div>
-                <p className="text-sm text-white/40">Créé par</p>
-                <p className="text-white font-medium">Organisateur</p>
-              </div>
               {tournament?.start_date && (
                 <div>
                   <p className="text-sm text-white/40">Date de début</p>
-                  <p className="text-white font-medium">
-                    {new Date(tournament.start_date).toLocaleDateString()}
-                  </p>
+                  <p className="text-white font-medium">{new Date(tournament.start_date).toLocaleDateString("fr-FR")}</p>
                 </div>
               )}
               <div className="pt-4 border-t border-white/5">
-                <p className="text-sm text-white/40 mb-2">État d'avancement de l'inscription</p>
+                <p className="text-sm text-white/40 mb-2">Inscriptions</p>
                 <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full transition-all duration-300"
-                    style={{ 
-                      width: `${(tournament?.current_players / tournament?.max_players) * 100}%`,
-                      backgroundColor: tournament?.background_color || '#6D28D9'
-                    }}
-                  ></div>
+                  <div className="h-full transition-all duration-300 rounded-full"
+                    style={{ width:`${(tournament?.current_players/tournament?.max_players)*100}%`, backgroundColor:tournament?.background_color||"#6D28D9" }}/>
                 </div>
                 <p className="text-xs text-white/40 mt-2 text-right">
-                  {tournament?.current_players}/{tournament?.max_players} places occupées
+                  {tournament?.current_players}/{tournament?.max_players} places
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Rules */}
+        {/* Règles */}
         <div className="bg-[#11151C] border border-white/5 rounded-xl p-8">
-          <h3 className="text-xl font-bold text-white mb-4">Tournament Rules</h3>
+          <h3 className="text-xl font-bold text-white mb-4">Règlement</h3>
           <ul className="space-y-3 text-white/60">
-            <li className="flex items-start gap-3">
-              <span className="text-purple-400 mt-1">•</span>
-              <span>All players must have verified accounts</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-purple-400 mt-1">•</span>
-              <span>Fair play is mandatory - any cheating results in permanent ban</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="text-purple-400 mt-1">•</span>
-              <span>Players must be ready 15 minutes before start time</span>
-            </li>
+            {["Tous les joueurs doivent avoir un compte vérifié.",
+              "Le fair-play est obligatoire — tout triche entraîne un ban permanent.",
+              "Les joueurs doivent être prêts 15 minutes avant le début."].map((r,i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="text-purple-400 mt-1">•</span><span>{r}</span>
+              </li>
+            ))}
           </ul>
         </div>
+
       </div>
     </div>
   );

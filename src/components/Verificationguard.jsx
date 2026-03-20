@@ -2,78 +2,74 @@ import { useVerification } from "../hooks/useVerification";
 
 /**
  * VerificationGuard
- * Wraps any interactive element and blocks it if user is not verified.
+ * -----------------
+ * Wraps n'importe quel bouton/action et le bloque si le compte
+ * n'est pas encore approuvé.
  *
  * Usage:
- *   <VerificationGuard>
+ *   <VerificationGuard profile={profile}>
  *     <button onClick={handleJoin}>Rejoindre</button>
  *   </VerificationGuard>
  *
- * Or with onClick interception:
- *   <VerificationGuard onClick={handleJoin}>
- *     <button>Rejoindre</button>
+ *   Ou avec un fallback personnalisé:
+ *   <VerificationGuard profile={profile} fallback={<span>Compte en attente</span>}>
+ *     <button onClick={handleJoin}>Rejoindre</button>
  *   </VerificationGuard>
  */
-export default function VerificationGuard({ children, className = "" }) {
-  const { isVerified, checking } = useVerification();
+export default function VerificationGuard({ profile, children, className = "", fallback = null }) {
+  const { canInteract, isPending, isRejected, isBanned, requireVerified } = useVerification(profile);
 
-  if (checking) return null;
-  if (isVerified) return children;
+  if (canInteract) return children;
+
+  // Si fallback fourni → l'afficher
+  if (fallback) return fallback;
+
+  // Sinon → rendre les enfants désactivés avec overlay + tooltip
+  const msg = isBanned
+    ? "Compte suspendu"
+    : isRejected
+    ? "Vérification refusée — contactez le support"
+    : "Compte en attente de validation admin";
+
+  const color = isBanned || isRejected ? "#ef4444" : "#f59e0b";
 
   return (
-    <div className={`relative group ${className}`}>
-      {/* Render children but intercept all clicks */}
-      <div
-        className="pointer-events-none opacity-50 select-none"
-        aria-disabled="true"
-      >
+    <div className={`relative group ${className}`} style={{ display: "inline-block" }}>
+      {/* Enfants désactivés visuellement */}
+      <div style={{ opacity: 0.45, pointerEvents: "none", userSelect: "none" }} aria-disabled="true">
         {children}
       </div>
-      {/* Invisible overlay to capture clicks */}
+
+      {/* Overlay transparent qui capture les clics */}
       <div
-        className="absolute inset-0 cursor-not-allowed"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          showVerificationToast();
-        }}
+        style={{ position: "absolute", inset: 0, cursor: "not-allowed", zIndex: 10 }}
+        onClick={e => { e.preventDefault(); e.stopPropagation(); requireVerified(() => {}); }}
       />
-      {/* Tooltip on hover */}
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none">
-        <div className="bg-red-900/90 border border-red-500 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-xl">
-          🔒 Compte non vérifié — contactez un admin
-        </div>
+
+      {/* Tooltip au hover */}
+      <div style={{
+        position: "absolute",
+        bottom: "calc(100% + 8px)",
+        left: "50%",
+        transform: "translateX(-50%)",
+        background: "#0f0f1a",
+        border: `1px solid ${color}55`,
+        borderRadius: 8,
+        padding: "7px 12px",
+        whiteSpace: "nowrap",
+        pointerEvents: "none",
+        zIndex: 20,
+        opacity: 0,
+        transition: "opacity .15s",
+        fontFamily: "Space Grotesk, sans-serif",
+        fontSize: 11,
+        color: color,
+        fontWeight: 600,
+      }}
+        className="group-hover:opacity-100"
+      >
+        🔒 {msg}
       </div>
     </div>
   );
-}
-
-function showVerificationToast() {
-  const existing = document.getElementById("kyc-toast");
-  if (existing) existing.remove();
-
-  const toast = document.createElement("div");
-  toast.id = "kyc-toast";
-  toast.innerHTML = `
-    <div style="
-      position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
-      background:#1a1a2e;border:1px solid #ef4444;border-radius:12px;
-      padding:14px 22px;display:flex;align-items:center;gap:12px;
-      z-index:99999;box-shadow:0 8px 32px rgba(239,68,68,0.3);
-      animation:kycSlideUp 0.3s ease;max-width:420px;width:90vw;
-    ">
-      <span style="font-size:20px">🔒</span>
-      <div>
-        <div style="color:#ef4444;font-weight:700;font-size:13px;margin-bottom:2px">
-          Vérification requise
-        </div>
-        <div style="color:#9ca3af;font-size:12px">
-          Votre compte doit être vérifié par un admin avant d'effectuer cette action.
-        </div>
-      </div>
-    </div>
-    <style>@keyframes kycSlideUp{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}</style>
-  `;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
 }
