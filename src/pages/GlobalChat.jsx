@@ -83,7 +83,8 @@ export default function GlobalChat() {
   const [typingUsers, setTypingUsers] = useState([]);
   const [reactionPicker, setReactionPicker] = useState(null); // msgId
   const [hoveredMsg, setHoveredMsg]   = useState(null);
-  const [showMembers, setShowMembers] = useState(true);
+  const [showMembers, setShowMembers] = useState(false);
+  const [showChannels, setShowChannels] = useState(false);
   const [unread, setUnread]           = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch]   = useState(false);
@@ -541,9 +542,19 @@ export default function GlobalChat() {
       `}</style>
 
       {/* ── TOP BAR ─────────────────────────────────────────────────────────── */}
-      <header className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#08091a]">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+      <header className="flex-shrink-0 flex items-center justify-between px-3 py-3 border-b border-white/5 bg-[#08091a]">
+        <div className="flex items-center gap-2 md:gap-4">
+          {/* Hamburger — mobile only */}
+          <button
+            onClick={() => setShowChannels(p => !p)}
+            className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 text-white/50 hover:text-white hover:bg-white/10 transition"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+
+          <div className="hidden md:flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#06b6d4] flex items-center justify-center">
               <span className="text-sm font-bold" style={{fontFamily:"Orbitron,sans-serif"}}>C</span>
             </div>
@@ -553,13 +564,13 @@ export default function GlobalChat() {
             </div>
           </div>
 
-          <div className="w-px h-8 bg-white/5"></div>
+          <div className="hidden md:block w-px h-8 bg-white/5"></div>
 
           <div className="flex items-center gap-2">
             <span className="text-lg">{currentChannel?.icon}</span>
             <div>
               <p className="text-sm font-semibold text-white">#{currentChannel?.label}</p>
-              <p className="text-[10px] text-white/30">{currentChannel?.desc}</p>
+              <p className="text-[10px] text-white/30 hidden sm:block">{currentChannel?.desc}</p>
             </div>
           </div>
         </div>
@@ -615,17 +626,30 @@ export default function GlobalChat() {
       </header>
 
       {/* ── MAIN LAYOUT ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
 
-        {/* ── CHANNELS SIDEBAR ─────────────────────────────────────────────── */}
-        <aside className="w-52 flex-shrink-0 border-r border-white/5 bg-[#06071a] flex flex-col">
+        {/* Backdrop mobile */}
+        {(showChannels || showMembers) && (
+          <div
+            className="md:hidden fixed inset-0 bg-black/60 z-20"
+            onClick={() => { setShowChannels(false); setShowMembers(false); }}
+          />
+        )}
+
+        {/* ── CHANNELS SIDEBAR ── overlay mobile, static desktop ── */}
+        <aside className={`
+          fixed md:static top-0 left-0 h-full z-30
+          w-52 flex-shrink-0 border-r border-white/5 bg-[#06071a] flex flex-col
+          transition-transform duration-200
+          ${showChannels ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        `}>
           <div className="px-3 pt-4 pb-2">
             <p className="text-[10px] text-white/25 tracking-[2px] font-semibold px-2 mb-2">CANAUX</p>
             <div className="space-y-0.5">
               {CHANNELS.map(ch => (
                 <button
                   key={ch.id}
-                  onClick={() => switchChannel(ch.id)}
+                  onClick={() => { switchChannel(ch.id); setShowChannels(false); }}
                   className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left transition-all channel-hover
                     ${channel === ch.id ? "channel-active text-white" : "text-white/40 hover:text-white/70"}`}
                 >
@@ -1037,6 +1061,24 @@ export default function GlobalChat() {
             <p className="text-[10px] text-white/15 text-center mt-1.5">
               Entrée pour envoyer · Shift+Entrée pour nouvelle ligne · Règles: respect & fair-play
             </p>
+
+            {/* ── MOBILE BOTTOM CHANNEL TABS ── */}
+            <div className="md:hidden flex border-t border-white/5 bg-[#08091a]">
+              {CHANNELS.map(ch => (
+                <button
+                  key={ch.id}
+                  onClick={() => { switchChannel(ch.id); setShowChannels(false); }}
+                  className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition-colors relative
+                    ${channel === ch.id ? "text-[#7c3aed]" : "text-white/30"}`}
+                >
+                  <span className="text-base leading-none">{ch.icon}</span>
+                  <span className="text-[9px] font-semibold truncate max-w-[50px]">#{ch.label}</span>
+                  {unread[ch.id] > 0 && (
+                    <span className="absolute top-1 right-2 w-2 h-2 bg-[#7c3aed] rounded-full"></span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </main>
 
@@ -1048,9 +1090,9 @@ export default function GlobalChat() {
               animate={{ width: 200, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="flex-shrink-0 border-l border-white/5 bg-[#06071a] overflow-hidden"
+              className="fixed md:static right-0 top-0 h-full z-30 w-[200px] flex-shrink-0 border-l border-white/5 bg-[#06071a] overflow-hidden"
             >
-              <div className="w-full md:w-[200px] h-full flex flex-col">
+              <div className="w-[200px] h-full flex flex-col">
                 <div className="p-3 border-b border-white/5">
                   <p className="text-[10px] text-white/25 tracking-[2px] font-semibold">MEMBRES EN LIGNE — {onlineUsers.length}</p>
                 </div>
