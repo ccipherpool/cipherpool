@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Security: sanitize text to prevent XSS
 const sanitize = (str) => {
   if (!str) return "";
   return str
@@ -16,7 +15,6 @@ const sanitize = (str) => {
     .slice(0, 500);
 };
 
-// ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const CHANNELS = [
   { id: "general",     label: "général",     icon: "⚡", desc: "Discussion libre" },
   { id: "tournaments", label: "tournois",    icon: "🏆", desc: "Infos & résultats" },
@@ -33,7 +31,6 @@ const ROLE_CONFIG = {
   user:        { label: "JOUEUR",      color: "#6b7280", bg: "rgba(107,114,128,0.1)", icon: "🎮" },
 };
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
 const getRoleConfig = (role) => ROLE_CONFIG[role] || ROLE_CONFIG.user;
 
 const formatTime = (ts) => {
@@ -46,10 +43,7 @@ const formatTime = (ts) => {
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 };
 
-const getAvatar = (name) => {
-  if (!name) return "?";
-  return name.trim()[0].toUpperCase();
-};
+const getAvatar = (name) => { if (!name) return "?"; return name.trim()[0].toUpperCase(); };
 
 const AVATAR_COLORS = [
   "linear-gradient(135deg,#7c3aed,#06b6d4)",
@@ -60,7 +54,6 @@ const AVATAR_COLORS = [
 ];
 const avatarColor = (name) => AVATAR_COLORS[(name?.charCodeAt(0) || 0) % AVATAR_COLORS.length];
 
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function GlobalChat() {
   const navigate = useNavigate();
   const [profile, setProfile]         = useState(null);
@@ -69,19 +62,20 @@ export default function GlobalChat() {
   const [messages, setMessages]       = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [input, setInput]             = useState("");
-  const [recording,   setRecording]   = useState(false);
-  const [audioBlob,   setAudioBlob]   = useState(null);
-  const [audioURL,    setAudioURL]    = useState(null);
-  const [recSecs,     setRecSecs]     = useState(0);
-  const [sendingAudio,setSendingAudio]= useState(false);
+  const [recording,    setRecording]  = useState(false);
+  const [audioBlob,    setAudioBlob]  = useState(null);
+  const [audioURL,     setAudioURL]   = useState(null);
+  const [recSecs,      setRecSecs]    = useState(0);
+  const [sendingAudio, setSendingAudio] = useState(false);
   const mediaRecRef  = useRef(null);
   const audioChunks  = useRef([]);
   const recTimer     = useRef(null);
   const [sending, setSending]         = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
-  const [reactionPicker, setReactionPicker] = useState(null); // msgId
+  const [reactionPicker, setReactionPicker] = useState(null);
   const [hoveredMsg, setHoveredMsg]   = useState(null);
-  const [showMembers, setShowMembers] = useState(true);
+  const [showMembers,  setShowMembers]  = useState(false);
+  const [showChannels, setShowChannels] = useState(false);
   const [unread, setUnread]           = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch]   = useState(false);
@@ -96,17 +90,23 @@ export default function GlobalChat() {
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate("/login"); return; }
+      if (!user) { navigate("/"); return; }
 
+      // ✅ FIX: .maybeSingle() instead of .single() → stop 406 redirect loop
       const { data } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
+
+      if (!data) {
+        await supabase.auth.signOut();
+        navigate("/");
+        return;
+      }
 
       setProfile(data);
 
-      // Update last_seen
       await supabase
         .from("profiles")
         .update({ last_seen: new Date().toISOString() })
@@ -117,7 +117,6 @@ export default function GlobalChat() {
     init();
   }, [navigate]);
 
-  // ── Fetch messages ─────────────────────────────────────────────────────────
   const fetchMessages = useCallback(async (ch) => {
     const { data } = await supabase
       .from("chat_messages")
@@ -126,18 +125,14 @@ export default function GlobalChat() {
         sender:profiles!chat_messages_sender_id_fkey (
           id, full_name, role, avatar_url, free_fire_id
         ),
-        reactions:chat_reactions (
-          emoji, user_id
-        )
+        reactions:chat_reactions ( emoji, user_id )
       `)
       .eq("channel", ch)
       .order("created_at", { ascending: true })
       .limit(100);
-
     setMessages(data || []);
   }, []);
 
-  // ── Fetch online users ─────────────────────────────────────────────────────
   const fetchOnlineUsers = useCallback(async () => {
     const threshold = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { data } = await supabase
@@ -145,108 +140,45 @@ export default function GlobalChat() {
       .select("id, full_name, role, avatar_url")
       .gte("last_seen", threshold)
       .order("full_name");
-
     setOnlineUsers(data || []);
   }, []);
 
-  // ── Realtime subscription ─────────────────────────────────────────────────
   useEffect(() => {
     if (!profile) return;
-
     fetchMessages(channel);
     fetchOnlineUsers();
-
-    // Cleanup old sub
     if (channelSub.current) supabase.removeChannel(channelSub.current);
 
-    channelSub.current = supabase
-      .channel(`chat:${channel}`)
-
-      // ── INSERT رسالة جديدة ──────────────────────────────────────
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "chat_messages",
-        filter: `channel=eq.${channel}`
-      }, async (payload) => {
-        const { data: fullMsg } = await supabase
-          .from("chat_messages")
-          .select(`
-            id, content, audio_url, channel, created_at, sender_id,
-            sender:profiles!chat_messages_sender_id_fkey (
-              id, full_name, role, avatar_url, free_fire_id
-            ),
-            reactions:chat_reactions ( emoji, user_id )
-          `)
-          .eq("id", payload.new.id)
-          .single();
+    channelSub.current = supabase.channel(`chat:${channel}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages", filter: `channel=eq.${channel}` }, async (payload) => {
+        const { data: fullMsg } = await supabase.from("chat_messages")
+          .select(`id, content, audio_url, channel, created_at, sender_id,
+            sender:profiles!chat_messages_sender_id_fkey(id, full_name, role, avatar_url, free_fire_id),
+            reactions:chat_reactions(emoji, user_id)`)
+          .eq("id", payload.new.id).single();
         if (fullMsg) setMessages(prev => [...prev, fullMsg]);
       })
-
-      // ── DELETE رسالة ────────────────────────────────────────────
-      .on("postgres_changes", {
-        event: "DELETE",
-        schema: "public",
-        table: "chat_messages",
-        filter: `channel=eq.${channel}`
-      }, (payload) => {
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "chat_messages", filter: `channel=eq.${channel}` }, (payload) => {
         setMessages(prev => prev.filter(m => m.id !== payload.old.id));
       })
-
-      // ── UPDATE رسالة (تعديل content) ────────────────────────────
-      .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "chat_messages",
-        filter: `channel=eq.${channel}`
-      }, async (payload) => {
-        const { data: fullMsg } = await supabase
-          .from("chat_messages")
-          .select(`
-            id, content, audio_url, channel, created_at, sender_id,
-            sender:profiles!chat_messages_sender_id_fkey (
-              id, full_name, role, avatar_url, free_fire_id
-            ),
-            reactions:chat_reactions ( emoji, user_id )
-          `)
-          .eq("id", payload.new.id)
-          .single();
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "chat_messages", filter: `channel=eq.${channel}` }, async (payload) => {
+        const { data: fullMsg } = await supabase.from("chat_messages")
+          .select(`id, content, audio_url, channel, created_at, sender_id,
+            sender:profiles!chat_messages_sender_id_fkey(id, full_name, role, avatar_url, free_fire_id),
+            reactions:chat_reactions(emoji, user_id)`)
+          .eq("id", payload.new.id).single();
         if (fullMsg) setMessages(prev => prev.map(m => m.id === fullMsg.id ? fullMsg : m));
       })
-
-      // ── Reactions INSERT ─────────────────────────────────────────
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "chat_reactions"
-      }, async (payload) => {
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_reactions" }, async (payload) => {
         const msgId = payload.new.message_id;
-        const { data: reactions } = await supabase
-          .from("chat_reactions")
-          .select("emoji, user_id")
-          .eq("message_id", msgId);
-        if (reactions) setMessages(prev => prev.map(m =>
-          m.id === msgId ? { ...m, reactions } : m
-        ));
+        const { data: reactions } = await supabase.from("chat_reactions").select("emoji, user_id").eq("message_id", msgId);
+        if (reactions) setMessages(prev => prev.map(m => m.id === msgId ? { ...m, reactions } : m));
       })
-
-      // ── Reactions DELETE ─────────────────────────────────────────
-      .on("postgres_changes", {
-        event: "DELETE",
-        schema: "public",
-        table: "chat_reactions"
-      }, async (payload) => {
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "chat_reactions" }, async (payload) => {
         const msgId = payload.old.message_id;
-        const { data: reactions } = await supabase
-          .from("chat_reactions")
-          .select("emoji, user_id")
-          .eq("message_id", msgId);
-        if (reactions) setMessages(prev => prev.map(m =>
-          m.id === msgId ? { ...m, reactions } : m
-        ));
+        const { data: reactions } = await supabase.from("chat_reactions").select("emoji, user_id").eq("message_id", msgId);
+        if (reactions) setMessages(prev => prev.map(m => m.id === msgId ? { ...m, reactions } : m));
       })
-
-      // ── Typing indicator ─────────────────────────────────────────
       .on("broadcast", { event: "typing" }, ({ payload }) => {
         if (payload.user_id === profile.id) return;
         setTypingUsers(prev => {
@@ -257,29 +189,18 @@ export default function GlobalChat() {
       })
       .subscribe();
 
-    // Online presence
     if (presenceSub.current) supabase.removeChannel(presenceSub.current);
-    presenceSub.current = supabase
-      .channel("online-users")
+    presenceSub.current = supabase.channel("online-users")
       .on("presence", { event: "sync" }, () => fetchOnlineUsers())
-      .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "profiles"
-      }, (payload) => {
-        // تبدل صورة + اسم المرسل فالرسايل مباشرة
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, (payload) => {
         setMessages(prev => prev.map(m =>
-          m.sender_id === payload.new.id
-            ? { ...m, sender: { ...m.sender, ...payload.new } }
-            : m
+          m.sender_id === payload.new.id ? { ...m, sender: { ...m.sender, ...payload.new } } : m
         ));
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
           await presenceSub.current.track({
-            user_id: profile.id,
-            name: profile.full_name,
-            online_at: new Date().toISOString()
+            user_id: profile.id, name: profile.full_name, online_at: new Date().toISOString()
           });
         }
       });
@@ -290,52 +211,27 @@ export default function GlobalChat() {
     };
   }, [profile, channel, fetchMessages, fetchOnlineUsers]);
 
-  // ── Auto-scroll ────────────────────────────────────────────────────────────
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // ── Send message ───────────────────────────────────────────────────────────
-  // Rate limit: max 1 message per second
   const lastMsgTime = useRef(0);
 
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || sending || !profile) return;
-
-    // Rate limit check
     const now = Date.now();
-    if (now - lastMsgTime.current < 1000) return; // 1 msg/sec max
+    if (now - lastMsgTime.current < 1000) return;
     lastMsgTime.current = now;
-
-    // Sanitize content
     const safeText = sanitize(text);
     if (!safeText) return;
-
     setSending(true);
     setInput("");
-
-    const { error } = await supabase
-      .from("chat_messages")
-      .insert([{
-        sender_id: profile.id,
-        channel,
-        content: safeText
-      }]);
-
-    if (error) {
-      console.error("Send error:", error);
-      setInput(text);
-    }
-
+    const { error } = await supabase.from("chat_messages").insert([{ sender_id: profile.id, channel, content: safeText }]);
+    if (error) { console.error("Send error:", error); setInput(text); }
     setSending(false);
     inputRef.current?.focus();
-
-    // Stop typing indicator
     broadcastTyping(false);
   };
 
-  // ── AUDIO RECORDING ──────────────────────────────────────────────────────
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -350,59 +246,35 @@ export default function GlobalChat() {
         stream.getTracks().forEach(t => t.stop());
       };
       mr.start(100);
-      setRecording(true);
-      setRecSecs(0);
+      setRecording(true); setRecSecs(0);
       recTimer.current = setInterval(() => setRecSecs(s => s + 1), 1000);
-    } catch (e) {
+    } catch {
       alert("Microphone non disponible — vérifiez les permissions.");
     }
   };
 
-  const stopRecording = () => {
-    mediaRecRef.current?.stop();
-    setRecording(false);
-    clearInterval(recTimer.current);
-  };
-
-  const cancelAudio = () => {
-    setAudioBlob(null);
-    setAudioURL(null);
-    setRecSecs(0);
-  };
+  const stopRecording = () => { mediaRecRef.current?.stop(); setRecording(false); clearInterval(recTimer.current); };
+  const cancelAudio   = () => { setAudioBlob(null); setAudioURL(null); setRecSecs(0); };
 
   const sendAudio = async () => {
     if (!audioBlob || !profile) return;
     setSendingAudio(true);
     try {
       const fileName = `audio_${profile.id}_${Date.now()}.webm`;
-      const { error: upErr } = await supabase.storage
-        .from("chat-audio")
-        .upload(fileName, audioBlob, { contentType: "audio/webm" });
+      const { error: upErr } = await supabase.storage.from("chat-audio").upload(fileName, audioBlob, { contentType: "audio/webm" });
       if (upErr) throw upErr;
       const { data: { publicUrl } } = supabase.storage.from("chat-audio").getPublicUrl(fileName);
-      await supabase.from("chat_messages").insert([{
-        sender_id: profile.id,
-        channel,
-        content: "[vocal]",
-        audio_url: publicUrl,
-      }]);
+      await supabase.from("chat_messages").insert([{ sender_id: profile.id, channel, content: "[vocal]", audio_url: publicUrl }]);
       cancelAudio();
-    } catch (e) {
-      console.error("Audio send error:", e);
-    }
+    } catch (e) { console.error("Audio send error:", e); }
     setSendingAudio(false);
   };
 
   const fmtSecs = s => `${Math.floor(s/60).toString().padStart(2,"0")}:${(s%60).toString().padStart(2,"0")}`;
 
-  // ── Typing indicator ───────────────────────────────────────────────────────
   const broadcastTyping = (typing) => {
     if (!channelSub.current) return;
-    channelSub.current.send({
-      type: "broadcast",
-      event: "typing",
-      payload: { user_id: profile.id, name: profile.full_name?.split(" ")[0], typing }
-    });
+    channelSub.current.send({ type: "broadcast", event: "typing", payload: { user_id: profile.id, name: profile.full_name?.split(" ")[0], typing } });
   };
 
   const handleInputChange = (e) => {
@@ -413,128 +285,97 @@ export default function GlobalChat() {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
-  // ── Reactions ──────────────────────────────────────────────────────────────
   const toggleReaction = async (msgId, emoji) => {
     if (!profile) return;
-
     const msg = messages.find(m => m.id === msgId);
     const existing = msg?.reactions?.find(r => r.emoji === emoji && r.user_id === profile.id);
-
     if (existing) {
-      await supabase
-        .from("chat_reactions")
-        .delete()
-        .eq("message_id", msgId)
-        .eq("user_id", profile.id)
-        .eq("emoji", emoji);
+      await supabase.from("chat_reactions").delete().eq("message_id", msgId).eq("user_id", profile.id).eq("emoji", emoji);
     } else {
-      await supabase
-        .from("chat_reactions")
-        .insert([{ message_id: msgId, user_id: profile.id, emoji }]);
+      await supabase.from("chat_reactions").insert([{ message_id: msgId, user_id: profile.id, emoji }]);
     }
-
     setReactionPicker(null);
   };
 
-  // ── Delete message ─────────────────────────────────────────────────────────
   const deleteMessage = async (msgId) => {
     const isAdmin = ["admin","super_admin"].includes(profile?.role);
     const msg = messages.find(m => m.id === msgId);
     if (!msg) return;
     if (msg.sender_id !== profile.id && !isAdmin) return;
-
     await supabase.from("chat_messages").delete().eq("id", msgId);
     setMessages(prev => prev.filter(m => m.id !== msgId));
   };
 
-  // ── Channel switch ─────────────────────────────────────────────────────────
   const switchChannel = (ch) => {
     setChannel(ch);
     setMessages([]);
     setUnread(prev => ({ ...prev, [ch]: 0 }));
+    setShowChannels(false);
   };
 
-  // ── Filtered messages ──────────────────────────────────────────────────────
   const displayMessages = searchQuery
-    ? messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.sender?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()))
+    ? messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()) || m.sender?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()))
     : messages;
 
-  // ── Group messages by sender + time ───────────────────────────────────────
   const groupedMessages = displayMessages.reduce((acc, msg, i) => {
     const prev = displayMessages[i - 1];
-    const isGrouped = prev &&
-      prev.sender_id === msg.sender_id &&
-      new Date(msg.created_at) - new Date(prev.created_at) < 120000;
+    const isGrouped = prev && prev.sender_id === msg.sender_id && new Date(msg.created_at) - new Date(prev.created_at) < 120000;
     return [...acc, { ...msg, isGrouped }];
   }, []);
 
-  if (loading) {
-    return (
-      <div className="h-screen bg-[#030014] flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative w-16 h-16 mx-auto mb-4">
-            <div className="absolute inset-0 rounded-full border-2 border-[#7c3aed]/20 border-t-[#7c3aed] animate-spin"></div>
-            <div className="absolute inset-2 rounded-full border-2 border-[#06b6d4]/20 border-b-[#06b6d4] animate-spin" style={{animationDirection:"reverse",animationDuration:"0.8s"}}></div>
-          </div>
-          <p className="text-white/30 text-sm tracking-widest">CONNEXION AU CHAT...</p>
+  if (loading) return (
+    <div className="h-screen bg-[#030014] flex items-center justify-center">
+      <div className="text-center">
+        <div className="relative w-16 h-16 mx-auto mb-4">
+          <div className="absolute inset-0 rounded-full border-2 border-[#7c3aed]/20 border-t-[#7c3aed] animate-spin"></div>
+          <div className="absolute inset-2 rounded-full border-2 border-[#06b6d4]/20 border-b-[#06b6d4] animate-spin" style={{animationDirection:"reverse",animationDuration:"0.8s"}}></div>
         </div>
+        <p className="text-white/30 text-sm tracking-widest">CONNEXION AU CHAT...</p>
       </div>
-    );
-  }
+    </div>
+  );
 
   const currentChannel = CHANNELS.find(c => c.id === channel);
   const isAdmin = ["admin", "super_admin"].includes(profile?.role);
 
   return (
     <div className="h-screen bg-[#030014] text-white flex flex-col overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-
-      {/* ── Google Fonts ── */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Orbitron:wght@700;900&display=swap');
-        
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.3); border-radius: 99px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(124,58,237,0.6); }
-
         .chat-input::placeholder { color: rgba(255,255,255,0.2); }
         .chat-input:focus { outline: none; }
-
+        .chat-input { font-size: 16px; }
         .msg-hover:hover .msg-actions { opacity: 1; pointer-events: all; }
         .msg-actions { opacity: 0; pointer-events: none; transition: opacity 0.15s; }
-
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .msg-enter { animation: slideUp 0.2s ease forwards; }
-
-        @keyframes pulse-dot {
-          0%,100% { transform: scale(1); opacity: 1; }
-          50%      { transform: scale(1.4); opacity: 0.7; }
-        }
+        @keyframes pulse-dot { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.7; } }
         .typing-dot { animation: pulse-dot 1.2s ease infinite; }
         .typing-dot:nth-child(2) { animation-delay: 0.2s; }
         .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
         .glow-border { box-shadow: 0 0 0 1px rgba(124,58,237,0.3), inset 0 0 20px rgba(124,58,237,0.03); }
-        .neon-text { text-shadow: 0 0 20px currentColor; }
-
         .channel-active { background: linear-gradient(90deg, rgba(124,58,237,0.2), transparent); border-left: 2px solid #7c3aed; }
         .channel-hover:hover { background: rgba(255,255,255,0.04); }
       `}</style>
 
-      {/* ── TOP BAR ─────────────────────────────────────────────────────────── */}
-      <header className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#08091a]">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+      {/* TOP BAR */}
+      <header className="flex-shrink-0 flex items-center justify-between px-3 py-3 border-b border-white/5 bg-[#08091a]">
+        <div className="flex items-center gap-2 md:gap-4">
+          {/* Hamburger — mobile only */}
+          <button onClick={() => setShowChannels(p => !p)}
+            className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 text-white/50 hover:text-white transition">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+
+          <div className="hidden md:flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#06b6d4] flex items-center justify-center">
               <span className="text-sm font-bold" style={{fontFamily:"Orbitron,sans-serif"}}>C</span>
             </div>
@@ -544,88 +385,76 @@ export default function GlobalChat() {
             </div>
           </div>
 
-          <div className="w-px h-8 bg-white/5"></div>
+          <div className="hidden md:block w-px h-8 bg-white/5"></div>
 
           <div className="flex items-center gap-2">
             <span className="text-lg">{currentChannel?.icon}</span>
             <div>
               <p className="text-sm font-semibold text-white">#{currentChannel?.label}</p>
-              <p className="text-[10px] text-white/30">{currentChannel?.desc}</p>
+              <p className="text-[10px] text-white/30 hidden sm:block">{currentChannel?.desc}</p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Search */}
+        <div className="flex items-center gap-2 md:gap-3">
           <AnimatePresence>
             {showSearch && (
               <motion.input
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: 200, opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Rechercher..."
+                initial={{ width: 0, opacity: 0 }} animate={{ width: 160, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
+                value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Rechercher..." autoFocus
                 className="chat-input bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white"
-                autoFocus
               />
             )}
           </AnimatePresence>
 
-          <button
-            onClick={() => { setShowSearch(p => !p); setSearchQuery(""); }}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${showSearch ? "bg-[#7c3aed]/30 text-[#7c3aed]" : "bg-white/5 text-white/40 hover:text-white hover:bg-white/10"}`}
-          >
+          <button onClick={() => { setShowSearch(p => !p); setSearchQuery(""); }}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${showSearch ? "bg-[#7c3aed]/30 text-[#7c3aed]" : "bg-white/5 text-white/40 hover:text-white hover:bg-white/10"}`}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
           </button>
 
-          <button
-            onClick={() => setShowMembers(p => !p)}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${showMembers ? "bg-[#7c3aed]/30 text-[#7c3aed]" : "bg-white/5 text-white/40 hover:text-white hover:bg-white/10"}`}
-          >
+          <button onClick={() => setShowMembers(p => !p)}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${showMembers ? "bg-[#7c3aed]/30 text-[#7c3aed]" : "bg-white/5 text-white/40 hover:text-white hover:bg-white/10"}`}>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
           </button>
 
-          {/* Profile chip */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/5">
-            <div
-              className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0"
-              style={{ background: avatarColor(profile?.full_name) }}
-            >
+            <div className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold flex-shrink-0"
+              style={{ background: avatarColor(profile?.full_name) }}>
               {getAvatar(profile?.full_name)}
             </div>
-            <span className="text-xs font-medium text-white/70 hidden sm:block max-w-[100px] truncate">
+            <span className="text-xs font-medium text-white/70 hidden sm:block max-w-[80px] truncate">
               {profile?.full_name?.split(" ")[0]}
             </span>
           </div>
         </div>
       </header>
 
-      {/* ── MAIN LAYOUT ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* MAIN LAYOUT */}
+      <div className="flex flex-1 overflow-hidden relative">
 
-        {/* ── CHANNELS SIDEBAR ─────────────────────────────────────────────── */}
-        <aside className="w-52 flex-shrink-0 border-r border-white/5 bg-[#06071a] flex flex-col">
+        {/* Backdrop mobile */}
+        {(showChannels || showMembers) && (
+          <div className="md:hidden fixed inset-0 bg-black/60 z-20"
+            onClick={() => { setShowChannels(false); setShowMembers(false); }}/>
+        )}
+
+        {/* CHANNELS SIDEBAR — overlay mobile */}
+        <aside className={`fixed md:static top-0 left-0 h-full z-30 w-52 flex-shrink-0 border-r border-white/5 bg-[#06071a] flex flex-col transition-transform duration-200 ${showChannels ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
           <div className="px-3 pt-4 pb-2">
             <p className="text-[10px] text-white/25 tracking-[2px] font-semibold px-2 mb-2">CANAUX</p>
             <div className="space-y-0.5">
               {CHANNELS.map(ch => (
-                <button
-                  key={ch.id}
-                  onClick={() => switchChannel(ch.id)}
-                  className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left transition-all channel-hover
-                    ${channel === ch.id ? "channel-active text-white" : "text-white/40 hover:text-white/70"}`}
-                >
+                <button key={ch.id} onClick={() => switchChannel(ch.id)}
+                  className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left transition-all channel-hover ${channel === ch.id ? "channel-active text-white" : "text-white/40 hover:text-white/70"}`}>
                   <span className="text-base w-5 text-center">{ch.icon}</span>
                   <span className="text-sm font-medium truncate">#{ch.label}</span>
                   {unread[ch.id] > 0 && (
-                    <span className="ml-auto bg-[#7c3aed] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                      {unread[ch.id]}
-                    </span>
+                    <span className="ml-auto bg-[#7c3aed] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{unread[ch.id]}</span>
                   )}
                 </button>
               ))}
@@ -635,33 +464,22 @@ export default function GlobalChat() {
           <div className="px-3 py-2 mt-2 border-t border-white/5">
             <p className="text-[10px] text-white/25 tracking-[2px] font-semibold px-2 mb-2">EN LIGNE — {onlineUsers.length}</p>
             <div className="space-y-1 max-h-40 overflow-y-auto">
-              {onlineUsers.slice(0, 15).map(u => {
-                const rc = getRoleConfig(u.role);
-                return (
-                  <div key={u.id}
-                    onClick={() => navigate(`/profile?id=${u.id}`)}
-                    className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/5 transition cursor-pointer"
-                    title={u.full_name}
-                  >
-                    <div className="relative flex-shrink-0">
-                      <div
-                        className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold overflow-hidden"
-                        style={{ background: u.avatar_url ? "transparent" : avatarColor(u.full_name) }}
-                      >
-                        {u.avatar_url
-                          ? <img src={u.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                          : getAvatar(u.full_name)}
-                      </div>
-                      <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-[#06071a]"></span>
+              {onlineUsers.slice(0, 15).map(u => (
+                <div key={u.id} onClick={() => navigate(`/profile?id=${u.id}`)}
+                  className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/5 transition cursor-pointer">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold overflow-hidden"
+                      style={{ background: u.avatar_url ? "transparent" : avatarColor(u.full_name) }}>
+                      {u.avatar_url ? <img src={u.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/> : getAvatar(u.full_name)}
                     </div>
-                    <span className="text-xs text-white/60 truncate hover:text-white transition">{u.full_name?.split(" ")[0]}</span>
+                    <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-[#06071a]"></span>
                   </div>
-                );
-              })}
+                  <span className="text-xs text-white/60 truncate hover:text-white transition">{u.full_name?.split(" ")[0]}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Role badge */}
           <div className="mt-auto p-3 border-t border-white/5">
             {(() => {
               const rc = getRoleConfig(profile?.role);
@@ -678,24 +496,16 @@ export default function GlobalChat() {
           </div>
         </aside>
 
-        {/* ── MESSAGE AREA ─────────────────────────────────────────────────── */}
+        {/* MESSAGE AREA */}
         <main className="flex-1 flex flex-col overflow-hidden bg-[#030014] relative">
-
-          {/* Subtle bg pattern */}
           <div className="absolute inset-0 pointer-events-none opacity-[0.015]"
             style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "32px 32px" }}>
           </div>
 
-          {/* Messages list */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0.5 relative z-10">
-
-            {/* Welcome banner */}
+          <div className="flex-1 overflow-y-auto px-3 md:px-4 py-4 space-y-0.5 relative z-10">
             {messages.length === 0 && !searchQuery && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center h-full text-center py-16"
-              >
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center h-full text-center py-16">
                 <div className="text-6xl mb-4">{currentChannel?.icon}</div>
                 <h3 className="text-xl font-bold text-white mb-2" style={{fontFamily:"Orbitron,sans-serif"}}>
                   BIENVENUE SUR #{currentChannel?.label.toUpperCase()}
@@ -710,12 +520,10 @@ export default function GlobalChat() {
               </div>
             )}
 
-            {groupedMessages.map((msg, idx) => {
+            {groupedMessages.map((msg) => {
               const rc = getRoleConfig(msg.sender?.role);
               const isOwn = msg.sender_id === profile?.id;
               const canDelete = isOwn || isAdmin;
-
-              // Group reactions by emoji
               const reactionGroups = (msg.reactions || []).reduce((acc, r) => {
                 acc[r.emoji] = (acc[r.emoji] || []);
                 acc[r.emoji].push(r.user_id);
@@ -723,21 +531,14 @@ export default function GlobalChat() {
               }, {});
 
               return (
-                <div
-                  key={msg.id}
-                  className={`msg-hover group relative flex gap-3 rounded-xl px-3 py-1 transition-colors hover:bg-white/[0.02] msg-enter
-                    ${msg.isGrouped ? "pt-0.5" : "pt-2"}
-                    ${isOwn ? "flex-row-reverse" : "flex-row"}`}
+                <div key={msg.id}
+                  className={`msg-hover group relative flex gap-3 rounded-xl px-3 py-1 transition-colors hover:bg-white/[0.02] msg-enter ${msg.isGrouped ? "pt-0.5" : "pt-2"} ${isOwn ? "flex-row-reverse" : "flex-row"}`}
                   onMouseEnter={() => setHoveredMsg(msg.id)}
-                  onMouseLeave={() => { setHoveredMsg(null); if (reactionPicker === msg.id) setReactionPicker(null); }}
-                >
-                  {/* Avatar column */}
+                  onMouseLeave={() => { setHoveredMsg(null); if (reactionPicker === msg.id) setReactionPicker(null); }}>
                   <div className="w-9 flex-shrink-0 flex items-start justify-center pt-0.5">
                     {!msg.isGrouped ? (
-                      <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shadow-lg overflow-hidden"
-                        style={{ background: msg.sender?.avatar_url ? "transparent" : avatarColor(msg.sender?.full_name) }}
-                      >
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shadow-lg overflow-hidden"
+                        style={{ background: msg.sender?.avatar_url ? "transparent" : avatarColor(msg.sender?.full_name) }}>
                         {msg.sender?.avatar_url
                           ? <img src={msg.sender.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                           : getAvatar(msg.sender?.full_name)}
@@ -749,70 +550,40 @@ export default function GlobalChat() {
                     )}
                   </div>
 
-                  {/* Content */}
                   <div className={`flex-1 min-w-0 flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
                     {!msg.isGrouped && (
-                      <div className={`flex items-center gap-2 mb-1 ${isOwn ? "flex-row-reverse" : ""}`}>
-                        <span className="text-sm font-semibold text-white/90 hover:text-white cursor-pointer transition">
-                          {isOwn ? "Vous" : (msg.sender?.full_name || "Inconnu")}
-                        </span>
-                        <span
-                          className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded"
-                          style={{ color: rc.color, background: rc.bg }}
-                        >
+                      <div className={`flex items-center gap-2 mb-1 flex-wrap ${isOwn ? "flex-row-reverse" : ""}`}>
+                        <span className="text-sm font-semibold text-white/90">{isOwn ? "Vous" : (msg.sender?.full_name || "Inconnu")}</span>
+                        <span className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded" style={{ color: rc.color, background: rc.bg }}>
                           {rc.icon} {rc.label}
                         </span>
-                        {!isOwn && msg.sender?.free_fire_id && (
-                          <span className="text-[10px] text-white/20 font-mono">FF:{msg.sender.free_fire_id}</span>
-                        )}
                         <span className="text-[10px] text-white/20">{formatTime(msg.created_at)}</span>
                       </div>
                     )}
 
-                    <div
-                      className="max-w-[75%] px-3 py-2 rounded-2xl"
+                    <div className="max-w-[85%] md:max-w-[75%] px-3 py-2"
                       style={{
-                        background: isOwn
-                          ? "linear-gradient(135deg, #7c3aed, #6d28d9)"
-                          : "rgba(255,255,255,0.06)",
+                        background: isOwn ? "linear-gradient(135deg, #7c3aed, #6d28d9)" : "rgba(255,255,255,0.06)",
                         borderRadius: isOwn ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
                         border: isOwn ? "none" : "1px solid rgba(255,255,255,0.06)",
-                      }}
-                    >
+                      }}>
                       {msg.audio_url ? (
-                        <div style={{
-                          display:"flex",alignItems:"center",gap:10,
-                          padding:"10px 14px",minWidth:220,
-                        }}>
-                          <span style={{fontSize:18,flexShrink:0}}>🎙️</span>
-                          <audio
-                            src={msg.audio_url}
-                            controls
-                            style={{flex:1,height:32,accentColor:"#7c3aed",outline:"none",minWidth:160}}
-                          />
+                        <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",minWidth:180}}>
+                          <span style={{fontSize:16,flexShrink:0}}>🎙️</span>
+                          <audio src={msg.audio_url} controls style={{flex:1,height:30,accentColor:"#7c3aed",outline:"none",minWidth:130}}/>
                         </div>
                       ) : (
-                        <p className="text-[0.875rem] text-white/90 leading-relaxed break-words">
-                          {msg.content}
-                        </p>
+                        <p className="text-sm text-white/90 leading-relaxed break-words">{msg.content}</p>
                       )}
                     </div>
 
-                    {/* Reactions display */}
                     {Object.keys(reactionGroups).length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1.5">
                         {Object.entries(reactionGroups).map(([emoji, users]) => {
                           const hasReacted = users.includes(profile?.id);
                           return (
-                            <button
-                              key={emoji}
-                              onClick={() => toggleReaction(msg.id, emoji)}
-                              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all border
-                                ${hasReacted
-                                  ? "bg-[#7c3aed]/20 border-[#7c3aed]/40 text-white"
-                                  : "bg-white/5 border-white/10 text-white/60 hover:border-white/20 hover:text-white"
-                                }`}
-                            >
+                            <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)}
+                              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs transition-all border ${hasReacted ? "bg-[#7c3aed]/20 border-[#7c3aed]/40 text-white" : "bg-white/5 border-white/10 text-white/60 hover:border-white/20"}`}>
                               <span>{emoji}</span>
                               <span className="font-semibold">{users.length}</span>
                             </button>
@@ -822,43 +593,22 @@ export default function GlobalChat() {
                     )}
                   </div>
 
-                  {/* Action buttons on hover */}
-                  <div className="msg-actions absolute right-3 top-1 flex items-center gap-1 bg-[#0d0f24] border border-white/10 rounded-lg p-1 shadow-xl">
-                    <button
-                      onClick={() => setReactionPicker(p => p === msg.id ? null : msg.id)}
-                      className="w-7 h-7 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition text-sm"
-                      title="Réagir"
-                    >
-                      😊
-                    </button>
+                  <div className="msg-actions absolute right-3 top-1 flex items-center gap-1 bg-[#0d0f24] border border-white/10 rounded-lg p-1 shadow-xl z-10">
+                    <button onClick={() => setReactionPicker(p => p === msg.id ? null : msg.id)}
+                      className="w-7 h-7 rounded-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition text-sm">😊</button>
                     {canDelete && (
-                      <button
-                        onClick={() => deleteMessage(msg.id)}
-                        className="w-7 h-7 rounded-md flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition text-sm"
-                        title="Supprimer"
-                      >
-                        🗑️
-                      </button>
+                      <button onClick={() => deleteMessage(msg.id)}
+                        className="w-7 h-7 rounded-md flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition text-sm">🗑️</button>
                     )}
                   </div>
 
-                  {/* Reaction picker */}
                   <AnimatePresence>
                     {reactionPicker === msg.id && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 4 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 4 }}
-                        className="absolute right-3 top-10 flex items-center gap-1 bg-[#0d0f24] border border-white/10 rounded-xl p-2 shadow-2xl z-30"
-                      >
+                      <motion.div initial={{ opacity: 0, scale: 0.9, y: 4 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 4 }}
+                        className="absolute right-3 top-10 flex items-center gap-1 bg-[#0d0f24] border border-white/10 rounded-xl p-2 shadow-2xl z-30">
                         {REACTIONS.map(emoji => (
-                          <button
-                            key={emoji}
-                            onClick={() => toggleReaction(msg.id, emoji)}
-                            className="text-xl w-9 h-9 rounded-lg flex items-center justify-center hover:bg-white/10 transition hover:scale-125"
-                          >
-                            {emoji}
-                          </button>
+                          <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)}
+                            className="text-xl w-9 h-9 rounded-lg flex items-center justify-center hover:bg-white/10 transition hover:scale-125">{emoji}</button>
                         ))}
                       </motion.div>
                     )}
@@ -867,15 +617,10 @@ export default function GlobalChat() {
               );
             })}
 
-            {/* Typing indicator */}
             <AnimatePresence>
               {typingUsers.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 4 }}
-                  className="flex items-center gap-3 px-3 py-2"
-                >
+                <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                  className="flex items-center gap-3 px-3 py-2">
                   <div className="w-9 flex-shrink-0"></div>
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1 items-center bg-white/5 px-3 py-2 rounded-xl rounded-bl-sm">
@@ -894,189 +639,119 @@ export default function GlobalChat() {
             <div ref={bottomRef}></div>
           </div>
 
-          {/* ── INPUT BAR ──────────────────────────────────────────────────── */}
-          <div className="flex-shrink-0 px-4 pb-4 pt-2 relative z-10">
-
-            {/* PREVIEW before sending */}
+          {/* INPUT BAR */}
+          <div className="flex-shrink-0 px-3 md:px-4 pb-4 pt-2 relative z-10">
             <AnimatePresence>
               {audioURL && !recording && (
-                <motion.div
-                  initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:8}}
-                  className="mb-2 flex items-center gap-3 bg-[#0d0f24] border border-purple-500/30 rounded-xl px-4 py-2"
-                >
+                <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:8}}
+                  className="mb-2 flex items-center gap-3 bg-[#0d0f24] border border-purple-500/30 rounded-xl px-4 py-2">
                   <span style={{fontSize:18}}>🎙️</span>
-                  <audio src={audioURL} controls
-                    style={{flex:1,height:32,accentColor:"#7c3aed",outline:"none"}}/>
-                  <button onClick={cancelAudio}
-                    className="text-white/30 hover:text-red-400 transition text-lg px-1">✕</button>
+                  <audio src={audioURL} controls style={{flex:1,height:30,accentColor:"#7c3aed",outline:"none"}}/>
+                  <button onClick={cancelAudio} className="text-white/30 hover:text-red-400 transition text-lg px-1">✕</button>
                   <button onClick={sendAudio} disabled={sendingAudio}
                     className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold tracking-wider transition"
-                    style={{background:"linear-gradient(135deg,#7c3aed,#06b6d4)",color:"#fff",
-                      opacity:sendingAudio?0.5:1}}>
-                    {sendingAudio
-                      ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
-                      : "ENVOYER"}
+                    style={{background:"linear-gradient(135deg,#7c3aed,#06b6d4)",color:"#fff",opacity:sendingAudio?0.5:1}}>
+                    {sendingAudio ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/> : "ENVOYER"}
                   </button>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <div className={`flex items-end gap-2 bg-[#0d0f24] border rounded-xl p-2 transition-colors ${
-              recording
-                ? "border-red-500/50 shadow-[0_0_16px_rgba(239,68,68,0.2)]"
-                : "border-white/8 glow-border focus-within:border-[#7c3aed]/40"
-            }`}>
-
-              {/* Recording indicator OR textarea */}
+            <div className={`flex items-end gap-2 bg-[#0d0f24] border rounded-xl p-2 transition-colors ${recording ? "border-red-500/50 shadow-[0_0_16px_rgba(239,68,68,0.2)]" : "border-white/8 glow-border focus-within:border-[#7c3aed]/40"}`}>
               {recording ? (
                 <div className="flex-1 flex items-center gap-3 py-2 px-2">
-                  <motion.span
-                    animate={{scale:[1,1.4,1],opacity:[1,.4,1]}}
-                    transition={{duration:.8,repeat:Infinity}}
-                    style={{width:10,height:10,borderRadius:"50%",background:"#ef4444",
-                      display:"block",boxShadow:"0 0 10px rgba(239,68,68,0.8)"}}
-                  />
-                  <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,
-                    color:"rgba(239,68,68,0.9)",letterSpacing:1,fontWeight:700}}>
-                    {fmtSecs(recSecs)}
-                  </span>
-                  <span style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:12,
-                    color:"rgba(255,255,255,0.4)"}}>
-                    Enregistrement en cours...
-                  </span>
+                  <motion.span animate={{scale:[1,1.4,1],opacity:[1,.4,1]}} transition={{duration:.8,repeat:Infinity}}
+                    style={{width:10,height:10,borderRadius:"50%",background:"#ef4444",display:"block",boxShadow:"0 0 10px rgba(239,68,68,0.8)"}}/>
+                  <span style={{fontSize:13,color:"rgba(239,68,68,0.9)",fontWeight:700}}>{fmtSecs(recSecs)}</span>
+                  <span style={{fontSize:12,color:"rgba(255,255,255,0.4)"}}>Enregistrement en cours...</span>
                 </div>
               ) : (
-                <textarea
-                  ref={inputRef}
-                  value={input}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder={`Message #${currentChannel?.label}...`}
-                  rows={1}
+                <textarea ref={inputRef} value={input} onChange={handleInputChange} onKeyDown={handleKeyDown}
+                  placeholder={`Message #${currentChannel?.label}...`} rows={1}
                   className="chat-input flex-1 bg-transparent text-white text-sm resize-none py-2 px-2 max-h-32 leading-relaxed"
-                  style={{ scrollbarWidth: "none" }}
-                />
+                  style={{ scrollbarWidth: "none" }}/>
               )}
 
               <div className="flex items-center gap-1 flex-shrink-0 pb-1">
-                {/* Quick reactions — hide while recording */}
                 {!recording && (
                   <div className="hidden md:flex gap-0.5">
                     {["🔥", "💀", "👑"].map(e => (
-                      <button
-                        key={e}
-                        onClick={() => setInput(p => p + e)}
-                        className="text-base w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-white/80 hover:bg-white/5 transition"
-                      >{e}</button>
+                      <button key={e} onClick={() => setInput(p => p + e)}
+                        className="text-base w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-white/80 hover:bg-white/5 transition">{e}</button>
                     ))}
                   </div>
                 )}
-
-                {/* MIC BUTTON */}
                 {!input.trim() && (
-                  <button
-                    onClick={recording ? stopRecording : startRecording}
-                    disabled={!!audioURL}
+                  <button onClick={recording ? stopRecording : startRecording} disabled={!!audioURL}
                     className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
-                    style={{
-                      background: recording
-                        ? "rgba(239,68,68,0.15)"
-                        : "rgba(255,255,255,0.05)",
-                      border: recording
-                        ? "1px solid rgba(239,68,68,0.4)"
-                        : "1px solid rgba(255,255,255,0.08)",
-                    }}
-                    title={recording ? "Arrêter l'enregistrement" : "Message vocal"}
-                  >
-                    {recording ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(239,68,68,0.9)">
-                        <rect x="6" y="6" width="12" height="12" rx="2"/>
-                      </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
-                      </svg>
-                    )}
+                    style={{ background: recording ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.05)", border: recording ? "1px solid rgba(239,68,68,0.4)" : "1px solid rgba(255,255,255,0.08)" }}>
+                    {recording
+                      ? <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(239,68,68,0.9)"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>}
                   </button>
                 )}
-
-                {/* SEND BUTTON */}
                 {!recording && (
-                  <button
-                    onClick={sendMessage}
-                    disabled={!input.trim() || sending}
+                  <button onClick={sendMessage} disabled={!input.trim() || sending}
                     className="w-9 h-9 rounded-lg flex items-center justify-center transition-all disabled:opacity-20"
-                    style={{
-                      background: input.trim()
-                        ? "linear-gradient(135deg, #7c3aed, #06b6d4)"
-                        : "rgba(255,255,255,0.05)"
-                    }}
-                  >
-                    {sending ? (
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
-                    ) : (
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                      </svg>
-                    )}
+                    style={{ background: input.trim() ? "linear-gradient(135deg, #7c3aed, #06b6d4)" : "rgba(255,255,255,0.05)" }}>
+                    {sending
+                      ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
+                      : <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>}
                   </button>
                 )}
               </div>
             </div>
 
-            <p className="text-[10px] text-white/15 text-center mt-1.5">
+            <p className="text-[10px] text-white/15 text-center mt-1.5 hidden md:block">
               Entrée pour envoyer · Shift+Entrée pour nouvelle ligne · Règles: respect & fair-play
             </p>
+
+            {/* Mobile bottom channel tabs */}
+            <div className="md:hidden flex border-t border-white/5 bg-[#08091a] -mx-3 mt-3 -mb-4">
+              {CHANNELS.map(ch => (
+                <button key={ch.id} onClick={() => switchChannel(ch.id)}
+                  className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition-colors relative ${channel === ch.id ? "text-[#7c3aed]" : "text-white/30"}`}>
+                  <span className="text-base leading-none">{ch.icon}</span>
+                  <span className="text-[9px] font-semibold truncate max-w-[50px]">#{ch.label}</span>
+                  {unread[ch.id] > 0 && <span className="absolute top-1 right-2 w-2 h-2 bg-[#7c3aed] rounded-full"></span>}
+                </button>
+              ))}
+            </div>
           </div>
         </main>
 
-        {/* ── MEMBERS SIDEBAR ──────────────────────────────────────────────── */}
+        {/* MEMBERS SIDEBAR — overlay mobile */}
         <AnimatePresence>
           {showMembers && (
             <motion.aside
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 200, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
+              initial={{ width: 0, opacity: 0 }} animate={{ width: 200, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="flex-shrink-0 border-l border-white/5 bg-[#06071a] overflow-hidden"
-            >
+              className="fixed md:static right-0 top-0 h-full z-30 w-[200px] flex-shrink-0 border-l border-white/5 bg-[#06071a] overflow-hidden">
               <div className="w-[200px] h-full flex flex-col">
                 <div className="p-3 border-b border-white/5">
                   <p className="text-[10px] text-white/25 tracking-[2px] font-semibold">MEMBRES EN LIGNE — {onlineUsers.length}</p>
                 </div>
-
                 <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-                  {/* Group by role */}
                   {["super_admin", "admin", "founder", "user"].map(roleKey => {
                     const group = onlineUsers.filter(u => (u.role || "user") === roleKey);
                     if (group.length === 0) return null;
                     const rc = getRoleConfig(roleKey);
-
                     return (
                       <div key={roleKey} className="mb-3">
                         <p className="text-[9px] font-bold tracking-widest px-2 pb-1 pt-1" style={{ color: rc.color }}>
                           {rc.icon} {rc.label} — {group.length}
                         </p>
                         {group.map(u => (
-                          <div key={u.id}
-                            onClick={() => navigate(`/profile?id=${u.id}`)}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/6 transition cursor-pointer group"
-                          >
+                          <div key={u.id} onClick={() => navigate(`/profile?id=${u.id}`)}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/6 transition cursor-pointer group">
                             <div className="relative flex-shrink-0">
-                              <div
-                                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold overflow-hidden"
-                                style={{ background: u.avatar_url ? "transparent" : avatarColor(u.full_name) }}
-                              >
-                                {u.avatar_url
-                                  ? <img src={u.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                                  : getAvatar(u.full_name)}
+                              <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold overflow-hidden"
+                                style={{ background: u.avatar_url ? "transparent" : avatarColor(u.full_name) }}>
+                                {u.avatar_url ? <img src={u.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/> : getAvatar(u.full_name)}
                               </div>
                               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#06071a]"></span>
                             </div>
-                            <div className="min-w-0">
-                              <p className="text-xs text-white/70 font-medium truncate group-hover:text-white transition">{u.full_name?.split(" ")[0]}</p>
-                            </div>
+                            <p className="text-xs text-white/70 font-medium truncate group-hover:text-white transition">{u.full_name?.split(" ")[0]}</p>
                           </div>
                         ))}
                       </div>
