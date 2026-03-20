@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "../lib/supabase";
 
@@ -7,20 +7,7 @@ export default function Leaderboard() {
   const [period,  setPeriod]  = useState("alltime");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchLeaderboard();
-
-    const channel = supabase
-      .channel("leaderboard-realtime")
-      .on("postgres_changes", { event:"UPDATE", schema:"public", table:"player_stats" }, () => {
-        fetchLeaderboard();
-      })
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
-  }, [period]); // ← period dans les deps pour re-fetch à chaque changement
-
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = useCallback(async () => {
     setLoading(true);
     try {
       let statsData;
@@ -100,7 +87,22 @@ export default function Leaderboard() {
       console.error("leaderboard error:", e);
     }
     setLoading(false);
-  };
+  }, [period]);
+
+  useEffect(() => {
+    fetchLeaderboard();
+
+    const channel = supabase
+      .channel("leaderboard-realtime")
+      .on("postgres_changes", { event:"UPDATE", schema:"public", table:"player_stats" }, () => {
+        fetchLeaderboard();
+      })
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [period, fetchLeaderboard]);
+
+;
 
   const getRankBadge = rank => rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : null;
 

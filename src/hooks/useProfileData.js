@@ -216,7 +216,7 @@ export function useProfileData(userId) {
           });
           setEquippedItems(map);
         }
-      } catch (_e) {
+      } catch {
         // store tables may not exist yet
       }
 

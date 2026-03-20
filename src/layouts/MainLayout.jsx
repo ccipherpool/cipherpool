@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation, NavLink, Link } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationProvider, NotificationBellConnected, useNotify } from "../components/NotificationSystem";
@@ -582,16 +582,7 @@ function BackButton() {
 function NewsPopup({ profile }) {
   const [article, setArticle] = useState(null);
 
-  useEffect(() => {
-    if (!profile?.id) return;
-    checkNews();
-    const ch = supabase.channel("news_popup")
-      .on("postgres_changes",{ event:"INSERT", schema:"public", table:"news" },()=>checkNews())
-      .subscribe();
-    return () => supabase.removeChannel(ch);
-  }, [profile?.id]);
-
-  const checkNews = async () => {
+  const checkNews = useCallback(async () => {
     try {
       const { data: latest } = await supabase.from("news")
         .select("id,title,excerpt,cover_url,category,published_at")
@@ -600,8 +591,19 @@ function NewsPopup({ profile }) {
       if (!latest) return;
       const seen = JSON.parse(localStorage.getItem("cp_seen_news") || "[]");
       if (!seen.includes(latest.id)) setArticle(latest);
-    } catch {}
-  };
+    } catch (error) {
+      console.error("checkNews failed", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    checkNews();
+    const ch = supabase.channel("news_popup")
+      .on("postgres_changes",{ event:"INSERT", schema:"public", table:"news" },()=>checkNews())
+      .subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [profile?.id, checkNews]);
 
   const dismiss = () => {
     if (!article) return;

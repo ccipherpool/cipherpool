@@ -47,7 +47,7 @@ export default function Sidebar({ profile }) {
   const isAdmin      = profile?.role === "admin" || isSuperAdmin;
   const isFounder    = profile?.role === "founder";
 
-  const Link = ({ item }) => (
+  const SidebarLink = ({ item }) => (
     <NavLink
       to={item.path}
       className={({ isActive }) =>
@@ -80,23 +80,23 @@ export default function Sidebar({ profile }) {
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
 
         <SectionTitle label="Principal" />
-        {mainLinks.map(item => <Link key={item.path} item={item} />)}
+        {mainLinks.map(item => <SidebarLink key={item.path} item={item} />)}
 
         {isFounder && (<>
           <SectionTitle label="Fondateur" />
-          {founderLinks.map(item => <Link key={item.path} item={item} />)}
+          {founderLinks.map(item => <SidebarLink key={item.path} item={item} />)}
         </>)}
 
         {isAdmin && (<>
           <SectionTitle label="Administration" />
-          {adminLinks.map(item => <Link key={item.path} item={item} />)}
+          {adminLinks.map(item => <SidebarLink key={item.path} item={item} />)}
         </>)}
 
         {isSuperAdmin && (<>
           <SectionTitle label="Super Admin" />
-          <Link item={{ path:"/super-admin",       icon:"👑", label:"Super Admin" }} />
-          <Link item={{ path:"/super-admin/grant", icon:"💎", label:"Gestion Coins" }} />
-          <Link item={{ path:"/designer",          icon:"🎨", label:"Designer Panel" }} />
+          <SidebarLink item={{ path:"/super-admin",       icon:"👑", label:"Super Admin" }} />
+          <SidebarLink item={{ path:"/super-admin/grant", icon:"💎", label:"Gestion Coins" }} />
+          <SidebarLink item={{ path:"/designer",          icon:"🎨", label:"Designer Panel" }} />
         </>)}
 
       </nav>

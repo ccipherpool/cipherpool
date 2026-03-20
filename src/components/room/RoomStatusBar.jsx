@@ -145,7 +145,7 @@ export default function RoomStatusBar({ tournament, role, onTournamentUpdate }) 
     poll();
     const id = setInterval(poll, 10000);
     return () => clearInterval(id);
-  }, [tournament?.id, status]);
+  }, [tournament?.id, status, onTournamentUpdate]);
 
   const handleCloseRegistration = async () => {
     setClosingReg(true);
@@ -208,14 +208,14 @@ export default function RoomStatusBar({ tournament, role, onTournamentUpdate }) 
             {formatTime(countdown)}
           </p>
           {/* Live progress bar */}
-          {status === "live" && tournament?.start_time && tournament?.end_time && (
-            <div style={{position:"absolute",bottom:0,left:0,right:0,height:2,background:"rgba(255,255,255,.05)"}}>
-              <motion.div style={{
-                height:"100%",background:RED,
-                width:`${Math.min(100,((Date.now()-new Date(tournament.start_time))/(new Date(tournament.end_time)-new Date(tournament.start_time)))*100)}%`
-              }}/>
-            </div>
-          )}
+          {status === "live" && tournament?.start_time && tournament?.end_time && (() => {
+            const pct = Math.min(100, ((Date.now() - new Date(tournament.start_time)) / (new Date(tournament.end_time) - new Date(tournament.start_time))) * 100);
+            return (
+              <div style={{position:"absolute",bottom:0,left:0,right:0,height:2,background:"rgba(255,255,255,.05)"}}>
+                <motion.div style={{ height:"100%", background:RED, width:`${pct}%` }}/>
+              </div>
+            );
+          })()}
         </div>
       )}
 

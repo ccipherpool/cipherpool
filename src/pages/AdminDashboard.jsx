@@ -22,10 +22,6 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const { isAdmin, isSuperAdmin } = usePermissions(profile);
 
-  useEffect(() => {
-    checkAdmin();
-  }, []);
-
   const checkAdmin = async () => {
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -48,6 +44,11 @@ export default function AdminDashboard() {
       fetchRecentData();
     }
   };
+
+  useEffect(() => {
+    checkAdmin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchStats = async () => {
     const { count: totalUsers } = await supabase

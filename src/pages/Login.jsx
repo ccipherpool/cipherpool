@@ -117,7 +117,7 @@ export default function Login() {
         attempts.current = 0;
         navigate("/dashboard"); // ← après login → dashboard (pas /home)
       }
-    } catch (_) {
+    } catch {
       setGlobal("Erreur réseau. Vérifie ta connexion.");
     } finally {
       setLoading(false);

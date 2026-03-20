@@ -74,7 +74,7 @@ function Toast({ notif, onRemove }) {
       setTimeout(() => onRemove(notif.id), 350);
     }, duration);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
+  }, [duration, notif.id, onRemove]);
 
   const handleClick = () => {
     if (notif.link) navigate(notif.link);
