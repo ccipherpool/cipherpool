@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
+import { useVerification } from "../hooks/useVerification";
 
 // Security: sanitize text to prevent XSS
 const sanitize = (str) => {
@@ -63,6 +64,7 @@ const avatarColor = (name) => AVATAR_COLORS[(name?.charCodeAt(0) || 0) % AVATAR_
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function GlobalChat() {
   const navigate = useNavigate();
+  const { requireVerified } = useVerification();
   const [profile, setProfile]         = useState(null);
   const [loading, setLoading]         = useState(true);
   const [channel, setChannel]         = useState("general");
@@ -300,7 +302,10 @@ export default function GlobalChat() {
   const lastMsgTime = useRef(0);
 
   const sendMessage = async () => {
-    const text = input.trim();
+    if (!requireVerified(() => _doSendMessage())) return;
+  };
+
+  const _doSendMessage = async () => {
     if (!text || sending || !profile) return;
 
     // Rate limit check
@@ -372,7 +377,11 @@ export default function GlobalChat() {
 
   const sendAudio = async () => {
     if (!audioBlob || !profile) return;
-    setSendingAudio(true);
+    requireVerified(() => _doSendAudio());
+  };
+
+  const _doSendAudio = async () => {
+    if (!audioBlob || !profile) return;
     try {
       const fileName = `audio_${profile.id}_${Date.now()}.webm`;
       const { error: upErr } = await supabase.storage

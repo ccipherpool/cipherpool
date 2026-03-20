@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
+import { useVerification } from "../hooks/useVerification";
 
 // === CONSTANTS & THEME ===
 const THEME = {
@@ -128,6 +129,7 @@ export default function TeamProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { profile } = useOutletContext();
+  const { requireVerified } = useVerification();
 
   const [team, setTeam] = useState(null);
   const [members, setMembers] = useState([]);
@@ -360,9 +362,12 @@ export default function TeamProfile() {
   }, [chatMessages]);
 
   // === ACTIONS ===
-  const sendMessage = async () => {
+  const sendMessage = () => {
     if (!chatInput.trim() || sending || !profile?.id) return;
+    requireVerified(() => _doSendMessage());
+  };
 
+  const _doSendMessage = async () => {
     const text = chatInput.trim();
     const tempId = `temp-${Date.now()}`;
 
@@ -568,7 +573,11 @@ export default function TeamProfile() {
     }
   };
 
-  const handleRequestJoin = async () => {
+  const handleRequestJoin = () => {
+    requireVerified(() => _doRequestJoin());
+  };
+
+  const _doRequestJoin = async () => {
     try {
       const { data, error } = await supabase
         .rpc("team_request_join", { p_team_id: id });

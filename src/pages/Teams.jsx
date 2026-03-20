@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
+import { useVerification } from "../hooks/useVerification";
 
 const CYAN = "#00d4ff", INDIGO = "#818cf8", VIOLET = "#a78bfa", GREEN = "#10b981", RED = "#f43f5e", AMBER = "#fbbf24", BG = "#020817", CARD = "#0a1628";
 const cx = a => `rgba(0,212,255,${a})`, gx = a => `rgba(16,185,129,${a})`, rx = a => `rgba(244,63,94,${a})`;
@@ -130,6 +131,7 @@ const COLORS = ["#00d4ff", "#818cf8", "#a78bfa", "#10b981", "#f43f5e", "#fbbf24"
 export default function Teams() {
   const { profile } = useOutletContext();
   const navigate = useNavigate();
+  const { requireVerified } = useVerification();
   const [teams, setTeams] = useState([]);
   const [myTeam, setMyTeam] = useState(null);
   const [tab, setTab] = useState("all");
@@ -504,7 +506,7 @@ export default function Teams() {
                   <motion.button
                     whileHover={{ scale: 1.04 }}
                     whileTap={{ scale: .97 }}
-                    onClick={() => { setShowJoin(true); setErr(""); }}
+                    onClick={() => requireVerified(() => { setShowJoin(true); setErr(""); })}
                     style={{
                       padding: "11px 22px",
                       borderRadius: 11,
@@ -522,7 +524,7 @@ export default function Teams() {
                   <motion.button
                     whileHover={{ scale: 1.04 }}
                     whileTap={{ scale: .97 }}
-                    onClick={() => { setShowCreate(true); setErr(""); }}
+                    onClick={() => requireVerified(() => { setShowCreate(true); setErr(""); })}
                     style={{
                       padding: "11px 22px",
                       borderRadius: 11,

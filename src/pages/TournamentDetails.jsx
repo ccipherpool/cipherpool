@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useVerification } from "../hooks/useVerification";
 
 export default function TournamentDetails() {
   const { id } = useParams();
-  const navigate = useNavigate(); // ✅ مهم جداً
+  const navigate = useNavigate();
+  const { requireVerified } = useVerification();
   const [tournament, setTournament] = useState(null);
   const [userRequest, setUserRequest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -59,16 +61,12 @@ export default function TournamentDetails() {
     setLoading(false);
   };
 
-  const requestToJoin = async () => {
-    if (!profile) {
-      navigate("/login");
-      return;
-    }
+  const requestToJoin = () => {
+    if (!profile) { navigate("/login"); return; }
+    requireVerified(() => _doJoin());
+  };
 
-    if (profile.verification_status !== "approved") {
-      alert("❌ Your account must be verified to join tournaments.");
-      return;
-    }
+  const _doJoin = async () => {
 
     if (tournament.status !== "open") {
       alert("❌ This tournament is not open for registration.");
@@ -232,21 +230,11 @@ export default function TournamentDetails() {
                         <h2 className="text-2xl font-bold text-white mb-6">Join Tournament</h2>
                         <button
                           onClick={requestToJoin}
-                          disabled={requesting || profile.verification_status !== "approved"}
-                          className={`px-8 py-4 rounded-lg font-medium text-lg transition ${
-                            profile.verification_status !== "approved"
-                              ? "bg-gray-600/20 text-gray-400 cursor-not-allowed"
-                              : "bg-purple-600 hover:bg-purple-700 text-white"
-                          }`}
+                          disabled={requesting}
+                          className="px-8 py-4 rounded-lg font-medium text-lg transition bg-purple-600 hover:bg-purple-700 text-white"
                         >
                           {requesting ? "Requesting..." : "Request to Join"}
                         </button>
-                        
-                        {profile.verification_status !== "approved" && (
-                          <p className="mt-4 text-yellow-400 text-sm">
-                            ⚠️ Your account must be verified to join tournaments.
-                          </p>
-                        )}
                       </div>
                     ) : (
                       <div className="p-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
