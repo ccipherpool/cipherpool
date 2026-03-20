@@ -6,8 +6,17 @@ export default function Tournaments() {
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [profile, setProfile] = useState(null);
+
+  const canCreate = ["super_admin", "founder"].includes(profile?.role);
 
   useEffect(() => {
+    // Fetch current user profile for role check
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("profiles").select("role").eq("id", user.id).single()
+        .then(({ data }) => setProfile(data));
+    });
     fetchTournaments();
 
     // ✅ Real-time: mise à jour automatique quand un tournoi change
@@ -134,13 +143,17 @@ export default function Tournaments() {
       {/* Tournaments Grid */}
       {filteredTournaments.length === 0 ? (
         <div className="text-center py-20 bg-[#11151C] border border-white/5 rounded-xl">
-          <p className="text-white/40 mb-4">No tournaments available</p>
-          <Link
-            to="/create-tournament"
-            className="text-purple-400 hover:text-purple-300 transition"
-          >
-            Create your first tournament →
-          </Link>
+          <div className="text-5xl mb-4">🏆</div>
+          <p className="text-white/40 mb-2">Aucun tournoi disponible pour le moment</p>
+          <p className="text-white/20 text-sm mb-6">Revenez bientôt pour les prochains tournois !</p>
+          {canCreate && (
+            <Link
+              to="/create-tournament"
+              className="inline-block px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition"
+            >
+              + Créer un tournoi
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-6">
