@@ -186,8 +186,8 @@ export default function Home() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "0 48px",
-          height: 72,
+          padding: "0 clamp(14px,4vw,48px)",
+          height: 60,
           borderBottom: "1px solid rgba(168,85,247,0.1)",
           backdropFilter: "blur(16px)",
           position: "sticky",
@@ -197,7 +197,7 @@ export default function Home() {
         }}
       >
         <Link
-          to="/home"
+          to="/"
           style={{
             display: "flex",
             alignItems: "center",
@@ -205,7 +205,7 @@ export default function Home() {
             textDecoration: "none",
           }}
         >
-          <span style={{ fontSize: 24, fontWeight: 900 }}>
+          <span style={{ fontSize: "clamp(18px,5vw,22px)", fontWeight: 900 }}>
             <span
               style={{
                 background: "linear-gradient(to right,#a855f7,#06b6d4)",
@@ -238,14 +238,15 @@ export default function Home() {
             <button
               onClick={() => navigate("/dashboard")}
               style={{
-                padding: "10px 22px",
+                padding: "8px clamp(10px,3vw,22px)",
                 background: "linear-gradient(to right,#7c3aed,#0891b2)",
                 border: "none",
                 borderRadius: 10,
                 color: "#fff",
                 fontWeight: 700,
-                fontSize: 14,
+                fontSize: "clamp(11px,3vw,14px)",
                 cursor: "pointer",
+                whiteSpace: "nowrap",
               }}
             >
               Mon Espace →
@@ -255,14 +256,15 @@ export default function Home() {
               <Link
                 to="/login"
                 style={{
-                  padding: "10px 20px",
+                  padding: "8px clamp(8px,3vw,20px)",
                   color: "#94a3b8",
                   textDecoration: "none",
                   border: "1px solid rgba(168,85,247,0.25)",
                   borderRadius: 10,
-                  fontSize: 14,
+                  fontSize: "clamp(11px,3vw,14px)",
                   fontWeight: 500,
                   transition: "all .2s",
+                  whiteSpace: "nowrap",
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.color = "#fff";
@@ -279,14 +281,15 @@ export default function Home() {
               <Link
                 to="/register"
                 style={{
-                  padding: "10px 22px",
+                  padding: "8px clamp(10px,3vw,22px)",
                   background: "linear-gradient(to right,#7c3aed,#0891b2)",
                   border: "none",
                   borderRadius: 10,
                   color: "#fff",
                   fontWeight: 700,
-                  fontSize: 14,
+                  fontSize: "clamp(11px,3vw,14px)",
                   textDecoration: "none",
+                  whiteSpace: "nowrap",
                 }}
               >
                 S'inscrire
@@ -300,7 +303,7 @@ export default function Home() {
       <section
         style={{
           position: "relative",
-          minHeight: "calc(100vh - 72px)",
+          minHeight: "calc(100vh - 60px)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -346,7 +349,8 @@ export default function Home() {
             zIndex: 10,
             textAlign: "center",
             maxWidth: 980,
-            padding: "0 24px",
+            padding: "0 clamp(14px,4vw,24px)",
+            width: "100%",
           }}
         >
           <div
@@ -444,8 +448,8 @@ export default function Home() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
-              gap: 12,
+              gridTemplateColumns: "repeat(4,1fr)",
+              gap: "clamp(6px,2vw,12px)",
               maxWidth: 760,
               margin: "0 auto 44px",
             }}
@@ -514,16 +518,20 @@ export default function Home() {
               justifyContent: "center",
               flexWrap: "wrap",
             }}
+            className="home-hero-btns"
           >
             <button
               onClick={() => goTo("/register")}
               style={{
-                padding: "15px 44px",
+                flex: "1 1 auto",
+                maxWidth: 280,
+                minWidth: 140,
+                padding: "clamp(12px,3vw,15px) clamp(20px,5vw,44px)",
                 background: "linear-gradient(135deg,#7c3aed,#0891b2)",
                 border: "none",
                 borderRadius: 14,
                 fontWeight: 800,
-                fontSize: 16,
+                fontSize: "clamp(13px,3vw,16px)",
                 color: "#fff",
                 cursor: "pointer",
                 boxShadow: "0 0 40px rgba(124,58,237,0.4)",
@@ -545,12 +553,15 @@ export default function Home() {
               <button
                 onClick={() => navigate("/login")}
                 style={{
-                  padding: "15px 36px",
+                  flex: "1 1 auto",
+                  maxWidth: 220,
+                  minWidth: 120,
+                  padding: "clamp(12px,3vw,15px) clamp(16px,4vw,36px)",
                   background: "transparent",
                   border: "1px solid rgba(168,85,247,0.38)",
                   borderRadius: 14,
                   fontWeight: 700,
-                  fontSize: 16,
+                  fontSize: "clamp(13px,3vw,16px)",
                   color: "#c4b5fd",
                   cursor: "pointer",
                   backdropFilter: "blur(8px)",
@@ -575,15 +586,16 @@ export default function Home() {
       {/* BAR */}
       <div
         style={{
-          padding: "18px 48px",
+          padding: "12px clamp(12px,4vw,48px)",
           background: "rgba(124,58,237,0.06)",
           borderTop: "1px solid rgba(168,85,247,0.1)",
           borderBottom: "1px solid rgba(168,85,247,0.1)",
           display: "flex",
-          gap: 36,
+          gap: "clamp(8px,3vw,36px)",
           justifyContent: "center",
           flexWrap: "wrap",
         }}
+        className="feature-bar"
       >
         {[
           "⚡ Interface simple",
@@ -609,7 +621,7 @@ export default function Home() {
 
       {/* ACTIVE TOURNAMENTS */}
       {activeTournaments.length > 0 && (
-        <section style={{ padding: "80px 48px", background: "#030308" }}>
+        <section style={{ padding: "clamp(40px,8vw,80px) clamp(14px,5vw,48px)", background: "#030308" }}>
           <div style={{ maxWidth: 1100, margin: "0 auto" }}>
             <div style={{ textAlign: "center", marginBottom: 48 }}>
               <h2
@@ -632,7 +644,7 @@ export default function Home() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit,minmax(290px,1fr))",
+                gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
                 gap: 20,
               }}
             >
@@ -739,7 +751,7 @@ export default function Home() {
       {/* HOW IT WORKS */}
       <section
         style={{
-          padding: "80px 48px",
+          padding: "clamp(40px,8vw,80px) clamp(14px,5vw,48px)",
           background: "linear-gradient(to bottom,#030308,#080312)",
         }}
       >
@@ -765,7 +777,7 @@ export default function Home() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
+              gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
               gap: 20,
             }}
           >
@@ -853,7 +865,7 @@ export default function Home() {
       </section>
 
       {/* FEATURES */}
-      <section style={{ padding: "80px 48px", background: "#080312" }}>
+      <section style={{ padding: "clamp(40px,8vw,80px) clamp(14px,5vw,48px)", background: "#080312" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 52 }}>
             <h2
@@ -872,7 +884,7 @@ export default function Home() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))",
+              gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))",
               gap: 14,
             }}
           >
@@ -933,7 +945,7 @@ export default function Home() {
       {/* CTA */}
       <section
         style={{
-          padding: "100px 48px",
+          padding: "clamp(60px,10vw,100px) clamp(14px,5vw,48px)",
           textAlign: "center",
           background:
             "linear-gradient(135deg,rgba(124,58,237,0.1),rgba(6,182,212,0.07))",
@@ -968,17 +980,19 @@ export default function Home() {
           <button
             onClick={() => goTo("/register")}
             style={{
-              padding: "18px 60px",
+              padding: "clamp(14px,3vw,18px) clamp(28px,6vw,60px)",
               background: "linear-gradient(135deg,#7c3aed,#0891b2)",
               border: "none",
               borderRadius: 16,
               fontWeight: 900,
-              fontSize: 18,
+              fontSize: "clamp(14px,3vw,18px)",
               color: "#fff",
               cursor: "pointer",
               boxShadow: "0 0 50px rgba(124,58,237,0.45)",
               transition: "all .25s",
               letterSpacing: 1,
+              width: "100%",
+              maxWidth: 360,
             }}
             onMouseEnter={(e) => {
               e.target.style.transform = "scale(1.06)";
@@ -998,7 +1012,7 @@ export default function Home() {
       <footer
         style={{
           borderTop: "1px solid rgba(168,85,247,0.08)",
-          padding: "48px 48px 28px",
+          padding: "clamp(28px,6vw,48px) clamp(14px,5vw,48px) 24px",
         }}
       >
         <div
@@ -1088,19 +1102,46 @@ export default function Home() {
       </footer>
 
       <style>{`
+        * { box-sizing: border-box; }
+        body { overflow-x: hidden; }
+
         @keyframes blink {
           0%,100% { opacity:1; transform:scale(1); }
           50% { opacity:.3; transform:scale(1.5); }
         }
 
-        @media (max-width: 900px) {
-          nav {
-            padding: 0 18px !important;
+        /* ── MOBILE ── */
+        @media (max-width: 640px) {
+          /* Stats cards: toujours 4 col mais plus petits */
+          .home-stats-grid {
+            grid-template-columns: repeat(4,1fr) !important;
+            gap: 6px !important;
           }
-        }
 
-        @media (max-width: 700px) {
-          footer > div:first-child {
+          /* Buttons hero: full width stacked */
+          .home-hero-btns {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            padding: 0 !important;
+          }
+          .home-hero-btns > * {
+            max-width: 100% !important;
+            min-width: unset !important;
+            justify-content: center !important;
+          }
+
+          /* Footer: 1 col */
+          footer .footer-inner {
+            grid-template-columns: 1fr !important;
+          }
+
+          /* Feature bar: wrap + smaller */
+          .feature-bar span {
+            font-size: 11px !important;
+          }
+
+          /* How it works grid */
+          .how-grid {
             grid-template-columns: 1fr !important;
           }
         }
