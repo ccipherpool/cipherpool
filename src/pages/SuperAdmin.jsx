@@ -299,9 +299,35 @@ export default function SuperAdmin() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto p-6">
+      <style>{`
+        @media (max-width: 900px) {
+          .sa-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+          .sa-header-btns { flex-wrap: wrap !important; gap: 6px !important; }
+          .sa-header-btns a, .sa-header-btns button { font-size: 11px !important; padding: 8px 12px !important; }
+          .sa-revenue-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 768px) {
+          .sa-stats-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; }
+          .sa-stats-grid .p-4 { padding: 8px !important; }
+          .sa-stats-grid p:first-child { font-size: 8px !important; letter-spacing: 0 !important; }
+          .sa-stats-grid p:last-child { font-size: 18px !important; }
+          .sa-tabs { overflow-x: auto !important; }
+          .sa-tabs button { padding: 6px 8px !important; font-size: 9px !important; white-space: nowrap; }
+          .sa-table th { font-size: 9px !important; padding: 6px 4px !important; }
+          .sa-table td { padding: 6px 4px !important; font-size: 11px !important; }
+          .sa-action-btns button { padding: 3px !important; }
+          .max-w-7xl { padding: 0 12px !important; }
+          .p-6 { padding: 14px !important; }
+          .overflow-x-auto { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+        }
+        @media (max-width: 480px) {
+          .sa-stats-grid { grid-template-columns: repeat(4, 1fr) !important; }
+          .sa-revenue-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
         {/* HEADER */}
-        <motion.div initial={{opacity:0,y:-20}} animate={{opacity:1,y:0}} className="flex justify-between items-center mb-6">
+        <motion.div initial={{opacity:0,y:-20}} animate={{opacity:1,y:0}} className="sa-header flex justify-between items-center mb-6">
           <div>
             <h1 className="text-4xl font-black">
               <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">SUPER ADMIN</span>
@@ -315,7 +341,7 @@ export default function SuperAdmin() {
               {lastRefresh&&<span className="text-white/20 text-xs">↻ {lastRefresh.toLocaleTimeString("fr-FR")}</span>}
             </div>
           </div>
-          <div className="flex gap-3 items-center">
+          <div className="sa-header-btns flex gap-3 items-center">
             {/* 🔔 Notification bell */}
             <button
               onClick={()=>{setActiveTab("users");setFilter("pending");}}
@@ -344,7 +370,7 @@ export default function SuperAdmin() {
         </AnimatePresence>
 
         {/* STATS CARDS */}
-        <div className="grid grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
+        <div className="sa-stats-grid grid grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
           {[
             {label:"UTILISATEURS",  value:stats.totalUsers,           color:"from-blue-600 to-cyan-600",    icon:"👥"},
             {label:"EN LIGNE",      value:stats.onlineUsers,          color:"from-green-600 to-emerald-600",icon:"🟢"},
@@ -371,7 +397,7 @@ export default function SuperAdmin() {
         </div>
 
         {/* REVENUE */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="sa-revenue-grid grid grid-cols-2 gap-4 mb-6">
           {[
             {label:"REVENU AUJOURD'HUI",value:stats.todayRevenue},
             {label:"REVENU CE MOIS",    value:stats.monthlyRevenue},
@@ -385,7 +411,7 @@ export default function SuperAdmin() {
         </div>
 
         {/* TABS */}
-        <div className="flex gap-1 mb-6 border-b border-purple-500/20 pb-3 overflow-x-auto">
+        <div className="sa-tabs flex gap-1 mb-6 border-b border-purple-500/20 pb-3 overflow-x-auto">
           {[
             {id:"dashboard",  label:"📊 DASHBOARD"},
             {id:"users",      label:`👥 UTILISATEURS (${users.length})`},
@@ -477,7 +503,7 @@ export default function SuperAdmin() {
                   </select>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="sa-table w-full">
                     <thead>
                       <tr className="bg-[#11152b]">
                         {["UTILISATEUR","RÔLE","STATUT","COINS","FF ID","INSCRIT","ACTIONS"].map(h=>(
@@ -522,7 +548,7 @@ export default function SuperAdmin() {
                           <td className="px-3 py-2.5"><span className="text-white/60 text-xs">{user.free_fire_id||"—"}</span></td>
                           <td className="px-3 py-2.5"><span className="text-white/40 text-xs">{new Date(user.created_at).toLocaleDateString("fr-FR")}</span></td>
                           <td className="px-3 py-2.5">
-                            <div className="flex gap-1.5">
+                            <div className="sa-action-btns flex gap-1.5">
                               {/* ✅ Voir dossier */}
                               <button onClick={()=>{setReviewUser(user);setShowReviewModal(true);}}
                                 className="p-1.5 bg-cyan-500/20 text-cyan-400 rounded text-xs hover:bg-cyan-500/30 transition-all" title="Voir dossier">👁️</button>
