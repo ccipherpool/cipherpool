@@ -307,7 +307,7 @@ export default function GlobalChat() {
   };
 
   const _doSendMessage = async () => {
-    if (!text || sending || !profile) return;
+    if (!input || sending || !profile) return;
 
     // Rate limit check
     const now = Date.now();
@@ -315,7 +315,7 @@ export default function GlobalChat() {
     lastMsgTime.current = now;
 
     // Sanitize content
-    const safeText = sanitize(text);
+    const safeText = sanitize(input);
     if (!safeText) return;
 
     setSending(true);
@@ -331,7 +331,7 @@ export default function GlobalChat() {
 
     if (error) {
       console.error("Send error:", error);
-      setInput(text);
+      setInput(input);
     }
 
     setSending(false);
