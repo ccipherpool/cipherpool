@@ -4,11 +4,6 @@ import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationProvider, NotificationBellConnected, useNotify } from "../components/NotificationSystem";
 
-/*
-  MAIN LAYOUT v4 — NO SIDEBAR · Top Navbar Only · Gaming Dark Edition
-*/
-
-// ═══════════════════════════ PALETTE ═══════════════════════════════════════
 const C = {
   bg:         "#0b0b0f",
   border:     "#1e1e2a",
@@ -36,7 +31,6 @@ const ROLE_CFG = {
   user:       { label:"MEMBRE",      color:C.textMid },
 };
 
-// Nav links for desktop topbar
 const NAV_LINKS = [
   { to:"/dashboard",   label:"ACCUEIL"    },
   { to:"/tournaments", label:"TOURNOIS"   },
@@ -46,7 +40,6 @@ const NAV_LINKS = [
   { to:"/news",        label:"ACTUALITÉS" },
 ];
 
-// Bottom nav (mobile)
 const BOTTOM_NAV = [
   { to:"/dashboard",   icon:"🏠", label:"Accueil"  },
   { to:"/tournaments", icon:"🏆", label:"Tournois" },
@@ -112,7 +105,6 @@ function Topbar({ profile, balance, equippedItems, chatUnread, unread, urgent, o
   const role = profile?.role ?? "user";
   const isAdmin = ["admin","super_admin","founder","fondateur"].includes(role);
   const initials = profile?.full_name?.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase() || "?";
-  const totalNotifs = unread + urgent;
 
   return (
     <header style={{
@@ -146,7 +138,7 @@ function Topbar({ profile, balance, equippedItems, chatUnread, unread, urgent, o
         </span>
       </Link>
 
-      {/* ── NAV LINKS desktop ── */}
+      {/* NAV LINKS desktop */}
       <nav className="cp-topnav" style={{display:"flex",alignItems:"center",gap:4,flex:1}}>
         {NAV_LINKS.map(l => {
           const active = l.to === "/dashboard"
@@ -232,7 +224,7 @@ function Topbar({ profile, balance, equippedItems, chatUnread, unread, urgent, o
         )}
       </nav>
 
-      {/* ── RIGHT SIDE ── */}
+      {/* RIGHT SIDE */}
       <div style={{display:"flex",alignItems:"center",gap:10,flexShrink:0}}>
 
         {/* Search */}
@@ -277,7 +269,7 @@ function Topbar({ profile, balance, equippedItems, chatUnread, unread, urgent, o
           onMouseEnter={e=>{e.currentTarget.style.background=C.primaryDim;}}
           onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.04)";}}>🎧</Link>
 
-        {/* 🔔 Notification Bell */}
+        {/* Notification Bell */}
         <NotificationBellConnected />
 
         {/* Chat */}
@@ -298,7 +290,7 @@ function Topbar({ profile, balance, equippedItems, chatUnread, unread, urgent, o
           )}
         </div>
 
-        {/* ── ONLINE INDICATOR ── */}
+        {/* Online indicator */}
         <div style={{position:"relative"}}>
           <button
             onClick={()=>setShowOnline(o=>!o)}
@@ -351,7 +343,7 @@ function Topbar({ profile, balance, equippedItems, chatUnread, unread, urgent, o
                     <p style={{textAlign:"center",padding:"20px",color:C.textLow,
                       fontFamily:"'JetBrains Mono',monospace",fontSize:10}}>Aucun membre</p>
                   ) : onlineUsers.map(u => {
-                    const initials = u.full_name?.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()||"?";
+                    const ini = u.full_name?.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()||"?";
                     const roleColors = {super_admin:C.cyan,admin:"#818cf8",founder:C.primary,fondateur:C.primary,user:C.textMid};
                     const rc = roleColors[u.role]||C.textMid;
                     return (
@@ -371,7 +363,7 @@ function Topbar({ profile, balance, equippedItems, chatUnread, unread, urgent, o
                             fontFamily:"'Space Grotesk',sans-serif",color:rc}}>
                             {u.avatar_url
                               ? <img src={u.avatar_url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                              : initials}
+                              : ini}
                           </div>
                           <span style={{position:"absolute",bottom:-1,right:-1,width:8,height:8,
                             borderRadius:"50%",background:"#22c55e",border:"2px solid #0b0b12",
@@ -397,7 +389,7 @@ function Topbar({ profile, balance, equippedItems, chatUnread, unread, urgent, o
           </AnimatePresence>
         </div>
 
-        {/* Avatar + dropdown */}
+        {/* Avatar */}
         <div style={{position:"relative"}}>
           <button onClick={()=>navigate("/profile")}
             style={{
@@ -438,32 +430,26 @@ function MobileDrawer({ profile, onClose, onLogout }) {
 
   const allLinks = [
     ...NAV_LINKS,
-    { to:"/dashboard",   label:"Mon Dashboard" },
-    { to:"/profile",     label:"Mon Profil" },
-    { to:"/wallet",      label:"Portefeuille" },
-    { to:"/achievements",label:"Achievements" },
+    { to:"/profile",      label:"Mon Profil" },
+    { to:"/wallet",       label:"Portefeuille" },
+    { to:"/achievements", label:"Achievements" },
     { to:"/daily-rewards",label:"Daily Rewards" },
-    { to:"/support",     label:"Assistance" },
+    { to:"/support",      label:"Assistance" },
     ...(isAdmin ? [
-      { to:"/admin",           label:"Administration" },
-      { to:"/admin/news",      label:"Actualités Admin" },
-      { to:"/admin/results",   label:"Résultats" },
+      { to:"/admin",            label:"Administration" },
+      { to:"/admin/news",       label:"Actualités Admin" },
+      { to:"/admin/results",    label:"Résultats" },
       { to:"/create-tournament",label:"Créer Tournoi" },
     ] : []),
   ];
 
   return (
-    <div style={{
-      display:"flex",flexDirection:"column",height:"100%",
-      background:"rgba(11,11,15,0.98)",overflowY:"auto",
-    }}>
-      {/* Profile top */}
+    <div style={{display:"flex",flexDirection:"column",height:"100%",background:"rgba(11,11,15,0.98)",overflowY:"auto"}}>
       <div style={{padding:"20px 16px 14px",borderBottom:`1px solid ${C.border}`}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
           <div style={{width:44,height:44,borderRadius:12,background:C.primaryDim,
             border:`1.5px solid rgba(124,58,237,0.35)`,display:"flex",alignItems:"center",justifyContent:"center",
-            fontSize:18,fontWeight:800,color:C.primary,fontFamily:"'Space Grotesk',sans-serif",
-            overflow:"hidden"}}>
+            fontSize:18,fontWeight:800,color:C.primary,fontFamily:"'Space Grotesk',sans-serif",overflow:"hidden"}}>
             {profile?.avatar_url
               ? <img src={profile.avatar_url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
               : profile?.full_name?.slice(0,2).toUpperCase() ?? "?"}
@@ -475,7 +461,6 @@ function MobileDrawer({ profile, onClose, onLogout }) {
         </div>
       </div>
 
-      {/* Links */}
       <nav style={{flex:1,padding:"10px 10px"}}>
         {allLinks.map(l => {
           const active = location.pathname === l.to || location.pathname.startsWith(l.to+"/");
@@ -495,7 +480,6 @@ function MobileDrawer({ profile, onClose, onLogout }) {
         })}
       </nav>
 
-      {/* Logout */}
       <div style={{padding:"12px 10px",borderTop:`1px solid ${C.border}`}}>
         <button onClick={onLogout} style={{
           width:"100%",padding:"13px",
@@ -514,7 +498,7 @@ function MobileDrawer({ profile, onClose, onLogout }) {
   );
 }
 
-// ═══════════════════════════ BOTTOM NAV (mobile) ════════════════════════════
+// ═══════════════════════════ BOTTOM NAV ════════════════════════════════════
 function BottomNav({ chatUnread }) {
   const location = useLocation();
   return (
@@ -546,7 +530,7 @@ function BottomNav({ chatUnread }) {
                 {chatUnread > 9 ? "9+" : chatUnread}
               </div>
             )}
-            <span style={{fontSize:20,lineHeight:1,filter:active?`drop-shadow(0 0 6px ${C.primary})`:"none",transition:"filter .2s"}}>{item.icon}</span>
+            <span style={{fontSize:20,lineHeight:1,filter:active?`drop-shadow(0 0 6px ${C.primary})`:""}}>{item.icon}</span>
             <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8,letterSpacing:.5,marginTop:4,
               color:active?C.primary:"rgba(255,255,255,0.28)",transition:"color .2s",fontWeight:active?700:400}}>
               {item.label}
@@ -559,43 +543,33 @@ function BottomNav({ chatUnread }) {
 }
 
 // ═══════════════════════════ BACK BUTTON ═══════════════════════════════════
-const ROOT_PAGES = ["/home", "/dashboard", "/tournaments", "/leaderboard",
-  "/teams", "/store", "/news", "/chat", "/profile", "/wallet",
-  "/achievements", "/daily-rewards", "/stats", "/support",
-  "/admin", "/founder", "/super-admin"];
+const ROOT_PAGES = ["/","home","/dashboard","/tournaments","/leaderboard",
+  "/teams","/store","/news","/chat","/profile","/wallet",
+  "/achievements","/daily-rewards","/stats","/support",
+  "/admin","/founder","/super-admin"];
 
 function BackButton() {
-  const navigate  = useNavigate();
-  const location  = useLocation();
-  const isRoot    = ROOT_PAGES.some(p => location.pathname === p);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isRoot = ROOT_PAGES.some(p => location.pathname === p);
   if (isRoot) return null;
 
   return (
-    <div style={{padding:"16px clamp(14px,4vw,24px) 0", maxWidth:1200, width:"100%"}}>
+    <div style={{padding:"16px clamp(14px,4vw,24px) 0",maxWidth:1200,width:"100%"}}>
       <button
         onClick={() => navigate(-1)}
         style={{
-          display:"inline-flex", alignItems:"center", gap:8,
+          display:"inline-flex",alignItems:"center",gap:8,
           background:"rgba(124,58,237,0.08)",
           border:"1px solid rgba(124,58,237,0.2)",
           color:"rgba(255,255,255,0.55)",
-          padding:"7px 16px", borderRadius:8,
-          fontSize:13, fontWeight:600, cursor:"pointer",
+          padding:"7px 16px",borderRadius:8,
+          fontSize:13,fontWeight:600,cursor:"pointer",
           fontFamily:"'Space Grotesk',sans-serif",
-          transition:"all .15s", letterSpacing:.3,
+          transition:"all .15s",letterSpacing:.3,
         }}
-        onMouseEnter={e=>{
-          e.currentTarget.style.background="rgba(124,58,237,0.18)";
-          e.currentTarget.style.borderColor="rgba(124,58,237,0.5)";
-          e.currentTarget.style.color="#fff";
-          e.currentTarget.style.transform="translateX(-2px)";
-        }}
-        onMouseLeave={e=>{
-          e.currentTarget.style.background="rgba(124,58,237,0.08)";
-          e.currentTarget.style.borderColor="rgba(124,58,237,0.2)";
-          e.currentTarget.style.color="rgba(255,255,255,0.55)";
-          e.currentTarget.style.transform="";
-        }}
+        onMouseEnter={e=>{e.currentTarget.style.background="rgba(124,58,237,0.18)";e.currentTarget.style.borderColor="rgba(124,58,237,0.5)";e.currentTarget.style.color="#fff";e.currentTarget.style.transform="translateX(-2px)";}}
+        onMouseLeave={e=>{e.currentTarget.style.background="rgba(124,58,237,0.08)";e.currentTarget.style.borderColor="rgba(124,58,237,0.2)";e.currentTarget.style.color="rgba(255,255,255,0.55)";e.currentTarget.style.transform="";}}
       >
         <span style={{fontSize:15}}>←</span>
         Retour
@@ -611,28 +585,21 @@ function NewsPopup({ profile }) {
   useEffect(() => {
     if (!profile?.id) return;
     checkNews();
-    // realtime : nouvelle news publiée
     const ch = supabase.channel("news_popup")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "news" }, () => checkNews())
+      .on("postgres_changes",{ event:"INSERT", schema:"public", table:"news" },()=>checkNews())
       .subscribe();
     return () => supabase.removeChannel(ch);
   }, [profile?.id]);
 
   const checkNews = async () => {
     try {
-      // dernière news publiée
       const { data: latest } = await supabase.from("news")
         .select("id,title,excerpt,cover_url,category,published_at")
-        .order("published_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("published_at",{ ascending:false })
+        .limit(1).maybeSingle();
       if (!latest) return;
-
-      // est-ce que ce user a déjà vu cet article ?
       const seen = JSON.parse(localStorage.getItem("cp_seen_news") || "[]");
-      if (!seen.includes(latest.id)) {
-        setArticle(latest);
-      }
+      if (!seen.includes(latest.id)) setArticle(latest);
     } catch {}
   };
 
@@ -651,86 +618,37 @@ function NewsPopup({ profile }) {
 
   return (
     <AnimatePresence>
-      <motion.div
-        key="news-overlay"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        style={{
-          position: "fixed", inset: 0, zIndex: 999,
-          background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "20px",
-        }}
-      >
+      <motion.div key="news-overlay"
+        initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+        style={{position:"fixed",inset:0,zIndex:999,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(12px)",
+          display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
         <motion.div
-          initial={{ scale: 0.85, opacity: 0, y: 30 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.85, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 280, damping: 26 }}
-          style={{
-            background: "linear-gradient(135deg, #0d0d1a, #0a0a14)",
-            border: `1px solid ${catColor}40`,
-            borderRadius: 20,
-            width: "100%", maxWidth: 520,
-            overflow: "hidden",
-            boxShadow: `0 0 60px ${catColor}20, 0 30px 80px rgba(0,0,0,0.8)`,
-          }}
-        >
-          {/* Banner image */}
+          initial={{scale:0.85,opacity:0,y:30}} animate={{scale:1,opacity:1,y:0}} exit={{scale:0.85,opacity:0}}
+          transition={{type:"spring",stiffness:280,damping:26}}
+          style={{background:"linear-gradient(135deg,#0d0d1a,#0a0a14)",border:`1px solid ${catColor}40`,
+            borderRadius:20,width:"100%",maxWidth:520,overflow:"hidden",
+            boxShadow:`0 0 60px ${catColor}20,0 30px 80px rgba(0,0,0,0.8)`}}>
           {article.cover_url && (
-            <div style={{ position: "relative", height: 180, overflow: "hidden" }}>
-              <img src={article.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 50%, #0d0d1a)" }} />
+            <div style={{position:"relative",height:180,overflow:"hidden"}}>
+              <img src={article.cover_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 50%,#0d0d1a)"}}/>
             </div>
           )}
-
-          {/* Badge */}
-          <div style={{ padding: article.cover_url ? "0 24px" : "24px 24px 0" }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              background: `${catColor}20`, border: `1px solid ${catColor}50`,
-              borderRadius: 20, padding: "4px 12px", marginBottom: 12,
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: catColor, display: "block",
-                boxShadow: `0 0 8px ${catColor}` }} />
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: 2,
-                color: catColor, fontWeight: 700, textTransform: "uppercase" }}>
-                📢 NOUVELLE ANNONCE
-              </span>
+          <div style={{padding:article.cover_url?"0 24px":"24px 24px 0"}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:6,background:`${catColor}20`,
+              border:`1px solid ${catColor}50`,borderRadius:20,padding:"4px 12px",marginBottom:12}}>
+              <span style={{width:6,height:6,borderRadius:"50%",background:catColor,display:"block",boxShadow:`0 0 8px ${catColor}`}}/>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2,color:catColor,fontWeight:700,textTransform:"uppercase"}}>📢 NOUVELLE ANNONCE</span>
             </div>
-
-            <h2 style={{
-              fontFamily: "'Bebas Neue',cursive", fontSize: 26, letterSpacing: 2,
-              color: "#fff", margin: "0 0 10px", lineHeight: 1.2,
-            }}>
-              {article.title}
-            </h2>
-
+            <h2 style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,letterSpacing:2,color:"#fff",margin:"0 0 10px",lineHeight:1.2}}>{article.title}</h2>
             {article.excerpt && (
-              <p style={{
-                fontFamily: "'Space Grotesk',sans-serif", fontSize: 14,
-                color: "rgba(255,255,255,0.6)", lineHeight: 1.6, margin: "0 0 24px",
-              }}>
-                {article.excerpt}
-              </p>
+              <p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:14,color:"rgba(255,255,255,0.6)",lineHeight:1.6,margin:"0 0 24px"}}>{article.excerpt}</p>
             )}
           </div>
-
-          {/* OK Button */}
-          <div style={{ padding: "0 24px 24px" }}>
-            <button
-              onClick={dismiss}
-              style={{
-                width: "100%", padding: "14px",
-                background: `linear-gradient(135deg, ${catColor}cc, ${catColor}88)`,
-                border: "none", borderRadius: 12,
-                fontFamily: "'Bebas Neue',cursive", fontSize: 18, letterSpacing: 3,
-                color: "#fff", cursor: "pointer",
-                boxShadow: `0 8px 24px ${catColor}40`,
-                transition: "all .2s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
-              onMouseLeave={e => e.currentTarget.style.transform = ""}
-            >
+          <div style={{padding:"0 24px 24px"}}>
+            <button onClick={dismiss} style={{width:"100%",padding:"14px",background:`linear-gradient(135deg,${catColor}cc,${catColor}88)`,border:"none",borderRadius:12,fontFamily:"'Bebas Neue',cursive",fontSize:18,letterSpacing:3,color:"#fff",cursor:"pointer",boxShadow:`0 8px 24px ${catColor}40`,transition:"all .2s"}}
+              onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"}
+              onMouseLeave={e=>e.currentTarget.style.transform=""}>
               ✓ J'AI LU — OK
             </button>
           </div>
@@ -745,67 +663,39 @@ function KYCBanner({ profile }) {
   const navigate = useNavigate();
   const [dismissed, setDismissed] = useState(false);
 
-  // Seulement si pending_verification ou pas de docs uploadés
   const needsKYC = profile && (
     profile.verification_status === "pending" ||
     profile.verification_status === null ||
     profile.verification_status === undefined
-  ) && profile.role !== "admin" && profile.role !== "super_admin"
-    && profile.role !== "founder" && profile.role !== "fondateur"
-    && profile.role !== "designer";
+  ) && !["admin","super_admin","founder","fondateur","designer"].includes(profile.role);
 
   if (!needsKYC || dismissed) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-      style={{
-        position: "relative", zIndex: 39,
-        background: "linear-gradient(90deg, rgba(251,191,36,0.12), rgba(239,68,68,0.08))",
-        borderBottom: "1px solid rgba(251,191,36,0.3)",
-        padding: "12px 24px",
-        display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
-      }}
-    >
-      <span style={{ fontSize: 20 }}>⚠️</span>
-      <div style={{ flex: 1, minWidth: 200 }}>
-        <p style={{
-          fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700,
-          fontSize: 13, color: "#fbbf24", margin: 0,
-        }}>
+    <motion.div initial={{opacity:0,y:-20}} animate={{opacity:1,y:0}}
+      style={{position:"relative",zIndex:39,background:"linear-gradient(90deg,rgba(251,191,36,0.12),rgba(239,68,68,0.08))",
+        borderBottom:"1px solid rgba(251,191,36,0.3)",padding:"12px 24px",
+        display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+      <span style={{fontSize:20}}>⚠️</span>
+      <div style={{flex:1,minWidth:200}}>
+        <p style={{fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize:13,color:"#fbbf24",margin:0}}>
           Vérification d'identité requise
         </p>
-        <p style={{
-          fontFamily: "'Space Grotesk',sans-serif", fontSize: 12,
-          color: "rgba(255,255,255,0.55)", margin: "2px 0 0",
-        }}>
-          Les informations fournies doivent correspondre à votre Carte Nationale d'Identité. L'admin doit valider votre compte avant accès complet.
+        <p style={{fontFamily:"'Space Grotesk',sans-serif",fontSize:12,color:"rgba(255,255,255,0.55)",margin:"2px 0 0"}}>
+          Votre compte est en attente de validation. Certaines actions sont temporairement désactivées.
         </p>
       </div>
-      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-        <button
-          onClick={() => navigate("/profile")}
-          style={{
-            padding: "7px 16px", borderRadius: 8,
-            background: "rgba(251,191,36,0.2)", border: "1px solid rgba(251,191,36,0.5)",
-            color: "#fbbf24", fontFamily: "'Space Grotesk',sans-serif",
-            fontWeight: 700, fontSize: 12, cursor: "pointer",
-            transition: "all .2s",
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = "rgba(251,191,36,0.35)"}
-          onMouseLeave={e => e.currentTarget.style.background = "rgba(251,191,36,0.2)"}
-        >
-          📎 Voir mon profil
+      <div style={{display:"flex",gap:8,flexShrink:0}}>
+        <button onClick={()=>navigate("/profile")}
+          style={{padding:"7px 16px",borderRadius:8,background:"rgba(251,191,36,0.2)",border:"1px solid rgba(251,191,36,0.5)",
+            color:"#fbbf24",fontFamily:"'Space Grotesk',sans-serif",fontWeight:700,fontSize:12,cursor:"pointer",transition:"all .2s"}}
+          onMouseEnter={e=>e.currentTarget.style.background="rgba(251,191,36,0.35)"}
+          onMouseLeave={e=>e.currentTarget.style.background="rgba(251,191,36,0.2)"}>
+          📎 Mon profil
         </button>
-        <button
-          onClick={() => setDismissed(true)}
-          style={{
-            width: 28, height: 28, borderRadius: 6,
-            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.4)", cursor: "pointer",
-            fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center",
-          }}
-        >
+        <button onClick={()=>setDismissed(true)}
+          style={{width:28,height:28,borderRadius:6,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",
+            color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>
           ×
         </button>
       </div>
@@ -834,12 +724,13 @@ export default function MainLayout() {
   const [onlineUsers,   setOnlineUsers]   = useState([]);
   const pRef = useRef(null);
 
-  useEffect(()=>{ loadProfile(); },[]);
+  useEffect(() => { loadProfile(); }, []);
 
-  useEffect(()=>{
-    if(!profile) return;
+  useEffect(() => {
+    if (!profile) return;
     pRef.current = profile;
     fetchBalance(); fetchEquipped(); fetchUnread(); fetchUrgent(); fetchChatUnread();
+
     const ch = supabase.channel("ml_v4")
       .on("postgres_changes",{event:"*",schema:"public",table:"wallets",filter:`user_id=eq.${profile.id}`},p=>{if(p.new?.balance!==undefined)setBalance(p.new.balance);})
       .on("postgres_changes",{event:"*",schema:"public",table:"user_items",filter:`user_id=eq.${profile.id}`},()=>fetchEquipped())
@@ -848,14 +739,13 @@ export default function MainLayout() {
       .on("postgres_changes",{event:"INSERT",schema:"public",table:"chat_messages"},()=>{if(location.pathname!=="/chat")fetchChatUnread();})
       .subscribe();
 
-    // ── GLOBAL PRESENCE ────────────────────────────────────────────
     const presenceCh = supabase.channel("global-presence", {
       config: { presence: { key: profile.id } }
     });
     presenceCh
-      .on("presence", { event: "sync" }, () => {
+      .on("presence",{ event:"sync" },() => {
         const state = presenceCh.presenceState();
-        const users = Object.values(state).map(arr => arr[0]).filter(Boolean);
+        const users = Object.values(state).map(arr=>arr[0]).filter(Boolean);
         setOnlineUsers(users);
       })
       .subscribe(async (status) => {
@@ -870,27 +760,56 @@ export default function MainLayout() {
         }
       });
 
-    return ()=>{
+    return () => {
       supabase.removeChannel(ch);
       supabase.removeChannel(presenceCh);
     };
-  },[profile?.id]);
+  }, [profile?.id]);
 
-  useEffect(()=>{
-    if(location.pathname==="/chat"){localStorage.setItem("chat_last_seen",new Date().toISOString());setChatUnread(0);}
+  useEffect(() => {
+    if (location.pathname === "/chat") {
+      localStorage.setItem("chat_last_seen", new Date().toISOString());
+      setChatUnread(0);
+    }
     setMobileOpen(false);
-  },[location.pathname]);
+  }, [location.pathname]);
 
-  const fetchBalance   = async()=>{ try{ const{data}=await supabase.from("wallets").select("balance").eq("user_id",pRef.current?.id).maybeSingle(); setBalance(data?.balance??0); }catch(_){} };
-  const fetchEquipped  = async()=>{ try{ const{data}=await supabase.from("user_items").select("item_id,equipped,store_items(id,name,type,rarity,image_url)").eq("user_id",pRef.current?.id).eq("equipped",true); if(data){ const m={}; data.forEach(u=>{if(u.store_items)m[u.store_items.type]=u.store_items;}); setEquippedItems(m); } }catch(_){} };
-  const fetchUnread    = async()=>{ try{ const p=pRef.current; if(!p)return; const{count}=await supabase.from("admin_messages").select("*",{count:"exact",head:true}).or(`user_id.eq.${p.id},is_global.eq.true`).eq("read",false); setUnread(count||0); }catch(_){} };
-  const fetchUrgent    = async()=>{ try{ const{count}=await supabase.from("support_tickets").select("*",{count:"exact",head:true}).in("priority",["urgent","critique"]).eq("status","open"); setUrgent(count||0); }catch(_){} };
-  const fetchChatUnread= async()=>{ try{ const p=pRef.current; if(!p)return; const last=localStorage.getItem("chat_last_seen")||"2020-01-01"; const{count}=await supabase.from("chat_messages").select("*",{count:"exact",head:true}).gt("created_at",last).neq("sender_id",p.id); setChatUnread(count||0); }catch(_){} };
-  const refreshProfile = async()=>{ const p=pRef.current; if(!p?.id)return; const{data}=await supabase.from("profiles").select("*").eq("id",p.id).single(); if(data)setProfile(data); await fetchBalance(); await fetchEquipped(); };
-  const loadProfile    = async()=>{ const{data:{user}}=await supabase.auth.getUser(); if(!user){navigate("/login");return;} const{data,error}=await supabase.from("profiles").select("*").eq("id",user.id).single(); if(error){navigate("/login");return;} setProfile(data); setLoading(false); };
-  const handleLogout   = async()=>{ await supabase.auth.signOut(); navigate("/home"); };
+  const fetchBalance    = async () => { try { const{data}=await supabase.from("wallets").select("balance").eq("user_id",pRef.current?.id).maybeSingle(); setBalance(data?.balance??0); } catch(_) {} };
+  const fetchEquipped   = async () => { try { const{data}=await supabase.from("user_items").select("item_id,equipped,store_items(id,name,type,rarity,image_url)").eq("user_id",pRef.current?.id).eq("equipped",true); if(data){const m={};data.forEach(u=>{if(u.store_items)m[u.store_items.type]=u.store_items;});setEquippedItems(m);} } catch(_) {} };
+  const fetchUnread     = async () => { try { const p=pRef.current; if(!p)return; const{count}=await supabase.from("admin_messages").select("*",{count:"exact",head:true}).or(`user_id.eq.${p.id},is_global.eq.true`).eq("read",false); setUnread(count||0); } catch(_) {} };
+  const fetchUrgent     = async () => { try { const{count}=await supabase.from("support_tickets").select("*",{count:"exact",head:true}).in("priority",["urgent","critique"]).eq("status","open"); setUrgent(count||0); } catch(_) {} };
+  const fetchChatUnread = async () => { try { const p=pRef.current; if(!p)return; const last=localStorage.getItem("chat_last_seen")||"2020-01-01"; const{count}=await supabase.from("chat_messages").select("*",{count:"exact",head:true}).gt("created_at",last).neq("sender_id",p.id); setChatUnread(count||0); } catch(_) {} };
+  const refreshProfile  = async () => { const p=pRef.current; if(!p?.id)return; const{data}=await supabase.from("profiles").select("*").eq("id",p.id).maybeSingle(); if(data)setProfile(data); await fetchBalance(); await fetchEquipped(); };
 
-  if(loading) return (
+  // ✅ FIX: maybeSingle() + signOut si profile manquant → stop infinite loop
+  const loadProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { navigate("/"); return; }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle(); // ← était .single() → causait 406 → loop infini
+
+    if (error || !data) {
+      // Profile manquant ou RLS block → déconnecter proprement
+      await supabase.auth.signOut();
+      navigate("/");
+      return;
+    }
+
+    setProfile(data);
+    setLoading(false);
+  };
+
+  // ✅ FIX: navigate("/") au lieu de navigate("/home")
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
+  if (loading) return (
     <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
       <OrbCanvas/><GridBg/>
       <div style={{textAlign:"center",position:"relative",zIndex:2}}>
@@ -903,77 +822,70 @@ export default function MainLayout() {
 
   return (
     <NotificationProvider profile={profile}>
-    <div style={{minHeight:"100vh",background:C.bg,color:C.text,display:"flex",flexDirection:"column",position:"relative"}}>
-      <OrbCanvas/><GridBg/>
+      <div style={{minHeight:"100vh",background:C.bg,color:C.text,display:"flex",flexDirection:"column",position:"relative"}}>
+        <OrbCanvas/><GridBg/>
 
-      {/* TOPBAR */}
-      <div style={{position:"relative",zIndex:41}}>
-        <Topbar
-          profile={profile} balance={balance} equippedItems={equippedItems}
-          chatUnread={chatUnread} unread={unread} urgent={urgent}
-          onlineUsers={onlineUsers}
-          onMenuClick={()=>setMobileOpen(o=>!o)}
-          onLogout={handleLogout}
-        />
+        <div style={{position:"relative",zIndex:41}}>
+          <Topbar
+            profile={profile} balance={balance} equippedItems={equippedItems}
+            chatUnread={chatUnread} unread={unread} urgent={urgent}
+            onlineUsers={onlineUsers}
+            onMenuClick={()=>setMobileOpen(o=>!o)}
+            onLogout={handleLogout}
+          />
+        </div>
+
+        <AnimatePresence>
+          {mobileOpen && (
+            <>
+              <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+                onClick={()=>setMobileOpen(false)}
+                style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)",zIndex:48}}/>
+              <motion.div initial={{x:-280}} animate={{x:0}} exit={{x:-280}}
+                transition={{type:"spring",stiffness:320,damping:32}}
+                style={{position:"fixed",top:0,left:0,zIndex:49,width:280,height:"100vh",overflowY:"auto",
+                  background:"rgba(11,11,15,0.98)",backdropFilter:"blur(28px)",
+                  borderRight:`1px solid ${C.border}`}}>
+                <MobileDrawer profile={profile} onClose={()=>setMobileOpen(false)} onLogout={handleLogout}/>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        <KYCBanner profile={profile} />
+        <NewsPopup profile={profile} />
+
+        <main style={{flex:1,overflowY:"auto",minWidth:0,position:"relative",zIndex:1,width:"100%",
+          paddingBottom:"var(--bottom-nav-h,0px)"}}>
+          <BackButton/>
+          <NotifyInjector profile={profile} setProfile={setProfile} balance={balance}
+            setBalance={setBalance} equippedItems={equippedItems} refreshProfile={refreshProfile}/>
+        </main>
+
+        <div className="cp-bottom-nav">
+          <BottomNav chatUnread={chatUnread}/>
+        </div>
+
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+          *,*::before,*::after{box-sizing:border-box;}
+          html{-webkit-text-size-adjust:100%;}
+          body{margin:0;overflow-x:hidden;background:#0a0a0f;}
+          img{max-width:100%;height:auto;}
+          button{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+          ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(124,58,237,0.3);border-radius:4px;}
+          .cp-bottom-nav{display:none;}
+          main > *{max-width:100%;}
+          @media(max-width:767px){ main{padding-left:0;padding-right:0;} }
+          @media(max-width:1023px){
+            .cp-bottom-nav{display:block;}
+            :root{--bottom-nav-h:64px;}
+          }
+          @media(min-width:1024px){
+            :root{--bottom-nav-h:0px;}
+          }
+        `}</style>
       </div>
-
-      {/* MOBILE DRAWER OVERLAY */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
-              onClick={()=>setMobileOpen(false)}
-              style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)",zIndex:48}}/>
-            <motion.div initial={{x:-280}} animate={{x:0}} exit={{x:-280}}
-              transition={{type:"spring",stiffness:320,damping:32}}
-              style={{position:"fixed",top:0,left:0,zIndex:49,width:280,height:"100vh",overflowY:"auto",
-                background:"rgba(11,11,15,0.98)",backdropFilter:"blur(28px)",
-                borderRight:`1px solid ${C.border}`}}>
-              <MobileDrawer profile={profile} onClose={()=>setMobileOpen(false)} onLogout={handleLogout}/>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* KYC WARNING BANNER */}
-      <KYCBanner profile={profile} />
-
-      {/* NEWS POPUP */}
-      <NewsPopup profile={profile} />
-
-      {/* MAIN CONTENT — full width, no sidebar */}
-      <main style={{flex:1,overflowY:"auto",minWidth:0,position:"relative",zIndex:1,width:"100%",
-        paddingBottom:"var(--bottom-nav-h,0px)"}}>
-        <BackButton/>
-        <NotifyInjector profile={profile} setProfile={setProfile} balance={balance}
-          setBalance={setBalance} equippedItems={equippedItems} refreshProfile={refreshProfile}/>
-      </main>
-
-      {/* BOTTOM NAV mobile */}
-      <div className="cp-bottom-nav">
-        <BottomNav chatUnread={chatUnread}/>
-      </div>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-        *,*::before,*::after{box-sizing:border-box;}
-        html{-webkit-text-size-adjust:100%;}
-        body{margin:0;overflow-x:hidden;background:#0a0a0f;}
-        img{max-width:100%;height:auto;}
-        button{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
-        ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(124,58,237,0.3);border-radius:4px;}
-        .cp-bottom-nav{display:none;}
-        main > *{max-width:100%;}
-        @media(max-width:767px){ main{padding-left:0;padding-right:0;} }
-        @media(max-width:1023px){
-          .cp-bottom-nav{display:block;}
-          :root{--bottom-nav-h:64px;}
-        }
-        @media(min-width:1024px){
-          :root{--bottom-nav-h:0px;}
-        }
-      `}</style>
-    </div>
     </NotificationProvider>
   );
 }
