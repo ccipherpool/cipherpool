@@ -150,7 +150,7 @@ function Kpi({ label, value, ac, icon, delay=0 }) {
     <motion.div initial={{opacity:0,y:18,scale:.94}} animate={{opacity:1,y:0,scale:1}} transition={{delay,duration:.44,ease:[.22,1,.36,1]}} whileHover={{y:-4,transition:{duration:.18}}}>
       <G ac={ac} style={{ padding:"20px 18px" }}>
         <div style={{ position:"absolute",top:-18,right:-18,width:75,height:75,borderRadius:"50%",background:`radial-gradient(circle,${ac}16,transparent 70%)`,pointerEvents:"none" }} />
-        <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.22)",marginBottom:8,position:"relative" }}><span style={{marginRight:5}}>{icon}</span>{label}</p>
+        <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.22)",marginBottom:8,position:"relative" }}><span style={{marginRight:5}}>{icon}</span>{label}</p>
         <p style={{ fontFamily:"'Bebas Neue',cursive",fontSize:38,letterSpacing:1,lineHeight:1,color:"#fff",textShadow:`0 0 30px ${ac}40`,position:"relative" }}>
           <N v={String(value)} />
         </p>
@@ -195,7 +195,7 @@ function EditProfileForm({ profile, onSaved }) {
 
   const ReadonlyField = ({ label, icon, field, value }) => (
     <div style={{marginBottom:14}}>
-      <label style={{display:"block",fontFamily:"JetBrains Mono,monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.25)",marginBottom:7}}>{icon} {label}</label>
+      <label style={{display:"block",fontFamily:"JetBrains Mono,monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.25)",marginBottom:7}}>{icon} {label}</label>
       <div style={{display:"flex",gap:10,alignItems:"center"}}>
         <div style={{flex:1,padding:"12px 16px",borderRadius:10,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",color:"rgba(255,255,255,.35)",fontFamily:"Space Grotesk,sans-serif",fontSize:13}}>
           {value||<span style={{color:"rgba(255,255,255,.15)"}}>—</span>}
@@ -211,18 +211,18 @@ function EditProfileForm({ profile, onSaved }) {
 
   return (
     <div style={{maxWidth:660}}>
-      <p style={{fontFamily:"JetBrains Mono,monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.2)",marginBottom:24}}>MON PROFIL</p>
+      <p style={{fontFamily:"JetBrains Mono,monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.2)",marginBottom:24}}>MON PROFIL</p>
 
       {/* DIRECT — FF ID + Bio */}
       <G ac={CYAN} style={{padding:"24px 28px",marginBottom:14}}>
         <p style={{fontFamily:"JetBrains Mono,monospace",fontSize:9,letterSpacing:2,color:CYAN,marginBottom:18}}>🎮 MODIFICATION DIRECTE</p>
         <div style={{marginBottom:16}}>
-          <label style={{display:"block",fontFamily:"JetBrains Mono,monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.3)",marginBottom:8}}>🎮 FREE FIRE ID</label>
+          <label style={{display:"block",fontFamily:"JetBrains Mono,monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.3)",marginBottom:8}}>🎮 FREE FIRE ID</label>
           <input value={ffid} onChange={e=>setFfid(e.target.value)} placeholder="ex: 1234567890" maxLength={20}
             style={{width:"100%",padding:"12px 16px",borderRadius:10,background:"rgba(0,212,255,.05)",border:"1px solid rgba(0,212,255,.2)",color:"#fff",fontFamily:"JetBrains Mono,monospace",fontSize:14,outline:"none",boxSizing:"border-box",letterSpacing:2}}/>
         </div>
         <div style={{marginBottom:20}}>
-          <label style={{display:"block",fontFamily:"JetBrains Mono,monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.3)",marginBottom:8}}>📝 BIO</label>
+          <label style={{display:"block",fontFamily:"JetBrains Mono,monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.3)",marginBottom:8}}>📝 BIO</label>
           <textarea value={bio} onChange={e=>setBio(e.target.value)} placeholder="Parle de toi, ton style de jeu..." maxLength={250} rows={3}
             style={{width:"100%",padding:"12px 16px",borderRadius:10,background:"rgba(0,212,255,.05)",border:"1px solid rgba(0,212,255,.2)",color:"rgba(255,255,255,.85)",fontFamily:"Space Grotesk,sans-serif",fontSize:13,outline:"none",resize:"vertical",boxSizing:"border-box"}}/>
           <p style={{fontFamily:"JetBrains Mono,monospace",fontSize:8,color:"rgba(255,255,255,.2)",textAlign:"right",marginTop:4}}>{bio.length}/250</p>
@@ -412,20 +412,37 @@ export default function Profile() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
         .prf{font-family:Space Grotesk,sans-serif;color:rgba(255,255,255,.88);min-height:100vh;background:${BG}}
-        .ptab{background:none;border:none;cursor:pointer;font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:2px;font-weight:600;padding:14px 16px;margin-bottom:-1px;transition:all .2s;white-space:nowrap;position:relative}
+        .ptab{background:none;border:none;cursor:pointer;font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:1px;font-weight:600;padding:12px 14px;margin-bottom:-1px;transition:all .2s;white-space:nowrap;position:relative}
         .ptab:hover{color:rgba(255,255,255,.8)!important}
         .avw:hover .avo{opacity:1!important}
         .rowh{transition:background .15s}.rowh:hover{background:${cx(.04)}!important}
         @keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
         @keyframes scan{0%{top:-100%}100%{top:200%}}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${cx(.22)};border-radius:99px}
+        @media(max-width:768px){
+          .prf-hero-inner{padding:0 16px!important}
+          .prf-hero-row{flex-direction:column!important;align-items:flex-start!important;margin-top:-60px!important;padding-bottom:16px!important;gap:12px!important}
+          .prf-balance{min-width:unset!important;width:100%!important}
+          .prf-content{padding:16px 12px 80px!important}
+          .prf-tabs-inner{padding:0 12px!important}
+          .ptab{padding:10px 10px!important;font-size:9px!important}
+          .prf-stats-grid{grid-template-columns:1fr 1fr!important}
+          .prf-info-grid{grid-template-columns:1fr!important}
+          .prf-hist-grid{grid-template-columns:1fr!important}
+          .prf-ach-grid{grid-template-columns:1fr!important}
+          .prf-wallet-grid{grid-template-columns:1fr 1fr!important}
+        }
+        @media(max-width:480px){
+          .prf-hero-banner{height:160px!important}
+          .prf-wallet-grid{grid-template-columns:1fr!important}
+        }
       `}</style>
 
       <div className="prf">
 
         {/* ══ HERO ════════════════════════════════════════════════ */}
         <div style={{ position:"relative",overflow:"hidden" }}>
-          <div style={{ height:230,position:"relative",overflow:"hidden",background:SURF }}>
+          <div style={{ height:"clamp(140px,25vw,230px)",position:"relative",overflow:"hidden",background:SURF }}>
             {eq?.banner?.image_url && <img src={eq.banner.image_url} style={{ position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",opacity:.35 }} />}
             <HeroBg />
             {/* Grid */}
@@ -436,9 +453,9 @@ export default function Profile() {
             <div style={{ position:"absolute",bottom:0,left:0,right:0,height:130,background:`linear-gradient(to top,${BG},transparent)`,pointerEvents:"none" }} />
           </div>
 
-          <div style={{ maxWidth:1060,margin:"0 auto",padding:"0 32px" }}>
+          <div className="prf-hero-inner" style={{ maxWidth:1060,margin:"0 auto",padding:"0 clamp(16px,3vw,32px)" }}>
             <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{duration:.5}}
-              style={{ display:"flex",alignItems:"flex-end",gap:26,marginTop:-72,paddingBottom:28,flexWrap:"wrap" }}>
+              className="prf-hero-row" style={{ display:"flex",alignItems:"flex-end",gap:"clamp(12px,2vw,26px)",marginTop:-72,paddingBottom:28,flexWrap:"wrap" }}>
 
               {/* ── Avatar with menu ── */}
               <motion.div ref={menuRef}
@@ -463,7 +480,7 @@ export default function Profile() {
                         ? <motion.div animate={{rotate:360}} transition={{duration:.9,repeat:Infinity,ease:"linear"}} style={{width:22,height:22,border:`2px solid ${cx(.3)}`,borderTopColor:CYAN,borderRadius:"50%"}}/>
                         : <>
                           <span style={{fontSize:18}}>📷</span>
-                          <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8,letterSpacing:1.5,color:CYAN}}>MODIFIER</span>
+                          <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8,letterSpacing:0.3,color:CYAN}}>MODIFIER</span>
                         </>
                       }
                     </div>
@@ -547,7 +564,7 @@ export default function Profile() {
                 </div>
                 <div style={{ maxWidth:300 }}>
                   <div style={{ display:"flex",justifyContent:"space-between",marginBottom:5 }}>
-                    <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"rgba(255,255,255,.2)",letterSpacing:1.5 }}>XP PROGRESSION</span>
+                    <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"rgba(255,255,255,.2)",letterSpacing:0.3 }}>XP PROGRESSION</span>
                     <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:CYAN }}>{xpPct}/100</span>
                   </div>
                   <div style={{ height:4,background:"rgba(255,255,255,.06)",borderRadius:99,overflow:"hidden" }}>
@@ -566,13 +583,13 @@ export default function Profile() {
               </motion.div>
 
               {/* Balance */}
-              <motion.div initial={{opacity:0,scale:.88}} animate={{opacity:1,scale:1}} transition={{delay:.18,type:"spring",stiffness:220,damping:22}} whileHover={{y:-5}} style={{flexShrink:0,minWidth:168}}>
+              <motion.div initial={{opacity:0,scale:.88}} animate={{opacity:1,scale:1}} transition={{delay:.18,type:"spring",stiffness:220,damping:22}} whileHover={{y:-5}} className="prf-balance" style={{flexShrink:0,minWidth:"min(168px,100%)"}}>
                 <G ac={CYAN} style={{ padding:"clamp(10px,3vw,20px) clamp(12px,3vw,24px)",textAlign:"center" }}>
                   <div style={{ position:"absolute",top:-28,right:-28,width:90,height:90,borderRadius:"50%",background:`radial-gradient(circle,${cx(.18)},transparent)`,pointerEvents:"none" }} />
-                  <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.22)",marginBottom:7,position:"relative" }}>SOLDE</p>
+                  <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.22)",marginBottom:7,position:"relative" }}>SOLDE</p>
                   <p style={{ fontFamily:"'Bebas Neue',cursive",fontSize:34,letterSpacing:2,color:CYAN,lineHeight:1,textShadow:`0 0 32px ${cx(.55)}`,position:"relative" }}><N v={balance} /></p>
                   <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:"rgba(255,255,255,.2)",marginTop:4,position:"relative" }}>💎 PIÈCES</p>
-                  <Link to="/store" style={{ display:"block",marginTop:12,padding:"7px 0",borderRadius:9,background:cx(.08),border:`1px solid ${cx(.22)}`,color:CYAN,fontSize:10,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1.5,textDecoration:"none",transition:"all .2s",position:"relative" }}
+                  <Link to="/store" style={{ display:"block",marginTop:12,padding:"7px 0",borderRadius:9,background:cx(.08),border:`1px solid ${cx(.22)}`,color:CYAN,fontSize:10,fontFamily:"'JetBrains Mono',monospace",letterSpacing:0.3,textDecoration:"none",transition:"all .2s",position:"relative" }}
                     onMouseEnter={e=>{e.currentTarget.style.background=cx(.18);e.currentTarget.style.boxShadow=`0 0 20px ${cx(.25)}`;}}
                     onMouseLeave={e=>{e.currentTarget.style.background=cx(.08);e.currentTarget.style.boxShadow="none";}}>
                     🛍️ BOUTIQUE
@@ -585,7 +602,7 @@ export default function Profile() {
 
         {/* ══ TABS ════════════════════════════════════════════════ */}
         <div style={{ borderBottom:`1px solid ${cx(.1)}`,position:"sticky",top:0,background:"rgba(2,8,23,0.9)",backdropFilter:"blur(24px)",zIndex:10,boxShadow:`0 4px 28px rgba(0,0,0,.35)` }}>
-          <div style={{ maxWidth:1060,margin:"0 auto",padding:"0 32px",display:"flex",gap:2,overflowX:"auto" }}>
+          <div className="prf-tabs-inner" style={{ maxWidth:1060,margin:"0 auto",padding:"0 clamp(8px,2vw,32px)",display:"flex",gap:2,overflowX:"auto" }}>
             {TABS.filter(t => isViewingOther ? t.key !== "edit" : true).map((t,i)=>(
               <motion.button key={t.key} className="ptab" onClick={()=>setTab(t.key)}
                 initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}} transition={{delay:i*.06}}
@@ -599,13 +616,13 @@ export default function Profile() {
         </div>
 
         {/* ══ CONTENT ═════════════════════════════════════════════ */}
-        <div style={{ maxWidth:1060,margin:"0 auto",padding:"32px 32px 64px" }}>
+        <div className="prf-content" style={{ maxWidth:1060,margin:"0 auto",padding:"clamp(12px,3vw,32px) clamp(12px,3vw,32px) 80px" }}>
           <AnimatePresence mode="wait">
 
             {/* STATS */}
             {tab==="stats" && (
               <motion.div key="stats" initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} transition={{duration:.28}}>
-                <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16 }}>
+                <div className="prf-stats-grid" style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:14 }}>
                   <Kpi label="PARTIES JOUÉES"  value={stats?.total_matches||0} ac={INDIGO} icon="🎮" delay={.04} />
                   <Kpi label="VICTOIRES"        value={stats?.wins||0}          ac={GREEN}  icon="🏆" delay={.08} />
                   <Kpi label="DÉFAITES"         value={stats?.losses||0}        ac={RED}    icon="💀" delay={.12} />
@@ -618,7 +635,7 @@ export default function Profile() {
                   <G ac={CYAN} style={{ padding:"24px 28px" }}>
                     <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:12 }}>
                       <div>
-                        <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.22)",marginBottom:5 }}>PERFORMANCE GLOBALE</p>
+                        <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.22)",marginBottom:5 }}>PERFORMANCE GLOBALE</p>
                         <p style={{ fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:2,color:CYAN,textShadow:`0 0 24px ${cx(.5)}` }}>{wr}% WIN RATE</p>
                       </div>
                       <div style={{ display:"flex",gap:28 }}>
@@ -643,14 +660,14 @@ export default function Profile() {
                   </G>
                 </motion.div>
 
-                <div style={{ display:"grid",gridTemplateColumns:"1fr 210px",gap:12 }}>
+                <div className="prf-info-grid" style={{ display:"grid",gridTemplateColumns:"min(100%,1fr) min(100%,210px)",gap:12 }}>
                   <motion.div initial={{opacity:0,x:-12}} animate={{opacity:1,x:0}} transition={{delay:.32}}>
                     <G style={{ padding:"22px 26px",height:"100%" }}>
-                      <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.2)",marginBottom:16 }}>INFORMATIONS</p>
+                      <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.2)",marginBottom:16 }}>INFORMATIONS</p>
                       {[["FREE FIRE ID",profile?.free_fire_id||"—"],["EMAIL",profile?.email||"—"],["INSCRIT LE",profile?.created_at?new Date(profile.created_at).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"}):"—"],["STATUT",approved?"✓ VÉRIFIÉ":"⏳ EN ATTENTE"]].map(([k,v],i)=>(
                         <motion.div key={k} initial={{opacity:0,x:-6}} animate={{opacity:1,x:0}} transition={{delay:i*.05+.34}}
                           style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:i<3?`1px solid ${cx(.08)}`:"none" }}>
-                          <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:1.5,color:"rgba(255,255,255,.2)" }}>{k}</span>
+                          <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:0.3,color:"rgba(255,255,255,.2)" }}>{k}</span>
                           <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:"rgba(255,255,255,.55)" }}>{v}</span>
                         </motion.div>
                       ))}
@@ -659,7 +676,7 @@ export default function Profile() {
                   <motion.div initial={{opacity:0,scale:.9}} animate={{opacity:1,scale:1}} transition={{delay:.34,type:"spring",stiffness:200}} whileHover={{y:-4}}>
                     <G ac={stats?.rank<=10?CYAN:undefined} style={{ height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,textAlign:"center" }}>
                       {stats?.rank<=10 && <motion.div animate={{rotate:360}} transition={{duration:22,repeat:Infinity,ease:"linear"}} style={{ position:"absolute",inset:0,background:`conic-gradient(from 0deg,transparent 78%,${cx(.18)} 100%)`,borderRadius:14,pointerEvents:"none" }} />}
-                      <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.2)",marginBottom:10,position:"relative" }}>CLASSEMENT</p>
+                      <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.2)",marginBottom:10,position:"relative" }}>CLASSEMENT</p>
                       <motion.p animate={stats?.rank<=3?{textShadow:[`0 0 35px ${cx(.35)}`,`0 0 60px ${cx(.55)}`,`0 0 35px ${cx(.35)}`]}:{}} transition={{duration:2,repeat:Infinity}}
                         style={{ fontFamily:"'Bebas Neue',cursive",fontSize:54,letterSpacing:-2,lineHeight:1,color:stats?.rank<=10?CYAN:"rgba(255,255,255,.3)",position:"relative" }}>
                         {stats?.rank?`#${stats.rank}`:"—"}
@@ -674,7 +691,7 @@ export default function Profile() {
             {/* HISTORY */}
             {tab==="history" && (
               <motion.div key="hist" initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} transition={{duration:.28}}>
-                <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.2)",marginBottom:18 }}>DERNIÈRES PARTIES — <span style={{color:VIOLET}}>{recentMatches.length}</span></p>
+                <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.2)",marginBottom:18 }}>DERNIÈRES PARTIES — <span style={{color:VIOLET}}>{recentMatches.length}</span></p>
                 {recentMatches.length===0
                   ? <div style={{textAlign:"center",padding:"80px 0"}}><motion.div animate={{y:[0,-10,0]}} transition={{duration:3,repeat:Infinity}} style={{fontSize:56,marginBottom:14}}>🏆</motion.div><p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:10,letterSpacing:4,color:"rgba(255,255,255,.15)" }}>AUCUNE PARTIE JOUÉE</p></div>
                   : <div style={{display:"flex",flexDirection:"column",gap:9}}>
@@ -710,10 +727,10 @@ export default function Profile() {
             {/* ACHIEVEMENTS */}
             {tab==="achievements" && (
               <motion.div key="ach" initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} transition={{duration:.28}}>
-                <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.2)",marginBottom:18 }}>SUCCÈS DÉBLOQUÉS — <span style={{color:INDIGO}}>{achievements.length}</span></p>
+                <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.2)",marginBottom:18 }}>SUCCÈS DÉBLOQUÉS — <span style={{color:INDIGO}}>{achievements.length}</span></p>
                 {achievements.length===0
                   ? <div style={{textAlign:"center",padding:"80px 0"}}><motion.div animate={{rotate:[0,10,-10,0]}} transition={{duration:2,repeat:Infinity}} style={{fontSize:56,marginBottom:14}}>🎖️</motion.div><p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:10,letterSpacing:4,color:"rgba(255,255,255,.15)" }}>AUCUN SUCCÈS</p></div>
-                  : <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(280px,100%),1fr))",gap:11}}>
+                  : <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(240px,100%),1fr))",gap:11}}>
                       {achievements.map((a,i)=>(
                         <motion.div key={a.id} initial={{opacity:0,scale:.9}} animate={{opacity:1,scale:1}} transition={{delay:i*.06}} whileHover={{scale:1.03,y:-4}}>
                           <G ac={INDIGO} style={{ padding:"20px",display:"flex",gap:14,alignItems:"flex-start" }}>
@@ -734,7 +751,7 @@ export default function Profile() {
             {/* WALLET */}
             {tab==="wallet" && (
               <motion.div key="wallet" initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} transition={{duration:.28}}>
-                <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20 }}>
+                <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(min(140px,100%),1fr))",gap:10,marginBottom:16 }}>
                   {[
                     {label:"SOLDE ACTUEL",  val:balance,ac:CYAN,  icon:"💎"},
                     {label:"TOTAL DÉPENSÉ", val:transactions.filter(t=>["purchase","debit","penalty"].includes(t.type)).reduce((s,t)=>s+(t.amount||0),0),ac:RED,   icon:"🛍️"},
@@ -744,7 +761,7 @@ export default function Profile() {
                       <G ac={c.ac} style={{ padding:"20px 22px" }}>
                         <div style={{ position:"absolute",top:-16,right:-16,width:70,height:70,borderRadius:"50%",background:`radial-gradient(circle,${c.ac}15,transparent)`,pointerEvents:"none" }} />
                         <div style={{ display:"flex",justifyContent:"space-between",marginBottom:9,position:"relative" }}>
-                          <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.22)" }}>{c.label}</p>
+                          <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.22)" }}>{c.label}</p>
                           <span style={{fontSize:16,opacity:.7}}>{c.icon}</span>
                         </div>
                         <p style={{ fontFamily:"'Bebas Neue',cursive",fontSize:32,letterSpacing:1,color:c.ac,lineHeight:1,textShadow:`0 0 22px ${c.ac}45`,position:"relative" }}><N v={c.val} /></p>
@@ -755,7 +772,7 @@ export default function Profile() {
                 </div>
                 <G style={{ overflow:"hidden" }}>
                   <div style={{ padding:"18px 24px 13px",borderBottom:`1px solid ${cx(.1)}` }}>
-                    <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.2)" }}>HISTORIQUE DES TRANSACTIONS</p>
+                    <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:0.5,color:"rgba(255,255,255,.2)" }}>HISTORIQUE DES TRANSACTIONS</p>
                   </div>
                   {transactions.length===0
                     ? <p style={{ color:"rgba(255,255,255,.15)",fontSize:13,textAlign:"center",padding:"40px 0",fontFamily:"'JetBrains Mono',monospace",letterSpacing:2 }}>AUCUNE TRANSACTION</p>
