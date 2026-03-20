@@ -176,33 +176,34 @@ export default function SuperAdmin() {
   // ══════════════════════════════════════════════════════════════
   const showMsg=(type,text)=>{setMessage({type,text});setTimeout(()=>setMessage({type:"",text:""}),5000);};
 
-  // ✅ NEW: Approve user
+  // ✅ Approve user — SECURITY DEFINER (bypass RLS)
   const approveUser = async (userId) => {
     try {
-      const{error}=await supabase.from("profiles").update({
-        verification_status:"approved",
-        verified_at:new Date().toISOString(),
-      }).eq("id",userId);
-      if(error) throw error;
-      showMsg("success","✅ Utilisateur approuvé !");
+      const { error } = await supabase.rpc("admin_verify_user", {
+        target_user_id: userId,
+        new_status: "approved",
+      });
+      if (error) throw error;
+      showMsg("success", "✅ Utilisateur approuvé !");
       fetchUsers(); fetchStats();
       setShowReviewModal(false);
       setReviewUser(null);
-    } catch(err){showMsg("error",err.message);}
+    } catch(err) { showMsg("error", err.message); }
   };
 
-  // ✅ NEW: Reject user
+  // ✅ Reject user — SECURITY DEFINER (bypass RLS)
   const rejectUser = async (userId) => {
     try {
-      const{error}=await supabase.from("profiles").update({
-        verification_status:"rejected",
-      }).eq("id",userId);
-      if(error) throw error;
-      showMsg("success","❌ Utilisateur refusé.");
+      const { error } = await supabase.rpc("admin_verify_user", {
+        target_user_id: userId,
+        new_status: "rejected",
+      });
+      if (error) throw error;
+      showMsg("success", "❌ Utilisateur refusé.");
       fetchUsers(); fetchStats();
       setShowReviewModal(false);
       setReviewUser(null);
-    } catch(err){showMsg("error",err.message);}
+    } catch(err) { showMsg("error", err.message); }
   };
 
   const updateUserRole=async(userId,role)=>{
