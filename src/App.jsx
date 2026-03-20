@@ -12,45 +12,46 @@ import GuestRoute     from "./components/GuestRoute";
 // Skeleton
 import { PageSkeleton } from "./components/SkeletonLoaders";
 
-/* ═══ LAZY LOADING — imports case-sensitive (Vercel/Linux) ═══ */
-const HomePage = lazy(() => import("./pages/Homepage"));        // Homepage.jsx
-const Login    = lazy(() => import("./pages/Login"));           // Login.jsx
-const Register = lazy(() => import("./pages/Register"));        // Register.jsx
+/* ═══ LAZY LOADING ═══ */
+// ✅ Home.jsx = seule landing page (Homepage.jsx supprimé)
+const Home     = lazy(() => import("./pages/Home"));
+const Login    = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
 
-const Dashboard   = lazy(() => import("./pages/Dashboard"));    // Dashboard.jsx
-const Tournaments = lazy(() => import("./pages/Tournaments"));  // Tournaments.jsx
-const Leaderboard = lazy(() => import("./pages/Leaderboard"));  // Leaderboard.jsx
-const Profile     = lazy(() => import("./pages/Profile"));      // Profile.jsx
-const Support     = lazy(() => import("./pages/Support"));      // Support.jsx
-const Wallet      = lazy(() => import("./pages/Wallet"));       // Wallet.jsx
-const GlobalChat  = lazy(() => import("./pages/GlobalChat"));   // ✅ GlobalChat.jsx (capital C)
-const Store       = lazy(() => import("./pages/Store"));        // Store.jsx
-const News        = lazy(() => import("./pages/News"));         // News.jsx
-const PlayerStats = lazy(() => import("./pages/PlayerStats"));  // ✅ PlayerStats.jsx (capital S)
-const Achievements= lazy(() => import("./pages/Achievements")); // Achievements.jsx
-const DailyRewards= lazy(() => import("./pages/DailyRewards")); // ✅ DailyRewards.jsx (capital R)
+const Dashboard   = lazy(() => import("./pages/Dashboard"));
+const Tournaments = lazy(() => import("./pages/Tournaments"));
+const Leaderboard = lazy(() => import("./pages/Leaderboard"));
+const Profile     = lazy(() => import("./pages/Profile"));
+const Support     = lazy(() => import("./pages/Support"));
+const Wallet      = lazy(() => import("./pages/Wallet"));
+const GlobalChat  = lazy(() => import("./pages/GlobalChat"));
+const Store       = lazy(() => import("./pages/Store"));
+const News        = lazy(() => import("./pages/News"));
+const PlayerStats = lazy(() => import("./pages/PlayerStats"));
+const Achievements= lazy(() => import("./pages/Achievements"));
+const DailyRewards= lazy(() => import("./pages/DailyRewards"));
 
-const Teams       = lazy(() => import("./pages/Teams"));        // Teams.jsx
-const TeamProfile = lazy(() => import("./pages/TeamProfile"));  // ✅ TeamProfile.jsx (capital P)
+const Teams       = lazy(() => import("./pages/Teams"));
+const TeamProfile = lazy(() => import("./pages/TeamProfile"));
 
-const TournamentDetails = lazy(() => import("./pages/TournamentDetails")); // TournamentDetails.jsx
-const TournamentWaiting = lazy(() => import("./pages/TournamentWaiting")); // TournamentWaiting.jsx
-const TournamentRoom    = lazy(() => import("./pages/TournamentRoom"));    // TournamentRoom.jsx
-const ManageTournament  = lazy(() => import("./pages/ManageTournament"));  // ManageTournament.jsx
-const CreateTournament  = lazy(() => import("./pages/CreateTournament"));  // CreateTournament.jsx
+const TournamentDetails = lazy(() => import("./pages/TournamentDetails"));
+const TournamentWaiting = lazy(() => import("./pages/TournamentWaiting"));
+const TournamentRoom    = lazy(() => import("./pages/TournamentRoom"));
+const ManageTournament  = lazy(() => import("./pages/ManageTournament"));
+const CreateTournament  = lazy(() => import("./pages/CreateTournament"));
 
-const FounderDashboard  = lazy(() => import("./pages/FounderDashboard")); // FounderDashboard.jsx
-const FounderRequests   = lazy(() => import("./pages/FounderRequests"));  // FounderRequests.jsx
+const FounderDashboard  = lazy(() => import("./pages/FounderDashboard"));
+const FounderRequests   = lazy(() => import("./pages/FounderRequests"));
 
-const AdminDashboard    = lazy(() => import("./pages/AdminDashboard"));    // AdminDashboard.jsx
-const AdminSupport      = lazy(() => import("./pages/AdminSupport"));      // AdminSupport.jsx
-const AdminResults      = lazy(() => import("./pages/AdminResults"));      // ✅ AdminResults.jsx (capital R)
-const AdminNews         = lazy(() => import("./pages/AdminNews"));         // ✅ AdminNews.jsx (capital N)
-const AdminStorePanel   = lazy(() => import("./pages/AdminStorePanel"));   // ✅ AdminStorePanel.jsx (capital S+P)
-const DesignerPanel     = lazy(() => import("./pages/DesignerPanel"));     // ✅ DesignerPanel.jsx (capital P)
+const AdminDashboard    = lazy(() => import("./pages/AdminDashboard"));
+const AdminSupport      = lazy(() => import("./pages/AdminSupport"));
+const AdminResults      = lazy(() => import("./pages/AdminResults"));
+const AdminNews         = lazy(() => import("./pages/AdminNews"));
+const AdminStorePanel   = lazy(() => import("./pages/AdminStorePanel"));
+const DesignerPanel     = lazy(() => import("./pages/DesignerPanel"));
 
-const SuperAdmin = lazy(() => import("./pages/SuperAdmin")); // SuperAdmin.jsx
-const AdminGrant = lazy(() => import("./pages/AdminGrant")); // AdminGrant.jsx
+const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
+const AdminGrant = lazy(() => import("./pages/AdminGrant"));
 
 function Lazy({ children }) {
   return <Suspense fallback={<PageSkeleton />}>{children}</Suspense>;
@@ -61,21 +62,20 @@ export default function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* ── PUBLIC ───────────────────────────────────────── */}
-        <Route path="/" element={<Lazy><HomePage /></Lazy>} />
+        {/* ── PUBLIC ─────────────────────────────────────────
+            / et /home → Home.jsx (landing page unique)
+        ─────────────────────────────────────────────────── */}
+        <Route path="/"     element={<Lazy><Home /></Lazy>} />
+        <Route path="/home" element={<Navigate to="/" replace />} />
 
         <Route element={<AuthLayout />}>
           <Route path="/login"    element={<Lazy><GuestRoute><Login /></GuestRoute></Lazy>} />
           <Route path="/register" element={<Lazy><GuestRoute><Register /></GuestRoute></Lazy>} />
         </Route>
 
-        {/* /home redirige vers / */}
-        <Route path="/home" element={<Navigate to="/" replace />} />
-
-        {/* ── PAGES AUTHENTIFIÉES ──────────────────────────── */}
+        {/* ── PAGES AUTHENTIFIÉES ────────────────────────── */}
         <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
 
-          {/* USER */}
           <Route path="/dashboard"     element={<Lazy><Dashboard /></Lazy>} />
           <Route path="/tournaments"   element={<Lazy><Tournaments /></Lazy>} />
           <Route path="/leaderboard"   element={<Lazy><Leaderboard /></Lazy>} />
@@ -91,29 +91,23 @@ export default function App() {
           <Route path="/teams"         element={<Lazy><Teams /></Lazy>} />
           <Route path="/teams/:id"     element={<Lazy><TeamProfile /></Lazy>} />
 
-          {/* TOURNAMENT */}
           <Route path="/tournaments/:id"         element={<Lazy><TournamentDetails /></Lazy>} />
           <Route path="/tournaments/:id/waiting" element={<Lazy><TournamentWaiting /></Lazy>} />
           <Route path="/tournaments/:id/room"    element={<Lazy><TournamentRoom /></Lazy>} />
           <Route path="/tournaments/:id/manage"  element={<Lazy><ManageTournament /></Lazy>} />
 
-          {/* FOUNDER */}
           <Route path="/founder"           element={<Lazy><FounderDashboard /></Lazy>} />
           <Route path="/founder/requests"  element={<Lazy><FounderRequests /></Lazy>} />
           <Route path="/founder/results"   element={<Lazy><AdminResults /></Lazy>} />
           <Route path="/create-tournament" element={<Lazy><CreateTournament /></Lazy>} />
 
-          {/* ADMIN */}
           <Route path="/admin"         element={<Lazy><AdminDashboard /></Lazy>} />
           <Route path="/admin/support" element={<Lazy><AdminSupport /></Lazy>} />
           <Route path="/admin/results" element={<Lazy><AdminResults /></Lazy>} />
           <Route path="/admin/news"    element={<Lazy><AdminNews /></Lazy>} />
           <Route path="/admin-store"   element={<Lazy><AdminStorePanel /></Lazy>} />
 
-          {/* DESIGNER */}
-          <Route path="/designer" element={<Lazy><DesignerPanel /></Lazy>} />
-
-          {/* SUPER ADMIN */}
+          <Route path="/designer"          element={<Lazy><DesignerPanel /></Lazy>} />
           <Route path="/super-admin"       element={<Lazy><SuperAdmin /></Lazy>} />
           <Route path="/super-admin/grant" element={<Lazy><AdminGrant /></Lazy>} />
 
