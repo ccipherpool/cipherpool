@@ -475,6 +475,11 @@ export default function Teams() {
         .tm-in{background:${cx(.06)};border:1px solid ${cx(.18)};border-radius:9px;color:#fff;padding:10px 14px;font-family:Space Grotesk,sans-serif;font-size:13px;outline:none;transition:border .2s;width:100%}
         .tm-in:focus{border-color:${CYAN};box-shadow:0 0 10px ${cx(.15)}}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${cx(.22)};border-radius:99px}
+        @media(max-width:768px){
+          .tm-hero-row{flex-direction:column!important;align-items:flex-start!important;}
+          .tm-hero-actions{width:100%!important;}
+          .tm-hero-actions button{flex:1!important;justify-content:center!important;padding:12px!important;}
+        }
       `}</style>
 
       <div className="tm" style={{ padding:"clamp(14px,4vw,32px)" }}>
@@ -486,21 +491,21 @@ export default function Teams() {
           borderRadius: 18,
           background: `linear-gradient(135deg,${cx(.08)},${CARD})`,
           border: `1px solid ${cx(.12)}`,
-          padding: "36px 40px",
-          marginBottom: 28
+          padding: "clamp(16px,3vw,28px) clamp(16px,4vw,36px)",
+          marginBottom: 20
         }}>
           <HeroBg />
-          <div style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+          <div className="tm-hero-row" style={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
             <div>
               <p style={{ fontFamily: "JetBrains Mono,monospace", fontSize: 10, letterSpacing: 3, color: cx(.5), marginBottom: 8 }}>👥 SYSTÈME D'ÉQUIPES</p>
-              <h1 style={{ fontFamily: "Bebas Neue,cursive", fontSize: 48, letterSpacing: 3, margin: 0, lineHeight: 1, color: "#fff" }}>
+              <h1 style={{ fontFamily: "Bebas Neue,cursive", fontSize: "clamp(32px,6vw,48px)", letterSpacing: 2, margin: 0, lineHeight: 1, color: "#fff" }}>
                 ÉQUIPES <span style={{ color: CYAN }}>ESPORT</span>
               </h1>
               <p style={{ color: "rgba(255,255,255,.4)", fontSize: 13, marginTop: 8, fontFamily: "Space Grotesk,sans-serif" }}>
                 {teams.length} équipes actives · Saison 1
               </p>
             </div>
-            <div style={{ display: "flex", gap: 10 }}>
+            <div className="tm-hero-actions" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {!myTeam && (
                 <>
                   <motion.button
@@ -734,7 +739,7 @@ export default function Teams() {
 
         {/* TEAMS GRID */}
         {tab === "all" && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(300px,100%),1fr))", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(260px,100%),1fr))", gap: 10 }}>
             {filteredTeams.map((team, i) => (
               <motion.div
                 key={team.id}
@@ -818,14 +823,14 @@ export default function Teams() {
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6, marginBottom: 10 }}>
                     {[
                       [team.points || 0, "PTS", CYAN],
                       [team.wins || 0, "WINS", GREEN],
                       [team.member_count || 0, "MBR", INDIGO]
                     ].map(([v, l, c]) => (
-                      <div key={l} style={{ textAlign: "center", padding: "8px 4px", borderRadius: 8, background: cx(.04), border: `1px solid ${cx(.07)}` }}>
-                        <p style={{ fontFamily: "Bebas Neue,cursive", fontSize: 22, color: c, lineHeight: 1 }}>{v}</p>
+                      <div key={l} style={{ textAlign: "center", padding: "6px 3px", borderRadius: 7, background: cx(.04), border: `1px solid ${cx(.07)}` }}>
+                        <p style={{ fontFamily: "Bebas Neue,cursive", fontSize: 18, color: c, lineHeight: 1 }}>{v}</p>
                         <p style={{ fontFamily: "JetBrains Mono,monospace", fontSize: 8, color: "rgba(255,255,255,.25)", letterSpacing: 1 }}>{l}</p>
                       </div>
                     ))}
@@ -869,7 +874,7 @@ export default function Teams() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    padding: "14px 22px",
+                    padding: "11px 16px",
                     borderBottom: i < teams.length - 1 ? `1px solid ${cx(.06)}` : "none",
                     cursor: "pointer",
                     transition: "background .15s",
@@ -917,7 +922,7 @@ export default function Teams() {
                     [team.tournaments_played || 0, "TOURNOIS", INDIGO]
                   ].map(([v, l, c]) => (
                     <div key={l} style={{ textAlign: "center", minWidth: 52, flexShrink: 0 }}>
-                      <p style={{ fontFamily: "Bebas Neue,cursive", fontSize: 22, color: c, lineHeight: 1 }}>{v}</p>
+                      <p style={{ fontFamily: "Bebas Neue,cursive", fontSize: 18, color: c, lineHeight: 1 }}>{v}</p>
                       <p style={{ fontFamily: "JetBrains Mono,monospace", fontSize: 8, color: "rgba(255,255,255,.25)", letterSpacing: 1 }}>{l}</p>
                     </div>
                   ))}

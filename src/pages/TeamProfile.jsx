@@ -701,6 +701,11 @@ export default function TeamProfile() {
         ::-webkit-scrollbar-thumb:hover {
           background: ${rgba(THEME.cyan, 0.3)};
         }
+        .tp-content { max-width: 960px; margin: 0 auto; }
+        @media(max-width:768px){
+          .tp-content { padding: 12px!important; }
+        }
+        @keyframes tp-blink { 0%,100%{opacity:1}50%{opacity:.4} }
       `}</style>
 
       <div style={{
@@ -739,13 +744,13 @@ export default function TeamProfile() {
             <div style={{
               display: "flex",
               alignItems: "flex-start",
-              gap: 24,
+              gap: "clamp(12px,2vw,20px)",
               flexWrap: "wrap",
-              marginBottom: 24
+              marginBottom: 16
             }}>
-              <TeamAvatar team={team} size={100} />
+              <TeamAvatar team={team} size={72} />
 
-              <div style={{ flex: 1, minWidth: 280 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   display: "flex",
                   alignItems: "center",
@@ -755,7 +760,7 @@ export default function TeamProfile() {
                 }}>
                   <h1 style={{
                     fontFamily: "'Bebas Neue', cursive",
-                    fontSize: 48,
+                    fontSize: "clamp(28px,5vw,40px)",
                     letterSpacing: 2,
                     color: "#fff",
                     margin: 0,
@@ -1012,14 +1017,56 @@ export default function TeamProfile() {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs — STICKY with mini identity strip */}
         <div style={{
-          padding: "0 40px",
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          background: "rgba(10,12,16,0.95)",
+          backdropFilter: "blur(20px)",
           borderBottom: `1px solid ${THEME.border}`,
-          display: "flex",
-          gap: 4,
-          overflowX: "auto"
         }}>
+          {/* Mini identity strip */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "7px clamp(12px,3vw,32px) 6px",
+            borderBottom: `1px solid rgba(255,255,255,0.04)`,
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 7, flexShrink: 0,
+              background: team.accent_color ? `${team.accent_color}22` : "rgba(0,212,255,0.1)",
+              border: `1px solid ${team.accent_color || THEME.cyan}30`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 13, fontWeight: 800, overflow: "hidden",
+            }}>
+              {team.logo_url
+                ? <img src={team.logo_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+                : (team.tag?.[0] || "T")}
+            </div>
+            <span style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: 13, fontWeight: 800,
+              color: "rgba(255,255,255,0.85)",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              flex: 1, minWidth: 0,
+            }}>
+              {team.name}
+            </span>
+            <span style={{
+              fontSize: 10, color: team.accent_color || THEME.cyan,
+              fontFamily: "'JetBrains Mono', monospace",
+              flexShrink: 0,
+            }}>
+              [{team.tag}]
+            </span>
+          </div>
+          {/* Tabs row */}
+          <div style={{
+            padding: "0 clamp(10px,3vw,32px)",
+            display: "flex",
+            gap: 2,
+            overflowX: "auto",
+          }}>
           {tabs.map(tab => (
             <motion.button
               key={tab.id}
@@ -1027,7 +1074,7 @@ export default function TeamProfile() {
               whileTap={{ y: 0 }}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: "16px 20px",
+                padding: "11px 14px",
                 background: "none",
                 border: "none",
                 borderBottom: `2px solid ${activeTab === tab.id ? accentColor : "transparent"}`,
@@ -1058,16 +1105,17 @@ export default function TeamProfile() {
               )}
             </motion.button>
           ))}
-        </div>
+          </div>  {/* end tabs row */}
+        </div>  {/* end sticky container */}
 
         {/* Content */}
-        <div style={{ padding: "32px 40px" }}>
+        <div style={{ padding: "clamp(14px,3vw,28px) clamp(12px,4vw,36px)" }}>
           {/* Members Tab */}
           {activeTab === "members" && (
             <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-              gap: 12
+              display: "flex",
+              flexDirection: "column",
+              gap: 0
             }}>
               {members.map((member, index) => {
                 const profileData = member.profile;
@@ -1225,7 +1273,8 @@ export default function TeamProfile() {
               border: `1px solid ${THEME.border}`,
               borderRadius: 16,
               overflow: "hidden",
-              height: 600,
+              minHeight: 340,
+              maxHeight: "min(600px,65vh)",
               display: "flex",
               flexDirection: "column"
             }}>
@@ -1233,7 +1282,7 @@ export default function TeamProfile() {
               <div style={{
                 flex: 1,
                 overflowY: "auto",
-                padding: "20px"
+                padding: "14px"
               }}>
                 {chatMessages.length === 0 ? (
                   <div style={{
