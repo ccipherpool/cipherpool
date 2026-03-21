@@ -5,12 +5,17 @@ import { motion, AnimatePresence } from "framer-motion";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const ITEM_TYPES = [
-  { value: "avatar",     label: "Avatar",       icon: "🎭", desc: "Photo de profil personnalisée" },
-  { value: "banner",     label: "Bannière",     icon: "🖼️", desc: "Arrière-plan du profil" },
-  { value: "badge",      label: "Badge",        icon: "🏅", desc: "Insigne de vérification" },
-  { value: "name_color", label: "Nom Coloré",   icon: "✨", desc: "Couleur du nom en jeu" },
-  { value: "frame",      label: "Cadre",        icon: "💠", desc: "Cadre autour de l'avatar" },
-  { value: "emote",      label: "Emote",        icon: "😎", desc: "Emote utilisable en chat" },
+  { value: "avatar",       label: "Avatar",          icon: "🎭", desc: "Photo de profil — s'affiche partout", surface: "profile,chat,teams,leaderboard" },
+  { value: "banner",       label: "Bannière",        icon: "🖼️", desc: "Arrière-plan du profil", surface: "profile" },
+  { value: "badge",        label: "Badge",           icon: "🏅", desc: "Insigne — profil + chat + leaderboard", surface: "profile,chat,leaderboard" },
+  { value: "name_color",   label: "Nom Coloré",      icon: "✨", desc: "Couleur du nom — s'affiche partout", surface: "profile,chat,leaderboard,teams" },
+  { value: "frame",        label: "Cadre Avatar",    icon: "💠", desc: "Cadre autour de l'avatar", surface: "profile,teams" },
+  { value: "emote",        label: "Emote Chat",      icon: "😎", desc: "Emote utilisable en chat", surface: "chat" },
+  { value: "title",        label: "Titre",           icon: "🏆", desc: "Ex: Founder · Legend · Top Killer", surface: "profile,chat" },
+  { value: "chat_bubble",  label: "Bulle de Chat",   icon: "💬", desc: "Style de bulle en chat", surface: "chat" },
+  { value: "profile_bg",   label: "BG Profil",       icon: "🌌", desc: "Fond animé du profil", surface: "profile" },
+  { value: "name_effect",  label: "Effet Nom",       icon: "✴️", desc: "Animation sur le nom", surface: "profile,chat" },
+  { value: "verification", label: "Style Vérif.",    icon: "✅", desc: "Badge vérifié custom", surface: "profile,chat" },
 ];
 
 const RARITIES = [
@@ -39,6 +44,8 @@ const EMPTY_FORM = {
   name: "", description: "", type: "avatar", rarity: "common",
   price: 300, color_value: "#7c3aed", limited: false, limited_until: "",
   daily_rotation: false, source: "store", sort_order: 0,
+  featured: false, visible_in_store: true,
+  show_in_profile: true, show_in_chat: true, show_in_leaderboard: true, show_in_team: true,
 };
 
 // ─── ITEM PREVIEW ────────────────────────────────────────────────────────────
@@ -189,6 +196,12 @@ export default function DesignerPanel() {
         image_url:   url || null,
         price:       form.source !== "store" ? 0 : parseInt(form.price) || 0,
         created_by:  profile.id,
+        featured:    form.featured || false,
+        visible_in_store: form.visible_in_store !== false,
+        show_in_profile:  form.show_in_profile !== false,
+        show_in_chat:     form.show_in_chat !== false,
+        show_in_leaderboard: form.show_in_leaderboard !== false,
+        show_in_team:     form.show_in_team !== false,
         // super_admin & admin: auto-approve. designer: needs approval
         approved:    ["super_admin","admin"].includes(profile.role),
         approved_by: ["super_admin","admin"].includes(profile.role) ? profile.id : null,
@@ -364,9 +377,10 @@ export default function DesignerPanel() {
         }}>
           <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", gap: 0 }}>
             {[
-              { key: "create",  label: editItem ? "MODIFIER L'ITEM" : "CRÉER UN ITEM", icon: "➕" },
-              { key: "manage",  label: "GÉRER LES ITEMS",    icon: "⚙️" },
-              { key: "pending", label: "EN ATTENTE",          icon: "⏳" },
+              { key: "create",  label: editItem ? "MODIFIER" : "CRÉER",    icon: "➕" },
+              { key: "manage",  label: "GÉRER",                              icon: "⚙️" },
+              { key: "pending", label: "EN ATTENTE",                         icon: "⏳" },
+              { key: "featured",label: "FEATURED",                           icon: "⭐" },
             ].map(t => (
               <button key={t.key} onClick={() => { setTab(t.key); if (t.key === "manage" || t.key === "pending") fetchItems(); }}
                 style={{
@@ -428,6 +442,19 @@ export default function DesignerPanel() {
                         <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
                       ))}
                     </select>
+                    {(() => {
+                      const t = ITEM_TYPES.find(x => x.value === form.type);
+                      return t ? (
+                        <div style={{ marginTop:6, fontSize:11, color:"rgba(255,255,255,0.4)", display:"flex", gap:6, flexWrap:"wrap" }}>
+                          <span>📍 Surfaces:</span>
+                          {t.surface?.split(",").map(s => (
+                            <span key={s} style={{ padding:"2px 7px", borderRadius:99,
+                              background:"rgba(124,58,237,0.12)", border:"1px solid rgba(124,58,237,0.2)",
+                              color:"#a78bfa", fontSize:10, fontWeight:700 }}>{s}</span>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
 

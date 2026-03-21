@@ -48,13 +48,62 @@ export default function AdminStorePanel() {
   const [coinReason, setCoinReason]     = useState("");
   const [loading, setLoading]     = useState(false);
   const [notification, setNotification] = useState(null);
+  const [pendingItems,  setPendingItems]  = useState([]);
+  const [allStoreItems, setAllStoreItems] = useState([]);
+  const [searchItem,    setSearchItem]    = useState("");
+  const [itemFilter,    setItemFilter]    = useState("all");
   const [logs, setLogs]           = useState([]);
 
   useEffect(() => {
     if (!["admin","super_admin"].includes(profile?.role)) navigate("/dashboard");
     fetchUsers();
     fetchStoreItems();
+    fetchPendingItems();
+    fetchAllStoreItems();
   }, []);
+
+  const fetchPendingItems = async () => {
+    const { data } = await supabase.from("store_items")
+      .select("*, creator:profiles!store_items_created_by_fkey(full_name)")
+      .eq("approved", false).order("created_at", { ascending:false });
+    setPendingItems(data ?? []);
+  };
+
+  const fetchAllStoreItems = async () => {
+    const { data } = await supabase.from("store_items")
+      .select("*").order("sort_order", { ascending:true });
+    setAllStoreItems(data ?? []);
+  };
+
+  const approveItem = async (itemId) => {
+    await supabase.from("store_items").update({ approved:true, active:true }).eq("id", itemId);
+    fetchPendingItems(); fetchAllStoreItems(); fetchStoreItems();
+    notify("✅ Item approuvé !");
+  };
+
+  const rejectItem = async (itemId) => {
+    await supabase.from("store_items").update({ approved:false, active:false }).eq("id", itemId);
+    fetchPendingItems();
+    notify("❌ Item rejeté", "error");
+  };
+
+  const toggleFeatured = async (itemId, current) => {
+    await supabase.from("store_items").update({ featured: !current }).eq("id", itemId);
+    fetchAllStoreItems();
+    notify(current ? "Item retiré des featured" : "⭐ Item mis en featured !");
+  };
+
+  const toggleVisible = async (itemId, current) => {
+    await supabase.from("store_items").update({ active: !current }).eq("id", itemId);
+    fetchAllStoreItems();
+    notify(current ? "Item masqué" : "Item visible en boutique");
+  };
+
+  const updatePrice = async (itemId, price) => {
+    await supabase.from("store_items").update({ price }).eq("id", itemId);
+    fetchAllStoreItems();
+    notify("💰 Prix mis à jour");
+  };
 
   useEffect(() => {
     if (selectedUser) fetchUserInventory(selectedUser.id);
@@ -280,9 +329,11 @@ export default function AdminStorePanel() {
         }}>
           <div style={{ maxWidth: 1300, margin: "0 auto", display: "flex" }}>
             {[
-              { key: "grant",  icon: "🎁", label: "DONNER ITEM" },
-              { key: "coins",  icon: "💰", label: "GÉRER COINS" },
-              { key: "logs",   icon: "📋", label: "HISTORIQUE" },
+              { key: "grant",    icon: "🎁", label: "DONNER" },
+              { key: "coins",    icon: "💰", label: "COINS" },
+              { key: "items",    icon: "📦", label: "ITEMS" },
+              { key: "approve",  icon: "⏳", label: "APPROBATIONS" },
+              { key: "logs",     icon: "📋", label: "LOGS" },
             ].map(t => (
               <button key={t.key} onClick={() => setTab(t.key)}
                 style={{
@@ -640,6 +691,148 @@ export default function AdminStorePanel() {
                   {loading ? "⏳..." : `🔴 RETIRER ${coinAmount < 0 ? Math.abs(coinAmount) : ""} COINS`}
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* ITEMS TAB — Store CMS */}
+          {tab === "items" && (
+            <div style={{ maxWidth:1300, margin:"0 auto" }}>
+              <div style={{ display:"flex", gap:8, marginBottom:16, flexWrap:"wrap", alignItems:"center" }}>
+                <input value={searchItem} onChange={e => setSearchItem(e.target.value)}
+                  placeholder="Rechercher un item..."
+                  style={{ flex:1, minWidth:180, padding:"9px 14px", borderRadius:10,
+                    background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.1)",
+                    color:"#fff", fontSize:13, fontFamily:"Rajdhani,sans-serif", outline:"none" }}/>
+                {["all","avatar","banner","badge","frame","name_color","emote","title"].map(f => (
+                  <button key={f} onClick={() => setItemFilter(f)}
+                    style={{ padding:"6px 12px", borderRadius:99, border:"none", cursor:"pointer",
+                      fontSize:10, fontWeight:700, fontFamily:"Rajdhani,sans-serif",
+                      background: itemFilter===f ? "rgba(124,58,237,0.25)" : "rgba(255,255,255,0.05)",
+                      color: itemFilter===f ? "#a78bfa" : "rgba(255,255,255,0.4)" }}>
+                    {f === "all" ? "Tout" : f}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(280px,100%),1fr))", gap:10 }}>
+                {allStoreItems
+                  .filter(i => (itemFilter === "all" || i.type === itemFilter) &&
+                    (!searchItem || i.name?.toLowerCase().includes(searchItem.toLowerCase())))
+                  .map(item => {
+                    const rc = RC[item.rarity] || RC.common;
+                    return (
+                      <div key={item.id} style={{ background:"rgba(255,255,255,0.03)",
+                        border:`1px solid ${rc.color}22`, borderRadius:14, overflow:"hidden" }}>
+                        <div style={{ height:3, background:`linear-gradient(90deg,${rc.color},transparent)` }}/>
+                        <div style={{ padding:"12px 14px" }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+                            <div style={{ width:42, height:42, borderRadius:9, flexShrink:0,
+                              background:`${rc.color}12`, border:`1px solid ${rc.color}22`,
+                              display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
+                              {item.image_url
+                                ? <img src={item.image_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+                                : <span style={{ fontSize:18 }}>{TYPE_ICON[item.type]||"📦"}</span>}
+                            </div>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div style={{ fontSize:14, fontWeight:800, color:"#fff",
+                                overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{item.name}</div>
+                              <div style={{ display:"flex", gap:5, marginTop:2 }}>
+                                <span style={{ fontSize:9, fontWeight:800, color:rc.color,
+                                  background:`${rc.color}12`, padding:"1px 6px", borderRadius:99 }}>{rc.label}</span>
+                                <span style={{ fontSize:9, color:"rgba(255,255,255,0.3)" }}>{item.type}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                            <span style={{ fontSize:11, color:"rgba(255,255,255,0.4)" }}>💰</span>
+                            <input type="number" defaultValue={item.price||0}
+                              onBlur={e => updatePrice(item.id, parseInt(e.target.value)||0)}
+                              style={{ width:80, padding:"4px 8px", borderRadius:7,
+                                background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)",
+                                color:"#fff", fontSize:12, fontFamily:"Rajdhani,sans-serif", outline:"none" }}/>
+                            <span style={{ fontSize:10, color:"rgba(255,255,255,0.25)" }}>CP</span>
+                          </div>
+                          <div style={{ display:"flex", gap:6 }}>
+                            <button onClick={() => toggleFeatured(item.id, item.featured)}
+                              style={{ flex:1, padding:"6px 8px", borderRadius:7, border:"none", cursor:"pointer",
+                                fontSize:11, fontWeight:700, fontFamily:"Rajdhani,sans-serif",
+                                background: item.featured ? "rgba(251,191,36,0.18)" : "rgba(255,255,255,0.04)",
+                                color: item.featured ? "#fbbf24" : "rgba(255,255,255,0.35)" }}>
+                              {item.featured ? "⭐ Featured" : "Mettre avant"}
+                            </button>
+                            <button onClick={() => toggleVisible(item.id, item.active)}
+                              style={{ flex:1, padding:"6px 8px", borderRadius:7, border:"none", cursor:"pointer",
+                                fontSize:11, fontWeight:700, fontFamily:"Rajdhani,sans-serif",
+                                background: item.active ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.04)",
+                                color: item.active ? "#22c55e" : "rgba(255,255,255,0.35)" }}>
+                              {item.active ? "👁️ Visible" : "Masqué"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* APPROVE TAB */}
+          {tab === "approve" && (
+            <div style={{ maxWidth:1300, margin:"0 auto" }}>
+              {pendingItems.length === 0 ? (
+                <div style={{ textAlign:"center", padding:"48px 0", color:"rgba(255,255,255,0.3)", fontSize:13 }}>
+                  ✅ Aucun item en attente
+                </div>
+              ) : (
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(min(260px,100%),1fr))", gap:10 }}>
+                  {pendingItems.map(item => {
+                    const rc = RC[item.rarity] || RC.common;
+                    return (
+                      <div key={item.id} style={{ background:"rgba(245,158,11,0.04)",
+                        border:"1px solid rgba(245,158,11,0.2)", borderRadius:14, overflow:"hidden" }}>
+                        <div style={{ height:3, background:"linear-gradient(90deg,#f59e0b,#f97316)" }}/>
+                        <div style={{ padding:"14px" }}>
+                          <div style={{ display:"flex", gap:10, marginBottom:10 }}>
+                            <div style={{ width:48, height:48, borderRadius:10, flexShrink:0,
+                              background:`${rc.color}12`, border:`1px solid ${rc.color}22`,
+                              display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
+                              {item.image_url
+                                ? <img src={item.image_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+                                : <span style={{ fontSize:20 }}>📦</span>}
+                            </div>
+                            <div>
+                              <div style={{ fontSize:14, fontWeight:800, color:"#fff", marginBottom:2 }}>{item.name}</div>
+                              <div style={{ fontSize:10, color:rc.color, marginBottom:1 }}>{rc.label} · {item.type}</div>
+                              <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)" }}>
+                                {item.creator?.full_name || "Designer"} · {item.price||0} CP
+                              </div>
+                            </div>
+                          </div>
+                          {item.description && (
+                            <p style={{ fontSize:11, color:"rgba(255,255,255,0.4)", lineHeight:1.5, marginBottom:10 }}>
+                              {item.description}
+                            </p>
+                          )}
+                          <div style={{ display:"flex", gap:7 }}>
+                            <button onClick={() => approveItem(item.id)}
+                              style={{ flex:1, padding:"9px", borderRadius:9, border:"none",
+                                background:"linear-gradient(135deg,#22c55e,#16a34a)", color:"#fff",
+                                fontSize:12, fontWeight:800, cursor:"pointer", fontFamily:"Rajdhani,sans-serif" }}>
+                              ✅ Approuver
+                            </button>
+                            <button onClick={() => rejectItem(item.id)}
+                              style={{ flex:1, padding:"9px", borderRadius:9,
+                                background:"rgba(239,68,68,0.12)", color:"#ef4444",
+                                fontSize:12, fontWeight:800, cursor:"pointer", fontFamily:"Rajdhani,sans-serif",
+                                border:"1px solid rgba(239,68,68,0.22)" }}>
+                              ❌ Rejeter
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
