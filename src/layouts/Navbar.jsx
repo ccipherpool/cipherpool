@@ -21,6 +21,7 @@ const NAV_LINKS = [
 ];
 
 const ADMIN_LINKS = [
+  { to: "/designer",    label: "DESIGN",     roles: ["designer", "admin", "super_admin"], icon: "🎨" },
   { to: "/founder",     label: "FOUNDER",    roles: ["founder", "super_admin"],    icon: "⚡" },
   { to: "/admin",       label: "ADMIN",      roles: ["admin", "super_admin"],      icon: "🛡️" },
   { to: "/super-admin", label: "SUPER ADM",  roles: ["super_admin"],               icon: "👑" },
@@ -52,6 +53,7 @@ export default function Navbar({ profile }) {
   const isVerified  = profile?.verification_status === "approved";
   const isAdmin     = ["admin", "super_admin"].includes(profile?.role);
   const isFounder   = ["founder", "super_admin"].includes(profile?.role);
+  const isDesigner  = ["designer", "admin", "super_admin"].includes(profile?.role);
 
   // ── Scroll shadow ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -223,7 +225,7 @@ export default function Navbar({ profile }) {
             })}
 
             {/* Admin links separator */}
-            {(isAdmin || isFounder) && (
+            {(isAdmin || isFounder || isDesigner) && (
               <>
                 <div className="w-px h-5 bg-white/10 mx-1"></div>
                 {ADMIN_LINKS.filter(l => l.roles.includes(profile?.role)).map(link => (
@@ -421,7 +423,7 @@ export default function Navbar({ profile }) {
                 })}
 
                 {/* Admin mobile links */}
-                {(isAdmin || isFounder) && (
+                {(isAdmin || isFounder || isDesigner) && (
                   <>
                     <div className="border-t border-white/5 my-2"></div>
                     <p className="text-[10px] text-white/25 tracking-widest px-3 pb-1">GESTION</p>
