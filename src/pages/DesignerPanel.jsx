@@ -169,7 +169,7 @@ export default function DesignerPanel() {
     const ext  = imageFile.name.split(".").pop();
     const path = `items/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage
-      .from("store_items")
+      .from("store-items")
       .upload(path, imageFile, { upsert: true });
     if (error) throw new Error("Upload image: " + error.message);
     const { data } = supabase.storage.from("store-items").getPublicUrl(path);
