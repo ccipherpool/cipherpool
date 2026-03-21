@@ -425,7 +425,7 @@ export default function Profile() {
           .prf-balance{min-width:unset!important;width:100%!important}
           .prf-content{padding:16px 12px 80px!important}
           .prf-tabs-inner{padding:0 12px!important}
-          .ptab{padding:10px 10px!important;font-size:9px!important}
+          .ptab{padding:8px 8px!important;font-size:8.5px!important}
           .prf-stats-grid{grid-template-columns:1fr 1fr!important}
           .prf-info-grid{grid-template-columns:1fr!important}
           .prf-hist-grid{grid-template-columns:1fr!important}
@@ -433,7 +433,7 @@ export default function Profile() {
           .prf-wallet-grid{grid-template-columns:1fr 1fr!important}
         }
         @media(max-width:480px){
-          .prf-hero-banner{height:160px!important}
+          .prf-hero-banner{height:120px!important}
           .prf-wallet-grid{grid-template-columns:1fr!important}
         }
       `}</style>
@@ -442,13 +442,13 @@ export default function Profile() {
 
         {/* ══ HERO ════════════════════════════════════════════════ */}
         <div style={{ position:"relative",overflow:"hidden" }}>
-          <div style={{ height:"clamp(140px,25vw,230px)",position:"relative",overflow:"hidden",background:SURF }}>
+          <div style={{ height:"clamp(110px,18vw,170px)",position:"relative",overflow:"hidden",background:SURF }}>
             {eq?.banner?.image_url && <img src={eq.banner.image_url} style={{ position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",opacity:.35 }} />}
             <HeroBg />
             {/* Grid */}
             <div style={{ position:"absolute",inset:0,backgroundImage:`linear-gradient(${cx(.07)} 1px,transparent 1px),linear-gradient(90deg,${cx(.07)} 1px,transparent 1px)`,backgroundSize:"50px 50px",pointerEvents:"none" }} />
             {/* Scan line */}
-            <div style={{ position:"absolute",left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${cx(.3)},transparent)`,animation:"scan 4s linear infinite",pointerEvents:"none" }} />
+            <div style={{ position:"absolute",left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${cx(.3)},transparent)`,animation:"scan 6s linear infinite",opacity:0.4,pointerEvents:"none" }} />
             {/* Fade */}
             <div style={{ position:"absolute",bottom:0,left:0,right:0,height:130,background:`linear-gradient(to top,${BG},transparent)`,pointerEvents:"none" }} />
           </div>
@@ -546,7 +546,7 @@ export default function Profile() {
               <motion.div initial={{opacity:0,x:-18}} animate={{opacity:1,x:0}} transition={{delay:.12,duration:.5,ease:[.22,1,.36,1]}}
                 style={{ flex:1,minWidth:220,paddingBottom:4 }}>
                 <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:8,flexWrap:"wrap" }}>
-                  <h1 style={{ fontFamily:"'Bebas Neue',cursive",fontSize:36,letterSpacing:2,margin:0,lineHeight:1,
+                  <h1 style={{ fontFamily:"'Bebas Neue',cursive",fontSize:"clamp(22px,4vw,32px)",letterSpacing:1.5,margin:0,lineHeight:1,
                     color:eq?.name_color?RARITY[eq.name_color.rarity]?.color||"#fff":"#fff",
                     textShadow:eq?.name_color?`0 0 30px ${RARITY[eq.name_color.rarity]?.glow}`:`0 2px 18px rgba(0,0,0,.6)` }}>
                     {profile?.full_name||"—"}
@@ -601,7 +601,30 @@ export default function Profile() {
         </div>
 
         {/* ══ TABS ════════════════════════════════════════════════ */}
-        <div style={{ borderBottom:`1px solid ${cx(.1)}`,position:"sticky",top:0,background:"rgba(2,8,23,0.9)",backdropFilter:"blur(24px)",zIndex:10,boxShadow:`0 4px 28px rgba(0,0,0,.35)` }}>
+        <div style={{ borderBottom:`1px solid ${cx(.1)}`,position:"sticky",top:0,background:"rgba(2,8,23,0.95)",backdropFilter:"blur(28px)",zIndex:20,boxShadow:`0 4px 24px rgba(0,0,0,.4)` }}>
+          {/* Mini identity strip — shows inside sticky tab bar */}
+          <div style={{ maxWidth:1060,margin:"0 auto",padding:"6px clamp(8px,2vw,32px) 0",
+            display:"flex",alignItems:"center",gap:10,borderBottom:`1px solid ${cx(.06)}`,marginBottom:0 }}>
+            <div style={{ width:26,height:26,borderRadius:7,flexShrink:0,overflow:"hidden",
+              background:`linear-gradient(135deg,${CYAN},${CYAN2})`,
+              display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:12 }}>
+              {profile?.avatar_url
+                ? <img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                : initials}
+            </div>
+            <span style={{ fontWeight:800,fontSize:13,color:"rgba(255,255,255,0.85)",
+              overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,minWidth:0 }}>
+              {profile?.full_name||"—"}
+            </span>
+            {isVerified && (
+              <span style={{ fontSize:9,fontWeight:700,color:GREEN,
+                background:gx(.08),border:`1px solid ${gx(.2)}`,
+                padding:"2px 7px",borderRadius:99,flexShrink:0 }}>✓ VÉR.</span>
+            )}
+            <span style={{ fontSize:11,fontWeight:800,color:AMBER,flexShrink:0 }}>
+              💎 {(balance??profile?.coins??0).toLocaleString()}
+            </span>
+          </div>
           <div className="prf-tabs-inner" style={{ maxWidth:1060,margin:"0 auto",padding:"0 clamp(8px,2vw,32px)",display:"flex",gap:2,overflowX:"auto" }}>
             {TABS.filter(t => isViewingOther ? t.key !== "edit" : true).map((t,i)=>(
               <motion.button key={t.key} className="ptab" onClick={()=>setTab(t.key)}

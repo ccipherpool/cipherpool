@@ -5,14 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const TABS = [
-  { key: "all",        label: "TOUT",        icon: "🏪" },
-  { key: "avatar",     label: "AVATARS",     icon: "🎭" },
-  { key: "banner",     label: "BANNIERES",   icon: "🖼️" },
-  { key: "frame",      label: "CADRES",      icon: "💠" },
-  { key: "badge",      label: "BADGES",      icon: "🏅" },
-  { key: "name_color", label: "NOM COLORÉ",  icon: "✨" },
-  { key: "emote",      label: "EMOTES",      icon: "😎" },
-  { key: "inventory",  label: "MON INVENTAIRE", icon: "🎒" },
+  { key: "all",        label: "Tout",      icon: "🏪" },
+  { key: "avatar",     label: "Avatar",    icon: "🎭" },
+  { key: "banner",     label: "Banner",    icon: "🖼️" },
+  { key: "frame",      label: "Cadre",     icon: "💠" },
+  { key: "badge",      label: "Badge",     icon: "🏅" },
+  { key: "name_color", label: "Nom",       icon: "✨" },
+  { key: "emote",      label: "Emote",     icon: "😎" },
+  { key: "inventory",  label: "Inventaire",icon: "🎒" },
 ];
 
 const RARITY = {
@@ -98,7 +98,7 @@ function ItemCard({ item, owned, equipped, onBuy, onEquip, coins }) {
 
       {/* Image area */}
       <div style={{
-        height: 160, display: "flex", alignItems: "center", justifyContent: "center",
+        height: 110, display: "flex", alignItems: "center", justifyContent: "center",
         position: "relative", overflow: "hidden",
         background: `radial-gradient(circle at center, ${rarity.glow}, transparent 70%)`,
       }}>
@@ -134,7 +134,7 @@ function ItemCard({ item, owned, equipped, onBuy, onEquip, coins }) {
       </div>
 
       {/* Info */}
-      <div style={{ padding: "14px 16px" }}>
+      <div style={{ padding: "10px 12px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
           <span style={{
             fontSize: 9, fontWeight: 700, letterSpacing: 1.5,
@@ -182,7 +182,7 @@ function ItemCard({ item, owned, equipped, onBuy, onEquip, coins }) {
                 onClick={handleEquip}
                 disabled={equipping || equipped}
                 style={{
-                  padding: "7px 14px", borderRadius: 8,
+                  padding: "6px 10px", borderRadius: 7,
                   background: equipped
                     ? "rgba(255,255,255,0.05)"
                     : `linear-gradient(135deg, ${rarity.color}, ${rarity.color}cc)`,
@@ -200,7 +200,7 @@ function ItemCard({ item, owned, equipped, onBuy, onEquip, coins }) {
                 onClick={handleBuy}
                 disabled={buying || !canAfford}
                 style={{
-                  padding: "7px 14px", borderRadius: 8,
+                  padding: "6px 10px", borderRadius: 7,
                   background: !canAfford
                     ? "rgba(239,68,68,0.15)"
                     : "linear-gradient(135deg, #7c3aed, #06b6d4)",
@@ -270,7 +270,7 @@ function InventoryView({ userItems, items, onEquip, onUnequip }) {
       {Object.keys(equippedByType).length > 0 && (
         <div style={{
           background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.15)",
-          borderRadius: 14, padding: "16px 20px", marginBottom: 28,
+          borderRadius: 12, padding: "12px 16px", marginBottom: 16,
         }}>
           <p style={{ fontFamily: "Orbitron, sans-serif", fontSize: 11, letterSpacing: 2, color: "#a855f7", marginBottom: 14 }}>
             ⚡ ACTUELLEMENT ÉQUIPÉ
@@ -282,7 +282,7 @@ function InventoryView({ userItems, items, onEquip, onUnequip }) {
                 <div key={type} style={{
                   display: "flex", alignItems: "center", gap: 10,
                   background: `${rc.color}10`, border: `1px solid ${rc.color}30`,
-                  borderRadius: 10, padding: "8px 14px",
+                  borderRadius: 8, padding: "6px 10px",
                 }}>
                   {item.image_url
                     ? <img src={item.image_url} style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover" }} />
@@ -307,7 +307,7 @@ function InventoryView({ userItems, items, onEquip, onUnequip }) {
         {itemTypes.map(t => (
           <button key={t.key} onClick={() => setActiveType(t.key)}
             style={{
-              padding: "6px 14px", borderRadius: 8, cursor: "pointer",
+              padding: "5px 10px", borderRadius: 7, cursor: "pointer",
               background: activeType === t.key ? "rgba(124,58,237,0.2)" : "transparent",
               border: `1px solid ${activeType === t.key ? "rgba(124,58,237,0.5)" : "rgba(255,255,255,0.08)"}`,
               color: activeType === t.key ? "#a855f7" : "rgba(255,255,255,0.35)",
@@ -334,7 +334,7 @@ function InventoryView({ userItems, items, onEquip, onUnequip }) {
                 borderRadius: 14,
                 background: equipped ? `${rc.color}08` : "rgba(255,255,255,0.02)",
                 border: `1px solid ${equipped ? rc.color + "50" : "rgba(255,255,255,0.07)"}`,
-                padding: 16, position: "relative", overflow: "hidden",
+                padding: 11, position: "relative", overflow: "hidden",
                 boxShadow: equipped ? `0 0 20px ${rc.color}20` : "none",
               }}
             >
@@ -550,7 +550,7 @@ export default function Store() {
                 initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}
                 onClick={e => e.stopPropagation()}
                 style={{
-                  width: 380, background: "#0d0e1f",
+                  width: "min(360px,90vw)", background: "#0d0e1f",
                   border: `1px solid ${RARITY[confirmItem.rarity]?.color || "#7c3aed"}40`,
                   borderRadius: 20, padding: 32,
                   boxShadow: `0 20px 60px ${RARITY[confirmItem.rarity]?.glow || "rgba(124,58,237,0.3)"}`,
@@ -670,7 +670,7 @@ export default function Store() {
                 }}>
                   <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: 2, marginBottom: 2 }}>MON SOLDE</div>
                   <div style={{
-                    fontFamily: "Orbitron", fontWeight: 700, fontSize: 20,
+                    fontFamily: "Orbitron", fontWeight: 700, fontSize: 16,
                     background: "linear-gradient(90deg, #f59e0b, #fbbf24)",
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                   }}>
@@ -693,7 +693,7 @@ export default function Store() {
             {/* Daily items banner */}
             {dailyItems.length > 0 && (
               <div style={{
-                marginTop: 20, padding: "12px 18px", borderRadius: 12,
+                marginTop: 12, padding: "10px 14px", borderRadius: 12,
                 background: "linear-gradient(135deg, rgba(239,68,68,0.1), rgba(245,158,11,0.1))",
                 border: "1px solid rgba(239,68,68,0.25)",
                 display: "flex", alignItems: "center", gap: 12,
@@ -733,9 +733,10 @@ export default function Store() {
                   key={t.key}
                   onClick={() => setTab(t.key)}
                   style={{
-                    padding: "14px 16px", background: "transparent", border: "none",
-                    borderBottom: `2px solid ${tab === t.key ? "#7c3aed" : "transparent"}`,
-                    color: tab === t.key ? "#fff" : "rgba(255,255,255,0.35)",
+                    padding: "7px 14px", background: tab === t.key ? "rgba(124,58,237,0.15)" : "transparent",
+                    border: `1px solid ${tab === t.key ? "rgba(124,58,237,0.4)" : "rgba(255,255,255,0.07)"}`,
+                    borderRadius: 99, margin: "6px 0",
+                    color: tab === t.key ? "#fff" : "rgba(255,255,255,0.4)",
                     fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
                     cursor: "pointer", transition: "all 0.2s", whiteSpace: "nowrap",
                     fontFamily: "Rajdhani, sans-serif",
@@ -766,8 +767,66 @@ export default function Store() {
           </div>
         </div>
 
+        {/* ── FEATURED ITEM (all tab only) ── */}
+        {tab === "all" && (() => {
+          const RARITY_ORDER_L = { common:0, rare:1, epic:2, legendary:3 };
+          const featured = [...items].filter(i => ["legendary","epic"].includes(i.rarity))
+            .sort((a,b) => (RARITY_ORDER_L[b.rarity]||0) - (RARITY_ORDER_L[a.rarity]||0))[0];
+          if (!featured) return null;
+          const rc = RARITY[featured.rarity] || RARITY.common;
+          const isOwned = userItems.some(u => u.item_id === featured.id);
+          return (
+            <div style={{ maxWidth:1200, margin:"0 auto", padding:"0 clamp(12px,3vw,28px) 10px" }}>
+              <div style={{
+                background:`linear-gradient(135deg,${rc.bg},rgba(255,255,255,0.02))`,
+                border:`1px solid ${rc.color}35`, borderRadius:16,
+                padding:"14px 18px", display:"flex", alignItems:"center", gap:14,
+                flexWrap:"wrap", boxShadow:`0 6px 28px ${rc.glow}`,
+                position:"relative", overflow:"hidden",
+              }}>
+                <span style={{ position:"absolute", top:8, left:14, fontSize:9,
+                  fontWeight:800, letterSpacing:1.5, color:rc.color,
+                  background:`${rc.color}15`, padding:"3px 8px", borderRadius:99 }}>
+                  ⭐ FEATURED
+                </span>
+                <div style={{ width:64, height:64, borderRadius:12, marginTop:10, flexShrink:0,
+                  background:`${rc.color}12`, border:`1px solid ${rc.color}28`,
+                  display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  {featured.image_url
+                    ? <img src={featured.image_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", borderRadius:10 }}/>
+                    : <span style={{ fontSize:28 }}>
+                        {featured.type==="avatar"?"🎭":featured.type==="banner"?"🖼️":
+                         featured.type==="frame"?"💠":featured.type==="badge"?"🏅":"✨"}
+                      </span>}
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:9, fontWeight:800, color:rc.color, letterSpacing:1.5, marginBottom:3 }}>{rc.label}</div>
+                  <div style={{ fontSize:15, fontWeight:800, color:"#fff", marginBottom:3,
+                    overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    {featured.name}
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+                    <span style={{ fontSize:14, fontWeight:800, color:"#f59e0b" }}>
+                      💰 {featured.source==="store" ? featured.price?.toLocaleString() : "GRATUIT"}
+                    </span>
+                    {!isOwned
+                      ? <button onClick={() => setConfirmItem(featured)}
+                          style={{ padding:"6px 16px", borderRadius:8, border:"none",
+                            background:`linear-gradient(135deg,${rc.color},${rc.color}aa)`,
+                            color:"#fff", fontSize:12, fontWeight:800, cursor:"pointer" }}>
+                          Acheter →
+                        </button>
+                      : <span style={{ fontSize:11, color:rc.color, fontWeight:700 }}>✓ Possédé</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── ITEMS GRID ── */}
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding:"clamp(14px,4vw,28px) clamp(14px,4vw,32px)" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding:"clamp(10px,3vw,24px) clamp(12px,3vw,28px)" }}>
 
           {/* ── INVENTORY TAB ── */}
           {tab === "inventory" ? (
