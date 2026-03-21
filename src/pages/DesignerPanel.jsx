@@ -133,7 +133,8 @@ export default function DesignerPanel() {
 
   // Access check
   useEffect(() => {
-    if (!["designer","admin","super_admin"].includes(profile?.role)) {
+    const role = profile?.role?.toLowerCase?.() || "";
+    if (!["designer","admin","super_admin"].includes(role)) {
       navigate("/dashboard");
     }
   }, [profile]);
@@ -203,8 +204,8 @@ export default function DesignerPanel() {
         show_in_leaderboard: form.show_in_leaderboard !== false,
         show_in_team:     form.show_in_team !== false,
         // super_admin & admin: auto-approve. designer: needs approval
-        approved:    ["super_admin","admin"].includes(profile.role),
-        approved_by: ["super_admin","admin"].includes(profile.role) ? profile.id : null,
+        approved:    ["super_admin","admin"].includes(profile.role?.toLowerCase?.()),
+        approved_by: ["super_admin","admin"].includes(profile.role?.toLowerCase?.()) ? profile.id : null,
         limited_until: form.limited && form.limited_until ? form.limited_until : null,
       };
 
@@ -222,7 +223,7 @@ export default function DesignerPanel() {
           .insert([payload]);
         if (error) throw error;
         notify(
-          ["super_admin","admin"].includes(profile.role)
+          ["super_admin","admin"].includes(profile.role?.toLowerCase?.())
             ? "✅ Item créé et publié !"
             : "✅ Item créé — en attente d'approbation"
         );
@@ -659,10 +660,10 @@ export default function DesignerPanel() {
                 >
                   {uploading ? "⏫ UPLOAD EN COURS..." : saving ? "💾 SAUVEGARDE..." :
                    editItem ? "✏️ METTRE À JOUR" :
-                   ["super_admin","admin"].includes(profile?.role) ? "🚀 CRÉER ET PUBLIER" : "📤 SOUMETTRE POUR APPROBATION"}
+                   ["super_admin","admin"].includes(profile?.role?.toLowerCase?.()) ? "🚀 CRÉER ET PUBLIER" : "📤 SOUMETTRE POUR APPROBATION"}
                 </button>
 
-                {!["super_admin","admin"].includes(profile?.role) && (
+                {!["super_admin","admin"].includes(profile?.role?.toLowerCase?.()) && (
                   <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, textAlign: "center", letterSpacing: 1 }}>
                     ⚠️ Les items des designers nécessitent une approbation admin avant publication
                   </p>
@@ -793,7 +794,7 @@ export default function DesignerPanel() {
                           {/* Actions */}
                           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                             {/* Approve (admin/super_admin only for pending) */}
-                            {!item.approved && ["admin","super_admin"].includes(profile?.role) && (
+                            {!item.approved && ["admin","super_admin"].includes(profile?.role?.toLowerCase?.()) && (
                               <button
                                 onClick={async () => {
                                   await supabase.from("store_items")
@@ -834,7 +835,7 @@ export default function DesignerPanel() {
                               ✏️ MODIFIER
                             </button>
 
-                            {["admin","super_admin"].includes(profile?.role) && (
+                            {["admin","super_admin"].includes(profile?.role?.toLowerCase?.()) && (
                               <button onClick={() => deleteItem(item.id)}
                                 style={{
                                   padding: "8px 12px", borderRadius: 8, cursor: "pointer",
