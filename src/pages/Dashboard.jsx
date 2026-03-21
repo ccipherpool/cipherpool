@@ -1,8 +1,8 @@
 // src/pages/Dashboard.jsx — CipherPool Player Hub v4
 // 🔥 Addictive · Pro · Mobile-first · Real data only
 import { useOutletContext, useNavigate } from "react-router-dom";
-import { useEffect, useState, useCallback, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "../lib/supabase";
 
 // ─── PALETTE ──────────────────────────────────────────────────────────────────
@@ -361,6 +361,10 @@ export default function Dashboard() {
     return () => supabase.removeChannel(ch);
   }, [profile?.id, load]);
 
+  // ✅ Hooks AVANT le early return (React rules)
+  const nextTournoi = tournaments.find(t => t.status==="open" && t.start_date);
+  const countdownNext = useCountdown(nextTournoi?.start_date);
+
   if (loading) return (
     <div style={{ minHeight:"100vh", background:P.bg,
       display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -372,9 +376,6 @@ export default function Dashboard() {
       </div>
     </div>
   );
-
-  const nextTournoi = tournaments.find(t => t.status==="open" && t.start_date);
-  const countdownNext = useCountdown(nextTournoi?.start_date);
 
   return (
     <div style={{ minHeight:"100vh", background:P.bg, color:"#fff",
