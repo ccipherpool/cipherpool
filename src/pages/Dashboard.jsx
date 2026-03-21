@@ -36,6 +36,7 @@ const getDivision = rank => {
 const ROLES = {
   super_admin: { label:"SUPER ADMIN", color:"#06b6d4", icon:"👑" },
   admin:       { label:"ADMIN",       color:P.indigo,  icon:"🛡️" },
+  designer:    { label:"DESIGNER",    color:"#ec4899",  icon:"🎨" },
   founder:     { label:"FONDATEUR",   color:P.purple,  icon:"⚡" },
   fondateur:   { label:"FONDATEUR",   color:P.purple,  icon:"⚡" },
   user:        { label:"JOUEUR",      color:"rgba(255,255,255,0.45)", icon:"🎮" },
@@ -177,14 +178,12 @@ export default function Dashboard() {
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState({ played:0, wins:0, kills:0, winRate:0, rank:null, total_points:0, top3:0 });
   const [daily, setDaily] = useState(null);
-  const [liveData,      setLiveData]      = useState({ liveCount:0, onlineCount:0, lastWinner:null });
-  const [onlineUsers,   setOnlineUsers]   = useState([]);
-  const [showLivePanel, setShowLivePanel] = useState(false);
+  const [liveData, setLiveData] = useState({ liveCount:0, onlineCount:0, lastWinner:null });
   const [missions, setMissions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const coins = balance ?? 0;
-  const role = ROLES[profile?.role] ?? ROLES.user;
+  const role = ROLES[profile?.role?.toLowerCase()] ?? ROLES.user;
   const approved = profile?.verification_status === "approved";
   const firstName = (profile?.full_name?.split(" ")[0] ?? "JOUEUR").toUpperCase();
   const division = getDivision(stats.rank);
@@ -200,7 +199,7 @@ export default function Dashboard() {
       supabase.from("admin_messages").select("*").order("created_at", { ascending:false }).limit(3),
       supabase.from("user_daily_claims").select("*").eq("user_id", profile.id).order("claimed_at", { ascending:false }).limit(7),
       supabase.from("match_results").select("user_id, points, profiles!match_results_user_id_fkey(full_name)").eq("status","verified").eq("placement",1).order("submitted_at", { ascending:false }).limit(1),
-      supabase.from("profiles").select("id,full_name,avatar_url,role,free_fire_id,last_seen").gte("last_seen", new Date(Date.now()-5*60*1000).toISOString()).order("last_seen", { ascending:false }).limit(20),
+      supabase.from("profiles").select("id").gte("last_seen", new Date(Date.now()-5*60*1000).toISOString()),
       supabase.from("tournaments").select("id").eq("status", "in_progress"),
     ]);
     setTournaments(trn ?? []);
@@ -210,11 +209,9 @@ export default function Dashboard() {
       winRate: st.wins>0 && st.tournaments_played>0 ? Math.round((st.wins/st.tournaments_played)*100) : 0,
       rank: st.rank ?? null, total_points: st.total_points ?? 0, top3: st.top3_finishes ?? 0,
     });
-    const usersOnline = onlineProfiles ?? [];
     const liveCount = (activeMatches ?? []).length;
-    const onlineCount = usersOnline.length;
+    const onlineCount = (onlineProfiles ?? []).length;
     const lastWinner = lastResult?.[0] ? { name: lastResult[0].profiles?.full_name || "Joueur", points: lastResult[0].points } : null;
-    setOnlineUsers(usersOnline);
     setLiveData({ liveCount, onlineCount, lastWinner });
     const todayClaim = (claims ?? []).find(c => new Date(c.claimed_at).toDateString() === new Date().toDateString());
     const streak = claims?.length ?? 0;
@@ -344,10 +341,7 @@ export default function Dashboard() {
                 {liveData.onlineCount > 0 && <span style={{ fontSize:12 }}>🟢 <b>{liveData.onlineCount}</b> joueur{liveData.onlineCount>1?"s":""} en ligne</span>}
                 {liveData.lastWinner && <span style={{ fontSize:12 }}>🏆 Dernier gagnant: <b style={{ color:P.gold }}>{liveData.lastWinner.name}</b></span>}
                 {countdownNext && <span style={{ fontSize:12 }}>⏳ Prochain départ: <b style={{ color:P.gold }}>{countdownNext}</b></span>}
-                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                  <button onClick={() => setShowLivePanel(true)} style={{ fontSize:11, color:P.green, background:"rgba(34,197,94,0.1)", border:"1px solid rgba(34,197,94,0.2)", borderRadius:99, padding:"5px 12px", cursor:"pointer", fontWeight:700 }}>👥 Qui est en ligne ?</button>
-                  <button onClick={() => nav("/tournaments")} style={{ fontSize:11, color:P.red, background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.2)", borderRadius:99, padding:"5px 12px", cursor:"pointer", fontWeight:700 }}>🏟️ Tournois live</button>
-                </div>
+                <button onClick={() => nav("/tournaments")} style={{ fontSize:11, color:P.red, background:"rgba(239,68,68,0.1)", border:"none", borderRadius:30, padding:"6px 12px", cursor:"pointer", alignSelf:"flex-start" }}>Voir tous →</button>
               </div>
             </div>
           )}
@@ -485,6 +479,7 @@ export default function Dashboard() {
             { icon:"📈", label:"MES STATS", sub:"Kills & Wins", path:"/stats" },
             { icon:"🏅", label:"SUCCÈS", sub:"Achievements", path:"/achievements" },
             { icon:"🛍️", label:"BOUTIQUE", sub:"Items", path:"/store" },
+            ...(["designer","admin","super_admin"].includes(profile?.role?.toLowerCase()) ? [{ icon:"🎨", label:"DESIGNER", sub:"Studio", path:"/designer" }] : []),
           ].map((item, i) => (
             <motion.div key={item.label} className="db-qlink" initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2 + i*0.03 }} onClick={() => nav(item.path)}>
               <div style={{ fontSize:22 }}>{item.icon}</div>
@@ -515,148 +510,6 @@ export default function Dashboard() {
         <button className="db-action" onClick={() => nav("/tournaments")} style={{ width:"100%", padding:"12px" }}>🚀 REJOINDRE UN TOURNOI</button>
       </div>
       <style>{`@media(max-width:768px){ .db-sticky{ display:block!important; } }`}</style>
-      {/* ══ LIVE PANEL MODAL ══════════════════════════════════════════════════ */}
-      {showLivePanel && (
-        <div onClick={() => setShowLivePanel(false)}
-          style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.75)",
-            backdropFilter:"blur(12px)", zIndex:200,
-            display:"flex", alignItems:"center", justifyContent:"center",
-            padding:"20px" }}>
-          <motion.div onClick={e => e.stopPropagation()}
-            initial={{ opacity:0, scale:0.95, y:20 }}
-            animate={{ opacity:1, scale:1, y:0 }}
-            exit={{ opacity:0, scale:0.95 }}
-            style={{ width:"min(720px,100%)", maxHeight:"80vh",
-              background:"#08091a", border:"1px solid rgba(255,255,255,0.08)",
-              borderRadius:20, overflow:"hidden",
-              display:"flex", flexDirection:"column",
-              boxShadow:"0 24px 64px rgba(0,0,0,0.6)" }}>
-            {/* Header */}
-            <div style={{ padding:"18px 20px", borderBottom:"1px solid rgba(255,255,255,0.07)",
-              display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
-              <div>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
-                  <span style={{ width:8, height:8, borderRadius:"50%", background:P.green,
-                    display:"block", boxShadow:`0 0 8px ${P.green}`, animation:"blink 1.4s infinite" }}/>
-                  <span style={{ fontSize:11, fontWeight:800, color:P.red, letterSpacing:2 }}>EN DIRECT</span>
-                </div>
-                <h3 style={{ fontFamily:"'Inter',sans-serif", fontSize:20, fontWeight:900,
-                  margin:0, color:"#fff" }}>Joueurs en ligne</h3>
-              </div>
-              <button onClick={() => setShowLivePanel(false)}
-                style={{ width:36, height:36, borderRadius:10,
-                  background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)",
-                  color:"rgba(255,255,255,0.6)", cursor:"pointer", fontSize:16,
-                  display:"flex", alignItems:"center", justifyContent:"center" }}>
-                ✕
-              </button>
-            </div>
-
-            {/* Stats chips */}
-            <div style={{ padding:"14px 20px", display:"flex", gap:10, flexWrap:"wrap",
-              borderBottom:"1px solid rgba(255,255,255,0.05)", flexShrink:0 }}>
-              <div style={{ padding:"10px 16px", borderRadius:12,
-                background:"rgba(239,68,68,0.06)", border:"1px solid rgba(239,68,68,0.18)" }}>
-                <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginBottom:2 }}>Tournois live</div>
-                <div style={{ fontSize:22, fontWeight:900, color:"#fff" }}>{liveData.liveCount}</div>
-              </div>
-              <div style={{ padding:"10px 16px", borderRadius:12,
-                background:"rgba(34,197,94,0.06)", border:"1px solid rgba(34,197,94,0.18)" }}>
-                <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginBottom:2 }}>Joueurs en ligne</div>
-                <div style={{ fontSize:22, fontWeight:900, color:"#fff" }}>{onlineUsers.length}</div>
-              </div>
-              {liveData.lastWinner && (
-                <div style={{ padding:"10px 16px", borderRadius:12,
-                  background:"rgba(251,191,36,0.06)", border:"1px solid rgba(251,191,36,0.18)" }}>
-                  <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginBottom:2 }}>Dernier gagnant</div>
-                  <div style={{ fontSize:14, fontWeight:900, color:P.gold }}>{liveData.lastWinner.name}</div>
-                </div>
-              )}
-            </div>
-
-            {/* Online users list */}
-            <div style={{ flex:1, overflowY:"auto", padding:"12px 16px" }}>
-              {onlineUsers.length === 0 ? (
-                <div style={{ textAlign:"center", padding:"40px 0",
-                  color:"rgba(255,255,255,0.3)", fontSize:13 }}>
-                  Aucun joueur visible en ligne
-                </div>
-              ) : (
-                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                  {onlineUsers.map(u => {
-                    const roleColors = { super_admin:"#06b6d4", admin:"#818cf8", founder:"#a855f7", user:"rgba(255,255,255,0.4)" };
-                    const rc = roleColors[u.role] || roleColors.user;
-                    return (
-                      <div key={u.id}
-                        style={{ display:"flex", alignItems:"center", gap:12,
-                          padding:"10px 14px", borderRadius:12,
-                          background:"rgba(255,255,255,0.03)",
-                          border:"1px solid rgba(255,255,255,0.06)",
-                          cursor:"pointer", transition:"background 0.15s" }}
-                        onClick={() => { nav(`/profile?id=${u.id}`); setShowLivePanel(false); }}
-                        onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.06)"}
-                        onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}>
-                        {/* Avatar */}
-                        <div style={{ width:40, height:40, borderRadius:11, flexShrink:0, overflow:"hidden",
-                          background:"linear-gradient(135deg,#7c3aed,#06b6d4)",
-                          display:"flex", alignItems:"center", justifyContent:"center",
-                          fontWeight:900, fontSize:16, position:"relative" }}>
-                          {u.avatar_url
-                            ? <img src={u.avatar_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
-                            : (u.full_name?.[0] || "?").toUpperCase()}
-                          <span style={{ position:"absolute", bottom:1, right:1, width:9, height:9,
-                            borderRadius:"50%", background:P.green,
-                            border:"2px solid #08091a" }}/>
-                        </div>
-                        {/* Info */}
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontSize:14, fontWeight:700, color:"#fff",
-                            overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                            {u.full_name || "Joueur"}
-                          </div>
-                          <div style={{ fontSize:11, display:"flex", alignItems:"center", gap:6 }}>
-                            {u.free_fire_id && (
-                              <span style={{ color:"rgba(255,255,255,0.35)" }}>
-                                FF: {u.free_fire_id}
-                              </span>
-                            )}
-                            <span style={{ color:rc, background:`${rc}12`,
-                              padding:"1px 6px", borderRadius:99, fontSize:9, fontWeight:700 }}>
-                              {u.role === "super_admin" ? "ADMIN" : u.role === "founder" ? "FONDATEUR" : "JOUEUR"}
-                            </span>
-                          </div>
-                        </div>
-                        {/* Action */}
-                        <button
-                          onClick={e => { e.stopPropagation(); nav(`/profile?id=${u.id}`); setShowLivePanel(false); }}
-                          style={{ padding:"7px 12px", borderRadius:8, border:"1px solid rgba(124,58,237,0.3)",
-                            background:"rgba(124,58,237,0.1)", color:"#fff", cursor:"pointer",
-                            fontSize:12, fontWeight:700, flexShrink:0 }}>
-                          Profil →
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div style={{ padding:"12px 20px", borderTop:"1px solid rgba(255,255,255,0.05)",
-              flexShrink:0, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span style={{ fontSize:11, color:"rgba(255,255,255,0.3)" }}>
-                Mis à jour en temps réel
-              </span>
-              <button onClick={() => { nav("/tournaments"); setShowLivePanel(false); }}
-                style={{ fontSize:12, fontWeight:700, color:P.red,
-                  background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.2)",
-                  borderRadius:8, padding:"7px 14px", cursor:"pointer" }}>
-                🏟️ Tournois live →
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 }
