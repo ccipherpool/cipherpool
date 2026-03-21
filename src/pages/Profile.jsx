@@ -288,11 +288,13 @@ export default function Profile() {
   const menuRef = useRef(null);
   const { isAdmin } = usePermissions(ap);
 
-  const { profile:dp, stats, achievements, recentMatches, transactions, loading, uploadAvatar } = useProfileData(viewingId || ap?.id);
+  const { profile:dp, stats, achievements, recentMatches, transactions, loading, uploadAvatar, equippedItems: fetchedEquippedItems } = useProfileData(viewingId || ap?.id);
 
   const profile  = dp || ap;
   const balance  = cb ?? 0;
-  const eq       = ce || {};
+  const eq       = fetchedEquippedItems && Object.keys(fetchedEquippedItems).length > 0
+    ? fetchedEquippedItems
+    : (ce || {});
 
   const approved  = isViewingOther ? false : true; // Can't edit another user's profile
   const isVerified = profile?.verification_status==="approved";
@@ -311,6 +313,9 @@ export default function Profile() {
     ? (storeAvatarUrl || photoAvatarUrl)
     : (storeAvatarUrl || photoAvatarUrl); // "auto" = prefer store
   const hasImg = !!(avatarSrc);
+
+  // Reset imgErr when avatar source changes
+  useEffect(() => { setImgErr(false); }, [profile?.avatar_url, eq?.avatar?.image_url]);
 
   // Persist avatar_mode change
   const setAvatarMode = async (mode) => {
