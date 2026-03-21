@@ -1,4 +1,4 @@
-// src/pages/Homepage.jsx — CipherPool eSports
+// src/pages/Homepage.jsx — CipherPool eSports (Version Pro)
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
@@ -17,18 +17,6 @@ const GLOBAL_CSS = `
   }
 
   .cp-home a { text-decoration: none; color: inherit; }
-
-  .cp-home::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.04) 2px,
-      rgba(0,0,0,0.04) 4px
-    );
-  }
 
   .noise {
     position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .03;
@@ -86,13 +74,6 @@ const GLOBAL_CSS = `
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
   @keyframes rotateSlow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
   @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-
-  .hex-bg {
-    position: absolute; inset: 0; overflow: hidden; pointer-events: none;
-    background:
-      radial-gradient(ellipse 80% 60% at 70% 40%, rgba(220,38,38,0.08) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 80% at 20% 60%, rgba(139,92,246,0.06) 0%, transparent 70%);
-  }
 
   .btn-primary {
     display: inline-flex; align-items: center; gap: 10px;
@@ -189,85 +170,65 @@ const GLOBAL_CSS = `
   ::-webkit-scrollbar-track { background: #050508; }
   ::-webkit-scrollbar-thumb { background: #dc2626; border-radius: 2px; }
 
-  /* ── TABLET ────────────────────────────────────────── */
-  /* ── TABLET ──────────────────────────────────────── */
+  /* ========== RESPONSIVE PERFECT ========== */
   @media (max-width: 1024px) {
     .cp-nav-links { display: none !important; }
   }
 
-  /* ── MOBILE ──────────────────────────────────────── */
   @media (max-width: 768px) {
-
-    /* Nav */
     .cp-nav {
       padding: 0 16px !important;
       height: 56px !important;
     }
-
-    /* Auth buttons in nav: hide text, keep buttons small */
-    .cp-nav .btn-primary { padding: 8px 14px !important; font-size: 11px !important; clip-path: none !important; border-radius: 8px !important; }
-    .cp-nav .btn-outline { padding: 8px 12px !important; font-size: 11px !important; clip-path: none !important; border-radius: 8px !important; }
-
-    /* Online badge: hide text */
-    .cp-nav [style*="EN LIGNE"] span:last-child { display: none; }
-
-    /* Hero: center text */
-    section:first-of-type > div > div[style*="zIndex: 2"] {
-      text-align: center !important;
-      padding: 0 20px !important;
-      max-width: 100% !important;
+    .cp-nav .btn-primary, 
+    .cp-nav .btn-outline {
+      padding: 6px 12px !important;
+      font-size: 10px !important;
+      clip-path: none !important;
+      border-radius: 6px !important;
     }
-
-    /* Section padding */
-    section { padding: 48px 16px !important; }
-
-    /* Buttons: full width + no clip-path on mobile */
     .btn-primary, .btn-outline {
-      padding: 13px 24px !important;
-      font-size: 13px !important;
+      padding: 10px 18px !important;
+      font-size: 12px !important;
       clip-path: none !important;
       border-radius: 8px !important;
     }
-
-    /* Section titles */
-    .section-title { font-size: clamp(22px, 7vw, 36px) !important; }
-
-    /* News 2-col → 1-col */
-    .news-grid { grid-template-columns: 1fr !important; }
-
-    /* Footer */
-    .footer-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
-
-    /* Section headers: stack */
+    section { padding: 48px 20px !important; }
+    .section-title { font-size: clamp(28px, 6vw, 40px) !important; }
+    .stat-box > div:first-child { font-size: 28px !important; }
+    .live-stats-grid { grid-template-columns: 1fr 1fr !important; gap: 1px !important; }
+    .news-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+    .footer-grid { grid-template-columns: 1fr !important; gap: 32px !important; text-align: center !important; }
+    .footer-grid div:first-child { text-align: center !important; margin: 0 auto !important; }
+    .footer-grid p { margin: 0 auto !important; }
     .section-header-row {
       flex-direction: column !important;
       align-items: flex-start !important;
-      gap: 12px !important;
+      gap: 16px !important;
     }
-
-    /* Live stats: 2 cols */
-    .live-stats-grid { grid-template-columns: 1fr 1fr !important; }
-
-    /* Stat box in hero */
-    .stat-box {
-      padding: 2px 0 2px 12px !important;
+    .hero-content {
+      text-align: center !important;
+      padding: 0 16px !important;
     }
-    .stat-box > div:first-child {
-      font-size: 28px !important;
+    .hero-stats {
+      justify-content: center !important;
+      gap: 24px !important;
     }
   }
 
-  /* ── SMALL MOBILE (< 480px) ──────────────────────── */
   @media (max-width: 480px) {
     .cp-nav .btn-outline { display: none !important; }
     .live-stats-grid { grid-template-columns: 1fr 1fr !important; }
-    .footer-grid { grid-template-columns: 1fr !important; }
+    .hero-buttons { flex-direction: column !important; width: 100% !important; }
+    .hero-buttons button { width: 100% !important; justify-content: center !important; }
   }
 `;
 
-/* ═══════════════════════════════════════════════════════
-   TOPBAR
-═══════════════════════════════════════════════════════ */
+function fmt(n) {
+  return n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n ?? 0);
+}
+
+/* ========== COMPOSANTS ========== */
 function Topbar({ user, onlineCount }) {
   const nav = useNavigate();
   const [scrolled, setScrolled] = useState(false);
@@ -279,7 +240,7 @@ function Topbar({ user, onlineCount }) {
   }, []);
 
   const links = [
-    { label: "Accueil",    path: "/" },          // ✅ / pas /home
+    { label: "Accueil",    path: "/" },
     { label: "Tournois",   path: "/tournaments" },
     { label: "Équipes",    path: "/teams" },
     { label: "Classement", path: "/leaderboard" },
@@ -288,15 +249,8 @@ function Topbar({ user, onlineCount }) {
   ];
 
   return (
-    <nav
-      className="cp-nav"
-      style={{ background: scrolled ? "rgba(5,5,8,0.98)" : "rgba(5,5,8,0.7)" }}
-    >
-      {/* Logo */}
-      <div
-        onClick={() => nav("/")}   // ✅ / pas /home
-        style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
-      >
+    <nav className="cp-nav" style={{ background: scrolled ? "rgba(5,5,8,0.98)" : "rgba(5,5,8,0.7)" }}>
+      <div onClick={() => nav("/")} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
         <div style={{
           width: 36, height: 36, background: "#dc2626",
           clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
@@ -314,7 +268,6 @@ function Topbar({ user, onlineCount }) {
         </div>
       </div>
 
-      {/* Nav links */}
       <div className="cp-nav-links" style={{ display: "flex", gap: 36, alignItems: "center" }}>
         {links.map((l) => (
           <button key={l.label} className="cp-nav-link" onClick={() => nav(l.path)}>
@@ -323,7 +276,6 @@ function Topbar({ user, onlineCount }) {
         ))}
       </div>
 
-      {/* Auth buttons */}
       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <div style={{
           display: "flex", alignItems: "center", gap: 6,
@@ -355,75 +307,19 @@ function Topbar({ user, onlineCount }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════
-   HERO
-═══════════════════════════════════════════════════════ */
 function Hero({ stats, user }) {
   const nav = useNavigate();
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-
-    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
-    resize();
-    window.addEventListener("resize", resize);
-
-    const particles = Array.from({ length: 60 }, () => ({
-      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
-      size: Math.random() * 1.5 + 0.5, alpha: Math.random() * 0.4 + 0.1,
-    }));
-
-    let raf;
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(220,38,38,${p.alpha})`;
-        ctx.fill();
-      });
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(220,38,38,${0.08 * (1 - dist / 120)})`;
-            ctx.lineWidth = 0.5;
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.stroke();
-          }
-        }
-      }
-      raf = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
-  }, []);
-
   return (
     <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", overflow: "hidden", paddingTop: 64 }}>
       <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 100% 80% at 100% 50%, rgba(220,38,38,0.07) 0%, transparent 60%)" }} />
-      <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
-
+      
       <div style={{ position: "absolute", right: "-5%", top: "10%", width: "55%", height: "80%", background: "linear-gradient(135deg, rgba(220,38,38,0.04) 0%, transparent 60%)", borderLeft: "1px solid rgba(220,38,38,0.1)", transform: "skewX(-8deg)", pointerEvents: "none" }} />
-
+      
       <div style={{ position: "absolute", right: "5%", top: "50%", transform: "translateY(-50%)", fontFamily: "'Barlow Condensed',sans-serif", fontSize: "clamp(100px,14vw,200px)", fontWeight: 900, lineHeight: 1, color: "rgba(255,255,255,0.02)", textTransform: "uppercase", userSelect: "none", pointerEvents: "none", letterSpacing: -4 }}>
         ESPORT
       </div>
 
-      <div style={{ position: "relative", zIndex: 2, padding: "0 clamp(20px,5vw,80px)", maxWidth: 800, animation: "slideInLeft .8s ease both" }}>
+      <div className="hero-content" style={{ position: "relative", zIndex: 2, padding: "0 clamp(20px,5vw,80px)", maxWidth: 800, animation: "slideInLeft .8s ease both" }}>
         <div className="section-label" style={{ marginBottom: 20 }}>Platform eSport #1 Maroc</div>
 
         <div style={{ position: "relative", marginBottom: 8 }}>
@@ -443,7 +339,7 @@ function Hero({ stats, user }) {
           Rejoins la plateforme ultime pour les gamers. Tournois Free Fire, classements, équipes et cash prizes.
         </p>
 
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", animation: "fadeUp .8s .5s ease both", marginBottom: 60, justifyContent: "center" }}>
+        <div className="hero-buttons" style={{ display: "flex", gap: 16, flexWrap: "wrap", animation: "fadeUp .8s .5s ease both", marginBottom: 60 }}>
           <button className="btn-primary" onClick={() => nav(user ? "/tournaments" : "/register")} style={{ fontSize: 14 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -455,7 +351,7 @@ function Hero({ stats, user }) {
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: 40, flexWrap: "wrap", animation: "fadeUp .8s .7s ease both", paddingTop: 32, borderTop: "1px solid rgba(255,255,255,0.06)", justifyContent: "center" }}>
+        <div className="hero-stats" style={{ display: "flex", gap: 40, flexWrap: "wrap", animation: "fadeUp .8s .7s ease both", paddingTop: 32, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           {[
             { label: "JOUEURS",  value: fmt(stats.players) },
             { label: "TOURNOIS", value: fmt(stats.tournaments) },
@@ -478,9 +374,6 @@ function Hero({ stats, user }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════
-   LIVE STATS BAR
-═══════════════════════════════════════════════════════ */
 function LiveStats({ stats, onlineCount }) {
   const items = [
     { label: "EN LIGNE MAINTENANT", value: onlineCount, icon: "🟢", color: "#22c55e", live: true },
@@ -491,7 +384,7 @@ function LiveStats({ stats, onlineCount }) {
 
   return (
     <section style={{ padding: "48px clamp(20px,5vw,80px)", background: "rgba(255,255,255,0.01)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-      <div className="live-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 1, background: "rgba(255,255,255,0.05)" }}>
+      <div className="live-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1, background: "rgba(255,255,255,0.05)" }}>
         {items.map((item, i) => (
           <div key={item.label} style={{ padding: "32px 28px", background: "#050508", display: "flex", flexDirection: "column", gap: 8, position: "relative", overflow: "hidden", animation: `fadeUp .5s ${i * 0.1}s ease both` }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: item.color, opacity: 0.4 }} />
@@ -513,9 +406,6 @@ function LiveStats({ stats, onlineCount }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════
-   FEATURE STRIP
-═══════════════════════════════════════════════════════ */
 function FeatureStrip() {
   const items = ["TOURNOIS FREE FIRE", "CASH PRIZES", "CLASSEMENTS EN TEMPS RÉEL", "ÉQUIPES PROFESSIONNELLES", "SYSTÈME DE RANG", "BOUTIQUE D'ITEMS"];
   return (
@@ -531,9 +421,6 @@ function FeatureStrip() {
   );
 }
 
-/* ═══════════════════════════════════════════════════════
-   TOURNAMENTS SECTION
-═══════════════════════════════════════════════════════ */
 function TournamentCard({ t, user }) {
   const nav = useNavigate();
   const pct = t.max_players > 0 ? Math.round(((t.current_players ?? 0) / t.max_players) * 100) : 0;
@@ -603,7 +490,7 @@ function TournamentsSection({ tournaments, user }) {
           <p style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 11, letterSpacing: 3, color: "rgba(255,255,255,0.2)" }}>AUCUN TOURNOI ACTIF — REVENEZ BIENTÔT</p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
           {tournaments.map((t) => <TournamentCard key={t.id} t={t} user={user} />)}
         </div>
       )}
@@ -611,9 +498,6 @@ function TournamentsSection({ tournaments, user }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════
-   TEAMS SECTION
-═══════════════════════════════════════════════════════ */
 function TeamsSection({ teams }) {
   const nav = useNavigate();
   if (!teams.length) return null;
@@ -626,18 +510,18 @@ function TeamsSection({ teams }) {
         </div>
         <button className="btn-outline" onClick={() => nav("/leaderboard")}>CLASSEMENT →</button>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 20 }}>
         {teams.slice(0, 6).map((team, i) => (
-          <div key={team.id} className="cp-card" onClick={() => nav(`/teams/${team.id}`)} style={{ padding: "20px 16px" }}>
+          <div key={team.id} className="cp-card" onClick={() => nav(`/teams/${team.id}`)} style={{ padding: "24px 20px", textAlign: "center" }}>
             <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: 2, color: i < 3 ? "#dc2626" : "rgba(255,255,255,0.2)", marginBottom: 12 }}>#{i + 1}</div>
-            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "linear-gradient(135deg,#1a0505,#0d0d1a)", border: `2px solid ${i < 3 ? "rgba(220,38,38,0.5)" : "rgba(255,255,255,0.08)"}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12, overflow: "hidden" }}>
+            <div style={{ width: 64, height: 64, margin: "0 auto 12px", borderRadius: "50%", background: "linear-gradient(135deg,#1a0505,#0d0d1a)", border: `2px solid ${i < 3 ? "rgba(220,38,38,0.5)" : "rgba(255,255,255,0.08)"}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
               {team.logo_url
                 ? <img src={team.logo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 900, color: i < 3 ? "#dc2626" : "rgba(255,255,255,0.3)" }}>{team.name?.[0]?.toUpperCase() ?? "T"}</span>
+                : <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 24, fontWeight: 900, color: i < 3 ? "#dc2626" : "rgba(255,255,255,0.3)" }}>{team.name?.[0]?.toUpperCase() ?? "T"}</span>
               }
             </div>
-            <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15, fontWeight: 800, letterSpacing: 0.5, marginBottom: 4 }}>{team.name}</p>
-            <span style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: 1 }}>{team.wins ?? 0} WINS</span>
+            <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 0.5, marginBottom: 6 }}>{team.name}</p>
+            <span style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 1 }}>{team.wins ?? 0} VICTOIRES</span>
           </div>
         ))}
       </div>
@@ -645,9 +529,6 @@ function TeamsSection({ teams }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════
-   NEWS SECTION
-═══════════════════════════════════════════════════════ */
 function NewsSection({ news }) {
   const nav = useNavigate();
   if (!news.length) return null;
@@ -661,7 +542,7 @@ function NewsSection({ news }) {
         </div>
         <button className="btn-outline" onClick={() => nav("/news")}>TOUTES LES NEWS →</button>
       </div>
-      <div className="news-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div className="news-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
         <div className="cp-card" onClick={() => nav("/news")} style={{ gridRow: rest.length > 0 ? "1 / 3" : "auto", overflow: "hidden" }}>
           <div style={{ height: 280, position: "relative", background: "#0d0d12", overflow: "hidden" }}>
             {main.cover_url
@@ -683,15 +564,15 @@ function NewsSection({ news }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {rest.slice(0, 3).map((n) => (
             <div key={n.id} className="cp-card" onClick={() => nav("/news")} style={{ display: "flex", overflow: "hidden", height: 100 }}>
-              <div style={{ width: 120, flexShrink: 0, background: "#0d0d12", overflow: "hidden" }}>
+              <div style={{ width: 100, flexShrink: 0, background: "#0d0d12", overflow: "hidden" }}>
                 {n.cover_url
                   ? <img src={n.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.7 }} />
                   : <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,#1a0505,#050508)", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 24, opacity: 0.15 }}>📰</span></div>
                 }
               </div>
-              <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0 }}>
+              <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0, flex: 1 }}>
                 <span style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 9, color: "#dc2626", letterSpacing: 2, marginBottom: 4 }}>{(n.category ?? "GÉNÉRAL").toUpperCase()}</span>
-                <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 15, fontWeight: 700, lineHeight: 1.2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{n.title}</p>
+                <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 700, lineHeight: 1.2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{n.title}</p>
               </div>
             </div>
           ))}
@@ -701,9 +582,6 @@ function NewsSection({ news }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════
-   HOW IT WORKS
-═══════════════════════════════════════════════════════ */
 function HowItWorks({ user }) {
   const nav = useNavigate();
   const steps = [
@@ -718,12 +596,12 @@ function HowItWorks({ user }) {
         <div className="section-label" style={{ justifyContent: "center" }}>Simple & rapide</div>
         <h2 className="section-title">COMMENT ÇA <span>MARCHE</span> ?</h2>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 32, maxWidth: 1000, margin: "0 auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 32, maxWidth: 1100, margin: "0 auto" }}>
         {steps.map((s) => (
           <div key={s.n} style={{ position: "relative", padding: "28px 24px", borderLeft: "2px solid rgba(220,38,38,0.3)" }}>
             <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 72, fontWeight: 900, lineHeight: 1, color: "rgba(220,38,38,0.08)", position: "absolute", top: 12, right: 16, letterSpacing: -2 }}>{s.n}</div>
-            <span style={{ fontSize: 32, display: "block", marginBottom: 16 }}>{s.icon}</span>
-            <h3 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18, fontWeight: 800, letterSpacing: 1, marginBottom: 10, color: "#fff" }}>{s.title}</h3>
+            <span style={{ fontSize: 36, display: "block", marginBottom: 16 }}>{s.icon}</span>
+            <h3 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 800, letterSpacing: 1, marginBottom: 12, color: "#fff" }}>{s.title}</h3>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>{s.desc}</p>
           </div>
         ))}
@@ -737,22 +615,19 @@ function HowItWorks({ user }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════
-   FOOTER
-═══════════════════════════════════════════════════════ */
 function Footer() {
   const nav = useNavigate();
   return (
     <footer style={{ padding: "60px clamp(20px,5vw,80px) 32px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
       <div className="footer-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 48, marginBottom: 48 }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, justifyContent: "center" }}>
             <div style={{ width: 32, height: 32, background: "#dc2626", clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: 12 }}>CP</span>
             </div>
             <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: 16, letterSpacing: 3 }}>CIPHERPOOL</span>
           </div>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", lineHeight: 1.7, maxWidth: 280 }}>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", lineHeight: 1.7, maxWidth: 280, textAlign: "center", margin: "0 auto" }}>
             La plateforme eSport dédiée aux gamers marocains. Tournois, classements et communauté.
           </p>
         </div>
@@ -760,11 +635,11 @@ function Footer() {
           { title: "PLATEFORME", links: [["Tournois","/tournaments"],["Classement","/leaderboard"],["Équipes","/teams"],["Boutique","/store"]] },
           { title: "COMPTE",     links: [["Connexion","/login"],["Inscription","/register"],["Mon Profil","/profile"],["Support","/support"]] },
         ].map((col) => (
-          <div key={col.title}>
+          <div key={col.title} style={{ textAlign: "center" }}>
             <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 3, color: "rgba(255,255,255,0.4)", marginBottom: 16 }}>{col.title}</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
               {col.links.map(([label, path]) => (
-                <button key={label} onClick={() => nav(path)} style={{ background: "none", border: "none", cursor: "pointer", textAlign: "left", fontSize: 13, color: "rgba(255,255,255,0.45)", fontFamily: "'Barlow',sans-serif", transition: "color .2s", padding: 0 }}
+                <button key={label} onClick={() => nav(path)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "rgba(255,255,255,0.45)", fontFamily: "'Barlow',sans-serif", transition: "color .2s", padding: 0 }}
                   onMouseEnter={e => e.target.style.color = "#dc2626"}
                   onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.45)"}>
                   {label}
@@ -775,7 +650,7 @@ function Footer() {
         ))}
       </div>
       <div className="cp-divider" />
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 24, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 24, flexWrap: "wrap", gap: 12, textAlign: "center" }}>
         <p style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 1 }}>© 2026 CIPHERPOOL — ALL RIGHTS RESERVED</p>
         <p style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 10, color: "rgba(220,38,38,0.5)", letterSpacing: 1 }}>BUILT FOR GAMERS ✦ POWERED BY PASSION</p>
       </div>
@@ -783,23 +658,14 @@ function Footer() {
   );
 }
 
-/* ═══════════════════════════════════════════════════════
-   HELPER
-═══════════════════════════════════════════════════════ */
-function fmt(n) {
-  return n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n ?? 0);
-}
-
-/* ═══════════════════════════════════════════════════════
-   MAIN PAGE
-═══════════════════════════════════════════════════════ */
-export default function Homepage() {   // ✅ nom = Homepage (correspond au fichier)
-  const [user,         setUser]         = useState(null);
-  const [tournaments,  setTournaments]  = useState([]);
-  const [teams,        setTeams]        = useState([]);
-  const [news,         setNews]         = useState([]);
-  const [stats,        setStats]        = useState({ players: 0, tournaments: 0, prizePool: 0, teams: 0 });
-  const [onlineCount,  setOnlineCount]  = useState(0);
+/* ========== PAGE PRINCIPALE ========== */
+export default function Homepage() {
+  const [user, setUser] = useState(null);
+  const [tournaments, setTournaments] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [news, setNews] = useState([]);
+  const [stats, setStats] = useState({ players: 0, tournaments: 0, prizePool: 0, teams: 0 });
+  const [onlineCount, setOnlineCount] = useState(0);
 
   useEffect(() => {
     let presenceCh;
@@ -837,15 +703,15 @@ export default function Homepage() {   // ✅ nom = Homepage (correspond au fich
       const { data: nw } = await supabase
         .from("news")
         .select("id,title,excerpt,cover_url,category,published_at,created_at")
-        .not("published_at", "is", null)   // ✅ corrigé (pas .eq("published",true))
+        .not("published_at", "is", null)
         .order("created_at", { ascending: false })
         .limit(4);
       setNews(nw ?? []);
 
       const [profilesRes, tournamentsRes, teamsRes] = await Promise.all([
-        supabase.from("profiles").select("*",   { count: "exact", head: true }),
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("tournaments").select("*", { count: "exact", head: true }),
-        supabase.from("teams").select("*",       { count: "exact", head: true }),
+        supabase.from("teams").select("*", { count: "exact", head: true }),
       ]);
 
       let totalPrize = 0;
@@ -855,10 +721,10 @@ export default function Homepage() {   // ✅ nom = Homepage (correspond au fich
       } catch (_) {}
 
       setStats({
-        players:     profilesRes.count    ?? 0,
+        players: profilesRes.count ?? 0,
         tournaments: tournamentsRes.count ?? 0,
-        prizePool:   totalPrize,
-        teams:       teamsRes.count       ?? 0,
+        prizePool: totalPrize,
+        teams: teamsRes.count ?? 0,
       });
     })();
 
