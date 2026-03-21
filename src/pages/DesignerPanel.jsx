@@ -133,7 +133,7 @@ export default function DesignerPanel() {
 
   // Access check
   useEffect(() => {
-    if (!["designer","admin","super_admin"].includes(profile?.role?.toLowerCase())) {
+    if (!["designer","admin","super_admin"].includes(profile?.role)) {
       navigate("/dashboard");
     }
   }, [profile]);
@@ -145,7 +145,7 @@ export default function DesignerPanel() {
   const fetchItems = async () => {
     setLoadingItems(true);
     const { data } = await supabase
-      .from("store-items")
+      .from("store_items")
       .select("*")
       .order("created_at", { ascending: false });
     setItems(data || []);
@@ -169,7 +169,7 @@ export default function DesignerPanel() {
     const ext  = imageFile.name.split(".").pop();
     const path = `items/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage
-      .from("store-items")
+      .from("store_items")
       .upload(path, imageFile, { upsert: true });
     if (error) throw new Error("Upload image: " + error.message);
     const { data } = supabase.storage.from("store-items").getPublicUrl(path);
@@ -210,7 +210,7 @@ export default function DesignerPanel() {
 
       if (editItem) {
         const { error } = await supabase
-          .from("store-items")
+          .from("store_items")
           .update(payload)
           .eq("id", editItem.id);
         if (error) throw error;
@@ -218,7 +218,7 @@ export default function DesignerPanel() {
         setEditItem(null);
       } else {
         const { error } = await supabase
-          .from("store-items")
+          .from("store_items")
           .insert([payload]);
         if (error) throw error;
         notify(
@@ -240,7 +240,7 @@ export default function DesignerPanel() {
   };
 
   const toggleActive = async (item) => {
-    await supabase.from("store-items")
+    await supabase.from("store_items")
       .update({ active: !item.active })
       .eq("id", item.id);
     setItems(prev => prev.map(i => i.id === item.id ? { ...i, active: !i.active } : i));
@@ -249,7 +249,7 @@ export default function DesignerPanel() {
 
   const deleteItem = async (id) => {
     if (!confirm("Supprimer cet item ?")) return;
-    await supabase.from("store-items").delete().eq("id", id);
+    await supabase.from("store_items").delete().eq("id", id);
     setItems(prev => prev.filter(i => i.id !== id));
     notify("🗑️ Item supprimé");
   };
@@ -796,7 +796,7 @@ export default function DesignerPanel() {
                             {!item.approved && ["admin","super_admin"].includes(profile?.role) && (
                               <button
                                 onClick={async () => {
-                                  await supabase.from("store-items")
+                                  await supabase.from("store_items")
                                     .update({ approved: true, approved_by: profile.id })
                                     .eq("id", item.id);
                                   fetchItems();
