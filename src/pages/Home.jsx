@@ -33,13 +33,19 @@ export default function Home() {
 
   const fetchStats = async () => {
     try {
-      const [t, teams, ps] = await Promise.allSettled([
+      const online15 = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+
+      const [t, teams, profiles, online] = await Promise.allSettled([
         supabase
           .from("tournaments")
           .select("id,name,status,game_type,max_players", { count: "exact" })
           .limit(5),
         supabase.from("teams").select("id", { count: "exact", head: true }),
-        supabase.from("player_stats").select("id", { count: "exact", head: true }),
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .gte("last_seen", online15),
       ]);
 
       if (t.status === "fulfilled" && t.value.data) {
@@ -59,8 +65,12 @@ export default function Home() {
         setStats((prev) => ({ ...prev, teams: teams.value.count || 0 }));
       }
 
-      if (ps.status === "fulfilled" && ps.value.count) {
-        setStats((prev) => ({ ...prev, players: ps.value.count }));
+      if (profiles.status === "fulfilled") {
+        setStats((prev) => ({ ...prev, players: profiles.value.count || 0 }));
+      }
+
+      if (online.status === "fulfilled") {
+        setStats((prev) => ({ ...prev, online: online.value.count || 0 }));
       }
     } catch (e) {
       console.error(e);
