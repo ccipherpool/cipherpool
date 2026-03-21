@@ -196,6 +196,7 @@ function Topbar({ profile, balance, equippedItems, chatUnread, unread, urgent, o
                   }}
                 >
                   {[
+                    {to:"/designer",label:"🎨 Designer Studio",roles:["designer","admin","super_admin"]},
                     {to:"/admin",label:"Administration",roles:["admin","super_admin"]},
                     {to:"/admin/news",label:"Actualités Admin",roles:["admin","founder","fondateur","super_admin"]},
                     {to:"/admin/results",label:"Résultats",roles:["admin","founder","fondateur","super_admin"]},

@@ -55,7 +55,7 @@ export default function AdminStorePanel() {
   const [logs, setLogs]           = useState([]);
 
   useEffect(() => {
-    if (!["admin","super_admin"].includes(profile?.role)) navigate("/dashboard");
+    if (!["admin","super_admin","designer"].includes(profile?.role)) navigate("/dashboard");
     fetchUsers();
     fetchStoreItems();
     fetchPendingItems();
