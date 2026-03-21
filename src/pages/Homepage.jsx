@@ -1,671 +1,169 @@
-// src/pages/Homepage.jsx — CipherPool eSports (Version Pro)
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { motion, AnimatePresence } from "framer-motion";
 
-const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,800;1,900&family=Barlow:wght@400;500;600&family=Share+Tech+Mono&display=swap');
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const fmt = n => n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n ?? 0);
+const accent = "#7c3aed";
+const accentCyan = "#06b6d4";
+const red = "#ef4444";
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  .cp-home {
-    font-family: 'Barlow', sans-serif;
-    background: #050508;
-    color: #fff;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  .cp-home a { text-decoration: none; color: inherit; }
-
-  .noise {
-    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .03;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  }
-
-  .display { font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; }
-  .mono    { font-family: 'Share Tech Mono', monospace; }
-
-  @keyframes glitch {
-    0%,100% { clip-path: inset(0 0 100% 0); transform: translate(0); }
-    10%      { clip-path: inset(10% 0 60% 0); transform: translate(-4px, 0); }
-    20%      { clip-path: inset(50% 0 30% 0); transform: translate(4px, 0); }
-    30%      { clip-path: inset(70% 0 10% 0); transform: translate(-2px, 0); }
-    40%      { clip-path: inset(90% 0 0% 0);  transform: translate(2px, 0); }
-  }
-
-  @keyframes glitch2 {
-    0%,100% { clip-path: inset(100% 0 0 0); transform: translate(0); opacity: 0; }
-    10%      { clip-path: inset(60% 0 15% 0); transform: translate(4px, 0); opacity: 1; }
-    20%      { clip-path: inset(30% 0 50% 0); transform: translate(-4px, 0); opacity: 1; }
-    40%      { opacity: 0; }
-  }
-
-  @keyframes pulse-red {
-    0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
-    50%      { box-shadow: 0 0 0 8px rgba(220,38,38,0); }
-  }
-
-  @keyframes float {
-    0%,100% { transform: translateY(0px); }
-    50%      { transform: translateY(-10px); }
-  }
-
-  @keyframes scan {
-    0%   { transform: translateY(-100%); }
-    100% { transform: translateY(100vh); }
-  }
-
-  @keyframes slideInLeft {
-    from { transform: translateX(-60px); opacity: 0; }
-    to   { transform: translateX(0);     opacity: 1; }
-  }
-
-  @keyframes fadeUp {
-    from { transform: translateY(30px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-  }
-
-  @keyframes countUp {
-    from { opacity: 0; transform: scale(0.8); }
-    to   { opacity: 1; transform: scale(1); }
-  }
-
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-  @keyframes rotateSlow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-  @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-
-  .btn-primary {
-    display: inline-flex; align-items: center; gap: 10px;
-    background: #dc2626;
-    color: #fff; font-family: 'Barlow Condensed', sans-serif;
-    font-size: 14px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
-    padding: 14px 32px; border: none; cursor: pointer;
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%);
-    transition: all .2s; position: relative; overflow: hidden;
-  }
-  .btn-primary::after {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-    transform: translateX(-100%); transition: transform .4s;
-  }
-  .btn-primary:hover::after { transform: translateX(100%); }
-  .btn-primary:hover { background: #ef4444; transform: translateY(-2px); }
-
-  .btn-outline {
-    display: inline-flex; align-items: center; gap: 10px;
-    background: transparent;
-    color: #fff; font-family: 'Barlow Condensed', sans-serif;
-    font-size: 14px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
-    padding: 13px 30px;
-    border: 1.5px solid rgba(255,255,255,0.2);
-    cursor: pointer;
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%);
-    transition: all .2s;
-  }
-  .btn-outline:hover { border-color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.05); }
-
-  .section-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px; letter-spacing: 4px; color: #dc2626;
-    text-transform: uppercase; margin-bottom: 10px;
-    display: flex; align-items: center; gap: 12px;
-  }
-  .section-label::before {
-    content: ''; display: block; width: 24px; height: 2px; background: #dc2626;
-  }
-
-  .section-title {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: clamp(32px, 5vw, 52px);
-    font-weight: 900; text-transform: uppercase; line-height: 1;
-    color: #fff;
-  }
-  .section-title span { color: #dc2626; }
-
-  .cp-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
-    transition: border-color .25s, transform .25s, box-shadow .25s;
-    cursor: pointer;
-  }
-  .cp-card:hover {
-    border-color: rgba(220,38,38,0.4);
-    transform: translateY(-4px);
-    box-shadow: 0 16px 48px rgba(220,38,38,0.12);
-  }
-
-  .cp-nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 clamp(20px, 5vw, 80px);
-    height: 64px;
-    background: rgba(5,5,8,0.85);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    transition: background .3s;
-  }
-
-  .cp-nav-link {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
-    color: rgba(255,255,255,0.5); cursor: pointer; transition: color .2s;
-    background: none; border: none; padding: 0;
-  }
-  .cp-nav-link:hover { color: #fff; }
-
-  .stat-box {
-    border-left: 2px solid #dc2626;
-    padding: 4px 0 4px 16px;
-    animation: countUp .6s ease both;
-  }
-
-  .cp-divider {
-    width: 100%; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    margin: 0;
-  }
-
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: #050508; }
-  ::-webkit-scrollbar-thumb { background: #dc2626; border-radius: 2px; }
-
-  /* ========== RESPONSIVE PERFECT ========== */
-  @media (max-width: 1024px) {
-    .cp-nav-links { display: none !important; }
-  }
-
-  @media (max-width: 768px) {
-    .cp-nav {
-      padding: 0 16px !important;
-      height: 56px !important;
-    }
-    .cp-nav .btn-primary, 
-    .cp-nav .btn-outline {
-      padding: 6px 12px !important;
-      font-size: 10px !important;
-      clip-path: none !important;
-      border-radius: 6px !important;
-    }
-    .btn-primary, .btn-outline {
-      padding: 10px 18px !important;
-      font-size: 12px !important;
-      clip-path: none !important;
-      border-radius: 8px !important;
-    }
-    section { padding: 48px 20px !important; }
-    .section-title { font-size: clamp(28px, 6vw, 40px) !important; }
-    .stat-box > div:first-child { font-size: 28px !important; }
-    .live-stats-grid { grid-template-columns: 1fr 1fr !important; gap: 1px !important; }
-    .news-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
-    .footer-grid { grid-template-columns: 1fr !important; gap: 32px !important; text-align: center !important; }
-    .footer-grid div:first-child { text-align: center !important; margin: 0 auto !important; }
-    .footer-grid p { margin: 0 auto !important; }
-    .section-header-row {
-      flex-direction: column !important;
-      align-items: flex-start !important;
-      gap: 16px !important;
-    }
-    .hero-content {
-      text-align: center !important;
-      padding: 0 16px !important;
-    }
-    .hero-stats {
-      justify-content: center !important;
-      gap: 24px !important;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .cp-nav .btn-outline { display: none !important; }
-    .live-stats-grid { grid-template-columns: 1fr 1fr !important; }
-    .hero-buttons { flex-direction: column !important; width: 100% !important; }
-    .hero-buttons button { width: 100% !important; justify-content: center !important; }
-  }
-`;
-
-function fmt(n) {
-  return n >= 1000 ? (n / 1000).toFixed(1) + "K" : String(n ?? 0);
-}
-
-/* ========== COMPOSANTS ========== */
-function Topbar({ user, onlineCount }) {
-  const nav = useNavigate();
-  const [scrolled, setScrolled] = useState(false);
-
+// ─── COUNTDOWN HOOK ───────────────────────────────────────────────────────────
+function useCountdown(target) {
+  const [secs, setSecs] = useState(null);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const links = [
-    { label: "Accueil",    path: "/" },
-    { label: "Tournois",   path: "/tournaments" },
-    { label: "Équipes",    path: "/teams" },
-    { label: "Classement", path: "/leaderboard" },
-    { label: "Boutique",   path: "/store" },
-    { label: "Actualités", path: "/news" },
-  ];
-
-  return (
-    <nav className="cp-nav" style={{ background: scrolled ? "rgba(5,5,8,0.98)" : "rgba(5,5,8,0.7)" }}>
-      <div onClick={() => nav("/")} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-        <div style={{
-          width: 36, height: 36, background: "#dc2626",
-          clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: 14, color: "#fff" }}>CP</span>
-        </div>
-        <div>
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: 18, letterSpacing: 3, color: "#fff", lineHeight: 1 }}>
-            CIPHERP<span style={{ color: "#dc2626" }}>OO</span>L
-          </p>
-          <p style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 8, letterSpacing: 2, color: "rgba(255,255,255,0.3)", lineHeight: 1 }}>
-            ESPORT PLATFORM
-          </p>
-        </div>
-      </div>
-
-      <div className="cp-nav-links" style={{ display: "flex", gap: 36, alignItems: "center" }}>
-        {links.map((l) => (
-          <button key={l.label} className="cp-nav-link" onClick={() => nav(l.path)}>
-            {l.label}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 6,
-          fontFamily: "'Share Tech Mono',monospace", fontSize: 10, letterSpacing: 1,
-          color: "rgba(255,255,255,0.5)", padding: "6px 12px",
-          background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.15)",
-        }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "blink 2s ease-in-out infinite" }} />
-          <span style={{ color: "#22c55e", fontWeight: 700 }}>{onlineCount}</span>
-          <span>EN LIGNE</span>
-        </div>
-
-        {user ? (
-          <button className="btn-primary" style={{ padding: "10px 24px", fontSize: 12 }} onClick={() => nav("/dashboard")}>
-            MON ESPACE
-          </button>
-        ) : (
-          <>
-            <button className="btn-outline" style={{ padding: "10px 20px", fontSize: 12 }} onClick={() => nav("/login")}>
-              CONNEXION
-            </button>
-            <button className="btn-primary" style={{ padding: "10px 24px", fontSize: 12 }} onClick={() => nav("/register")}>
-              S'INSCRIRE
-            </button>
-          </>
-        )}
-      </div>
-    </nav>
-  );
+    if (!target) return;
+    const tick = () => {
+      const diff = Math.max(0, Math.floor((new Date(target) - Date.now()) / 1000));
+      setSecs(diff);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [target]);
+  if (secs === null) return null;
+  const h = Math.floor(secs / 3600).toString().padStart(2, "0");
+  const m = Math.floor((secs % 3600) / 60).toString().padStart(2, "0");
+  const s = (secs % 60).toString().padStart(2, "0");
+  return `${h}:${m}:${s}`;
 }
 
-function Hero({ stats, user }) {
-  const nav = useNavigate();
-  return (
-    <section style={{ position: "relative", minHeight: "100vh", display: "flex", alignItems: "center", overflow: "hidden", paddingTop: 64 }}>
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 100% 80% at 100% 50%, rgba(220,38,38,0.07) 0%, transparent 60%)" }} />
-      
-      <div style={{ position: "absolute", right: "-5%", top: "10%", width: "55%", height: "80%", background: "linear-gradient(135deg, rgba(220,38,38,0.04) 0%, transparent 60%)", borderLeft: "1px solid rgba(220,38,38,0.1)", transform: "skewX(-8deg)", pointerEvents: "none" }} />
-      
-      <div style={{ position: "absolute", right: "5%", top: "50%", transform: "translateY(-50%)", fontFamily: "'Barlow Condensed',sans-serif", fontSize: "clamp(100px,14vw,200px)", fontWeight: 900, lineHeight: 1, color: "rgba(255,255,255,0.02)", textTransform: "uppercase", userSelect: "none", pointerEvents: "none", letterSpacing: -4 }}>
-        ESPORT
-      </div>
-
-      <div className="hero-content" style={{ position: "relative", zIndex: 2, padding: "0 clamp(20px,5vw,80px)", maxWidth: 800, animation: "slideInLeft .8s ease both" }}>
-        <div className="section-label" style={{ marginBottom: 20 }}>Platform eSport #1 Maroc</div>
-
-        <div style={{ position: "relative", marginBottom: 8 }}>
-          <h1 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: "clamp(56px,9vw,120px)", fontWeight: 900, lineHeight: 0.95, textTransform: "uppercase", letterSpacing: -2, color: "#fff" }}>
-            DOMINE<br />
-            <span style={{ color: "#dc2626", WebkitTextStroke: "2px #dc2626", WebkitTextFillColor: "transparent" }}>L'ARÈNE</span>
-          </h1>
-          <h1 aria-hidden style={{ position: "absolute", top: 0, left: 0, fontFamily: "'Barlow Condensed',sans-serif", fontSize: "clamp(56px,9vw,120px)", fontWeight: 900, lineHeight: 0.95, textTransform: "uppercase", letterSpacing: -2, color: "#00ffff", animation: "glitch 4s infinite", opacity: 0.4, pointerEvents: "none" }}>
-            DOMINE<br />L'ARÈNE
-          </h1>
-          <h1 aria-hidden style={{ position: "absolute", top: 0, left: 0, fontFamily: "'Barlow Condensed',sans-serif", fontSize: "clamp(56px,9vw,120px)", fontWeight: 900, lineHeight: 0.95, textTransform: "uppercase", letterSpacing: -2, color: "#ff0040", animation: "glitch2 4s infinite 1s", opacity: 0.3, pointerEvents: "none" }}>
-            DOMINE<br />L'ARÈNE
-          </h1>
-        </div>
-
-        <p style={{ fontSize: 16, lineHeight: 1.6, color: "rgba(255,255,255,0.5)", maxWidth: 440, marginBottom: 40, animation: "fadeUp .8s .3s ease both" }}>
-          Rejoins la plateforme ultime pour les gamers. Tournois Free Fire, classements, équipes et cash prizes.
-        </p>
-
-        <div className="hero-buttons" style={{ display: "flex", gap: 16, flexWrap: "wrap", animation: "fadeUp .8s .5s ease both", marginBottom: 60 }}>
-          <button className="btn-primary" onClick={() => nav(user ? "/tournaments" : "/register")} style={{ fontSize: 14 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-            </svg>
-            EXPLORER LES TOURNOIS
-          </button>
-          <button className="btn-outline" onClick={() => nav(user ? "/dashboard" : "/register")} style={{ fontSize: 14 }}>
-            {user ? "MON DASHBOARD →" : "CRÉER UN COMPTE →"}
-          </button>
-        </div>
-
-        <div className="hero-stats" style={{ display: "flex", gap: 40, flexWrap: "wrap", animation: "fadeUp .8s .7s ease both", paddingTop: 32, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          {[
-            { label: "JOUEURS",  value: fmt(stats.players) },
-            { label: "TOURNOIS", value: fmt(stats.tournaments) },
-            { label: "PRIZE POOL", value: `${fmt(stats.prizePool)} CP` },
-            { label: "ÉQUIPES",  value: fmt(stats.teams) },
-          ].map((s, i) => (
-            <div key={s.label} className="stat-box" style={{ animationDelay: `${0.8 + i * 0.1}s` }}>
-              <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: "clamp(28px,4vw,40px)", fontWeight: 900, lineHeight: 1, color: "#fff" }}>{s.value}</div>
-              <div style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 10, letterSpacing: 2, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, animation: "fadeUp 1s 1.2s ease both" }}>
-        <span style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 9, letterSpacing: 3, color: "rgba(255,255,255,0.2)" }}>SCROLL</span>
-        <div style={{ width: 1, height: 40, background: "linear-gradient(#dc2626, transparent)", animation: "scan 1.5s ease-in-out infinite" }} />
-      </div>
-    </section>
-  );
-}
-
-function LiveStats({ stats, onlineCount }) {
-  const items = [
-    { label: "EN LIGNE MAINTENANT", value: onlineCount, icon: "🟢", color: "#22c55e", live: true },
-    { label: "MEMBRES INSCRITS",    value: stats.players, icon: "👥", color: "#fff" },
-    { label: "TOURNOIS ORGANISÉS",  value: stats.tournaments, icon: "🏆", color: "#fbbf24" },
-    { label: "ÉQUIPES ACTIVES",     value: stats.teams, icon: "⚔️", color: "#818cf8" },
-  ];
-
-  return (
-    <section style={{ padding: "48px clamp(20px,5vw,80px)", background: "rgba(255,255,255,0.01)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-      <div className="live-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1, background: "rgba(255,255,255,0.05)" }}>
-        {items.map((item, i) => (
-          <div key={item.label} style={{ padding: "32px 28px", background: "#050508", display: "flex", flexDirection: "column", gap: 8, position: "relative", overflow: "hidden", animation: `fadeUp .5s ${i * 0.1}s ease both` }}>
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: item.color, opacity: 0.4 }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 16 }}>{item.icon}</span>
-              {item.live && (
-                <span style={{ display: "flex", alignItems: "center", gap: 4, fontFamily: "'Share Tech Mono',monospace", fontSize: 8, letterSpacing: 2, color: "#22c55e", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", padding: "2px 8px" }}>
-                  <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#22c55e", animation: "blink 1s infinite" }} />
-                  LIVE
-                </span>
-              )}
-            </div>
-            <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: "clamp(40px,5vw,64px)", fontWeight: 900, lineHeight: 1, color: item.color }}>{fmt(item.value)}</div>
-            <div style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 9, letterSpacing: 3, color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>{item.label}</div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function FeatureStrip() {
-  const items = ["TOURNOIS FREE FIRE", "CASH PRIZES", "CLASSEMENTS EN TEMPS RÉEL", "ÉQUIPES PROFESSIONNELLES", "SYSTÈME DE RANG", "BOUTIQUE D'ITEMS"];
-  return (
-    <div style={{ borderTop: "1px solid rgba(220,38,38,0.2)", borderBottom: "1px solid rgba(220,38,38,0.2)", background: "rgba(220,38,38,0.04)", padding: "14px 0", overflow: "hidden", position: "relative" }}>
-      <div style={{ display: "flex", gap: 0, animation: "marquee 20s linear infinite", whiteSpace: "nowrap" }}>
-        {[...items, ...items].map((item, i) => (
-          <span key={i} style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 13, fontWeight: 700, letterSpacing: 3, color: i % 2 === 0 ? "rgba(255,255,255,0.6)" : "rgba(220,38,38,0.8)", padding: "0 32px" }}>
-            {i % 2 === 0 ? item : "✦"}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TournamentCard({ t, user }) {
-  const nav = useNavigate();
-  const pct = t.max_players > 0 ? Math.round(((t.current_players ?? 0) / t.max_players) * 100) : 0;
-  const statusMap = {
-    open:        { label: "INSCRIPTIONS", color: "#22c55e" },
-    in_progress: { label: "EN COURS",     color: "#dc2626" },
-    closed:      { label: "TERMINÉ",      color: "#6b7280" },
+// ─── STATUS BADGE ─────────────────────────────────────────────────────────────
+function StatusBadge({ status }) {
+  const cfg = {
+    open:        { label: "🟢 OUVERT",   color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
+    in_progress: { label: "🔴 LIVE",     color: red,       bg: "rgba(239,68,68,0.12)" },
+    full:        { label: "🔒 COMPLET",  color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
   };
-  const st = statusMap[t.status] || statusMap.open;
+  const c = cfg[status] || cfg.open;
+  return (
+    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5, color: c.color,
+      background: c.bg, padding: "3px 10px", borderRadius: 99 }}>
+      {c.label}
+    </span>
+  );
+}
+
+// ─── TOURNAMENT CARD ──────────────────────────────────────────────────────────
+function TournamentCard({ t, index, user }) {
+  const nav = useNavigate();
+  const pct = t.max_players > 0 ? Math.round((t.current_players / t.max_players) * 100) : 0;
+  const almostFull = pct >= 80 && pct < 100;
+  const isFree = !t.entry_fee || t.entry_fee === 0;
 
   return (
-    <div className="cp-card" onClick={() => nav(user ? `/tournaments/${t.id}` : "/register")} style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ height: 160, position: "relative", overflow: "hidden", background: "#0d0d12" }}>
-        {t.banner_url
-          ? <img src={t.banner_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.7 }} />
-          : <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,#1a0505,#050508)", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 56, opacity: 0.1 }}>🎮</span></div>
-        }
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent 40%, rgba(5,5,8,0.9))" }} />
-        <div style={{ position: "absolute", top: 12, left: 12, display: "flex", alignItems: "center", gap: 6, background: "rgba(5,5,8,0.8)", backdropFilter: "blur(8px)", padding: "4px 10px", border: `1px solid ${st.color}30` }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: st.color, display: "block", animation: t.status === "in_progress" ? "blink 1s infinite" : "none" }} />
-          <span style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 9, letterSpacing: 2, color: st.color }}>{st.label}</span>
-        </div>
-        {t.prize_coins > 0 && (
-          <div style={{ position: "absolute", top: 12, right: 12, background: "rgba(220,38,38,0.85)", padding: "4px 10px", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 1 }}>
-            {fmt(t.prize_coins)} CP
-          </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.07 }}
+      onClick={() => nav(user ? `/tournaments/${t.id}` : "/register")}
+      style={{
+        background: "rgba(255,255,255,0.03)",
+        border: `1px solid ${t.status === "in_progress" ? red + "44" : "rgba(124,58,237,0.2)"}`,
+        borderRadius: 16,
+        overflow: "hidden",
+        cursor: "pointer",
+        position: "relative",
+        transition: "transform 0.2s",
+      }}
+      whileTap={{ scale: 0.98 }}
+    >
+      {/* Top accent line */}
+      <div style={{ height: 3, background: t.status === "in_progress"
+        ? `linear-gradient(90deg,${red},#f97316)`
+        : `linear-gradient(90deg,${accent},${accentCyan})` }} />
+
+      {/* Badges */}
+      <div style={{ position: "absolute", top: 12, right: 12, display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+        {almostFull && (
+          <span style={{ fontSize: 9, fontWeight: 800, color: "#f59e0b",
+            background: "rgba(245,158,11,0.15)", padding: "3px 8px", borderRadius: 99 }}>
+            🔥 PRESQUE COMPLET
+          </span>
         )}
-        <div style={{ position: "absolute", bottom: 12, left: 12, right: 12 }}>
-          <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 18, fontWeight: 800, letterSpacing: 0.5, lineHeight: 1.1 }}>{t.name}</p>
-        </div>
+        {isFree && (
+          <span style={{ fontSize: 9, fontWeight: 800, color: "#22c55e",
+            background: "rgba(34,197,94,0.12)", padding: "3px 8px", borderRadius: 99 }}>
+            🆓 GRATUIT
+          </span>
+        )}
       </div>
-      <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 10, color: "rgba(255,255,255,0.35)", letterSpacing: 1 }}>JOUEURS</span>
-            <span style={{ fontFamily: "'Barlow Condensed',monospace", fontSize: 12, fontWeight: 700, color: "#fff" }}>{t.current_players ?? 0} / {t.max_players}</span>
-          </div>
-          <div style={{ height: 2, background: "rgba(255,255,255,0.06)" }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: pct >= 80 ? "#dc2626" : "#22c55e", transition: "width .5s" }} />
-          </div>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto" }}>
-          {t.entry_fee > 0
-            ? <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 700, color: "#dc2626" }}>{t.entry_fee} CP <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>/ entrée</span></span>
-            : <span style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 10, color: "#22c55e", letterSpacing: 1 }}>GRATUIT</span>
-          }
-          <span style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 9, color: "rgba(255,255,255,0.25)", letterSpacing: 1 }}>FREE FIRE</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
-function TournamentsSection({ tournaments, user }) {
-  const nav = useNavigate();
-  return (
-    <section style={{ padding: "100px clamp(20px,5vw,80px)" }}>
-      <div className="section-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, flexWrap: "wrap", gap: 16 }}>
-        <div>
-          <div className="section-label">Compétitions actives</div>
-          <h2 className="section-title">TOURNOIS <span>EN VEDETTE</span></h2>
+      <div style={{ padding: "14px 16px" }}>
+        <div style={{ marginBottom: 10 }}>
+          <StatusBadge status={t.status} />
         </div>
-        <button className="btn-outline" onClick={() => nav(user ? "/tournaments" : "/register")}>VOIR TOUT →</button>
-      </div>
-      {tournaments.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "80px 20px", border: "1px solid rgba(255,255,255,0.05)" }}>
-          <p style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 11, letterSpacing: 3, color: "rgba(255,255,255,0.2)" }}>AUCUN TOURNOI ACTIF — REVENEZ BIENTÔT</p>
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
-          {tournaments.map((t) => <TournamentCard key={t.id} t={t} user={user} />)}
-        </div>
-      )}
-    </section>
-  );
-}
 
-function TeamsSection({ teams }) {
-  const nav = useNavigate();
-  if (!teams.length) return null;
-  return (
-    <section style={{ padding: "100px clamp(20px,5vw,80px)", background: "rgba(255,255,255,0.01)" }}>
-      <div className="section-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, flexWrap: "wrap", gap: 20 }}>
-        <div>
-          <div className="section-label">Les meilleures</div>
-          <h2 className="section-title">MEILLEURES <span>ÉQUIPES</span></h2>
-        </div>
-        <button className="btn-outline" onClick={() => nav("/leaderboard")}>CLASSEMENT →</button>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 20 }}>
-        {teams.slice(0, 6).map((team, i) => (
-          <div key={team.id} className="cp-card" onClick={() => nav(`/teams/${team.id}`)} style={{ padding: "24px 20px", textAlign: "center" }}>
-            <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: 2, color: i < 3 ? "#dc2626" : "rgba(255,255,255,0.2)", marginBottom: 12 }}>#{i + 1}</div>
-            <div style={{ width: 64, height: 64, margin: "0 auto 12px", borderRadius: "50%", background: "linear-gradient(135deg,#1a0505,#0d0d1a)", border: `2px solid ${i < 3 ? "rgba(220,38,38,0.5)" : "rgba(255,255,255,0.08)"}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-              {team.logo_url
-                ? <img src={team.logo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 24, fontWeight: 900, color: i < 3 ? "#dc2626" : "rgba(255,255,255,0.3)" }}>{team.name?.[0]?.toUpperCase() ?? "T"}</span>
-              }
-            </div>
-            <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 0.5, marginBottom: 6 }}>{team.name}</p>
-            <span style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 1 }}>{team.wins ?? 0} VICTOIRES</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
+        <h3 style={{ fontFamily: "'Inter',sans-serif", fontSize: 16, fontWeight: 800,
+          color: "#fff", margin: "0 0 10px", lineHeight: 1.2, paddingRight: 80 }}>
+          {t.name}
+        </h3>
 
-function NewsSection({ news }) {
-  const nav = useNavigate();
-  if (!news.length) return null;
-  const [main, ...rest] = news;
-  return (
-    <section style={{ padding: "100px clamp(20px,5vw,80px)" }}>
-      <div className="section-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 48, flexWrap: "wrap", gap: 20 }}>
-        <div>
-          <div className="section-label">Infos & Updates</div>
-          <h2 className="section-title">DERNIÈRES <span>ACTUALITÉS</span></h2>
+        {/* Stats row */}
+        <div style={{ display: "flex", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+            🏆 <strong style={{ color: "#fbbf24" }}>{fmt(t.prize_coins)}</strong> coins
+          </span>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+            👥 {t.current_players}/{t.max_players}
+          </span>
+          {t.entry_fee > 0 && (
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+              💰 {t.entry_fee} coins
+            </span>
+          )}
         </div>
-        <button className="btn-outline" onClick={() => nav("/news")}>TOUTES LES NEWS →</button>
-      </div>
-      <div className="news-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-        <div className="cp-card" onClick={() => nav("/news")} style={{ gridRow: rest.length > 0 ? "1 / 3" : "auto", overflow: "hidden" }}>
-          <div style={{ height: 280, position: "relative", background: "#0d0d12", overflow: "hidden" }}>
-            {main.cover_url
-              ? <img src={main.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.6 }} />
-              : <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,#1a0505,#050508)" }} />
-            }
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent 30%, rgba(5,5,8,0.95))" }} />
-            <div style={{ position: "absolute", top: 16, left: 16 }}>
-              <span style={{ background: "#dc2626", padding: "3px 10px", fontFamily: "'Barlow Condensed',sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: 2 }}>{(main.category ?? "GÉNÉRAL").toUpperCase()}</span>
-            </div>
-            <div style={{ position: "absolute", bottom: 20, left: 20, right: 20 }}>
-              <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>{main.title}</p>
-            </div>
-          </div>
-          <div style={{ padding: "16px 20px" }}>
-            <p style={{ fontSize: 14, lineHeight: 1.6, color: "rgba(255,255,255,0.5)" }}>{main.excerpt?.slice(0, 120)}...</p>
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {rest.slice(0, 3).map((n) => (
-            <div key={n.id} className="cp-card" onClick={() => nav("/news")} style={{ display: "flex", overflow: "hidden", height: 100 }}>
-              <div style={{ width: 100, flexShrink: 0, background: "#0d0d12", overflow: "hidden" }}>
-                {n.cover_url
-                  ? <img src={n.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.7 }} />
-                  : <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,#1a0505,#050508)", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 24, opacity: 0.15 }}>📰</span></div>
-                }
-              </div>
-              <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0, flex: 1 }}>
-                <span style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 9, color: "#dc2626", letterSpacing: 2, marginBottom: 4 }}>{(n.category ?? "GÉNÉRAL").toUpperCase()}</span>
-                <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 14, fontWeight: 700, lineHeight: 1.2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{n.title}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
-function HowItWorks({ user }) {
-  const nav = useNavigate();
-  const steps = [
-    { n: "01", icon: "👤", title: "CRÉE TON COMPTE",   desc: "Inscris-toi gratuitement et configure ton profil gamer en moins de 2 minutes." },
-    { n: "02", icon: "🎮", title: "REJOINS UN TOURNOI", desc: "Parcours les tournois disponibles et inscris-toi avec tes coins ou gratuitement." },
-    { n: "03", icon: "⚔️", title: "COMBATS ET GAGNE",  desc: "Joue tes matchs, soumets tes résultats et grimpe dans le classement." },
-    { n: "04", icon: "🏆", title: "RÉCOLTE TES GAINS", desc: "Remporte des coins, des items exclusifs et la gloire dans la communauté." },
-  ];
-  return (
-    <section style={{ padding: "100px clamp(20px,5vw,80px)", background: "rgba(220,38,38,0.02)", borderTop: "1px solid rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-      <div style={{ textAlign: "center", marginBottom: 64 }}>
-        <div className="section-label" style={{ justifyContent: "center" }}>Simple & rapide</div>
-        <h2 className="section-title">COMMENT ÇA <span>MARCHE</span> ?</h2>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 32, maxWidth: 1100, margin: "0 auto" }}>
-        {steps.map((s) => (
-          <div key={s.n} style={{ position: "relative", padding: "28px 24px", borderLeft: "2px solid rgba(220,38,38,0.3)" }}>
-            <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 72, fontWeight: 900, lineHeight: 1, color: "rgba(220,38,38,0.08)", position: "absolute", top: 12, right: 16, letterSpacing: -2 }}>{s.n}</div>
-            <span style={{ fontSize: 36, display: "block", marginBottom: 16 }}>{s.icon}</span>
-            <h3 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 20, fontWeight: 800, letterSpacing: 1, marginBottom: 12, color: "#fff" }}>{s.title}</h3>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6 }}>{s.desc}</p>
-          </div>
-        ))}
-      </div>
-      <div style={{ textAlign: "center", marginTop: 56 }}>
-        <button className="btn-primary" onClick={() => nav(user ? "/dashboard" : "/register")} style={{ fontSize: 15 }}>
-          {user ? "MON ESPACE →" : "REJOINDRE MAINTENANT — C'EST GRATUIT"}
+        {/* Progress bar */}
+        <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 99, overflow: "hidden", marginBottom: 14 }}>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 0.8, delay: index * 0.07 + 0.2 }}
+            style={{
+              height: "100%",
+              background: pct >= 80 ? `linear-gradient(90deg,${red},#f97316)` : `linear-gradient(90deg,${accent},${accentCyan})`,
+              borderRadius: 99,
+            }}
+          />
+        </div>
+
+        {/* CTA */}
+        <button
+          style={{
+            width: "100%", padding: "12px 0", borderRadius: 10, border: "none",
+            cursor: "pointer", fontFamily: "'Inter',sans-serif", fontSize: 13,
+            fontWeight: 800, letterSpacing: 0.5, transition: "all 0.2s",
+            background: t.status === "in_progress"
+              ? `linear-gradient(135deg,${red},#f97316)`
+              : `linear-gradient(135deg,${accent},${accentCyan})`,
+            color: "#fff",
+            boxShadow: t.status === "in_progress"
+              ? "0 4px 20px rgba(239,68,68,0.3)"
+              : "0 4px 20px rgba(124,58,237,0.3)",
+          }}
+          onClick={e => { e.stopPropagation(); nav(user ? `/tournaments/${t.id}` : "/register"); }}
+        >
+          {t.status === "in_progress" ? "🔴 Rejoindre LIVE" : "⚡ Rejoindre"}
         </button>
       </div>
-    </section>
+    </motion.div>
   );
 }
 
-function Footer() {
-  const nav = useNavigate();
-  return (
-    <footer style={{ padding: "60px clamp(20px,5vw,80px) 32px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-      <div className="footer-grid" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 48, marginBottom: 48 }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, justifyContent: "center" }}>
-            <div style={{ width: 32, height: 32, background: "#dc2626", clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: 12 }}>CP</span>
-            </div>
-            <span style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 900, fontSize: 16, letterSpacing: 3 }}>CIPHERPOOL</span>
-          </div>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", lineHeight: 1.7, maxWidth: 280, textAlign: "center", margin: "0 auto" }}>
-            La plateforme eSport dédiée aux gamers marocains. Tournois, classements et communauté.
-          </p>
-        </div>
-        {[
-          { title: "PLATEFORME", links: [["Tournois","/tournaments"],["Classement","/leaderboard"],["Équipes","/teams"],["Boutique","/store"]] },
-          { title: "COMPTE",     links: [["Connexion","/login"],["Inscription","/register"],["Mon Profil","/profile"],["Support","/support"]] },
-        ].map((col) => (
-          <div key={col.title} style={{ textAlign: "center" }}>
-            <p style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 12, fontWeight: 800, letterSpacing: 3, color: "rgba(255,255,255,0.4)", marginBottom: 16 }}>{col.title}</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
-              {col.links.map(([label, path]) => (
-                <button key={label} onClick={() => nav(path)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "rgba(255,255,255,0.45)", fontFamily: "'Barlow',sans-serif", transition: "color .2s", padding: 0 }}
-                  onMouseEnter={e => e.target.style.color = "#dc2626"}
-                  onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.45)"}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="cp-divider" />
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 24, flexWrap: "wrap", gap: 12, textAlign: "center" }}>
-        <p style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 1 }}>© 2026 CIPHERPOOL — ALL RIGHTS RESERVED</p>
-        <p style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 10, color: "rgba(220,38,38,0.5)", letterSpacing: 1 }}>BUILT FOR GAMERS ✦ POWERED BY PASSION</p>
-      </div>
-    </footer>
-  );
-}
-
-/* ========== PAGE PRINCIPALE ========== */
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function Homepage() {
-  const [user, setUser] = useState(null);
+  const nav = useNavigate();
+  const [user, setUser]               = useState(null);
   const [tournaments, setTournaments] = useState([]);
-  const [teams, setTeams] = useState([]);
-  const [news, setNews] = useState([]);
-  const [stats, setStats] = useState({ players: 0, tournaments: 0, prizePool: 0, teams: 0 });
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [stats, setStats]             = useState({ players: 0, tournaments: 0, prizePool: 0 });
   const [onlineCount, setOnlineCount] = useState(0);
+  const [nextTournoi, setNextTournoi] = useState(null);
+  const [menuOpen, setMenuOpen]       = useState(false);
+
+  const countdown = useCountdown(nextTournoi?.start_date || null);
 
   useEffect(() => {
     let presenceCh;
@@ -676,7 +174,7 @@ export default function Homepage() {
 
       if (u) {
         presenceCh = supabase
-          .channel("home-presence", { config: { presence: { key: u.id } } })
+          .channel("home-presence-v2", { config: { presence: { key: u.id } } })
           .on("presence", { event: "sync" }, () => {
             setOnlineCount(Object.keys(presenceCh.presenceState()).length);
           })
@@ -685,67 +183,567 @@ export default function Homepage() {
           });
       }
 
+      // Tournaments actifs
       const { data: trn } = await supabase
         .from("tournaments")
-        .select("id,name,status,max_players,current_players,banner_url,prize_coins,entry_fee")
+        .select("id,name,status,max_players,current_players,prize_coins,entry_fee,start_date,game_type,mode")
         .in("status", ["open", "in_progress"])
         .order("created_at", { ascending: false })
         .limit(6);
       setTournaments(trn ?? []);
 
-      const { data: tm } = await supabase
-        .from("teams")
-        .select("id,name,logo_url,wins,accent_color")
-        .order("wins", { ascending: false })
-        .limit(6);
-      setTeams(tm ?? []);
+      // Prochain tournoi avec countdown
+      const openTrn = trn?.find(t => t.status === "open" && t.start_date);
+      setNextTournoi(openTrn || null);
 
-      const { data: nw } = await supabase
-        .from("news")
-        .select("id,title,excerpt,cover_url,category,published_at,created_at")
-        .not("published_at", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(4);
-      setNews(nw ?? []);
+      // Leaderboard top 3
+      const { data: lb } = await supabase
+        .from("player_stats")
+        .select("user_id, total_points, wins, kills")
+        .gt("tournaments_played", 0)
+        .order("total_points", { ascending: false })
+        .limit(3);
 
-      const [profilesRes, tournamentsRes, teamsRes] = await Promise.all([
+      if (lb?.length) {
+        const ids = lb.map(s => s.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url, free_fire_id")
+          .in("id", ids);
+        const pMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
+        setLeaderboard(lb.map((s, i) => ({ ...s, ...pMap[s.user_id], rank: i + 1 })));
+      }
+
+      // Stats globales
+      const [pRes, tRes] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("tournaments").select("*", { count: "exact", head: true }),
-        supabase.from("teams").select("*", { count: "exact", head: true }),
       ]);
-
-      let totalPrize = 0;
+      let prize = 0;
       try {
-        const { data: prizeData } = await supabase.from("tournaments").select("prize_coins");
-        totalPrize = prizeData?.reduce((sum, t) => sum + (t.prize_coins ?? 0), 0) ?? 0;
-      } catch (_) {}
-
-      setStats({
-        players: profilesRes.count ?? 0,
-        tournaments: tournamentsRes.count ?? 0,
-        prizePool: totalPrize,
-        teams: teamsRes.count ?? 0,
-      });
+        const { data: pd } = await supabase.from("tournaments").select("prize_coins");
+        prize = pd?.reduce((s, t) => s + (t.prize_coins ?? 0), 0) ?? 0;
+      } catch {}
+      setStats({ players: pRes.count ?? 0, tournaments: tRes.count ?? 0, prizePool: prize });
     })();
 
     return () => { if (presenceCh) supabase.removeChannel(presenceCh); };
   }, []);
 
+  const rankEmoji = r => r === 1 ? "👑" : r === 2 ? "🥈" : "🥉";
+
   return (
-    <div className="cp-home">
-      <style>{GLOBAL_CSS}</style>
-      <div className="noise" />
-      <Topbar user={user} onlineCount={onlineCount} />
-      <main style={{ position: "relative", zIndex: 1 }}>
-        <Hero stats={stats} user={user} />
-        <FeatureStrip />
-        <LiveStats stats={stats} onlineCount={onlineCount} />
-        <TournamentsSection tournaments={tournaments} user={user} />
-        <TeamsSection teams={teams} />
-        <NewsSection news={news} />
-        <HowItWorks user={user} />
-      </main>
-      <Footer />
+    <div style={{ minHeight: "100vh", background: "#050508", color: "#fff",
+      fontFamily: "'Inter', sans-serif", overflowX: "hidden" }}>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        * { box-sizing: border-box; }
+        body { overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.3); border-radius: 99px; }
+        @keyframes pulse-online {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.4); }
+        }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        .hp-section { padding: clamp(40px,8vw,80px) clamp(16px,5vw,40px); max-width: 900px; margin: 0 auto; }
+        .hp-section-label {
+          font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+          color: ${accent}; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+        }
+        .hp-section-label::before { content: ''; width: 20px; height: 2px; background: ${accent}; }
+        .hp-title {
+          font-size: clamp(24px,5vw,40px); font-weight: 900; line-height: 1.1; margin: 0 0 8px;
+        }
+        .hp-btn-primary {
+          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+          background: linear-gradient(135deg,${accent},${accentCyan});
+          color: #fff; border: none; border-radius: 12px; cursor: pointer;
+          font-family: 'Inter',sans-serif; font-weight: 800; font-size: 15px;
+          padding: 15px 28px; transition: all 0.2s; letter-spacing: 0.3px;
+          box-shadow: 0 6px 28px rgba(124,58,237,0.4);
+        }
+        .hp-btn-primary:active { transform: scale(0.97); }
+        .hp-btn-outline {
+          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+          background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7);
+          border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; cursor: pointer;
+          font-family: 'Inter',sans-serif; font-weight: 700; font-size: 14px;
+          padding: 14px 24px; transition: all 0.2s;
+        }
+        .hp-btn-outline:active { transform: scale(0.97); background: rgba(255,255,255,0.08); }
+      `}</style>
+
+      {/* ══ TOPBAR ═══════════════════════════════════════════════════════════ */}
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 100,
+        background: "rgba(5,5,8,0.92)", backdropFilter: "blur(20px)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 clamp(16px,5vw,40px)", height: 60,
+      }}>
+        {/* Logo */}
+        <div onClick={() => nav("/")} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 9,
+            background: `linear-gradient(135deg,${accent},${accentCyan})`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontWeight: 900, fontSize: 14, boxShadow: "0 4px 16px rgba(124,58,237,0.4)",
+          }}>CP</div>
+          <span style={{ fontWeight: 900, fontSize: 17, letterSpacing: 1 }}>
+            CIPHER<span style={{ color: accent }}>POOL</span>
+          </span>
+        </div>
+
+        {/* Right side */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Online badge */}
+          {onlineCount > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 5,
+              background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)",
+              padding: "5px 10px", borderRadius: 99 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e",
+                animation: "pulse-online 2s infinite", display: "block" }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#22c55e" }}>{onlineCount}</span>
+            </div>
+          )}
+
+          {user ? (
+            <button onClick={() => nav("/dashboard")} className="hp-btn-primary"
+              style={{ padding: "9px 18px", fontSize: 13 }}>
+              Mon espace →
+            </button>
+          ) : (
+            <>
+              <button onClick={() => nav("/login")} className="hp-btn-outline"
+                style={{ padding: "9px 16px", fontSize: 13 }}>
+                Connexion
+              </button>
+              <button onClick={() => nav("/register")} className="hp-btn-primary"
+                style={{ padding: "9px 18px", fontSize: 13 }}>
+                S'inscrire
+              </button>
+            </>
+          )}
+        </div>
+      </nav>
+
+      {/* ══ SCREEN 1 — HERO ══════════════════════════════════════════════════ */}
+      <section style={{
+        minHeight: "calc(100svh - 60px)",
+        display: "flex", flexDirection: "column", justifyContent: "center",
+        padding: "clamp(32px,8vw,80px) clamp(16px,5vw,40px)",
+        position: "relative", overflow: "hidden",
+        background: "radial-gradient(ellipse 80% 60% at 60% 40%, rgba(124,58,237,0.08) 0%, transparent 70%)",
+      }}>
+        {/* BG grid */}
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none",
+          backgroundImage: `linear-gradient(rgba(124,58,237,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.05) 1px, transparent 1px)`,
+          backgroundSize: "50px 50px" }} />
+
+        <div style={{ position: "relative", maxWidth: 700, animation: "fadeUp 0.7s ease both" }}>
+          {/* Tag */}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 20,
+            background: `rgba(124,58,237,0.12)`, border: `1px solid rgba(124,58,237,0.25)`,
+            padding: "6px 14px", borderRadius: 99 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: accent,
+              animation: "pulse-online 2s infinite", display: "block" }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: accent, letterSpacing: 0.5 }}>
+              Platform eSport #1 Maroc
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h1 className="hp-title" style={{ marginBottom: 16 }}>
+            Dkhol l'arène.{" "}
+            <span style={{
+              background: `linear-gradient(135deg,${accent},${accentCyan})`,
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            }}>Wrrihm chkun nta.</span>
+          </h1>
+
+          {/* Subtitle */}
+          <p style={{ fontSize: "clamp(14px,3vw,17px)", color: "rgba(255,255,255,0.55)",
+            lineHeight: 1.65, maxWidth: 520, marginBottom: 32 }}>
+            Tournois Free Fire, rewards, classement live — kol chi mn téléphone dyalk.
+            Inscription rapide, cash prizes, w communauté gaming 🇲🇦.
+          </p>
+
+          {/* CTAs */}
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 40 }}>
+            <button className="hp-btn-primary" onClick={() => nav(user ? "/tournaments" : "/register")}
+              style={{ flex: "1 1 160px", maxWidth: 240 }}>
+              🚀 Bda Daba
+            </button>
+            <button className="hp-btn-outline" onClick={() => nav("/tournaments")}
+              style={{ flex: "1 1 140px", maxWidth: 220 }}>
+              🏆 Chof Tournois
+            </button>
+          </div>
+
+          {/* Social proof chips */}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {[
+              { icon: "🔥", val: `+${fmt(stats.players)}`, label: "joueurs" },
+              { icon: "🏆", val: fmt(stats.tournaments), label: "tournois" },
+              { icon: "🟢", val: onlineCount > 0 ? onlineCount : "...", label: "en ligne" },
+            ].map(({ icon, val, label }) => (
+              <div key={label} style={{
+                display: "flex", alignItems: "center", gap: 6,
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                padding: "8px 14px", borderRadius: 10,
+              }}>
+                <span style={{ fontSize: 14 }}>{icon}</span>
+                <span style={{ fontWeight: 900, fontSize: 16, color: "#fff" }}>{val}</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div style={{ position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 10, letterSpacing: 2, color: "rgba(255,255,255,0.2)" }}>SCROLL</span>
+          <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 1.5, repeat: Infinity }}
+            style={{ width: 1, height: 30, background: `linear-gradient(${accent},transparent)` }} />
+        </div>
+      </section>
+
+      {/* ══ SCREEN 2 — TOURNOIS ACTIFS ═══════════════════════════════════════ */}
+      <section className="hp-section">
+        <div className="hp-section-label">🎮 Action Immédiate</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end",
+          marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+          <h2 className="hp-title">Tournois kaynin daba</h2>
+          <button onClick={() => nav("/tournaments")} className="hp-btn-outline"
+            style={{ padding: "9px 18px", fontSize: 13 }}>
+            Voir tout →
+          </button>
+        </div>
+
+        {tournaments.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "48px 16px",
+            background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 16 }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🏟️</div>
+            <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 15, marginBottom: 16 }}>
+              Pas encore de tournois actifs
+            </p>
+            <button className="hp-btn-primary" onClick={() => nav("/register")}>
+              S'inscrire pour être notifié
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(300px,100%),1fr))", gap: 14 }}>
+            {tournaments.map((t, i) => (
+              <TournamentCard key={t.id} t={t} index={i} user={user} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ══ SCREEN 3 — COUNTDOWN PROCHAIN TOURNOI ════════════════════════════ */}
+      {nextTournoi && countdown && (
+        <section style={{ padding: "clamp(32px,6vw,60px) clamp(16px,5vw,40px)" }}>
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              style={{
+                background: `linear-gradient(135deg, rgba(239,68,68,0.08), rgba(124,58,237,0.08))`,
+                border: "1px solid rgba(239,68,68,0.25)",
+                borderRadius: 20, padding: "clamp(24px,5vw,40px)",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                flexWrap: "wrap", gap: 24,
+              }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: red, marginBottom: 8 }}>
+                  ⏳ PROCHAIN TOURNOI
+                </div>
+                <h3 style={{ fontSize: "clamp(18px,4vw,26px)", fontWeight: 900, color: "#fff", margin: "0 0 6px" }}>
+                  {nextTournoi.name}
+                </h3>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", margin: 0 }}>
+                  💰 {fmt(nextTournoi.prize_coins)} coins · 👥 {nextTournoi.current_players}/{nextTournoi.max_players}
+                </p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: "clamp(32px,7vw,52px)",
+                  fontWeight: 900, color: red, letterSpacing: 2,
+                  textShadow: "0 0 30px rgba(239,68,68,0.5)" }}>
+                  {countdown}
+                </div>
+                <button className="hp-btn-primary" onClick={() => nav(user ? `/tournaments/${nextTournoi.id}` : "/register")}
+                  style={{ padding: "12px 28px", fontSize: 14 }}>
+                  🎯 Réserver ma place
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
+
+      {/* ══ SCREEN 4 — POURQUOI JOUER ICI ════════════════════════════════════ */}
+      <section className="hp-section">
+        <div className="hp-section-label">💎 La valeur</div>
+        <h2 className="hp-title" style={{ marginBottom: 28 }}>3lach تلعب هنا؟</h2>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(200px,100%),1fr))", gap: 12 }}>
+          {[
+            { icon: "🏆", title: "Tournois chaque semaine", desc: "Battle Royale, Clash Squad, Solo, Duo, Squad" },
+            { icon: "💰", title: "Rba7 coins & rewards", desc: "Cash prizes, récompenses exclusives, bonus quotidiens" },
+            { icon: "🧑‍🤝‍🧑", title: "L3ab m3a team", desc: "Crée ton équipe, recrute, et montez ensemble" },
+            { icon: "📊", title: "Tla3 f classement", desc: "Ranking live, stats détaillées, ton niveau réel" },
+          ].map(({ icon, title, desc }, i) => (
+            <motion.div key={title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08 }}
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(124,58,237,0.15)",
+                borderRadius: 16, padding: "20px 18px",
+                transition: "border-color 0.2s",
+              }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>{icon}</div>
+              <h3 style={{ fontWeight: 800, fontSize: 15, color: "#fff", margin: "0 0 6px" }}>{title}</h3>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, margin: 0 }}>{desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ══ SCREEN 5 — TOP JOUEURS ════════════════════════════════════════════ */}
+      {leaderboard.length > 0 && (
+        <section className="hp-section">
+          <div className="hp-section-label">🔥 Compétition</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end",
+            marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+            <h2 className="hp-title">Top joueurs aujourd'hui</h2>
+            <button onClick={() => nav("/leaderboard")} className="hp-btn-outline"
+              style={{ padding: "9px 18px", fontSize: 13 }}>
+              Classement complet →
+            </button>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {leaderboard.map((p, i) => (
+              <motion.div key={p.user_id}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08 }}
+                onClick={() => nav("/leaderboard")}
+                style={{
+                  display: "flex", alignItems: "center", gap: 16,
+                  padding: "14px 18px", borderRadius: 14, cursor: "pointer",
+                  background: i === 0 ? "rgba(251,191,36,0.06)" : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${i === 0 ? "rgba(251,191,36,0.2)" : "rgba(255,255,255,0.07)"}`,
+                  transition: "background 0.15s",
+                }}>
+                {/* Rank */}
+                <div style={{
+                  width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+                  background: i === 0 ? "rgba(251,191,36,0.15)" : "rgba(255,255,255,0.05)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 18,
+                }}>
+                  {rankEmoji(p.rank)}
+                </div>
+
+                {/* Avatar */}
+                <div style={{
+                  width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+                  background: p.avatar_url ? "transparent" : `linear-gradient(135deg,${accent},${accentCyan})`,
+                  overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 900, fontSize: 16,
+                }}>
+                  {p.avatar_url
+                    ? <img src={p.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : (p.full_name?.[0] || "?")}
+                </div>
+
+                {/* Name */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 800, fontSize: 15, color: "#fff", margin: 0,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {p.full_name || "Joueur"}
+                  </p>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", margin: "2px 0 0" }}>
+                    FF: {p.free_fire_id || "—"}
+                  </p>
+                </div>
+
+                {/* Points */}
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <p style={{ fontWeight: 900, fontSize: 17,
+                    color: i === 0 ? "#fbbf24" : accent, margin: 0 }}>
+                    {(p.total_points || 0).toLocaleString()}
+                  </p>
+                  <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", margin: "2px 0 0" }}>pts</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ══ SCREEN 6 — HOW IT WORKS ══════════════════════════════════════════ */}
+      <section className="hp-section">
+        <div className="hp-section-label">✅ Simple</div>
+        <h2 className="hp-title" style={{ marginBottom: 28 }}>Kifach تلعب؟</h2>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
+          {/* Vertical line */}
+          <div style={{ position: "absolute", left: 24, top: 48, bottom: 48, width: 2,
+            background: `linear-gradient(${accent},${accentCyan})`, opacity: 0.25 }} />
+
+          {[
+            { num: "01", icon: "✍️", title: "Créer compte", desc: "Inscription gratuite en 2 minutes avec ton Free Fire ID" },
+            { num: "02", icon: "🎮", title: "Rejoindre tournoi", desc: "Choisis ton tournoi, envoie ta demande, attends l'approbation" },
+            { num: "03", icon: "🏆", title: "Gagner rewards", desc: "Joue, soumets ton résultat avec screenshot, gagne coins & prizes" },
+          ].map(({ num, icon, title, desc }, i) => (
+            <motion.div key={num}
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              style={{ display: "flex", gap: 20, padding: "20px 0", alignItems: "flex-start" }}>
+              {/* Step circle */}
+              <div style={{
+                width: 48, height: 48, borderRadius: "50%", flexShrink: 0,
+                background: `linear-gradient(135deg,${accent},${accentCyan})`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 20, boxShadow: `0 4px 20px rgba(124,58,237,0.3)`,
+                position: "relative", zIndex: 1,
+              }}>
+                {icon}
+              </div>
+
+              <div style={{ paddingTop: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: accent, letterSpacing: 1, marginBottom: 4 }}>
+                  STEP {num}
+                </div>
+                <h3 style={{ fontWeight: 800, fontSize: 17, color: "#fff", margin: "0 0 6px" }}>{title}</h3>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, margin: 0 }}>{desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ══ SCREEN 7 — FINAL CTA ═════════════════════════════════════════════ */}
+      <section style={{ padding: "clamp(48px,8vw,80px) clamp(16px,5vw,40px)" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          style={{
+            maxWidth: 700, margin: "0 auto", textAlign: "center",
+            background: `linear-gradient(135deg, rgba(124,58,237,0.1), rgba(6,182,212,0.08))`,
+            border: "1px solid rgba(124,58,237,0.25)",
+            borderRadius: 24, padding: "clamp(32px,6vw,56px) clamp(20px,5vw,48px)",
+          }}>
+          <div style={{ fontSize: 48, marginBottom: 16, animation: "float 3s ease-in-out infinite" }}>🎮</div>
+          <h2 style={{ fontSize: "clamp(24px,5vw,38px)", fontWeight: 900,
+            margin: "0 0 12px", lineHeight: 1.15 }}>
+            Wach wajed{" "}
+            <span style={{
+              background: `linear-gradient(135deg,${accent},${accentCyan})`,
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            }}>تربح؟</span>
+          </h2>
+          <p style={{ fontSize: "clamp(14px,3vw,16px)", color: "rgba(255,255,255,0.5)",
+            lineHeight: 1.6, marginBottom: 32, maxWidth: 400, margin: "0 auto 32px" }}>
+            Rejoins des milliers de joueurs Free Fire. Tournois, classements, rewards — kol chi mne l'arena.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <button className="hp-btn-primary" onClick={() => nav(user ? "/tournaments" : "/register")}
+              style={{ flex: "1 1 160px", maxWidth: 240, padding: "16px 28px", fontSize: 16 }}>
+              🚀 Bda Daba
+            </button>
+            {!user && (
+              <button className="hp-btn-outline" onClick={() => nav("/login")}
+                style={{ flex: "1 1 140px", maxWidth: 200 }}>
+                Déjà inscrit →
+              </button>
+            )}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ══ FOOTER ═══════════════════════════════════════════════════════════ */}
+      <footer style={{
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+        padding: "clamp(24px,5vw,40px) clamp(16px,5vw,40px)",
+        textAlign: "center",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 7,
+            background: `linear-gradient(135deg,${accent},${accentCyan})`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontWeight: 900, fontSize: 11,
+          }}>CP</div>
+          <span style={{ fontWeight: 900, fontSize: 15 }}>
+            CIPHER<span style={{ color: accent }}>POOL</span>
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 24, justifyContent: "center", flexWrap: "wrap", marginBottom: 16 }}>
+          {[
+            ["Tournois", "/tournaments"], ["Classement", "/leaderboard"],
+            ["Équipes", "/teams"], ["Actualités", "/news"],
+          ].map(([label, path]) => (
+            <button key={label} onClick={() => nav(path)}
+              style={{ background: "none", border: "none", cursor: "pointer",
+                color: "rgba(255,255,255,0.4)", fontSize: 13, padding: 0,
+                transition: "color 0.15s", fontFamily: "'Inter',sans-serif" }}
+              onMouseEnter={e => e.target.style.color = "#fff"}
+              onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.4)"}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.2)", margin: 0 }}>
+          © 2026 CipherPool · Platform eSport Free Fire Maroc 🇲🇦
+        </p>
+      </footer>
+
+      {/* ══ STICKY BOTTOM CTA (mobile only) ══════════════════════════════════ */}
+      {!user && (
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+          padding: "12px 16px",
+          background: "rgba(5,5,8,0.95)", backdropFilter: "blur(20px)",
+          borderTop: `1px solid rgba(124,58,237,0.2)`,
+          display: "none",  // shown via CSS
+        }}
+          className="sticky-mobile-cta"
+        >
+          <button className="hp-btn-primary" onClick={() => nav("/register")}
+            style={{ width: "100%", padding: "15px", fontSize: 15 }}>
+            🎮 Rejoindre Tournoi — Gratuit
+          </button>
+        </div>
+      )}
+
+      <style>{`
+        @media (max-width: 768px) {
+          .sticky-mobile-cta { display: block !important; }
+          .hp-section { padding-bottom: 90px !important; }
+        }
+      `}</style>
     </div>
   );
 }
