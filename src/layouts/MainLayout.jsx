@@ -102,8 +102,8 @@ function Topbar({ profile, balance, equippedItems, chatUnread, unread, urgent, o
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [showOnline, setShowOnline] = useState(false);
-  const role = profile?.role ?? "user";
-  const isAdmin = ["admin","super_admin","founder","fondateur"].includes(role);
+  const role = profile?.role?.toLowerCase() ?? "user";
+  const isAdmin = ["admin","super_admin","founder","fondateur","designer"].includes(role);
   const initials = profile?.full_name?.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase() || "?";
 
   return (
@@ -425,8 +425,8 @@ function Topbar({ profile, balance, equippedItems, chatUnread, unread, urgent, o
 // ═══════════════════════════ MOBILE DRAWER ══════════════════════════════════
 function MobileDrawer({ profile, onClose, onLogout }) {
   const location = useLocation();
-  const role = profile?.role ?? "user";
-  const isAdmin = ["admin","super_admin","founder","fondateur"].includes(role);
+  const role = profile?.role?.toLowerCase() ?? "user";
+  const isAdmin = ["admin","super_admin","founder","fondateur","designer"].includes(role);
   const roleConf = ROLE_CFG[role] ?? ROLE_CFG.user;
 
   const allLinks = [
@@ -437,10 +437,11 @@ function MobileDrawer({ profile, onClose, onLogout }) {
     { to:"/daily-rewards",label:"Daily Rewards" },
     { to:"/support",      label:"Assistance" },
     ...(isAdmin ? [
-      { to:"/admin",            label:"Administration" },
+      ...(["designer"].includes(role) ? [{ to:"/designer", label:"🎨 Designer Studio" }] : []),
+      ...(!["designer"].includes(role) ? [{ to:"/admin", label:"Administration" }] : []),
       { to:"/admin/news",       label:"Actualités Admin" },
       { to:"/admin/results",    label:"Résultats" },
-      { to:"/create-tournament",label:"Créer Tournoi" },
+      ...(!["designer"].includes(role) ? [{ to:"/create-tournament",label:"Créer Tournoi" }] : []),
     ] : []),
   ];
 
