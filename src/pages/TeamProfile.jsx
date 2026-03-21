@@ -701,11 +701,6 @@ export default function TeamProfile() {
         ::-webkit-scrollbar-thumb:hover {
           background: ${rgba(THEME.cyan, 0.3)};
         }
-        .tp-content { max-width: 960px; margin: 0 auto; }
-        @media(max-width:768px){
-          .tp-content { padding: 12px!important; }
-        }
-        @keyframes tp-blink { 0%,100%{opacity:1}50%{opacity:.4} }
       `}</style>
 
       <div style={{
@@ -744,13 +739,13 @@ export default function TeamProfile() {
             <div style={{
               display: "flex",
               alignItems: "flex-start",
-              gap: "clamp(12px,2vw,20px)",
+              gap: 24,
               flexWrap: "wrap",
-              marginBottom: 16
+              marginBottom: 24
             }}>
-              <TeamAvatar team={team} size={72} />
+              <TeamAvatar team={team} size={100} />
 
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: 1, minWidth: 280 }}>
                 <div style={{
                   display: "flex",
                   alignItems: "center",
@@ -760,7 +755,7 @@ export default function TeamProfile() {
                 }}>
                   <h1 style={{
                     fontFamily: "'Bebas Neue', cursive",
-                    fontSize: "clamp(28px,5vw,40px)",
+                    fontSize: 48,
                     letterSpacing: 2,
                     color: "#fff",
                     margin: 0,
@@ -1017,56 +1012,14 @@ export default function TeamProfile() {
           </div>
         </div>
 
-        {/* Tabs — STICKY with mini identity strip */}
+        {/* Tabs */}
         <div style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 30,
-          background: "rgba(10,12,16,0.95)",
-          backdropFilter: "blur(20px)",
+          padding: "0 40px",
           borderBottom: `1px solid ${THEME.border}`,
+          display: "flex",
+          gap: 4,
+          overflowX: "auto"
         }}>
-          {/* Mini identity strip */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "7px clamp(12px,3vw,32px) 6px",
-            borderBottom: `1px solid rgba(255,255,255,0.04)`,
-          }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 7, flexShrink: 0,
-              background: team.accent_color ? `${team.accent_color}22` : "rgba(0,212,255,0.1)",
-              border: `1px solid ${team.accent_color || THEME.cyan}30`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 13, fontWeight: 800, overflow: "hidden",
-            }}>
-              {team.logo_url
-                ? <img src={team.logo_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
-                : (team.tag?.[0] || "T")}
-            </div>
-            <span style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 13, fontWeight: 800,
-              color: "rgba(255,255,255,0.85)",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              flex: 1, minWidth: 0,
-            }}>
-              {team.name}
-            </span>
-            <span style={{
-              fontSize: 10, color: team.accent_color || THEME.cyan,
-              fontFamily: "'JetBrains Mono', monospace",
-              flexShrink: 0,
-            }}>
-              [{team.tag}]
-            </span>
-          </div>
-          {/* Tabs row */}
-          <div style={{
-            padding: "0 clamp(10px,3vw,32px)",
-            display: "flex",
-            gap: 2,
-            overflowX: "auto",
-          }}>
           {tabs.map(tab => (
             <motion.button
               key={tab.id}
@@ -1074,7 +1027,7 @@ export default function TeamProfile() {
               whileTap={{ y: 0 }}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: "11px 14px",
+                padding: "16px 20px",
                 background: "none",
                 border: "none",
                 borderBottom: `2px solid ${activeTab === tab.id ? accentColor : "transparent"}`,
@@ -1105,17 +1058,16 @@ export default function TeamProfile() {
               )}
             </motion.button>
           ))}
-          </div>  {/* end tabs row */}
-        </div>  {/* end sticky container */}
+        </div>
 
         {/* Content */}
-        <div style={{ padding: "clamp(14px,3vw,28px) clamp(12px,4vw,36px)" }}>
+        <div style={{ padding: "32px 40px" }}>
           {/* Members Tab */}
           {activeTab === "members" && (
             <div style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 0
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+              gap: 12
             }}>
               {members.map((member, index) => {
                 const profileData = member.profile;
@@ -1273,16 +1225,19 @@ export default function TeamProfile() {
               border: `1px solid ${THEME.border}`,
               borderRadius: 16,
               overflow: "hidden",
-              minHeight: 340,
-              maxHeight: "min(600px,65vh)",
+              height: "clamp(380px,60vh,620px)",
               display: "flex",
-              flexDirection: "column"
+              flexDirection: "column",
+              position: "relative",
             }}>
-              {/* Messages */}
+              {/* Messages scroll area */}
               <div style={{
                 flex: 1,
                 overflowY: "auto",
-                padding: "14px"
+                padding: "16px",
+                paddingBottom: 0,
+                display: "flex",
+                flexDirection: "column",
               }}>
                 {chatMessages.length === 0 ? (
                   <div style={{
@@ -1396,13 +1351,29 @@ export default function TeamProfile() {
                 )}
               </div>
 
-              {/* Input */}
+              {/* Input bar — sticky at bottom */}
               <div style={{
-                padding: "16px 20px",
+                flexShrink: 0,
+                padding: "10px 14px",
                 borderTop: `1px solid ${THEME.border}`,
+                background: THEME.card,
                 display: "flex",
-                gap: 10
+                alignItems: "center",
+                gap: 8,
               }}>
+                {/* Avatar small */}
+                <div style={{
+                  width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                  background: `linear-gradient(135deg, ${accentColor}40, ${THEME.indigo}40)`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 13, fontWeight: 800, overflow: "hidden",
+                }}>
+                  {profile?.avatar_url
+                    ? <img src={profile.avatar_url} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+                    : (profile?.full_name?.[0] || "?").toUpperCase()}
+                </div>
+
+                {/* Input */}
                 <input
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
@@ -1412,37 +1383,43 @@ export default function TeamProfile() {
                       sendMessage();
                     }
                   }}
-                  placeholder="Écrivez votre message..."
+                  placeholder="Écrivez un message..."
                   style={{
                     flex: 1,
-                    background: rgba(THEME.text, 0.05),
-                    border: `1px solid ${THEME.border}`,
-                    borderRadius: 8,
+                    background: rgba(THEME.text, 0.06),
+                    border: `1px solid ${chatInput.trim() ? accentColor+"50" : THEME.border}`,
+                    borderRadius: 10,
                     padding: "10px 14px",
                     color: THEME.text,
-                    fontSize: 13,
+                    fontSize: 14,
                     fontFamily: "'Space Grotesk', sans-serif",
-                    outline: "none"
+                    outline: "none",
+                    transition: "border-color 0.2s",
                   }}
                 />
+
+                {/* Send button */}
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileTap={{ scale: 0.93 }}
                   onClick={sendMessage}
                   disabled={sending || !chatInput.trim()}
                   style={{
-                    padding: "10px 18px",
-                    borderRadius: 8,
-                    background: chatInput.trim() ? `linear-gradient(135deg, ${accentColor}, ${THEME.indigo})` : rgba(THEME.text, 0.05),
+                    width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                    background: chatInput.trim()
+                      ? `linear-gradient(135deg, ${accentColor}, ${THEME.indigo})`
+                      : rgba(THEME.text, 0.05),
                     border: "none",
-                    color: chatInput.trim() ? "#fff" : rgba(THEME.text, 0.3),
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: chatInput.trim() ? "pointer" : "not-allowed"
+                    color: chatInput.trim() ? "#fff" : rgba(THEME.text, 0.2),
+                    cursor: chatInput.trim() ? "pointer" : "not-allowed",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 16, transition: "all 0.2s",
                   }}
                 >
-                  {sending ? "..." : "ENVOYER"}
+                  {sending
+                    ? <div style={{ width:14, height:14, border:"2px solid rgba(255,255,255,0.3)",
+                        borderTopColor:"#fff", borderRadius:"50%",
+                        animation:"spin 0.8s linear infinite" }}/>
+                    : "↑"}
                 </motion.button>
               </div>
             </div>
