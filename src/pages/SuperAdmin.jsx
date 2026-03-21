@@ -211,7 +211,10 @@ export default function SuperAdmin() {
       const{error:rpcErr}=await supabase.rpc("set_user_role",{target_user:userId,new_role:role});
       if(rpcErr){const{error:dErr}=await supabase.from("profiles").update({role}).eq("id",userId);if(dErr)throw dErr;}
       await supabase.from("admin_logs").insert([{user_id:profile.id,action:"change_role",details:{target_user:userId,new_role:role}}]);
-      showMsg("success","Rôle modifié ✅");fetchUsers();fetchAdmins();setShowRoleModal(false);
+      // Si le rôle modifié est celui du user connecté → refresh session
+      if(userId===profile.id){await supabase.auth.refreshSession();}
+      showMsg("success","Rôle modifié ✅ — L'utilisateur doit se reconnecter pour voir les changements.");
+      fetchUsers();fetchAdmins();setShowRoleModal(false);
     }catch(err){showMsg("error",err.message);}
   };
 
