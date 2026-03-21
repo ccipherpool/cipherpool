@@ -284,6 +284,7 @@ export default function Profile() {
   const [avatarMenu,  setAvatarMenu]  = useState(false);
   const [tab,         setTab]         = useState("stats");
   const [imgErr,      setImgErr]      = useState(false);
+  const [avatarMode,  setAvatarModeState] = useState(null); // "photo" | "store" | null=auto
   const menuRef = useRef(null);
   const { isAdmin } = usePermissions(ap);
 
@@ -300,7 +301,24 @@ export default function Profile() {
   const xpPct     = (profile?.xp%100)||0;
   const wr        = stats?.total_matches>0 ? Math.round((stats.wins/stats.total_matches)*100) : 0;
   const kd        = stats?.deaths>0 ? (stats.kills/stats.deaths).toFixed(2) : (stats?.kills||0);
-  const hasImg    = !!(eq?.avatar?.image_url||(profile?.avatar_url&&!imgErr));
+  // avatar_mode: "photo" = always use profile photo, "store" = use store avatar
+  const effectiveAvatarMode = avatarMode ?? profile?.avatar_mode ?? "auto";
+  const storeAvatarUrl  = eq?.avatar?.image_url;
+  const photoAvatarUrl  = (profile?.avatar_url && !imgErr) ? profile.avatar_url : null;
+  const avatarSrc = effectiveAvatarMode === "photo"
+    ? photoAvatarUrl
+    : effectiveAvatarMode === "store"
+    ? (storeAvatarUrl || photoAvatarUrl)
+    : (storeAvatarUrl || photoAvatarUrl); // "auto" = prefer store
+  const hasImg = !!(avatarSrc);
+
+  // Persist avatar_mode change
+  const setAvatarMode = async (mode) => {
+    setAvatarModeState(mode);
+    if (!ap?.id) return;
+    await supabase.from("profiles").update({ avatar_mode: mode }).eq("id", ap.id);
+    if (refreshProfile) refreshProfile();
+  };
   const tabColor  = TABS.find(t=>t.key===tab)?.color||CYAN;
 
   // Close menu on outside click
@@ -469,8 +487,8 @@ export default function Profile() {
                     border:eq?.frame?`3px solid ${RARITY[eq.frame.rarity]?.color||CYAN}`:`2px solid ${cx(.22)}`,
                     boxShadow:eq?.frame?`0 0 28px ${RARITY[eq.frame.rarity]?.glow||cx(.5)},0 12px 48px rgba(0,0,0,.7)`:`0 12px 48px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08)`,
                     display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",position:"relative" }}>
-                  {hasImg
-                    ? <img src={eq?.avatar?.image_url||profile?.avatar_url} onError={()=>setImgErr(true)} style={{ position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover" }} />
+                  {hasImg && avatarSrc
+                    ? <img src={avatarSrc} onError={()=>setImgErr(true)} style={{ position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover" }} />
                     : <span style={{ fontFamily:"'Bebas Neue',cursive",fontSize:38,color:CYAN,letterSpacing:2,textShadow:`0 0 22px ${cx(.55)}` }}>{initials}</span>
                   }
                   {/* Hover overlay */}
@@ -490,6 +508,37 @@ export default function Profile() {
                 {/* Online dot */}
                 <motion.div animate={{scale:[1,1.5,1],opacity:[1,.4,1]}} transition={{duration:2.2,repeat:Infinity}}
                   style={{ position:"absolute",bottom:7,right:7,width:12,height:12,borderRadius:"50%",background:GREEN,border:`3px solid ${BG}`,boxShadow:`0 0 12px ${gx(.7)}`,zIndex:2 }} />
+
+                {/* Avatar mode toggle — only show if has store avatar */}
+                {!isViewingOther && storeAvatarUrl && photoAvatarUrl && (
+                  <div style={{
+                    position:"absolute", top:-10, left:"50%", transform:"translateX(-50%)",
+                    display:"flex", gap:3, background:BG, borderRadius:99,
+                    padding:"2px 3px", border:`1px solid ${cx(.15)}`, zIndex:4,
+                    whiteSpace:"nowrap",
+                  }}>
+                    {[
+                      { mode:"photo", icon:"📸", label:"Photo" },
+                      { mode:"store", icon:"🎭", label:"Avatar" },
+                    ].map(({ mode, icon, label }) => {
+                      const active = effectiveAvatarMode === mode ||
+                        (effectiveAvatarMode === "auto" && mode === (storeAvatarUrl ? "store" : "photo"));
+                      return (
+                        <button key={mode} onClick={() => setAvatarMode(mode)}
+                          style={{
+                            padding:"3px 8px", borderRadius:99, border:"none",
+                            cursor:"pointer", fontSize:10, fontWeight:700,
+                            background: active ? `linear-gradient(135deg,${CYAN},${CYAN2})` : "transparent",
+                            color: active ? "#000" : "rgba(255,255,255,0.35)",
+                            transition:"all .2s",
+                            fontFamily:"'Space Grotesk',sans-serif",
+                          }}>
+                          {icon} {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Badge */}
                 {eq?.badge?.image_url && (
@@ -608,8 +657,8 @@ export default function Profile() {
             <div style={{ width:26,height:26,borderRadius:7,flexShrink:0,overflow:"hidden",
               background:`linear-gradient(135deg,${CYAN},${CYAN2})`,
               display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:12 }}>
-              {profile?.avatar_url
-                ? <img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              {avatarSrc
+                ? <img src={avatarSrc} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                 : initials}
             </div>
             <span style={{ fontWeight:800,fontSize:13,color:"rgba(255,255,255,0.85)",

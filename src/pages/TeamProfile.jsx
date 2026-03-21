@@ -137,6 +137,7 @@ export default function TeamProfile() {
   const [joinRequests, setJoinRequests] = useState([]);
   const [tournaments, setTournaments] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
+  const [senderEquipped, setSenderEquipped] = useState({}); // userId → equipped items
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("members");
@@ -249,7 +250,9 @@ export default function TeamProfile() {
         .from("team_messages")
         .select(`
           *,
-          sender:profiles!team_messages_sender_id_fkey(full_name, avatar_url)
+          sender:profiles!team_messages_sender_id_fkey(
+            id, full_name, avatar_url, avatar_mode
+          )
         `)
         .eq("team_id", id)
         .order("created_at", { ascending: true })
@@ -257,6 +260,25 @@ export default function TeamProfile() {
 
       if (error) throw error;
       setChatMessages(data || []);
+
+      // Fetch equipped items for each unique sender
+      const senderIds = [...new Set((data||[]).map(m => m.sender_id).filter(Boolean))];
+      if (senderIds.length > 0) {
+        const { data: equips } = await supabase
+          .from("user_items")
+          .select("user_id, equipped, item:store_items(id, type, name, image_url, color_value, rarity)")
+          .in("user_id", senderIds)
+          .eq("equipped", true);
+
+        if (equips) {
+          const map = {};
+          equips.forEach(e => {
+            if (!map[e.user_id]) map[e.user_id] = {};
+            if (e.item?.type) map[e.user_id][e.item.type] = e.item;
+          });
+          setSenderEquipped(map);
+        }
+      }
     } catch (err) {
       console.error("Error fetching chat:", err);
     }
@@ -1263,82 +1285,142 @@ export default function TeamProfile() {
                       const isMe = msg.sender_id === profile?.id;
                       const sender = msg.sender;
 
+                      // ── Equipped items for this sender ──────────────────
+                      const eq = senderEquipped[msg.sender_id] || {};
+                      const RARITY_COLORS = {
+                        common:"#9ca3af", rare:"#3b82f6",
+                        epic:"#a855f7", legendary:"#f59e0b"
+                      };
+                      // avatar: prefer store avatar if equipped
+                      const senderAvatarMode = sender?.avatar_mode ?? "auto";
+                      const storeAvatar  = eq?.avatar?.image_url;
+                      const photoAvatar  = sender?.avatar_url;
+                      const displayAvatar = senderAvatarMode === "photo"
+                        ? photoAvatar
+                        : (storeAvatar || photoAvatar);
+
+                      // name color
+                      const nameColor = eq?.name_color?.color_value
+                        ? eq.name_color.color_value
+                        : isMe ? accentColor : THEME.textMuted;
+
+                      // badge
+                      const badge = eq?.badge;
+
+                      // frame color
+                      const frameColor = eq?.frame
+                        ? (RARITY_COLORS[eq.frame.rarity] || accentColor)
+                        : null;
+
                       return (
                         <motion.div
                           key={msg.id}
-                          initial={{ opacity: 0, y: 10 }}
+                          initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           style={{
                             display: "flex",
-                            gap: 10,
-                            flexDirection: isMe ? "row-reverse" : "row"
+                            gap: 9,
+                            flexDirection: isMe ? "row-reverse" : "row",
+                            alignItems: "flex-end",
                           }}
                         >
-                          {/* Avatar */}
-                          <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 8,
-                            background: `linear-gradient(135deg, ${rgba(accentColor, 0.2)}, ${THEME.card})`,
-                            border: `1px solid ${rgba(accentColor, 0.2)}`,
-                            overflow: "hidden",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontFamily: "'Bebas Neue', cursive",
-                            fontSize: 14,
-                            color: accentColor,
-                            flexShrink: 0
-                          }}>
-                            {sender?.avatar_url ? (
-                              <img 
-                                src={sender.avatar_url} 
-                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                              />
-                            ) : (
-                              sender?.full_name?.[0] || "?"
+                          {/* Avatar + Frame */}
+                          <div style={{ position:"relative", flexShrink:0 }}>
+                            <div style={{
+                              width: 34, height: 34, borderRadius: 9,
+                              background: `linear-gradient(135deg, ${rgba(accentColor, 0.2)}, ${THEME.card})`,
+                              border: frameColor
+                                ? `2px solid ${frameColor}`
+                                : `1px solid ${rgba(accentColor, 0.2)}`,
+                              boxShadow: frameColor
+                                ? `0 0 10px ${frameColor}60`
+                                : "none",
+                              overflow: "hidden",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              fontFamily: "'Bebas Neue', cursive",
+                              fontSize: 14, color: accentColor,
+                            }}>
+                              {displayAvatar ? (
+                                <img src={displayAvatar}
+                                  style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+                              ) : (
+                                sender?.full_name?.[0]?.toUpperCase() || "?"
+                              )}
+                            </div>
+                            {/* Badge overlay */}
+                            {badge?.image_url && (
+                              <div style={{
+                                position:"absolute", top:-5, right:-5,
+                                width:14, height:14, borderRadius:"50%",
+                                overflow:"hidden", border:`1px solid ${THEME.bg}`,
+                                boxShadow:`0 0 6px ${RARITY_COLORS[badge.rarity]||accentColor}`,
+                              }}>
+                                <img src={badge.image_url}
+                                  style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+                              </div>
                             )}
                           </div>
 
-                          {/* Message */}
+                          {/* Message content */}
                           <div style={{
-                            maxWidth: "70%",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: isMe ? "flex-end" : "flex-start"
+                            maxWidth: "72%",
+                            display: "flex", flexDirection: "column",
+                            alignItems: isMe ? "flex-end" : "flex-start",
                           }}>
+                            {/* Name + time */}
                             <div style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                              marginBottom: 2
+                              display: "flex", alignItems: "center",
+                              gap: 5, marginBottom: 3,
+                              flexDirection: isMe ? "row-reverse" : "row",
                             }}>
                               <span style={{
-                                fontFamily: "'JetBrains Mono', monospace",
-                                fontSize: 9,
-                                color: isMe ? accentColor : THEME.textMuted
+                                fontFamily: "'Space Grotesk', sans-serif",
+                                fontSize: 11, fontWeight: 700,
+                                color: nameColor,
+                                textShadow: eq?.name_color
+                                  ? `0 0 12px ${nameColor}60` : "none",
                               }}>
                                 {isMe ? "Vous" : (sender?.full_name || "Inconnu")}
                               </span>
+                              {/* Title if equipped */}
+                              {eq?.title && (
+                                <span style={{
+                                  fontSize: 8, fontWeight: 800,
+                                  color: RARITY_COLORS[eq.title.rarity] || accentColor,
+                                  background: `${RARITY_COLORS[eq.title.rarity]||accentColor}15`,
+                                  padding: "1px 5px", borderRadius: 99,
+                                  letterSpacing: 0.5,
+                                }}>
+                                  {eq.title.name}
+                                </span>
+                              )}
                               <span style={{
-                                fontSize: 8,
-                                color: rgba(THEME.textMuted, 0.5)
+                                fontSize: 8, color: rgba(THEME.textMuted, 0.45),
                               }}>
                                 {new Date(msg.created_at).toLocaleTimeString("fr-FR", {
-                                  hour: "2-digit",
-                                  minute: "2-digit"
+                                  hour:"2-digit", minute:"2-digit"
                                 })}
                               </span>
                             </div>
+
+                            {/* Bubble */}
                             <div style={{
-                              padding: "10px 14px",
-                              borderRadius: isMe ? "16px 4px 16px 16px" : "4px 16px 16px 16px",
-                              background: isMe ? rgba(accentColor, 0.1) : rgba(THEME.text, 0.05),
-                              border: `1px solid ${isMe ? rgba(accentColor, 0.15) : "transparent"}`,
+                              padding: "9px 13px",
+                              borderRadius: isMe ? "14px 3px 14px 14px" : "3px 14px 14px 14px",
+                              background: eq?.chat_bubble
+                                ? `${RARITY_COLORS[eq.chat_bubble.rarity]||accentColor}12`
+                                : isMe ? rgba(accentColor, 0.12) : rgba(THEME.text, 0.05),
+                              border: `1px solid ${
+                                eq?.chat_bubble
+                                  ? `${RARITY_COLORS[eq.chat_bubble.rarity]||accentColor}30`
+                                  : isMe ? rgba(accentColor, 0.18) : "transparent"
+                              }`,
                               color: THEME.text,
-                              fontSize: 13,
-                              lineHeight: 1.5,
-                              wordBreak: "break-word"
+                              fontSize: 13, lineHeight: 1.5,
+                              wordBreak: "break-word",
+                              boxShadow: eq?.chat_bubble && RARITY_COLORS[eq.chat_bubble.rarity] === "#f59e0b"
+                                ? `0 2px 12px ${RARITY_COLORS[eq.chat_bubble.rarity]}20`
+                                : "none",
                             }}>
                               {msg.content || msg.message}
                             </div>
