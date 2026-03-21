@@ -129,7 +129,7 @@ function TournamentCard({ t, idx }) {
         )}
       </div>
 
-      <div style={{ padding:"12px 14px 14px" }}>
+      <div style={{ padding:"10px 12px 12px" }}>
         <h3 style={{ fontFamily:"'Inter',sans-serif", fontSize:15, fontWeight:800,
           color:"#fff", margin:"0 0 8px", lineHeight:1.2, paddingRight:80,
           overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
@@ -380,7 +380,7 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight:"100vh", background:P.bg, color:"#fff",
       fontFamily:"'Inter',sans-serif",
-      padding:"20px clamp(12px,4vw,48px) 96px",
+      padding:"16px clamp(12px,4vw,44px) 90px",
       maxWidth:940, margin:"0 auto" }}>
 
       <style>{`
@@ -408,13 +408,13 @@ export default function Dashboard() {
         .db-lbl{
           font-size:10px;font-weight:700;letter-spacing:3px;
           text-transform:uppercase;color:#7c3aed;
-          display:flex;align-items:center;gap:8px;margin-bottom:12px;
+          display:flex;align-items:center;gap:8px;margin-bottom:10px;
         }
         .db-lbl::before{content:'';width:16px;height:2px;background:#7c3aed;}
         .db-card{
           background:rgba(255,255,255,0.03);
           border:1px solid rgba(255,255,255,0.07);
-          border-radius:14px;padding:18px 16px;
+          border-radius:14px;padding:16px 14px;
         }
         .db-qlink{
           display:flex;flex-direction:column;gap:4px;
@@ -434,7 +434,7 @@ export default function Dashboard() {
           FOLD 1 — HERO
       ══════════════════════════════════════════════════════════ */}
       <motion.div initial={{ opacity:0, y:-14 }} animate={{ opacity:1, y:0 }}
-        style={{ marginBottom:28 }}>
+        style={{ marginBottom:16 }}>
 
         {/* Greeting */}
         <p style={{ fontSize:11, letterSpacing:2, color:"rgba(255,255,255,0.3)",
@@ -442,16 +442,25 @@ export default function Dashboard() {
           {new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}
         </p>
 
-        {/* MAIN TITLE — energy */}
-        <h1 style={{ fontFamily:"'Inter',sans-serif",
-          fontSize:"clamp(26px,6vw,54px)", fontWeight:900,
-          lineHeight:1.0, letterSpacing:-0.5, marginBottom:18 }}>
-          PRÊT À DOMINER,{" "}
-          <span style={{ background:`linear-gradient(135deg,${P.purple},${P.cyan})`,
-            WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
-            {firstName}?
-          </span>
-        </h1>
+        {/* MAIN TITLE — dynamic based on context */}
+        {(() => {
+          let title = "PRÊT À DOMINER,";
+          let sub = firstName + "?";
+          if (liveData.liveCount > 0) { title = "UN MATCH T'ATTEND,"; }
+          else if (daily?.canClaim)   { title = "TON BONUS EST PRÊT,"; }
+          else if (stats.played === 0){ title = "TON PREMIER MATCH,"; sub = "COMMENCE ICI"; }
+          return (
+            <h1 style={{ fontFamily:"'Inter',sans-serif",
+              fontSize:"clamp(24px,6vw,50px)", fontWeight:900,
+              lineHeight:1.0, letterSpacing:-0.5, marginBottom:16 }}>
+              {title}{" "}
+              <span style={{ background:`linear-gradient(135deg,${P.purple},${P.cyan})`,
+                WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+                {sub}
+              </span>
+            </h1>
+          );
+        })()}
 
         {/* Player strip */}
         <div style={{ display:"flex", alignItems:"center", gap:10,
@@ -498,7 +507,7 @@ export default function Dashboard() {
       ══════════════════════════════════════════════════════════ */}
       {(liveData.liveCount > 0 || liveData.onlineCount > 0 || liveData.lastWinner) && (
         <motion.div initial={{ opacity:0, x:-14 }} animate={{ opacity:1, x:0 }}
-          transition={{ delay:0.08 }} style={{ marginBottom:32 }}>
+          transition={{ delay:0.08 }} style={{ marginBottom:16 }}>
           <div style={{ display:"flex", alignItems:"center", gap:14, padding:"12px 16px",
             background:"rgba(239,68,68,0.05)", border:"1px solid rgba(239,68,68,0.18)",
             borderRadius:12, flexWrap:"wrap", rowGap:8 }}>
@@ -548,7 +557,7 @@ export default function Dashboard() {
       {/* ══════════════════════════════════════════════════════════
           FOLD 3 — TOURNOIS (BEFORE STATS)
       ══════════════════════════════════════════════════════════ */}
-      <div style={{ marginBottom:36 }}>
+      <div style={{ marginBottom:22 }}>
         <div style={{ display:"flex", justifyContent:"space-between",
           alignItems:"center", marginBottom:14, flexWrap:"wrap", gap:8 }}>
           <div className="db-lbl" style={{ marginBottom:0 }}>🎮 Tournois actifs</div>
@@ -589,9 +598,9 @@ export default function Dashboard() {
       ══════════════════════════════════════════════════════════ */}
       {missions.length > 0 && (
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
-          transition={{ delay:0.12 }} style={{ marginBottom:36 }}>
+          transition={{ delay:0.12 }} style={{ marginBottom:22 }}>
           <div className="db-lbl">🎯 Missions du jour</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
             {missions.map((m, i) => {
               const pct = Math.min(100, m.target > 0 ? Math.round((m.prog/m.target)*100) : 0);
               return (
@@ -626,15 +635,17 @@ export default function Dashboard() {
         </motion.div>
       )}
 
+      {/* ─ PROGRESSION CLUSTER ─ */}
+      <div style={{ borderTop:"1px solid rgba(255,255,255,0.05)", marginBottom:20 }}/>
       {/* ══════════════════════════════════════════════════════════
           FOLD 5 — STATS (smart cards with trends)
       ══════════════════════════════════════════════════════════ */}
-      <div style={{ marginBottom:36 }}>
+      <div style={{ marginBottom:22 }}>
         <div className="db-lbl">📊 Mes performances</div>
         <div className="db-stats-grid" style={{
           display:"grid",
           gridTemplateColumns:"repeat(auto-fill,minmax(min(140px,45vw),1fr))",
-          gap:10 }}>
+          gap:8 }}>
           <StatCard icon="🎮" label="TOURNOIS JOUÉS" value={stats.played}
             color={P.cyan} delay={0} onClick={() => nav("/stats")}
             trend={stats.played > 0 ? { text:`${stats.played} match${stats.played>1?"s":""}`, positive:true } : null}/>
@@ -658,7 +669,7 @@ export default function Dashboard() {
           FOLD 6 — RANK + PRESTIGE
       ══════════════════════════════════════════════════════════ */}
       <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
-        transition={{ delay:0.18 }} style={{ marginBottom:36 }}>
+        transition={{ delay:0.18 }} style={{ marginBottom:22 }}>
         <div className="db-lbl">🏆 Mon classement</div>
         <div className="db-card" onClick={() => nav("/leaderboard")}
           style={{ cursor:"pointer",
@@ -723,19 +734,21 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
+      {/* ─ REWARDS CLUSTER ─ */}
+      <div style={{ borderTop:"1px solid rgba(255,255,255,0.05)", marginBottom:20 }}/>
       {/* ══════════════════════════════════════════════════════════
           FOLD 7 — DAILY REWARD + STREAK
       ══════════════════════════════════════════════════════════ */}
       {daily && (
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
-          transition={{ delay:0.22 }} style={{ marginBottom:36 }}>
+          transition={{ delay:0.22 }} style={{ marginBottom:22 }}>
           <div className="db-lbl">🎁 Bonus & récompenses</div>
           <div style={{ display:"grid",
-            gridTemplateColumns:"repeat(auto-fill,minmax(min(200px,100%),1fr))",
-            gap:10 }}>
+            gridTemplateColumns:"repeat(auto-fill,minmax(min(180px,100%),1fr))",
+            gap:8 }}>
             {/* Daily */}
             <div onClick={() => nav("/daily-rewards")}
-              style={{ padding:"16px", borderRadius:14, cursor:"pointer",
+              style={{ padding:"13px 14px", borderRadius:12, cursor:"pointer",
                 background: daily.canClaim
                   ? "linear-gradient(135deg,rgba(251,191,36,0.07),rgba(124,58,237,0.05))"
                   : P.surf,
@@ -765,7 +778,7 @@ export default function Dashboard() {
 
             {/* Streak */}
             <div onClick={() => nav("/daily-rewards")}
-              style={{ padding:"16px", borderRadius:14, cursor:"pointer",
+              style={{ padding:"13px 14px", borderRadius:12, cursor:"pointer",
                 background:"rgba(239,68,68,0.04)",
                 border:"1px solid rgba(239,68,68,0.14)" }}>
               <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:8 }}>
@@ -789,7 +802,7 @@ export default function Dashboard() {
 
             {/* Achievements shortcut */}
             <div onClick={() => nav("/achievements")}
-              style={{ padding:"16px", borderRadius:14, cursor:"pointer",
+              style={{ padding:"13px 14px", borderRadius:12, cursor:"pointer",
                 background:P.surf, border:"1px solid rgba(255,255,255,0.06)" }}>
               <span style={{ fontSize:24, display:"block", marginBottom:10 }}>🏅</span>
               <p style={{ fontSize:14, fontWeight:800, color:"#fff", margin:"0 0 3px" }}>
@@ -806,11 +819,11 @@ export default function Dashboard() {
       {/* ══════════════════════════════════════════════════════════
           FOLD 8 — QUICK ACTIONS
       ══════════════════════════════════════════════════════════ */}
-      <div style={{ marginBottom:36 }}>
+      <div style={{ marginBottom:22 }}>
         <div className="db-lbl">⚡ Actions rapides</div>
         <div style={{ display:"grid",
           gridTemplateColumns:"repeat(auto-fill,minmax(min(130px,43vw),1fr))",
-          gap:8 }}>
+          gap:7 }}>
           {[
             { icon:"🎮", label:"JOUER",       sub:"Tournois",     path:"/tournaments",   color:P.purple },
             { icon:"📊", label:"CLASSEMENT",  sub:"Mon rang",     path:"/leaderboard",   color:P.cyan },
