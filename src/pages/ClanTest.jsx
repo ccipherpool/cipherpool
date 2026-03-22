@@ -119,13 +119,15 @@ export default function ClanTest() {
       if (error) throw error;
 
       // Notification admin_messages → founder
-      await supabase.from("admin_messages").insert([{
-        user_id: profile.id,
-        content: `🎮 Nouvelle candidature clan de ${form.pseudo} (${form.role}) — ${teamName}`,
-        type:    "clan_test",
-        is_global: false,
-        read: false,
-      }]).catch(() => {});
+      try {
+        await supabase.from("admin_messages").insert([{
+          user_id: profile.id,
+          content: `🎮 Nouvelle candidature clan de ${form.pseudo} (${form.role}) — ${teamName}`,
+          type:    "clan_test",
+          is_global: false,
+          read: false,
+        }]);
+      } catch (_) {}
 
       setStep(2);
     } catch (err) {
