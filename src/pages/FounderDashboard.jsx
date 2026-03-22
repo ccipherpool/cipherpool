@@ -266,7 +266,7 @@ export default function FounderDashboard() {
               </p>
             </div>
             
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               <Link
                 to="/founder/requests"
                 className="px-6 py-3 bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30 rounded-lg font-medium transition flex items-center gap-2"
@@ -288,6 +288,12 @@ export default function FounderDashboard() {
                     {pendingResults}
                   </span>
                 )}
+              </Link>
+              <Link
+                to="/founder/clan-tests"
+                className="px-6 py-3 bg-cyan-600/20 text-cyan-400 hover:bg-cyan-600/30 rounded-lg font-medium transition flex items-center gap-2"
+              >
+                <span>🎮 TESTS CLAN</span>
               </Link>
               <button
                 onClick={() => setShowCreateModal(true)}
