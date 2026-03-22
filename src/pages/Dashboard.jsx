@@ -479,7 +479,7 @@ export default function Dashboard() {
             { icon:"📈", label:"MES STATS", sub:"Kills & Wins", path:"/stats" },
             { icon:"🏅", label:"SUCCÈS", sub:"Achievements", path:"/achievements" },
             { icon:"🛍️", label:"BOUTIQUE", sub:"Items", path:"/store" },
-            { icon:"⚔️", label:"TEST CLAN", sub:"Postuler", path:"/teams" },
+            { icon:"⚔️", label:"TEST CLAN", sub:"Postuler", path:"/clan-test" },
             ...(["designer","admin","super_admin"].includes(profile?.role?.toLowerCase()) ? [{ icon:"🎨", label:"DESIGNER", sub:"Studio", path:"/designer" }] : []),
             ...(["founder","fondateur","super_admin"].includes(profile?.role?.toLowerCase()) ? [{ icon:"📋", label:"TESTS CLAN", sub:"Gérer", path:"/founder/clan-tests" }] : []),
           ].map((item, i) => (
