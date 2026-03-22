@@ -479,7 +479,9 @@ export default function Dashboard() {
             { icon:"📈", label:"MES STATS", sub:"Kills & Wins", path:"/stats" },
             { icon:"🏅", label:"SUCCÈS", sub:"Achievements", path:"/achievements" },
             { icon:"🛍️", label:"BOUTIQUE", sub:"Items", path:"/store" },
+            { icon:"⚔️", label:"TEST CLAN", sub:"Postuler", path:"/teams" },
             ...(["designer","admin","super_admin"].includes(profile?.role?.toLowerCase()) ? [{ icon:"🎨", label:"DESIGNER", sub:"Studio", path:"/designer" }] : []),
+            ...(["founder","fondateur","super_admin"].includes(profile?.role?.toLowerCase()) ? [{ icon:"📋", label:"TESTS CLAN", sub:"Gérer", path:"/founder/clan-tests" }] : []),
           ].map((item, i) => (
             <motion.div key={item.label} className="db-qlink" initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2 + i*0.03 }} onClick={() => nav(item.path)}>
               <div style={{ fontSize:22 }}>{item.icon}</div>
