@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate, useOutletContext } from "react-router-dom";
+import { useParams, useNavigate, useOutletContext, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { useVerification } from "../hooks/useVerification";
@@ -878,6 +878,33 @@ export default function TeamProfile() {
                 >
                   <span>🙋</span>
                   REJOINDRE
+                </motion.button>
+              )}
+
+              {/* Clan Test button — always visible for non-members */}
+              {!isMember && profile && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate(`/clan-test?team=${id}&name=${encodeURIComponent(team.name)}`)}
+                  style={{
+                    padding: "10px 22px",
+                    borderRadius: 10,
+                    background: "rgba(16,185,129,0.12)",
+                    border: `1px solid rgba(16,185,129,0.35)`,
+                    color: "#10b981",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    letterSpacing: 1,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6
+                  }}
+                >
+                  <span>🎮</span>
+                  TEST CLAN
                 </motion.button>
               )}
 

@@ -26,6 +26,7 @@ const Achievements  = lazy(() => import("./pages/Achievements"));
 const DailyRewards  = lazy(() => import("./pages/DailyRewards"));
 const Teams         = lazy(() => import("./pages/Teams"));
 const TeamProfile   = lazy(() => import("./pages/TeamProfile"));
+const ClanTest      = lazy(() => import("./pages/ClanTest"));
 
 const TournamentDetails = lazy(() => import("./pages/TournamentDetails"));
 const TournamentWaiting = lazy(() => import("./pages/TournamentWaiting"));
@@ -35,6 +36,7 @@ const CreateTournament  = lazy(() => import("./pages/CreateTournament"));
 
 const FounderDashboard = lazy(() => import("./pages/FounderDashboard"));
 const FounderRequests  = lazy(() => import("./pages/FounderRequests"));
+const FounderClanTests = lazy(() => import("./pages/FounderClanTests"));
 
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminSupport   = lazy(() => import("./pages/AdminSupport"));
@@ -87,10 +89,12 @@ export default function App() {
           <Route path="/tournaments/:id/room"    element={<Lazy><TournamentRoom /></Lazy>} />
           <Route path="/tournaments/:id/manage"  element={<Lazy><ManageTournament /></Lazy>} />
 
-          <Route path="/founder"           element={<Lazy><FounderDashboard /></Lazy>} />
-          <Route path="/founder/requests"  element={<Lazy><FounderRequests /></Lazy>} />
-          <Route path="/founder/results"   element={<Lazy><AdminResults /></Lazy>} />
-          <Route path="/create-tournament" element={<Lazy><CreateTournament /></Lazy>} />
+          <Route path="/founder"               element={<Lazy><FounderDashboard /></Lazy>} />
+          <Route path="/founder/requests"      element={<Lazy><FounderRequests /></Lazy>} />
+          <Route path="/founder/results"       element={<Lazy><AdminResults /></Lazy>} />
+          <Route path="/founder/clan-tests"    element={<Lazy><FounderClanTests /></Lazy>} />
+          <Route path="/create-tournament"     element={<Lazy><CreateTournament /></Lazy>} />
+          <Route path="/clan-test"             element={<Lazy><ClanTest /></Lazy>} />
 
           <Route path="/admin"         element={<Lazy><AdminDashboard /></Lazy>} />
           <Route path="/admin/support" element={<Lazy><AdminSupport /></Lazy>} />
