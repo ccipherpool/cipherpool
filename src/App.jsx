@@ -52,6 +52,10 @@ import DesignerPanel  from "./pages/Designerpanel";
 import Teams       from "./pages/Teams";
 import TeamProfile from "./pages/Teamprofile";   // ← lowercase p
 
+// Clans
+import Clans       from "./pages/Clans";
+import ClanDetails from "./pages/ClanDetails";
+
 // Phase 2
 import Achievements from "./pages/Achievements";
 import DailyRewards from "./pages/Dailyrewards"; // ← lowercase r
@@ -88,6 +92,10 @@ export default function App() {
           {/* Teams */}
           <Route path="/teams"      element={<Teams />} />
           <Route path="/teams/:id"  element={<TeamProfile />} />
+
+          {/* Clans */}
+          <Route path="/clans"      element={<Clans />} />
+          <Route path="/clans/:id"  element={<ClanDetails />} />
 
           {/* Tournaments */}
           <Route path="/tournaments/:id"         element={<TournamentDetails />} />

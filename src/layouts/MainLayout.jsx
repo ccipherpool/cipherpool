@@ -51,6 +51,7 @@ const NAV = [
   { to:"/tournaments",  label:"Tournois",         icon:"🏆" },
   { to:"/leaderboard",  label:"Classement",       icon:"📊" },
   { to:"/teams",        label:"Équipes",          icon:"🛡️" },
+  { to:"/clans",        label:"Clans",            icon:"⚔️" },
   { to:"/news",         label:"Actualités",       icon:"📰" },
   { to:"/chat",         label:"Chat global",      icon:"💬", chat:true },
   { to:"/store",        label:"Boutique",         icon:"🛍️" },
