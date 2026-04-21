@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm install:*)",
+      "Bash(mkdir -p '/c/cipherpool v2/cipherpool-frontend/src/components/ui')",
+      "Bash(mkdir -p '/c/cipherpool v2/cipherpool-frontend/src/pages/auth')",
+      "Bash(grep -E '\\\\.\\(json|js|jsx|css\\)$')",
+      "WebFetch(domain:21st.dev)",
+      "Bash(node --input-type=module)",
+      "Bash(npx vite *)",
+      "Bash(xargs grep *)"
+    ]
+  }
+}
