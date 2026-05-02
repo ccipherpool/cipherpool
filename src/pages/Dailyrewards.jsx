@@ -86,13 +86,20 @@ export default function DailyRewards(){
     if(!um||!um.completed||um.claimed)return;
     const mission=missions.find(m=>m.id===missionId);
     if(!mission)return;
-    await supabase.from("user_missions").update({claimed:true,claimed_at:new Date().toISOString()}).eq("id",um.id);
-    const {error:rpcErr} = await supabase.rpc("grant_coins",{target_user:profile.id,amount:mission.coins_reward});
-    if(rpcErr){
-      const{data:wData}=await supabase.from("wallets").select("balance").eq("user_id",profile.id).single();
-      if(wData)await supabase.from("wallets").update({balance:(wData.balance||0)+mission.coins_reward}).eq("user_id",profile.id);
+    
+    // Use a secure RPC to claim mission rewards instead of direct grant_coins
+    const { data, error } = await supabase.rpc("claim_mission_reward", { 
+      p_user_id: profile.id, 
+      p_mission_id: missionId 
+    });
+    
+    if (error) {
+      console.error("Error claiming mission:", error);
+      return;
     }
-    await fetchAll();refreshProfile?.();
+    
+    await fetchAll();
+    refreshProfile?.();
   };
 
   if(loading)return(
