@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   CIPHERPOOL  ·  global.css  ·  Responsive Design System
-   Import this in main.jsx :  import "./global.css"
-   ═══════════════════════════════════════════════════════════════════════════ */
-
 /* ── Fonts ── */
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
@@ -31,7 +26,8 @@
 
 /* ── Global Styles ── */
 body {
-  @apply bg-bg-base text-text-primary;
+  background-color: #050508;
+  color: #ffffff;
   font-family: 'Space Grotesk', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -39,15 +35,17 @@ body {
 
 /* ── Utility Classes ── */
 .gradient-text-primary {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-secondary-400;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(to right, #a855f7, #00d4ff);
 }
 
 .glass-panel {
-  @apply bg-bg-surface/70 backdrop-blur-xl border border-primary-900/30;
-}
-
-.card-hover-effect {
-  @apply transition-all duration-300 hover:border-primary-500/50 hover:shadow-glow-primary hover:-translate-y-1;
+  background-color: rgba(13, 13, 20, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* ── Animations ── */
