@@ -7,29 +7,65 @@ export default {
   theme: {
     extend: {
       colors: {
-        'cp-dark': '#050508',
-        'cp-card': 'rgba(13, 13, 20, 0.8)',
-        'cp-primary': '#a855f7',
-        'cp-secondary': '#00d4ff',
-        'cp-accent': '#22c55e',
+        'dark': {
+          '950': '#0a0a0f',
+          '900': '#0f0f1a',
+          '850': '#14141f',
+          '800': '#1a1a2e',
+        },
+        'brand': {
+          'primary': '#8b5cf6',    // Subtle Purple
+          'secondary': '#6366f1',  // Indigo
+          'accent': '#ec4899',     // Pink (for CTAs)
+        },
+        'neutral': {
+          '50': '#fafafa',
+          '100': '#f5f5f5',
+          '200': '#e5e5e5',
+          '300': '#d4d4d4',
+          '400': '#a3a3a3',
+          '500': '#737373',
+          '600': '#525252',
+          '700': '#404040',
+          '800': '#262626',
+          '900': '#171717',
+        }
       },
-      backgroundImage: {
-        'mesh-gradient': "radial-gradient(at 0% 0%, rgba(168, 85, 247, 0.15) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(0, 212, 255, 0.1) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.05) 0px, transparent 50%), radial-gradient(at 0% 100%, rgba(168, 85, 247, 0.1) 0px, transparent 50%)",
+      fontSize: {
+        'xs': ['12px', { lineHeight: '16px' }],
+        'sm': ['14px', { lineHeight: '20px' }],
+        'base': ['16px', { lineHeight: '24px' }],
+        'lg': ['18px', { lineHeight: '28px' }],
+        'xl': ['20px', { lineHeight: '28px' }],
+        '2xl': ['24px', { lineHeight: '32px' }],
+        '3xl': ['30px', { lineHeight: '36px' }],
+        '4xl': ['36px', { lineHeight: '40px' }],
+      },
+      fontFamily: {
+        'sans': ['Inter', 'system-ui', 'sans-serif'],
+        'display': ['Space Grotesk', 'system-ui', 'sans-serif'],
+        'mono': ['JetBrains Mono', 'monospace'],
       },
       boxShadow: {
-        'neon-purple': '0 0 15px rgba(168, 85, 247, 0.4)',
-        'neon-cyan': '0 0 15px rgba(0, 212, 255, 0.4)',
-        'glass': 'inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
+        'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'sm': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+        'base': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'md': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        'lg': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
       },
       animation: {
-        'slow-spin': 'spin 20s linear infinite',
-        'float': 'float 6s ease-in-out infinite',
+        'fade-in': 'fadeIn 0.3s ease-in',
+        'slide-up': 'slideUp 0.3s ease-out',
       },
       keyframes: {
-        float: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-20px)' },
-        }
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       }
     },
   },

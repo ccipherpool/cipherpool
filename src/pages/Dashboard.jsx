@@ -1,25 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { 
-  Zap, Trophy, Users, MessageSquare, 
-  Wallet, Star, TrendingUp, Award, 
-  ChevronRight, Play, Clock, Shield
+  Trophy, Users, MessageSquare, Store, 
+  Wallet, BarChart3, ArrowRight, Zap 
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const [profile, setProfile] = useState(null);
-  const [stats, setStats] = useState({
-    tournaments: 0,
-    wins: 0,
-    rank: 'Bronze',
-    nextRankXp: 1000
-  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
@@ -27,198 +19,163 @@ const Dashboard = () => {
       }
       setLoading(false);
     };
-    fetchData();
+    fetchProfile();
   }, []);
 
-  const quickActions = [
-    { title: 'Rejoindre un Tournoi', desc: 'Gagnez des prix réels', icon: Trophy, color: 'from-cp-primary to-purple-600', path: '/tournaments' },
-    { title: 'Chat Global', desc: 'Discutez avec la communauté', icon: MessageSquare, color: 'from-blue-500 to-cp-secondary', path: '/chat' },
-    { title: 'Mon Clan', desc: 'Gérez votre équipe', icon: Users, color: 'from-cp-accent to-emerald-600', path: '/clans' },
-    { title: 'Boutique', desc: 'Échangez vos coins', icon: Wallet, color: 'from-orange-500 to-yellow-500', path: '/store' },
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
-  };
-
   if (loading) return (
-    <div className="flex items-center justify-center h-[60vh]">
-      <div className="w-12 h-12 border-4 border-cp-primary border-t-transparent rounded-full animate-spin" />
+    <div className="flex items-center justify-center h-96">
+      <div className="w-8 h-8 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
+  const stats = [
+    { label: 'Coins', value: profile?.coins || 0, icon: Wallet, color: 'text-yellow-400' },
+    { label: 'XP', value: profile?.xp || 0, icon: Zap, color: 'text-brand-primary' },
+    { label: 'Rank', value: '#1', icon: Trophy, color: 'text-pink-400' },
+    { label: 'Wins', value: '42', icon: BarChart3, color: 'text-blue-400' },
+  ];
+
+  const quickLinks = [
+    { title: 'Join Tournament', desc: 'Compete for prizes', icon: Trophy, path: '/tournaments', color: 'from-brand-primary to-brand-secondary' },
+    { title: 'Global Chat', desc: 'Connect with players', icon: MessageSquare, path: '/chat', color: 'from-blue-500 to-blue-600' },
+    { title: 'My Clan', desc: 'Manage your team', icon: Users, path: '/clans', color: 'from-emerald-500 to-emerald-600' },
+    { title: 'Store', desc: 'Browse items', icon: Store, path: '/store', color: 'from-orange-500 to-orange-600' },
+  ];
+
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-10 pb-20"
-    >
-      {/* Hero Welcome Section */}
-      <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-cp-primary/20 via-[#0d0d14] to-cp-secondary/10 border border-white/5 p-8 lg:p-12">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-[radial-gradient(circle_at_center,_rgba(168,85,247,0.2)_0%,_transparent_70%)] pointer-events-none" />
+    <div className="space-y-8 pb-20">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden rounded-xl bg-dark-850 border border-neutral-700 p-8 md:p-12">
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-brand-primary/5 to-transparent pointer-events-none" />
         
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-          <div className="space-y-4">
-            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cp-primary/10 border border-cp-primary/20 text-cp-primary text-xs font-bold uppercase tracking-widest">
-              <Zap size={14} className="fill-cp-primary" />
-              Saison 1 en cours
-            </motion.div>
-            <motion.h1 variants={itemVariants} className="text-4xl lg:text-6xl font-black tracking-tighter">
-              BIENVENUE, <span className="text-cp-primary uppercase">{profile?.full_name?.split(' ')[0] || 'JOUEUR'}</span> !
-            </motion.h1>
-            <motion.p variants={itemVariants} className="text-white/50 max-w-md text-lg font-medium leading-relaxed">
-              Prêt pour la victoire ? Vos statistiques sont à jour. Dominez le classement aujourd'hui.
-            </motion.p>
-            <motion.div variants={itemVariants} className="flex flex-wrap gap-4 pt-4">
-              <Link to="/tournaments" className="px-8 py-4 bg-cp-primary hover:bg-cp-primary/80 rounded-2xl font-bold transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] flex items-center gap-2 group">
-                <Play size={18} className="fill-white" />
-                JOUER MAINTENANT
-                <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </motion.div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+          <div className="space-y-4 max-w-md">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs font-semibold uppercase tracking-wide">
+              <Zap size={14} />
+              Season 1 Active
+            </div>
+            <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight">
+              Welcome back, <span className="text-brand-primary">{profile?.full_name?.split(' ')[0] || 'Player'}</span>
+            </h1>
+            <p className="text-neutral-400 leading-relaxed">
+              Your stats are ready. Keep grinding and dominate the leaderboard.
+            </p>
+            <Link 
+              to="/tournaments"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg font-semibold transition-colors duration-200 w-fit"
+            >
+              Play Now
+              <ArrowRight size={18} />
+            </Link>
           </div>
 
-          {/* User Quick Stats Card */}
-          <motion.div variants={itemVariants} className="bg-[#0d0d14]/60 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 w-full lg:w-80 shadow-2xl">
+          {/* Profile Card */}
+          <div className="w-full md:w-80 bg-dark-900 border border-neutral-700 rounded-xl p-6">
             <div className="flex items-center justify-between mb-6">
-              <span className="text-white/40 text-xs font-bold uppercase tracking-widest">Niveau Actuel</span>
-              <Shield size={20} className="text-cp-primary" />
+              <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Current Level</span>
+              <span className="text-2xl font-display font-bold text-brand-primary">12</span>
             </div>
-            <div className="flex items-end gap-2 mb-4">
-              <span className="text-5xl font-black leading-none">12</span>
-              <span className="text-cp-primary font-bold mb-1">PRO</span>
+            <div className="space-y-3">
+              <div className="w-full h-2 bg-dark-800 rounded-full overflow-hidden">
+                <div className="w-2/3 h-full bg-gradient-to-r from-brand-primary to-brand-secondary" />
+              </div>
+              <div className="flex justify-between text-xs text-neutral-400 font-medium">
+                <span>650 XP</span>
+                <span>1000 XP</span>
+              </div>
             </div>
-            <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden mb-2">
-              <motion.div 
-                initial={{ width: 0 }}
-                animate={{ width: '65%' }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-                className="h-full bg-gradient-to-r from-cp-primary to-cp-secondary" 
-              />
-            </div>
-            <div className="flex justify-between text-[10px] font-bold text-white/30 uppercase tracking-tighter">
-              <span>650 XP</span>
-              <span>1000 XP</span>
-            </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        {[
-          { label: 'Coins', value: profile?.coins || 0, icon: Wallet, color: 'text-yellow-400' },
-          { label: 'XP Total', value: profile?.xp || 0, icon: Star, color: 'text-cp-primary' },
-          { label: 'Victoires', value: stats.wins, icon: Trophy, color: 'text-cp-accent' },
-          { label: 'Tendance', value: '+12%', icon: TrendingUp, color: 'text-cp-secondary' },
-        ].map((stat, i) => (
-          <motion.div 
-            key={i}
-            variants={itemVariants}
-            className="bg-white/5 border border-white/5 rounded-3xl p-6 hover:bg-white/10 transition-all group"
-          >
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {stats.map((stat, i) => (
+          <div key={i} className="card">
             <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-2xl bg-white/5 ${stat.color} group-hover:scale-110 transition-transform`}>
-                <stat.icon size={20} />
-              </div>
+              <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">{stat.label}</span>
+              <stat.icon size={20} className={stat.color} />
             </div>
-            <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-1">{stat.label}</p>
-            <h3 className="text-2xl lg:text-3xl font-black tracking-tighter">{stat.value}</h3>
-          </motion.div>
+            <h3 className="text-3xl font-display font-bold">{stat.value}</h3>
+          </div>
         ))}
       </div>
 
-      {/* Quick Actions Hub */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between px-2">
-          <h2 className="text-2xl font-black tracking-tighter uppercase">Accès Rapide</h2>
-          <Link to="/dashboard" className="text-cp-primary text-xs font-bold hover:underline tracking-widest">VOIR TOUT</Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {quickActions.map((action, i) => (
-            <motion.div key={i} variants={itemVariants}>
-              <Link 
-                to={action.path}
-                className="group relative block h-48 overflow-hidden rounded-[2rem] border border-white/5 bg-white/5 hover:border-white/20 transition-all"
-              >
-                <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
-                <div className="absolute top-6 left-6 p-4 rounded-2xl bg-white/5 border border-white/10 group-hover:scale-110 transition-transform">
-                  <action.icon size={24} className="text-white" />
+      {/* Quick Links */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-display font-bold">Quick Access</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {quickLinks.map((link, i) => (
+            <Link 
+              key={i}
+              to={link.path}
+              className="group relative overflow-hidden rounded-xl border border-neutral-700 bg-dark-850 p-6 hover:border-neutral-600 hover:bg-dark-800 transition-all duration-200"
+            >
+              <div className={`absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l ${link.color} opacity-0 group-hover:opacity-5 transition-opacity duration-200`} />
+              
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-lg bg-dark-900 border border-neutral-700 flex items-center justify-center mb-4 group-hover:border-neutral-600 transition-colors duration-200">
+                  <link.icon size={24} className="text-neutral-300" />
                 </div>
-                <div className="absolute bottom-6 left-6 right-6">
-                  <h4 className="text-xl font-black tracking-tighter uppercase mb-1">{action.title}</h4>
-                  <p className="text-white/40 text-xs font-medium">{action.desc}</p>
-                </div>
-                <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
-                  <ChevronRight size={20} className="text-white" />
-                </div>
-              </Link>
-            </motion.div>
+                <h4 className="font-semibold text-neutral-100 mb-1">{link.title}</h4>
+                <p className="text-sm text-neutral-400">{link.desc}</p>
+              </div>
+
+              <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <ArrowRight size={20} className="text-neutral-400" />
+              </div>
+            </Link>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* Recent Activity & Leaderboard Preview */}
+      {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-2xl font-black tracking-tighter uppercase">Derniers Tournois</h2>
-            <Clock size={20} className="text-white/20" />
-          </div>
-          <div className="space-y-4">
+        <div className="lg:col-span-2 space-y-4">
+          <h2 className="text-xl font-display font-bold">Recent Tournaments</h2>
+          <div className="space-y-3">
             {[1, 2, 3].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all cursor-pointer">
-                <div className="w-16 h-16 rounded-xl bg-[#050508] border border-white/10 flex items-center justify-center">
-                  <Trophy size={24} className="text-cp-primary" />
+              <div key={i} className="card-interactive flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-dark-900 border border-neutral-700 flex items-center justify-center flex-shrink-0">
+                  <Trophy size={20} className="text-brand-primary" />
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-lg tracking-tight">Free Fire Elite Cup #{i+102}</h4>
-                  <p className="text-white/40 text-xs font-medium">Terminé il y a 2 heures • 5000 Coins</p>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-neutral-100 truncate">Free Fire Elite Cup #{102 + i}</h4>
+                  <p className="text-xs text-neutral-400">Completed 2 hours ago • 5000 Coins</p>
                 </div>
-                <div className="text-right">
-                  <span className="px-3 py-1 rounded-full bg-cp-accent/10 text-cp-accent text-[10px] font-black uppercase tracking-widest">Gagné</span>
-                </div>
+                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold flex-shrink-0">Won</span>
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div variants={itemVariants} className="space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-2xl font-black tracking-tighter uppercase">Top Joueurs</h2>
-            <Award size={20} className="text-yellow-400" />
-          </div>
-          <div className="bg-white/5 border border-white/5 rounded-[2rem] p-6 space-y-6">
+        <div className="space-y-4">
+          <h2 className="text-xl font-display font-bold">Top Players</h2>
+          <div className="card space-y-4">
             {[
               { name: 'Shadow_FF', xp: '12.5k', rank: 1 },
               { name: 'Cipher_King', xp: '11.2k', rank: 2 },
               { name: 'Elite_Gamer', xp: '10.8k', rank: 3 },
             ].map((player, i) => (
-              <div key={i} className="flex items-center gap-4">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm ${i === 0 ? 'bg-yellow-400 text-black' : 'bg-white/10 text-white/40'}`}>
+              <div key={i} className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-semibold text-sm flex-shrink-0 ${
+                  i === 0 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-dark-900 text-neutral-400'
+                }`}>
                   {player.rank}
                 </div>
-                <div className="flex-1">
-                  <p className="font-bold text-sm">{player.name}</p>
-                  <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">{player.xp} XP</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm text-neutral-100 truncate">{player.name}</p>
+                  <p className="text-xs text-neutral-400">{player.xp} XP</p>
                 </div>
-                <ChevronRight size={16} className="text-white/10" />
               </div>
             ))}
-            <button className="w-full py-4 bg-white/5 hover:bg-white/10 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all">
-              Voir le classement complet
+            <button className="w-full py-3 mt-4 border border-neutral-700 hover:bg-dark-800 rounded-lg text-sm font-medium transition-colors duration-200">
+              View Full Leaderboard
             </button>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

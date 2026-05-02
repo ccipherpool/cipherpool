@@ -3,59 +3,107 @@
 @tailwind utilities;
 
 /* ── Fonts ── */
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-/* ── Custom Scrollbar ── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(12, 12, 15, 0.5);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(168, 85, 247, 0.4);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.6);
+/* ── Root Variables ── */
+:root {
+  --color-bg-primary: #0a0a0f;
+  --color-bg-secondary: #14141f;
+  --color-bg-tertiary: #1a1a2e;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a3a3a3;
+  --color-brand: #8b5cf6;
 }
 
 /* ── Global Styles ── */
-body {
-  background-color: #050508;
-  color: #ffffff;
-  font-family: 'Space Grotesk', sans-serif;
+* {
+  @apply transition-colors duration-200;
+}
+
+html, body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Utility Classes ── */
-.gradient-text-primary {
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  background-image: linear-gradient(to right, #a855f7, #00d4ff);
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.glass-panel {
-  background-color: rgba(13, 13, 20, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+/* ── Utility Classes ── */
+.card {
+  @apply bg-dark-850 border border-neutral-700 rounded-lg p-6;
+}
+
+.card-interactive {
+  @apply card hover:border-neutral-600 hover:bg-dark-800 cursor-pointer transition-all duration-200;
+}
+
+.btn-primary {
+  @apply px-4 py-2 bg-brand-primary text-white rounded-lg font-medium hover:bg-brand-primary/90 transition-colors duration-200;
+}
+
+.btn-secondary {
+  @apply px-4 py-2 bg-dark-800 text-neutral-100 border border-neutral-700 rounded-lg font-medium hover:bg-dark-700 transition-colors duration-200;
+}
+
+.btn-ghost {
+  @apply px-4 py-2 text-neutral-300 rounded-lg font-medium hover:bg-dark-800 transition-colors duration-200;
+}
+
+.text-muted {
+  @apply text-neutral-400;
+}
+
+.text-subtle {
+  @apply text-neutral-500;
 }
 
 /* ── Animations ── */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
 }
 
 /* ── Responsive Helpers ── */
@@ -66,5 +114,13 @@ body {
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  .glass {
+    @apply bg-dark-850/50 backdrop-blur-xl border border-neutral-700;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent;
   }
 }

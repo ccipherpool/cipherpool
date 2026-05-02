@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { 
   LayoutDashboard, Trophy, Users, MessageSquare, 
-  Store, Wallet, User, Settings, Menu, X, 
-  Bell, ShieldCheck, LogOut, ChevronRight,
-  Star, Zap, Award, HelpCircle, BarChart3, Newspaper, Gift, Medal
+  Store, Wallet, User, LogOut, Menu, X, 
+  Bell, Settings, ChevronRight, BarChart3,
+  Newspaper, Gift, Medal, Shield
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const MainLayout = () => {
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const location = useLocation();
@@ -31,16 +30,16 @@ const MainLayout = () => {
   }, [navigate]);
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Tableau de bord', path: '/dashboard', color: 'text-cp-primary' },
-    { icon: Trophy, label: 'Tournois', path: '/tournaments', color: 'text-cp-secondary' },
-    { icon: BarChart3, label: 'Classement', path: '/leaderboard', color: 'text-yellow-400' },
-    { icon: Users, label: 'Clans', path: '/clans', color: 'text-cp-accent' },
-    { icon: MessageSquare, label: 'Chat Global', path: '/chat', color: 'text-purple-400' },
-    { icon: Store, label: 'Boutique', path: '/store', color: 'text-orange-400' },
-    { icon: Wallet, label: 'Portefeuille', path: '/wallet', color: 'text-blue-400' },
-    { icon: Newspaper, label: 'Actualités', path: '/news', color: 'text-pink-400' },
-    { icon: Medal, label: 'Achievements', path: '/achievements', color: 'text-indigo-400' },
-    { icon: Gift, label: 'Daily Rewards', path: '/daily-rewards', color: 'text-red-400' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: Trophy, label: 'Tournaments', path: '/tournaments' },
+    { icon: BarChart3, label: 'Leaderboard', path: '/leaderboard' },
+    { icon: Users, label: 'Clans', path: '/clans' },
+    { icon: MessageSquare, label: 'Chat', path: '/chat' },
+    { icon: Store, label: 'Store', path: '/store' },
+    { icon: Wallet, label: 'Wallet', path: '/wallet' },
+    { icon: Newspaper, label: 'News', path: '/news' },
+    { icon: Medal, label: 'Achievements', path: '/achievements' },
+    { icon: Gift, label: 'Daily Rewards', path: '/daily-rewards' },
   ];
 
   const handleLogout = async () => {
@@ -51,132 +50,124 @@ const MainLayout = () => {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-[#050508] text-white font-sans selection:bg-cp-primary/30 overflow-hidden flex">
-      {/* Background Mesh */}
-      <div className="fixed inset-0 bg-[radial-gradient(at_0%_0%,_rgba(168,85,247,0.15)_0px,_transparent_50%),_radial-gradient(at_100%_0%,_rgba(0,212,255,0.1)_0px,_transparent_50%)] pointer-events-none z-0" />
-      
+    <div className="flex h-screen bg-dark-950 text-neutral-100">
       {/* Sidebar */}
-      <motion.aside 
-        initial={false}
-        animate={{ width: isSidebarOpen ? 280 : 0, x: isSidebarOpen ? 0 : -280 }}
-        className="fixed lg:relative z-50 h-screen bg-[#0d0d14]/80 backdrop-blur-2xl border-r border-white/5 flex flex-col overflow-hidden"
-      >
-        <div className="w-[280px] flex flex-col h-full p-6">
+      <aside className={`
+        fixed lg:relative h-screen bg-dark-900 border-r border-neutral-700 flex flex-col
+        transition-all duration-300 z-50 lg:z-0
+        ${isSidebarOpen ? 'w-64' : 'w-0 lg:w-20'}
+        overflow-hidden
+      `}>
+        <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-10 px-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-cp-primary to-cp-secondary rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.4)]">
-              <Zap size={22} className="text-white fill-white" />
-            </div>
-            <span className="font-black tracking-tighter text-2xl italic">CIPHER<span className="text-cp-primary">POOL</span></span>
+          <div className="h-20 flex items-center justify-between px-6 border-b border-neutral-700">
+            {isSidebarOpen && (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">CP</span>
+                </div>
+                <span className="font-display font-bold text-lg">CipherPool</span>
+              </div>
+            )}
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden p-2 hover:bg-dark-800 rounded-lg transition-colors"
+            >
+              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 overflow-y-auto pr-2 custom-scrollbar">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 px-3">Menu Principal</p>
+          <nav className="flex-1 overflow-y-auto scrollbar-hide p-4 space-y-1">
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
+                  onClick={() => setIsSidebarOpen(false)}
                   className={`
-                    group flex items-center justify-between p-3 rounded-xl transition-all duration-300
+                    flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm
+                    transition-all duration-200
                     ${isActive 
-                      ? 'bg-cp-primary/10 text-white border border-white/5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]' 
-                      : 'text-white/50 hover:bg-white/5 hover:text-white'}
+                      ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20' 
+                      : 'text-neutral-400 hover:text-neutral-100 hover:bg-dark-800'}
                   `}
+                  title={!isSidebarOpen ? item.label : ''}
                 >
-                  <div className="flex items-center gap-3">
-                    <item.icon size={20} className={`${isActive ? item.color : 'group-hover:' + item.color} transition-colors`} />
-                    <span className="font-medium text-sm">{item.label}</span>
-                  </div>
-                  {isActive && <motion.div layoutId="active-pill" className="w-1.5 h-1.5 rounded-full bg-cp-primary shadow-[0_0_10px_rgba(168,85,247,0.8)]" />}
+                  <item.icon size={20} className="flex-shrink-0" />
+                  {isSidebarOpen && <span>{item.label}</span>}
                 </Link>
               );
             })}
-
-            {profile?.role === 'super_admin' && (
-              <div className="mt-8">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 px-3">Administration</p>
-                <Link
-                  to="/admin"
-                  className="flex items-center gap-3 p-3 rounded-xl text-white/50 hover:bg-red-500/10 hover:text-red-400 transition-all"
-                >
-                  <ShieldCheck size={20} />
-                  <span className="font-medium text-sm">Super Admin</span>
-                </Link>
-              </div>
-            )}
           </nav>
 
           {/* User Profile */}
-          <div className="mt-auto pt-6 border-t border-white/5">
-            <div className="bg-white/5 rounded-2xl p-4 flex items-center gap-3 border border-white/5 hover:bg-white/10 transition-colors group">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cp-primary/20 to-cp-secondary/20 border border-white/10 flex items-center justify-center overflow-hidden">
-                <User size={20} className="text-cp-primary" />
+          <div className="border-t border-neutral-700 p-4">
+            {profile && (
+              <div className={`
+                flex items-center gap-3 p-3 rounded-lg bg-dark-800 border border-neutral-700
+                ${isSidebarOpen ? '' : 'justify-center'}
+              `}>
+                <div className="w-10 h-10 rounded-full bg-brand-primary/20 flex items-center justify-center flex-shrink-0">
+                  <User size={18} className="text-brand-primary" />
+                </div>
+                {isSidebarOpen && (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{profile.full_name}</p>
+                    <p className="text-xs text-neutral-400 truncate uppercase">{profile.role}</p>
+                  </div>
+                )}
+                <button 
+                  onClick={handleLogout}
+                  className="p-2 hover:bg-dark-700 rounded-lg transition-colors text-neutral-400 hover:text-neutral-100"
+                  title="Logout"
+                >
+                  <LogOut size={18} />
+                </button>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold truncate">{profile?.full_name || 'Joueur'}</p>
-                <p className="text-[10px] text-white/40 truncate uppercase tracking-wider">{profile?.role || 'User'}</p>
-              </div>
-              <button onClick={handleLogout} className="p-2 text-white/30 hover:text-red-400 transition-colors">
-                <LogOut size={18} />
-              </button>
-            </div>
+            )}
           </div>
         </div>
-      </motion.aside>
+      </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col relative h-screen overflow-hidden">
-        {/* Top Header */}
-        <header className="h-20 flex items-center justify-between px-8 relative z-20">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="h-20 flex items-center justify-between px-6 border-b border-neutral-700 bg-dark-900">
           <button 
-            onClick={() => setSidebarOpen(!isSidebarOpen)}
-            className="p-2.5 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-all"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="hidden lg:flex p-2 hover:bg-dark-800 rounded-lg transition-colors"
           >
             {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/5 rounded-xl">
-              <div className="w-2 h-2 rounded-full bg-accent-500 animate-pulse" />
-              <span className="text-xs font-bold text-white/60 uppercase tracking-widest">Serveur Online</span>
-            </div>
-            <button className="p-2.5 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-all relative">
-              <Bell size={20} className="text-white/70" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-cp-primary rounded-full border-2 border-[#050508]" />
+            <button className="p-2 hover:bg-dark-800 rounded-lg transition-colors relative">
+              <Bell size={20} className="text-neutral-400" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-brand-primary rounded-full" />
+            </button>
+            <button className="p-2 hover:bg-dark-800 rounded-lg transition-colors">
+              <Settings size={20} className="text-neutral-400" />
             </button>
           </div>
         </header>
 
-        {/* Content Scroll Area */}
-        <main className="flex-1 overflow-y-auto relative z-10 custom-scrollbar">
-          <div className="max-w-7xl mx-auto p-6 lg:p-10">
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="max-w-7xl mx-auto p-6">
             <Outlet />
           </div>
         </main>
       </div>
 
       {/* Mobile Overlay */}
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden"
-          />
-        )}
-      </AnimatePresence>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-      `}} />
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 };
