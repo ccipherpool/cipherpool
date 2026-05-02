@@ -4,89 +4,160 @@ import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 
 /* ═══════════════════════════════════════════════════════
-   LOGIN  —  CipherPool v5
+   LOGIN  —  CIPHERPOOL v6  (amélioré)
    ✅ Rate limiting : 5 tentatives → blocage 30s
-   ✅ Loading state sur le bouton
+   ✅ Loading state + bouton désactivé
    ✅ Messages d'erreur précis
-   ✅ Entrée animée
+   ✅ Contraste & responsive améliorés
+   ✅ Accessibilité (aria-live)
+   ✅ Animation du countdown circulaire
    ═══════════════════════════════════════════════════════ */
 
-const MAX_ATTEMPTS  = 5;
-const LOCKOUT_MS    = 30_000; // 30 secondes
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS   = 30_000; // 30 secondes
 
+// Palette modernisée
 const C = {
-  bg:      "#0a0a0f",
-  card:    "#0f0f17",
-  border:  "#1f1f2f",
-  primary: "#8b3dff",
-  primaryGlow:"rgba(139,61,255,0.45)",
-  cyan:    "#00e5ff",
-  danger:  "#ff4757",
-  text:    "#fff",
-  textMid: "rgba(255,255,255,0.55)",
-  textLow: "rgba(255,255,255,0.25)",
+  bg:        "#0a0a0f",
+  card:      "#0f0f17",
+  border:    "#252535",
+  primary:   "#8b3dff",
+  primaryGlow:"rgba(139,61,255,0.5)",
+  cyan:      "#00e5ff",
+  danger:    "#ff4757",
+  warning:   "#ffb347",
+  text:      "#f0f0f0",
+  textMid:   "rgba(255,255,255,0.65)",
+  textLow:   "rgba(255,255,255,0.4)",
 };
 
-function Input({ label, type, value, onChange, placeholder, error }) {
+// ── Composant Input réutilisable (amélioré) ─────────────
+function Input({ label, type, value, onChange, placeholder, error, id }) {
   const [show, setShow] = useState(false);
   const isPassword = type === "password";
+  const inputId = id || label.replace(/\s/g, "").toLowerCase();
+
   return (
-    <div style={{ marginBottom:18 }}>
-      <label style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:9, letterSpacing:2, color:C.textLow, display:"block", marginBottom:7 }}>
+    <div style={{ marginBottom: 20 }}>
+      <label
+        htmlFor={inputId}
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 11,
+          letterSpacing: 1.5,
+          color: C.textLow,
+          display: "block",
+          marginBottom: 6,
+        }}
+      >
         {label}
       </label>
-      <div style={{ position:"relative" }}>
+      <div style={{ position: "relative" }}>
         <input
+          id={inputId}
           type={isPassword && show ? "text" : type}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${inputId}-error` : undefined}
           style={{
-            width:"100%", boxSizing:"border-box",
-            padding: isPassword ? "12px 44px 12px 16px" : "12px 16px",
-            borderRadius:12, border:`1px solid ${error ? C.danger+"66" : C.border}`,
-            background:"rgba(255,255,255,0.04)", color:C.text,
-            fontFamily:"'Space Grotesk',sans-serif", fontSize:14, outline:"none",
-            transition:"all .22s",
+            width: "100%",
+            boxSizing: "border-box",
+            padding: isPassword ? "12px 48px 12px 16px" : "12px 16px",
+            borderRadius: 12,
+            border: `1px solid ${error ? C.danger + "aa" : C.border}`,
+            background: "rgba(255,255,255,0.05)",
+            color: C.text,
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: 14,
+            outline: "none",
+            transition: "all 0.2s ease",
           }}
-          onFocus={e => { e.target.style.borderColor = error ? C.danger : C.primary+"88"; e.target.style.boxShadow = `0 0 0 3px ${C.primary}18`; }}
-          onBlur={e  => { e.target.style.borderColor = error ? C.danger+"66" : C.border; e.target.style.boxShadow = "none"; }}
+          onFocus={(e) => {
+            e.target.style.borderColor = error ? C.danger : C.primary + "aa";
+            e.target.style.boxShadow = `0 0 0 3px ${C.primary}20`;
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = error ? C.danger + "aa" : C.border;
+            e.target.style.boxShadow = "none";
+          }}
         />
         {isPassword && (
-          <button type="button" onClick={() => setShow(s => !s)}
-            style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", fontSize:16, opacity:.45, color:"#fff" }}>
+          <button
+            type="button"
+            onClick={() => setShow((s) => !s)}
+            aria-label={show ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+            style={{
+              position: "absolute",
+              right: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "rgba(0,0,0,0.5)",
+              border: "none",
+              borderRadius: 20,
+              padding: "4px 8px",
+              cursor: "pointer",
+              fontSize: 16,
+              color: "#fff",
+              opacity: 0.7,
+              transition: "opacity 0.2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = 1)}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = 0.7)}
+          >
             {show ? "🙈" : "👁"}
           </button>
         )}
       </div>
-      {error && <p style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:9, color:C.danger, marginTop:5, letterSpacing:.5 }}>{error}</p>}
+      {error && (
+        <p
+          id={`${inputId}-error`}
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 10,
+            color: C.danger,
+            marginTop: 5,
+            letterSpacing: 0.3,
+          }}
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }
 
+// ── Composant principal Login ───────────────────────────
 export default function Login() {
-  const navigate  = useNavigate();
-  const [email,    setEmail]   = useState("");
-  const [password, setPass]    = useState("");
-  const [loading,  setLoading] = useState(false);
-  const [errors,   setErrors]  = useState({});
-  const [globalErr,setGlobal]  = useState("");
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPass] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [globalErr, setGlobal] = useState("");
 
-  // ── Rate limiting ──────────────────────────────────────
-  const attempts  = useRef(0);
+  const attempts = useRef(0);
   const lockedUntil = useRef(0);
   const [lockSecs, setLockSecs] = useState(0);
 
+  // Compte à rebours du blocage
   const startCountdown = () => {
     const tick = () => {
-      const rem = Math.ceil((lockedUntil.current - Date.now()) / 1000);
-      if (rem > 0) { setLockSecs(rem); setTimeout(tick, 1000); }
-      else { setLockSecs(0); setGlobal(""); }
+      const remaining = Math.ceil((lockedUntil.current - Date.now()) / 1000);
+      if (remaining > 0) {
+        setLockSecs(remaining);
+        setTimeout(tick, 1000);
+      } else {
+        setLockSecs(0);
+        setGlobal("");
+        attempts.current = 0;
+      }
     };
     tick();
   };
 
-  // ── Validation ─────────────────────────────────────────
+  // Validation des champs
   const validate = () => {
     const e = {};
     if (!email.trim()) e.email = "Email requis";
@@ -101,7 +172,6 @@ export default function Login() {
     e.preventDefault();
     setGlobal("");
 
-    // ── Vérifier le blocage ──
     if (Date.now() < lockedUntil.current) {
       const rem = Math.ceil((lockedUntil.current - Date.now()) / 1000);
       setGlobal(`Trop de tentatives. Réessaie dans ${rem}s.`);
@@ -112,7 +182,10 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
       if (error) {
         attempts.current += 1;
@@ -121,15 +194,17 @@ export default function Login() {
         if (attempts.current >= MAX_ATTEMPTS) {
           lockedUntil.current = Date.now() + LOCKOUT_MS;
           attempts.current = 0;
-          setGlobal(`Trop de tentatives. Compte bloqué 30 secondes.`);
+          setGlobal("Trop de tentatives. Compte bloqué 30 secondes.");
           startCountdown();
         } else {
-          // Messages d'erreur précis
-          const msg =
-            error.message.includes("Invalid login") ? `Email ou mot de passe incorrect. ${remaining} essai${remaining > 1 ? "s" : ""} restant${remaining > 1 ? "s" : ""}.` :
-            error.message.includes("Email not confirmed") ? "Confirme ton email avant de te connecter." :
-            error.message.includes("rate limit") ? "Trop de requêtes. Attends quelques secondes." :
-            error.message;
+          let msg;
+          if (error.message.includes("Invalid login"))
+            msg = `Email ou mot de passe incorrect. ${remaining} essai${remaining > 1 ? "s" : ""} restant${remaining > 1 ? "s" : ""}.`;
+          else if (error.message.includes("Email not confirmed"))
+            msg = "Confirme ton email avant de te connecter.";
+          else if (error.message.includes("rate limit"))
+            msg = "Trop de requêtes. Attends quelques secondes.";
+          else msg = error.message;
           setGlobal(msg);
         }
       } else {
@@ -146,80 +221,262 @@ export default function Login() {
   const isLocked = lockSecs > 0;
 
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center", padding:20, position:"relative", overflow:"hidden" }}>
-
-      {/* BG orbs */}
-      <div style={{ position:"fixed", inset:0, pointerEvents:"none" }}>
-        <div style={{ position:"absolute", top:"-15%", left:"-10%", width:500, height:500, background:`radial-gradient(${C.primary}18,transparent 65%)` }}/>
-        <div style={{ position:"absolute", bottom:"-10%", right:"-10%", width:400, height:400, background:`radial-gradient(${C.cyan}10,transparent 65%)` }}/>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: C.bg,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Orbes de fond */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none" }}>
+        <div
+          style={{
+            position: "absolute",
+            top: "-15%",
+            left: "-10%",
+            width: 500,
+            height: 500,
+            background: `radial-gradient(${C.primary}20, transparent 70%)`,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            bottom: "-10%",
+            right: "-10%",
+            width: 400,
+            height: 400,
+            background: `radial-gradient(${C.cyan}15, transparent 70%)`,
+          }}
+        />
       </div>
 
       <motion.div
-        initial={{ opacity:0, y:28, scale:.96 }}
-        animate={{ opacity:1, y:0,  scale:1 }}
-        transition={{ duration:.55, ease:[.22,1,.36,1] }}
-        style={{ width:"100%", maxWidth:420, position:"relative", zIndex:1 }}
+        initial={{ opacity: 0, y: 28, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          width: "100%",
+          maxWidth: 440,
+          position: "relative",
+          zIndex: 1,
+          margin: "0 auto",
+        }}
       >
-        {/* Logo */}
-        <div style={{ textAlign:"center", marginBottom:36 }}>
-          <motion.div whileHover={{ rotate:5, scale:1.08 }}
-            style={{ width:52, height:52, borderRadius:15, background:`linear-gradient(135deg,${C.primary},#4f46e5)`, display:"inline-flex", alignItems:"center", justifyContent:"center", boxShadow:`0 8px 32px ${C.primaryGlow}`, marginBottom:14 }}>
-            <span style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:"#fff", letterSpacing:1 }}>CP</span>
+        {/* Logo + titre */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <motion.div
+            whileHover={{ rotate: 5, scale: 1.08 }}
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              background: `linear-gradient(135deg, ${C.primary}, #4f46e5)`,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: `0 8px 32px ${C.primaryGlow}`,
+              marginBottom: 14,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "'Bebas Neue', cursive",
+                fontSize: 24,
+                color: "#fff",
+                letterSpacing: 1,
+              }}
+            >
+              CP
+            </span>
           </motion.div>
-          <h1 style={{ fontFamily:"'Bebas Neue',cursive", fontSize:32, letterSpacing:4, color:"#fff", margin:0 }}>
-            CIPHER<span style={{ color:C.primary, textShadow:`0 0 24px ${C.primaryGlow}` }}>POOL</span>
+          <h1
+            style={{
+              fontFamily: "'Bebas Neue', cursive",
+              fontSize: "clamp(28px, 8vw, 36px)",
+              letterSpacing: 4,
+              color: "#fff",
+              margin: 0,
+            }}
+          >
+            CIPHER<span style={{ color: C.primary, textShadow: `0 0 24px ${C.primaryGlow}` }}>POOL</span>
           </h1>
-          <p style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:9, letterSpacing:3, color:C.textLow, marginTop:6 }}>CONNEXION À TON COMPTE</p>
+          <p
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 10,
+              letterSpacing: 3,
+              color: C.textLow,
+              marginTop: 8,
+            }}
+          >
+            CONNEXION SÉCURISÉE
+          </p>
         </div>
 
-        {/* Card */}
-        <div style={{
-          background:"rgba(15,15,23,0.92)", backdropFilter:"blur(24px)",
-          border:`1px solid ${C.border}`, borderRadius:22, padding:"32px 30px",
-          boxShadow:`0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)`,
-        }}>
-
-          {/* Rate limit indicator */}
+        {/* Carte principale */}
+        <div
+          style={{
+            background: "rgba(15,15,23,0.94)",
+            backdropFilter: "blur(24px)",
+            border: `1px solid ${C.border}`,
+            borderRadius: 28,
+            padding: "clamp(20px, 5vw, 34px)",
+            boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03)",
+          }}
+        >
+          {/* Bloc de blocage actif */}
           {isLocked && (
-            <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }}
-              style={{ background:"rgba(255,71,87,0.1)", border:"1px solid rgba(255,71,87,0.3)", borderRadius:12, padding:"12px 16px", marginBottom:22, display:"flex", alignItems:"center", gap:10 }}>
-              <span style={{ fontSize:18 }}>🔒</span>
-              <div>
-                <p style={{ fontFamily:"'Space Grotesk',sans-serif", fontWeight:700, fontSize:13, color:C.danger, margin:0 }}>Compte temporairement bloqué</p>
-                <p style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:"rgba(255,71,87,0.7)", margin:"3px 0 0" }}>
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                background: "rgba(255,71,87,0.12)",
+                border: "1px solid rgba(255,71,87,0.4)",
+                borderRadius: 16,
+                padding: "12px 18px",
+                marginBottom: 24,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <span style={{ fontSize: 20 }}>🔒</span>
+              <div style={{ flex: 1 }}>
+                <p
+                  style={{
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    color: C.danger,
+                    margin: 0,
+                  }}
+                >
+                  Compte temporairement bloqué
+                </p>
+                <p
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 10,
+                    color: "rgba(255,71,87,0.8)",
+                    margin: "4px 0 0",
+                  }}
+                >
                   Réessaie dans <strong>{lockSecs}s</strong>
                 </p>
               </div>
-              {/* Countdown ring */}
-              <div style={{ marginLeft:"auto", position:"relative", width:32, height:32, flexShrink:0 }}>
-                <svg width="32" height="32" style={{ transform:"rotate(-90deg)" }}>
-                  <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,71,87,0.2)" strokeWidth="2.5"/>
-                  <circle cx="16" cy="16" r="13" fill="none" stroke={C.danger} strokeWidth="2.5"
-                    strokeDasharray={`${2*Math.PI*13}`}
-                    strokeDashoffset={`${2*Math.PI*13*(1 - lockSecs/30)}`}
-                    style={{ transition:"stroke-dashoffset 1s linear" }}/>
+              {/* Anneau de progression SVG */}
+              <div style={{ position: "relative", width: 36, height: 36, flexShrink: 0 }}>
+                <svg width="36" height="36" style={{ transform: "rotate(-90deg)" }}>
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,71,87,0.2)" strokeWidth="2.5" />
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="14"
+                    fill="none"
+                    stroke={C.danger}
+                    strokeWidth="2.5"
+                    strokeDasharray={`${2 * Math.PI * 14}`}
+                    strokeDashoffset={`${2 * Math.PI * 14 * (1 - lockSecs / 30)}`}
+                    style={{ transition: "stroke-dashoffset 1s linear" }}
+                  />
                 </svg>
-                <span style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:8, color:C.danger, fontWeight:700 }}>{lockSecs}</span>
+                <span
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 9,
+                    color: C.danger,
+                    fontWeight: 700,
+                  }}
+                >
+                  {lockSecs}
+                </span>
               </div>
             </motion.div>
           )}
 
-          {/* Attempts warning */}
+          {/* Alerte tentatives restantes */}
           {attempts.current > 0 && attempts.current < MAX_ATTEMPTS && !isLocked && (
-            <div style={{ background:"rgba(255,179,71,0.08)", border:"1px solid rgba(255,179,71,0.2)", borderRadius:10, padding:"9px 14px", marginBottom:18, fontFamily:"'JetBrains Mono',monospace", fontSize:9, color:"#ffb347", letterSpacing:.5 }}>
-              ⚠️ {MAX_ATTEMPTS - attempts.current} tentative{MAX_ATTEMPTS - attempts.current > 1 ? "s" : ""} restante{MAX_ATTEMPTS - attempts.current > 1 ? "s" : ""} avant blocage
+            <div
+              style={{
+                background: "rgba(255,179,71,0.1)",
+                border: "1px solid rgba(255,179,71,0.3)",
+                borderRadius: 12,
+                padding: "8px 14px",
+                marginBottom: 20,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                color: C.warning,
+                letterSpacing: 0.5,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span>⚠️</span>
+              {MAX_ATTEMPTS - attempts.current} tentative{MAX_ATTEMPTS - attempts.current > 1 ? "s" : ""} restante
+              {MAX_ATTEMPTS - attempts.current > 1 ? "s" : ""} avant blocage
             </div>
           )}
 
           <form onSubmit={handleSubmit} noValidate>
-            <Input label="EMAIL" type="email" value={email} onChange={e => { setEmail(e.target.value); setErrors(er => ({...er, email:""})); }} placeholder="ton@email.com" error={errors.email}/>
-            <Input label="MOT DE PASSE" type="password" value={password} onChange={e => { setPass(e.target.value); setErrors(er => ({...er, password:""})); }} placeholder="••••••••" error={errors.password}/>
+            <Input
+              label="EMAIL"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setErrors((er) => ({ ...er, email: "" }));
+              }}
+              placeholder="ton@email.com"
+              error={errors.email}
+              id="login-email"
+            />
 
-            {/* Global error */}
+            <Input
+              label="MOT DE PASSE"
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPass(e.target.value);
+                setErrors((er) => ({ ...er, password: "" }));
+              }}
+              placeholder="••••••••"
+              error={errors.password}
+              id="login-password"
+            />
+
+            {/* Message global */}
             <AnimatePresence>
               {globalErr && !isLocked && (
-                <motion.div initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
-                  style={{ background:"rgba(255,71,87,0.08)", border:"1px solid rgba(255,71,87,0.25)", borderRadius:10, padding:"10px 14px", marginBottom:18, fontFamily:"'Space Grotesk',sans-serif", fontSize:12, color:C.danger }}>
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  aria-live="polite"
+                  style={{
+                    background: "rgba(255,71,87,0.1)",
+                    border: "1px solid rgba(255,71,87,0.3)",
+                    borderRadius: 12,
+                    padding: "10px 14px",
+                    marginBottom: 20,
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: 12,
+                    color: C.danger,
+                  }}
+                >
                   {globalErr}
                 </motion.div>
               )}
@@ -228,47 +485,105 @@ export default function Login() {
             <motion.button
               type="submit"
               disabled={loading || isLocked}
-              whileHover={!loading && !isLocked ? { scale:1.02, y:-1 } : {}}
-              whileTap={!loading && !isLocked ? { scale:.97 } : {}}
+              whileHover={!loading && !isLocked ? { scale: 1.02, y: -1 } : {}}
+              whileTap={!loading && !isLocked ? { scale: 0.98 } : {}}
               style={{
-                width:"100%", padding:"14px", borderRadius:13,
-                background: isLocked ? "rgba(255,255,255,0.06)" : `linear-gradient(135deg,${C.primary},#4f46e5)`,
-                border:"none", color: isLocked ? "rgba(255,255,255,0.25)" : "#fff",
-                fontFamily:"'JetBrains Mono',monospace", fontSize:12, letterSpacing:2, fontWeight:700,
+                width: "100%",
+                padding: "14px",
+                borderRadius: 16,
+                background: isLocked
+                  ? "rgba(255,255,255,0.06)"
+                  : `linear-gradient(135deg, ${C.primary}, #4f46e5)`,
+                border: "none",
+                color: isLocked ? "rgba(255,255,255,0.3)" : "#fff",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 12,
+                letterSpacing: 2,
+                fontWeight: 700,
                 cursor: loading || isLocked ? "not-allowed" : "pointer",
                 boxShadow: isLocked ? "none" : `0 8px 28px ${C.primaryGlow}`,
-                display:"flex", alignItems:"center", justifyContent:"center", gap:10,
-                transition:"all .25s",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+                transition: "all 0.25s",
               }}
             >
               {loading ? (
                 <>
-                  <motion.div animate={{ rotate:360 }} transition={{ duration:.8, repeat:Infinity, ease:"linear" }}
-                    style={{ width:14, height:14, border:"2px solid rgba(255,255,255,0.2)", borderTopColor:"#fff", borderRadius:"50%" }}/>
-                  CONNEXION EN COURS...
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                    style={{
+                      width: 14,
+                      height: 14,
+                      border: "2px solid rgba(255,255,255,0.2)",
+                      borderTopColor: "#fff",
+                      borderRadius: "50%",
+                    }}
+                  />
+                  CONNEXION...
                 </>
               ) : isLocked ? (
                 `🔒 BLOQUÉ (${lockSecs}s)`
-              ) : "⚡ SE CONNECTER"}
+              ) : (
+                "⚡ SE CONNECTER"
+              )}
             </motion.button>
           </form>
 
-          <p style={{ textAlign:"center", fontFamily:"'Space Grotesk',sans-serif", fontSize:13, color:C.textMid, marginTop:22 }}>
+          <p
+            style={{
+              textAlign: "center",
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: 13,
+              color: C.textMid,
+              marginTop: 24,
+            }}
+          >
             Pas encore de compte ?{" "}
-            <Link to="/register" style={{ color:C.primary, textDecoration:"none", fontWeight:700 }}>Créer un compte</Link>
+            <Link
+              to="/register"
+              style={{
+                color: C.primary,
+                textDecoration: "none",
+                fontWeight: 700,
+                borderBottom: `1px solid ${C.primary}60`,
+              }}
+            >
+              Créer un compte
+            </Link>
           </p>
         </div>
 
-        {/* Security badge */}
-        <p style={{ textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:8, color:C.textLow, letterSpacing:2, marginTop:18 }}>
+        <p
+          style={{
+            textAlign: "center",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 9,
+            color: C.textLow,
+            letterSpacing: 2,
+            marginTop: 24,
+          }}
+        >
           🔒 CONNEXION SÉCURISÉE · MAX {MAX_ATTEMPTS} TENTATIVES
         </p>
       </motion.div>
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-        * { box-sizing:border-box; }
-        input::placeholder { color:rgba(255,255,255,0.2); }
+        * {
+          box-sizing: border-box;
+        }
+        input::placeholder {
+          color: rgba(255,255,255,0.45);
+          font-size: 13px;
+        }
+        @media (max-width: 480px) {
+          input::placeholder {
+            font-size: 12px;
+          }
+        }
       `}</style>
     </div>
   );
