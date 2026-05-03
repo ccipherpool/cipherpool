@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { BauhausCard } from "../components/ui/BauhausCard";
 import { RatingInteraction } from "../components/ui/RatingInteraction";
+import { WordsPullUpMultiStyle } from "../components/ui/WordsPullUp";
 
 function StatCard({ icon: Icon, label, value, color, accentColor, delay = 0 }) {
   return (
@@ -148,10 +149,12 @@ export default function Dashboard() {
           <div>
             <p className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em] mb-2 font-mono">⚡ SAISON 1 ACTIVE</p>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight mb-3">
-              BON RETOUR,{" "}
-              <span style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                {firstName.toUpperCase()}
-              </span>
+              <WordsPullUpMultiStyle
+                segments={[
+                  { text: "BON RETOUR,", style: { color: "#fff" } },
+                  { text: " " + firstName.toUpperCase(), style: { background: "linear-gradient(135deg,#06b6d4,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" } },
+                ]}
+              />
             </h1>
             <p className="text-sm text-white/40 mb-5 font-medium">
               {matches > 0 ? `${matches} match${matches > 1 ? "s" : ""} joué${matches > 1 ? "s" : ""} — Continue à grinder.` : "Lance-toi dans ton premier tournoi !"}

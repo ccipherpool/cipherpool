@@ -10,6 +10,7 @@ import { MovingBorder } from "../components/ui/MovingBorder";
 import { GlassButton, GlassPanel } from "../components/ui/GlassEffect";
 import { RainbowButton } from "../components/ui/RainbowButton";
 import { SearchComponent } from "../components/ui/SearchComponent";
+import { WordsPullUp } from "../components/ui/WordsPullUp";
 
 const testimonials = [
   {
@@ -157,28 +158,28 @@ export default function Home() {
           <span className="text-xs text-white/80 font-medium tracking-wide">✨ Plateforme n°1 Esports Maroc</span>
         </motion.div>
 
-        <motion.h1
-          className="text-5xl md:text-7xl lg:text-8xl font-black leading-none tracking-tight mb-6"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-        >
-          <span className="block font-light text-white/80 text-3xl md:text-4xl mb-3 tracking-widest uppercase">
+        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-none tracking-tight mb-6">
+          <motion.span
+            className="block font-light text-white/80 text-3xl md:text-4xl mb-3 tracking-widest uppercase"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
             <Typewriter text={["L'ESPORTS MAROCAIN", "LES TOURNOIS PRO", "LA COMPÉTITION"]} speed={60} waitTime={2500} />
-          </span>
+          </motion.span>
           <span
             className="block text-white"
             style={{ filter: "drop-shadow(0 0 30px rgba(6,182,212,0.3))" }}
           >
-            COMMENCE
+            <WordsPullUp text="COMMENCE" style={{ animationDelay: "0.4s" }} />
           </span>
           <span
             className="block font-light italic"
             style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
           >
-            ICI.
+            <WordsPullUp text="ICI." />
           </span>
-        </motion.h1>
+        </h1>
 
         <motion.p
           className="text-lg text-white/50 max-w-xl mb-10 leading-relaxed"
