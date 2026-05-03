@@ -9,7 +9,10 @@
       "WebFetch(domain:21st.dev)",
       "Bash(node --input-type=module)",
       "Bash(npx vite *)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\" -Recurse -Force)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(node -e ' *)"
     ]
   }
 }

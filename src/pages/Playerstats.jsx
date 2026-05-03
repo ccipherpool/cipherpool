@@ -33,7 +33,7 @@ function Bar({value,max,color}){
 const POSITIONS={"1er":"🥇","2ème":"🥈","3ème":"🥉"};
 
 export default function PlayerStats(){
-  const{profile}=useOutletContext();
+  const{profile}= useOutletContext() || {};
   const[stats,setStats]=useState(null);
   const[history,setHistory]=useState([]);
   const[loading,setLoading]=useState(true);

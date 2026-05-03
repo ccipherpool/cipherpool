@@ -55,6 +55,7 @@ import TeamProfile from "./pages/Teamprofile";   // ← lowercase p
 // Clans
 import Clans       from "./pages/Clans";
 import ClanDetails from "./pages/ClanDetails";
+import CreateClan  from "./pages/CreateClan";
 
 // Phase 2
 import Achievements from "./pages/Achievements";
@@ -93,9 +94,10 @@ export default function App() {
           <Route path="/teams"      element={<Teams />} />
           <Route path="/teams/:id"  element={<TeamProfile />} />
 
-          {/* Clans */}
-          <Route path="/clans"      element={<Clans />} />
-          <Route path="/clans/:id"  element={<ClanDetails />} />
+          {/* Clans — /clans/create MUST come before /clans/:id */}
+          <Route path="/clans"         element={<Clans />} />
+          <Route path="/clans/create"  element={<CreateClan />} />
+          <Route path="/clans/:id"     element={<ClanDetails />} />
 
           {/* Tournaments */}
           <Route path="/tournaments/:id"         element={<TournamentDetails />} />

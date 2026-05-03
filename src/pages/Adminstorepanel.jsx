@@ -34,7 +34,7 @@ function CoinBadge({ amount }) {
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 export default function AdminStorePanel() {
-  const { profile } = useOutletContext();
+  const { profile } = useOutletContext() || {};
   const navigate    = useNavigate();
 
   const [tab, setTab]             = useState("grant");

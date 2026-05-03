@@ -33,7 +33,7 @@ function timeAgo(date) {
 }
 
 export default function Wallet() {
-  const { profile, balance: ctxBalance, setBalance } = useOutletContext();
+  const { profile, balance: ctxBalance, setBalance } = useOutletContext() || {};
   const [balance, setLocalBalance] = useState(ctxBalance || 0);
   const [transactions, setTransactions] = useState([]);
   const [loading] = useState(false);

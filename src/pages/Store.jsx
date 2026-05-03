@@ -396,7 +396,7 @@ function InventoryView({ userItems, items, onEquip, onUnequip }) {
 
 // ─── MAIN STORE ───────────────────────────────────────────────────────────────
 export default function Store() {
-  const { profile, setProfile, refreshProfile }   = useOutletContext();
+  const { profile, setProfile, refreshProfile }   = useOutletContext() || {};
   const [tab, setTab]             = useState("all");
   const [items, setItems]         = useState([]);
   const [userItems, setUserItems] = useState([]);

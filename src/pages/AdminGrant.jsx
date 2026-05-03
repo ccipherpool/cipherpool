@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AdminGrant() {
-  const { profile } = useOutletContext();
+  const { profile } = useOutletContext() || {};
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState("");

@@ -14,7 +14,7 @@ const cx=a=>`rgba(0,212,255,${a})`,rx=a=>`rgba(244,63,94,${a})`,gx=a=>`rgba(16,1
 function G({children,style,ac}){const[h,setH]=useState(false);return(<div onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={{position:"relative",overflow:"hidden",background:CARD,border:`1px solid ${h&&ac?ac+"35":cx(.1)}`,borderRadius:14,boxShadow:`0 4px 20px rgba(0,0,0,.4)`,transition:"border .22s",...style}}><div style={{position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${ac||cx(.3)},transparent)`,opacity:h?1:.3,transition:"opacity .22s",pointerEvents:"none"}}/>{children}</div>);}
 
 export default function AdminSupport(){
-  const{profile}=useOutletContext();
+  const{profile}= useOutletContext() || {};
   const[tickets,setTickets]=useState([]);
   const[selected,setSelected]=useState(null);
   const[messages,setMessages]=useState([]);

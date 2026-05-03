@@ -34,7 +34,7 @@ function CountdownTimer(){
 }
 
 export default function DailyRewards(){
-  const{profile,refreshProfile}=useOutletContext();
+  const{profile,refreshProfile}=useOutletContext()||{};
   const[rewards,setRewards]=useState([]);
   const[missions,setMissions]=useState([]);
   const[userMissions,setUserMissions]=useState([]);

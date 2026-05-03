@@ -43,7 +43,7 @@ function HeroBg(){
 const COLORS=["#00d4ff","#818cf8","#a78bfa","#10b981","#f43f5e","#fbbf24","#f97316","#ec4899"];
 
 export default function Teams(){
-  const{profile}=useOutletContext();
+  const{profile}= useOutletContext() || {};
   const navigate=useNavigate();
   const[teams,setTeams]=useState([]);
   const[myTeam,setMyTeam]=useState(null);

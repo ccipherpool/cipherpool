@@ -109,7 +109,7 @@ function ItemPreview({ form, imageUrl }) {
 
 // ─── MAIN DESIGNER PANEL ─────────────────────────────────────────────────────
 export default function DesignerPanel() {
-  const { profile }  = useOutletContext();
+  const { profile }  = useOutletContext() || {};
   const navigate     = useNavigate();
   const fileRef      = useRef(null);
 

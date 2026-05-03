@@ -24,7 +24,7 @@ const G = ({ children, ac=CYAN, style={}, ...p }) => (
 );
 
 export default function SubmitResult() {
-  const { profile } = useOutletContext();
+  const { profile } = useOutletContext() || {};
   const [step, setStep]           = useState(1); // 1=form 2=preview 3=success
   const [tournamentId, setTournamentId] = useState("");
   const [matchNum, setMatchNum]   = useState(1);

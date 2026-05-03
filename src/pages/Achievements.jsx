@@ -16,7 +16,7 @@ const RARITY={
 const CAT_COLORS={combat:CYAN,tournament:AMBER,social:GREEN,special:VIOLET};
 
 export default function Achievements(){
-  const{profile}=useOutletContext();
+  const{profile}=useOutletContext()||{};
   const[all,setAll]=useState([]);
   const[earned,setEarned]=useState([]);
   const[filter,setFilter]=useState("all");

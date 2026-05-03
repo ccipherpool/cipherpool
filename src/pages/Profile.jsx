@@ -255,7 +255,7 @@ function EditProfileForm({ profile, onSaved }) {
    MAIN
 ══════════════════════════════════════════════════════════════════ */
 export default function Profile() {
-  const { profile:ap, balance:cb, equippedItems:ce, refreshProfile } = useOutletContext();
+  const { profile:ap, balance:cb, equippedItems:ce, refreshProfile } = useOutletContext() || {};
   const [uploading,   setUploading]   = useState(false);
   const [deleting,    setDeleting]    = useState(false);
   const [avatarMenu,  setAvatarMenu]  = useState(false);

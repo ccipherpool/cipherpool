@@ -20,7 +20,7 @@ function G({children,style,ac}){
 
 export default function TeamProfile(){
   const{id}=useParams();
-  const{profile}=useOutletContext();
+  const{profile}= useOutletContext() || {};
   const navigate=useNavigate();
   const[team,setTeam]=useState(null);
   const[members,setMembers]=useState([]);
