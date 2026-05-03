@@ -65,7 +65,7 @@ export default function MainLayout() {
       {/* Mobile Header */}
       <header className="md:hidden h-14 bg-[#1e293b] text-white flex items-center justify-between px-4 shrink-0">
         <button onClick={() => setMobileOpen(true)}><Menu size={24}/></button>
-        <span className="font-black tracking-tighter text-lg">CIPHERPOOL</span>
+        <span className="font-black tracking-tighter text-lg text-white">CIPHERPOOL</span>
         <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-[10px]">{profile?.full_name?.[0]}</div>
       </header>
 
