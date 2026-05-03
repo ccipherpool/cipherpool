@@ -1,32 +1,37 @@
-import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/ui";
-import { ArrowRight, Zap, Trophy, Users, Gamepad2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, Zap, Trophy, Users, Gamepad2, Sparkles } from "lucide-react";
 
 export default function Home() {
   const navigate = useNavigate();
 
   const features = [
     {
-      icon: <Trophy className="w-8 h-8" />,
+      icon: <Trophy className="w-6 h-6" />,
       title: "Tournois Compétitifs",
       description: "Participez à des tournois passionnants et gagnez des récompenses",
     },
     {
-      icon: <Users className="w-8 h-8" />,
+      icon: <Users className="w-6 h-6" />,
       title: "Rejoignez des Équipes",
       description: "Formez ou rejoignez des équipes pour dominer les classements",
     },
     {
-      icon: <Gamepad2 className="w-8 h-8" />,
+      icon: <Gamepad2 className="w-6 h-6" />,
       title: "Gameplay Immersif",
       description: "Expérience de jeu optimisée avec des statistiques en temps réel",
     },
     {
-      icon: <Zap className="w-8 h-8" />,
+      icon: <Zap className="w-6 h-6" />,
       title: "Récompenses Instantanées",
       description: "Gagnez des coins et des XP à chaque victoire",
     },
+  ];
+
+  const stats = [
+    { number: "10K+", label: "Joueurs Actifs" },
+    { number: "500+", label: "Tournois Mensuels" },
+    { number: "1M+", label: "Coins Distribués" },
   ];
 
   const containerVariants = {
@@ -50,23 +55,29 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-base text-text-primary overflow-hidden">
+    <div className="min-h-screen bg-dark-950 text-neutral-100 overflow-hidden">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-bg-surface/80 backdrop-blur-md border-b border-primary-900/30">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-950/80 backdrop-blur-xl border-b border-neutral-800/50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center font-bold text-white text-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center font-bold text-white text-sm font-display">
               CP
             </div>
-            <span className="font-bold text-lg">CIPHERPOOL</span>
+            <span className="font-bold text-lg font-display tracking-tight">CipherPool</span>
           </div>
-          <div className="flex gap-4">
-            <Button variant="ghost" onClick={() => navigate("/login")}>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => navigate("/login")}
+              className="px-4 py-2 text-neutral-300 hover:text-neutral-100 transition-colors duration-200 font-medium"
+            >
               Se connecter
-            </Button>
-            <Button variant="primary" onClick={() => navigate("/register")}>
+            </button>
+            <button 
+              onClick={() => navigate("/register")}
+              className="px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg font-medium transition-colors duration-200"
+            >
               S'inscrire
-            </Button>
+            </button>
           </div>
         </div>
       </nav>
@@ -79,53 +90,59 @@ export default function Home() {
           initial="hidden"
           animate="visible"
         >
+          <motion.div
+            variants={itemVariants}
+            className="inline-flex items-center gap-2 mb-6 px-3 py-1 bg-brand-primary/10 border border-brand-primary/30 rounded-full"
+          >
+            <Sparkles className="w-4 h-4 text-brand-primary" />
+            <span className="text-sm font-medium text-brand-primary">Plateforme de Gaming Premium</span>
+          </motion.div>
+
           <motion.h1
             variants={itemVariants}
-            className="text-5xl md:text-7xl font-bold mb-6 gradient-text-primary"
+            className="text-5xl md:text-7xl font-bold mb-6 font-display tracking-tight"
           >
-            Bienvenue à CipherPool
+            <span className="bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent bg-clip-text text-transparent">
+              Dominez le Jeu
+            </span>
           </motion.h1>
 
           <motion.p
             variants={itemVariants}
-            className="text-xl text-text-secondary mb-8 max-w-2xl mx-auto"
+            className="text-lg text-neutral-400 mb-8 max-w-2xl mx-auto leading-relaxed"
           >
-            La plateforme ultime pour les joueurs de Free Fire. Participez à des tournois,
-            rejoignez des équipes et gagnez des récompenses épiques.
+            La plateforme ultime pour les joueurs de Free Fire. Participez à des tournois, rejoignez des équipes et gagnez des récompenses.
           </motion.p>
 
           <motion.div
             variants={itemVariants}
             className="flex gap-4 justify-center flex-wrap"
           >
-            <Button
-              variant="primary"
-              size="lg"
+            <button
               onClick={() => navigate("/register")}
-              className="gap-2"
+              className="px-6 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 group"
             >
               Commencer maintenant
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button
               onClick={() => navigate("/login")}
+              className="px-6 py-3 bg-dark-800 hover:bg-dark-700 text-neutral-100 border border-neutral-700 rounded-lg font-medium transition-colors duration-200"
             >
               Se connecter
-            </Button>
+            </button>
           </motion.div>
         </motion.div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-6 bg-gradient-to-b from-transparent to-primary-900/10">
+      <section className="py-20 px-6 border-t border-neutral-800/50">
         <div className="max-w-6xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-4xl font-bold text-center mb-16"
+            className="text-4xl font-bold text-center mb-16 font-display"
           >
             Pourquoi CipherPool?
           </motion.h2>
@@ -141,13 +158,13 @@ export default function Home() {
               <motion.div
                 key={index}
                 variants={itemVariants}
-                className="bg-bg-card border border-primary-900/30 rounded-xl p-6 hover:border-primary-500/50 transition-all group"
+                className="group p-6 rounded-xl border border-neutral-800 hover:border-neutral-700 bg-dark-850/50 hover:bg-dark-800/50 transition-all duration-300 cursor-pointer"
               >
-                <div className="text-primary-400 mb-4 group-hover:scale-110 transition-transform">
+                <div className="text-brand-primary mb-4 group-hover:scale-110 transition-transform duration-300">
                   {feature.icon}
                 </div>
-                <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-                <p className="text-text-secondary text-sm">{feature.description}</p>
+                <h3 className="text-lg font-bold mb-2 font-display">{feature.title}</h3>
+                <p className="text-neutral-400 text-sm leading-relaxed">{feature.description}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -155,7 +172,7 @@ export default function Home() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 px-6">
+      <section className="py-20 px-6 bg-dark-900/50 border-y border-neutral-800/50">
         <div className="max-w-6xl mx-auto">
           <motion.div
             className="grid grid-cols-1 md:grid-cols-3 gap-8"
@@ -163,23 +180,19 @@ export default function Home() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
           >
-            {[
-              { number: "10K+", label: "Joueurs Actifs" },
-              { number: "500+", label: "Tournois Mensuels" },
-              { number: "1M+", label: "Coins Distribués" },
-            ].map((stat, index) => (
+            {stats.map((stat, index) => (
               <motion.div
                 key={index}
-                className="text-center"
+                className="text-center p-6 rounded-xl border border-neutral-800/50 bg-dark-850/30 hover:bg-dark-800/50 transition-all duration-300"
                 initial={{ opacity: 0, scale: 0.8 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
               >
-                <div className="text-5xl font-bold text-primary-400 mb-2">
+                <div className="text-5xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent mb-2 font-display">
                   {stat.number}
                 </div>
-                <p className="text-text-secondary">{stat.label}</p>
+                <p className="text-neutral-400">{stat.label}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -189,27 +202,27 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-20 px-6">
         <motion.div
-          className="max-w-4xl mx-auto bg-gradient-to-r from-primary-600/20 to-secondary-600/20 border border-primary-500/30 rounded-2xl p-12 text-center"
+          className="max-w-4xl mx-auto bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 border border-brand-primary/30 rounded-xl p-12 text-center backdrop-blur-sm"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl font-bold mb-4">Prêt à commencer?</h2>
-          <p className="text-text-secondary mb-8">
+          <h2 className="text-3xl font-bold mb-4 font-display">Prêt à commencer?</h2>
+          <p className="text-neutral-400 mb-8">
             Rejoignez des milliers de joueurs et commencez votre aventure dès maintenant.
           </p>
-          <Button
-            variant="primary"
-            size="lg"
+          <button
             onClick={() => navigate("/register")}
+            className="px-6 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg font-medium transition-all duration-200 inline-flex items-center gap-2"
           >
             Créer un compte gratuit
-          </Button>
+            <ArrowRight className="w-5 h-5" />
+          </button>
         </motion.div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-primary-900/30 py-8 px-6 text-center text-text-secondary">
+      <footer className="border-t border-neutral-800/50 py-8 px-6 text-center text-neutral-500 bg-dark-900/50">
         <p>&copy; 2026 CipherPool. Tous droits réservés.</p>
       </footer>
     </div>
