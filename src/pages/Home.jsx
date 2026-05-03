@@ -1,235 +1,210 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Zap, Trophy, Users, Gamepad2, Sparkles } from "lucide-react";
+import { ArrowRight, Trophy, Users, Gamepad2, Sparkles, Shield, Star, Zap } from "lucide-react";
 
 export default function Home() {
   const navigate = useNavigate();
 
   const features = [
     {
-      icon: <Trophy className="w-6 h-6" />,
+      icon: <Trophy className="w-8 h-8" />,
       title: "Tournois Compétitifs",
-      description: "Participez à des tournois passionnants et gagnez des récompenses",
+      description: "Des tournois quotidiens avec des cashprizes réels et une organisation pro.",
+      color: "from-yellow-500/20 to-orange-500/20",
+      border: "border-yellow-500/30"
     },
     {
-      icon: <Users className="w-6 h-6" />,
-      title: "Rejoignez des Équipes",
-      description: "Formez ou rejoignez des équipes pour dominer les classements",
+      icon: <Shield className="w-8 h-8" />,
+      title: "Système Anti-Cheat",
+      description: "Une vérification rigoureuse pour garantir l'équité de chaque match.",
+      color: "from-blue-500/20 to-indigo-500/20",
+      border: "border-blue-500/30"
     },
     {
-      icon: <Gamepad2 className="w-6 h-6" />,
-      title: "Gameplay Immersif",
-      description: "Expérience de jeu optimisée avec des statistiques en temps réel",
+      icon: <Users className="w-8 h-8" />,
+      title: "Clans & Équipes",
+      description: "Créez votre clan, recrutez des joueurs et dominez le classement national.",
+      color: "from-purple-500/20 to-pink-500/20",
+      border: "border-purple-500/30"
     },
     {
-      icon: <Zap className="w-6 h-6" />,
-      title: "Récompenses Instantanées",
-      description: "Gagnez des coins et des XP à chaque victoire",
+      icon: <Zap className="w-8 h-8" />,
+      title: "Paiements Rapides",
+      description: "Récupérez vos gains instantanément via nos méthodes de paiement sécurisées.",
+      color: "from-green-500/20 to-emerald-500/20",
+      border: "border-green-500/30"
     },
   ];
-
-  const stats = [
-    { number: "10K+", label: "Joueurs Actifs" },
-    { number: "500+", label: "Tournois Mensuels" },
-    { number: "1M+", label: "Coins Distribués" },
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: "easeOut" },
-    },
-  };
 
   return (
-    <div className="min-h-screen bg-dark-950 text-neutral-100 overflow-hidden">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-950/80 backdrop-blur-xl border-b border-neutral-800/50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center font-bold text-white text-sm font-display">
+    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden font-sans">
+      {/* Navbar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate("/")}>
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-transform">
               CP
             </div>
-            <span className="font-bold text-lg font-display tracking-tight">CipherPool</span>
+            <span className="font-black text-xl tracking-tighter">CIPHERPOOL</span>
           </div>
-          <div className="flex gap-3 items-center">
-            <button 
-              onClick={() => navigate("/team")}
-              className="px-4 py-2 text-neutral-300 hover:text-neutral-100 transition-colors duration-200 font-medium"
-            >
-              Équipe
-            </button>
-            <button 
-              onClick={() => navigate("/login")}
-              className="px-4 py-2 text-neutral-300 hover:text-neutral-100 transition-colors duration-200 font-medium"
-            >
-              Se connecter
-            </button>
+          
+          <div className="hidden md:flex items-center gap-8 text-sm font-bold text-neutral-400 uppercase tracking-widest">
+            <button onClick={() => navigate("/tournaments")} className="hover:text-white transition-colors">Tournois</button>
+            <button onClick={() => navigate("/leaderboard")} className="hover:text-white transition-colors">Classement</button>
+            <button onClick={() => navigate("/team")} className="hover:text-white transition-colors">Staff</button>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate("/login")} className="hidden sm:block text-sm font-bold text-neutral-400 hover:text-white uppercase tracking-widest px-4 py-2 transition-colors">Connexion</button>
             <button 
               onClick={() => navigate("/register")}
-              className="px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg font-medium transition-colors duration-200"
+              className="bg-white text-black px-6 py-2.5 rounded-full font-black text-sm uppercase tracking-widest hover:bg-purple-500 hover:text-white transition-all active:scale-95 shadow-lg shadow-white/5"
             >
-              S'inscrire
+              Rejoindre
             </button>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
-        <motion.div
-          className="max-w-5xl mx-auto text-center"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div
-            variants={itemVariants}
-            className="inline-flex items-center gap-2 mb-6 px-3 py-1 bg-brand-primary/10 border border-brand-primary/30 rounded-full"
-          >
-            <Sparkles className="w-4 h-4 text-brand-primary" />
-            <span className="text-sm font-medium text-brand-primary">Plateforme de Gaming Premium</span>
-          </motion.div>
+      <section className="relative pt-40 pb-20 md:pt-60 md:pb-40 px-6">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <div className="absolute top-[20%] left-[-10%] w-[60%] h-[60%] bg-purple-600/10 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute bottom-[10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px]" />
+        </div>
 
-          <motion.h1
-            variants={itemVariants}
-            className="text-5xl md:text-7xl font-bold mb-6 font-display tracking-tight"
-          >
-            <span className="bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent bg-clip-text text-transparent">
-              Dominez le Jeu
-            </span>
-          </motion.h1>
-
-          <motion.p
-            variants={itemVariants}
-            className="text-lg text-neutral-400 mb-8 max-w-2xl mx-auto leading-relaxed"
-          >
-            La plateforme ultime pour les joueurs de Free Fire. Participez à des tournois, rejoignez des équipes et gagnez des récompenses.
-          </motion.p>
-
-          <motion.div
-            variants={itemVariants}
-            className="flex gap-4 justify-center flex-wrap"
-          >
-            <button
-              onClick={() => navigate("/register")}
-              className="px-6 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 group"
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="max-w-4xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8"
             >
-              Commencer maintenant
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button
-              onClick={() => navigate("/login")}
-              className="px-6 py-3 bg-dark-800 hover:bg-dark-700 text-neutral-100 border border-neutral-700 rounded-lg font-medium transition-colors duration-200"
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400">La Plateforme n°1 au Maroc</span>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-6xl md:text-8xl font-black mb-8 tracking-tighter leading-[0.9]"
             >
-              Se connecter
-            </button>
-          </motion.div>
-        </motion.div>
+              L'ESPORTS <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500">
+                SANS LIMITES.
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg md:text-xl text-neutral-400 mb-12 max-w-2xl leading-relaxed font-medium"
+            >
+              Rejoins des milliers de joueurs, participe à des tournois exclusifs Free Fire et transforme tes victoires en récompenses réelles. 
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex flex-col sm:flex-row gap-4"
+            >
+              <button
+                onClick={() => navigate("/register")}
+                className="px-10 py-5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl font-black text-lg uppercase tracking-widest hover:scale-105 transition-all shadow-2xl shadow-purple-500/20 flex items-center justify-center gap-3 group"
+              >
+                Commencer l'aventure
+                <ArrowRight className="group-hover:translate-x-2 transition-transform" />
+              </button>
+              <button
+                onClick={() => navigate("/tournaments")}
+                className="px-10 py-5 bg-white/5 border border-white/10 rounded-2xl font-black text-lg uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center"
+              >
+                Voir les tournois
+              </button>
+            </motion.div>
+          </div>
+        </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-6 border-t border-neutral-800/50">
-        <div className="max-w-6xl mx-auto">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl font-bold text-center mb-16 font-display"
-          >
-            Pourquoi CipherPool?
-          </motion.h2>
-
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            {features.map((feature, index) => (
+      {/* Features Grid */}
+      <section className="py-20 px-6 relative z-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((f, i) => (
               <motion.div
-                key={index}
-                variants={itemVariants}
-                className="group p-6 rounded-xl border border-neutral-800 hover:border-neutral-700 bg-dark-850/50 hover:bg-dark-800/50 transition-all duration-300 cursor-pointer"
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className={`p-8 rounded-3xl bg-gradient-to-br ${f.color} border ${f.border} backdrop-blur-xl group hover:-translate-y-2 transition-all duration-500`}
               >
-                <div className="text-brand-primary mb-4 group-hover:scale-110 transition-transform duration-300">
-                  {feature.icon}
+                <div className="mb-6 p-4 bg-white/5 rounded-2xl w-fit group-hover:scale-110 transition-transform duration-500">
+                  {f.icon}
                 </div>
-                <h3 className="text-lg font-bold mb-2 font-display">{feature.title}</h3>
-                <p className="text-neutral-400 text-sm leading-relaxed">{feature.description}</p>
+                <h3 className="text-xl font-black mb-3 tracking-tight uppercase">{f.title}</h3>
+                <p className="text-neutral-400 text-sm leading-relaxed font-medium">{f.description}</p>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 px-6 bg-dark-900/50 border-y border-neutral-800/50">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            {stats.map((stat, index) => (
-              <motion.div
-                key={index}
-                className="text-center p-6 rounded-xl border border-neutral-800/50 bg-dark-850/30 hover:bg-dark-800/50 transition-all duration-300"
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <div className="text-5xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent mb-2 font-display">
-                  {stat.number}
-                </div>
-                <p className="text-neutral-400">{stat.label}</p>
-              </motion.div>
-            ))}
-          </motion.div>
+      <section className="py-20 px-6 border-y border-white/5 bg-white/[0.01]">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-12">
+          {[
+            { label: "Joueurs", val: "10K+" },
+            { label: "Tournois", val: "500+" },
+            { label: "Gains", val: "1M+" },
+            { label: "Clans", val: "120+" },
+          ].map((s, i) => (
+            <div key={i} className="text-center">
+              <p className="text-4xl md:text-6xl font-black mb-2 tracking-tighter">{s.val}</p>
+              <p className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.3em]">{s.label}</p>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6">
+      <section className="py-40 px-6 text-center">
         <motion.div
-          className="max-w-4xl mx-auto bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 border border-brand-primary/30 rounded-xl p-12 text-center backdrop-blur-sm"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
+          className="max-w-4xl mx-auto p-12 md:p-24 rounded-[3rem] bg-gradient-to-br from-purple-600 to-indigo-700 relative overflow-hidden shadow-2xl shadow-purple-500/20"
         >
-          <h2 className="text-3xl font-bold mb-4 font-display">Prêt à commencer?</h2>
-          <p className="text-neutral-400 mb-8">
-            Rejoignez des milliers de joueurs et commencez votre aventure dès maintenant.
-          </p>
-          <button
-            onClick={() => navigate("/register")}
-            className="px-6 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg font-medium transition-all duration-200 inline-flex items-center gap-2"
-          >
-            Créer un compte gratuit
-            <ArrowRight className="w-5 h-5" />
-          </button>
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+          <div className="relative z-10">
+            <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tighter leading-none">PRÊT À DEVENIR <br/>UNE LÉGENDE ?</h2>
+            <button 
+              onClick={() => navigate("/register")}
+              className="bg-white text-black px-12 py-5 rounded-2xl font-black text-xl uppercase tracking-widest hover:scale-105 transition-all active:scale-95"
+            >
+              Rejoindre CipherPool
+            </button>
+          </div>
         </motion.div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-neutral-800/50 py-8 px-6 text-center text-neutral-500 bg-dark-900/50">
-        <p>&copy; 2026 CipherPool. Tous droits réservés.</p>
+      <footer className="py-12 px-6 border-t border-white/5 text-center">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center font-black text-sm">CP</div>
+            <span className="font-black tracking-tighter">CIPHERPOOL</span>
+          </div>
+          <div className="flex gap-8 text-[10px] font-black text-neutral-600 uppercase tracking-widest">
+            <span>© 2026 Tous droits réservés</span>
+            <button className="hover:text-white transition-colors">Privacy Policy</button>
+            <button className="hover:text-white transition-colors">Terms of Service</button>
+          </div>
+        </div>
       </footer>
     </div>
   );

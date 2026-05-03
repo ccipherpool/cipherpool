@@ -1,70 +1,40 @@
 import { Outlet, useNavigate, useLocation, NavLink, Link } from "react-router-dom";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X, Bell, LogOut, ChevronRight, LayoutDashboard, Trophy, BarChart3, Users2, Shield, Newspaper, MessageSquare, ShoppingBag, Wallet as WalletIcon, Medal, Gift, LineChart, Headphones } from "lucide-react";
 
 const NAV_MAIN = [
-  { to: "/dashboard",     label: "Tableau de bord",  icon: "⚡" },
-  { to: "/tournaments",   label: "Tournois",          icon: "🏆" },
-  { to: "/leaderboard",   label: "Classement",        icon: "📊" },
-  { to: "/clans",         label: "Clans",             icon: "⚔️" },
-  { to: "/teams",         label: "Équipes",           icon: "🛡️" },
-  { to: "/news",          label: "Actualités",        icon: "📰" },
-  { to: "/chat",          label: "Chat global",       icon: "💬" },
-  { to: "/store",         label: "Boutique",          icon: "🛍️" },
-  { to: "/wallet",        label: "Portefeuille",      icon: "💎" },
-  { to: "/achievements",  label: "Achievements",      icon: "🏅" },
-  { to: "/daily-rewards", label: "Daily Rewards",     icon: "🎁" },
-  { to: "/stats",         label: "Mes Stats",         icon: "📈" },
-  { to: "/support",       label: "Support",           icon: "🎧" },
-  { to: "/profile",       label: "Mon Profil",        icon: "👤" },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/tournaments", label: "Tournois", icon: Trophy },
+  { to: "/leaderboard", label: "Classement", icon: BarChart3 },
+  { to: "/clans", label: "Clans", icon: Shield },
+  { to: "/teams", label: "Équipes", icon: Users2 },
+  { to: "/news", label: "Actualités", icon: Newspaper },
+  { to: "/chat", label: "Chat global", icon: MessageSquare },
+  { to: "/store", label: "Boutique", icon: ShoppingBag },
+  { to: "/wallet", label: "Portefeuille", icon: WalletIcon },
+  { to: "/achievements", label: "Succès", icon: Medal },
+  { to: "/daily-rewards", label: "Cadeaux", icon: Gift },
+  { to: "/stats", label: "Mes Stats", icon: LineChart },
+  { to: "/support", label: "Support", icon: Headphones },
 ];
 
 const NAV_ADMIN = [
-  { to: "/admin",          label: "Administration",   icon: "🛡️", roles: ["admin","super_admin","fondateur","founder"] },
-  { to: "/admin/news",     label: "Actualités",       icon: "📰", roles: ["admin","super_admin","fondateur","founder"] },
-  { to: "/admin/results",  label: "Résultats",        icon: "📋", roles: ["admin","super_admin","fondateur","founder"] },
-  { to: "/admin-store",    label: "Boutique Admin",   icon: "🏪", roles: ["admin","super_admin"] },
-  { to: "/designer",       label: "Designer",         icon: "🎨", roles: ["designer","admin","super_admin"] },
-  { to: "/founder",        label: "Panel Fondateur",  icon: "⚡", roles: ["founder","fondateur","super_admin"] },
-  { to: "/create-tournament", label: "Créer Tournoi", icon: "➕", roles: ["founder","fondateur","super_admin"] },
-  { to: "/super-admin",    label: "Super Admin",      icon: "👑", roles: ["super_admin"] },
+  { to: "/admin", label: "Administration", icon: Shield, roles: ["admin", "super_admin", "fondateur", "founder"] },
+  { to: "/super-admin", label: "Super Admin", icon: Shield, roles: ["super_admin"] },
 ];
 
-const S = {
-  bg:       "#0b0b14",
-  sidebar:  "#0f0f1a",
-  surface:  "#14141f",
-  card:     "rgba(255,255,255,0.03)",
-  border:   "rgba(255,255,255,0.07)",
-  accent:   "#00c49a",
-  accentD:  "#009e7a",
-  orange:   "#f0a030",
-  text:     "#e8e8f4",
-  text2:    "#9898b8",
-  text3:    "#5c5c7a",
-};
-
 export default function MainLayout() {
-  const navigate  = useNavigate();
-  const location  = useLocation();
-  const [profile,    setProfile]    = useState(null);
-  const [balance,    setBalance]    = useState(0);
-  const [collapsed,  setCollapsed]  = useState(false);
-  const [adminOpen,  setAdminOpen]  = useState(false);
-  const [loading,    setLoading]    = useState(true);
-
-  const refreshProfile = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-    if (data) setProfile(data);
-    const { data: wallet } = await supabase.from("wallets").select("balance").eq("user_id", user.id).single();
-    if (wallet) setBalance(wallet.balance ?? 0);
-  }, []);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [profile, setProfile] = useState(null);
+  const [balance, setBalance] = useState(0);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let walletSub;
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/login"); return; }
@@ -76,197 +46,196 @@ export default function MainLayout() {
       setProfile(prof);
       setBalance(wallet?.balance ?? 0);
       setLoading(false);
-
-      walletSub = supabase
-        .channel(`wallet-${user.id}`)
-        .on("postgres_changes", {
-          event: "*", schema: "public", table: "wallets",
-          filter: `user_id=eq.${user.id}`,
-        }, (payload) => {
-          setBalance(payload.new?.balance ?? 0);
-        })
-        .subscribe();
     };
     init();
-    return () => { walletSub?.unsubscribe(); };
   }, [navigate]);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
   const visibleAdmin = NAV_ADMIN.filter(i => i.roles.includes(profile?.role));
-  const canAdmin = visibleAdmin.length > 0;
 
   if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: S.bg }}>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ width: 36, height: 36, borderRadius: "50%", border: `2px solid ${S.accent}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
-        <p style={{ color: S.text3, fontSize: 11, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 3 }}>CHARGEMENT</p>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      </div>
+    <div className="h-screen bg-[#0a0a0f] flex items-center justify-center">
+      <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
-  const sideW = collapsed ? 60 : 240;
-
   return (
-    <div style={{ display: "flex", height: "100vh", background: S.bg, overflow: "hidden" }}>
-      {/* ── SIDEBAR ── */}
-      <aside style={{
-        width: sideW, minWidth: sideW, height: "100vh",
-        background: S.sidebar,
-        borderRight: `1px solid ${S.border}`,
-        display: "flex", flexDirection: "column",
-        transition: "width 0.22s ease",
-        overflow: "hidden", flexShrink: 0,
-        position: "relative", zIndex: 20,
-      }}>
-        {/* Logo */}
-        <div style={{ height: 56, display: "flex", alignItems: "center", padding: "0 16px", borderBottom: `1px solid ${S.border}`, gap: 10, flexShrink: 0 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${S.accent},${S.accentD})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontWeight: 900, fontSize: 11, color: "#fff", letterSpacing: 0.5 }}>
-            CP
-          </div>
+    <div className="h-screen bg-[#0a0a0f] flex overflow-hidden font-sans text-white">
+      {/* Sidebar for Desktop */}
+      <motion.aside
+        initial={false}
+        animate={{ width: collapsed ? 80 : 280 }}
+        className="hidden md:flex flex-col bg-[#0f0f1a] border-r border-white/5 relative z-20 transition-all duration-300"
+      >
+        <div className="h-20 flex items-center px-6 gap-3 border-b border-white/5">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center font-black text-lg shadow-lg shadow-purple-500/10 shrink-0">CP</div>
           {!collapsed && (
-            <div style={{ overflow: "hidden", whiteSpace: "nowrap" }}>
-              <span style={{ fontWeight: 900, fontSize: 14, color: S.text, letterSpacing: 1 }}>CIPHER</span>
-              <span style={{ fontWeight: 400, fontSize: 14, color: S.accent, letterSpacing: 1 }}>POOL</span>
-            </div>
+            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-black tracking-tighter text-xl">CIPHERPOOL</motion.span>
           )}
         </div>
 
-        {/* Nav */}
-        <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
-          {NAV_MAIN.map(item => {
-            const active = location.pathname === item.to || (item.to !== "/dashboard" && location.pathname.startsWith(item.to));
+        <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1 custom-scrollbar">
+          {NAV_MAIN.map((item) => {
+            const Icon = item.icon;
+            const active = location.pathname === item.to;
             return (
-              <NavLink key={item.to} to={item.to} title={collapsed ? item.label : undefined}
-                style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: collapsed ? "11px 0" : "9px 14px",
-                  margin: "1px 6px", borderRadius: 8,
-                  background: active ? `rgba(0,196,154,0.1)` : "transparent",
-                  borderLeft: active ? `3px solid ${S.accent}` : "3px solid transparent",
-                  color: active ? S.accent : S.text2,
-                  textDecoration: "none", fontSize: 13, fontWeight: active ? 600 : 400,
-                  transition: "all 0.15s",
-                  justifyContent: collapsed ? "center" : "flex-start",
-                }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                  active ? "bg-purple-600/10 text-purple-400 border border-purple-500/20" : "text-neutral-500 hover:bg-white/5 hover:text-neutral-300 border border-transparent"
+                }`}
               >
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {!collapsed && <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.label}</span>}
+                <Icon className={`w-5 h-5 shrink-0 ${active ? "text-purple-400" : "group-hover:text-neutral-300"}`} />
+                {!collapsed && <span className="font-bold text-sm tracking-tight">{item.label}</span>}
               </NavLink>
             );
           })}
 
-          {/* Admin section */}
-          {canAdmin && (
-            <>
-              <div style={{ margin: "8px 10px", height: 1, background: S.border }} />
-              {!collapsed && (
-                <button onClick={() => setAdminOpen(v => !v)} style={{
-                  display: "flex", alignItems: "center", gap: 10, width: "100%",
-                  padding: "9px 14px", margin: "1px 6px", borderRadius: 8,
-                  background: "transparent", border: "none", cursor: "pointer",
-                  color: S.text3, fontSize: 12, fontWeight: 700, letterSpacing: 1,
-                }}>
-                  <span style={{ fontSize: 14 }}>⚙️</span>
-                  <span style={{ flex: 1, textAlign: "left" }}>ADMINISTRATION</span>
-                  <span style={{ transform: adminOpen ? "rotate(180deg)" : "none", transition: "transform .2s", fontSize: 10 }}>▼</span>
-                </button>
-              )}
-              <AnimatePresence>
-                {(adminOpen || collapsed) && visibleAdmin.map(item => {
-                  const active = location.pathname === item.to;
-                  return (
-                    <NavLink key={item.to} to={item.to} title={collapsed ? item.label : undefined}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 10,
-                        padding: collapsed ? "11px 0" : "8px 14px",
-                        margin: "1px 6px", borderRadius: 8,
-                        background: active ? "rgba(240,160,48,0.1)" : "transparent",
-                        borderLeft: active ? `3px solid ${S.orange}` : "3px solid transparent",
-                        color: active ? S.orange : S.text3,
-                        textDecoration: "none", fontSize: 12, fontWeight: active ? 600 : 400,
-                        transition: "all 0.15s",
-                        justifyContent: collapsed ? "center" : "flex-start",
-                      }}
-                      onMouseEnter={e => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
-                      onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
-                    >
-                      <span style={{ fontSize: 14, flexShrink: 0 }}>{item.icon}</span>
-                      {!collapsed && <span>{item.label}</span>}
-                    </NavLink>
-                  );
-                })}
-              </AnimatePresence>
-            </>
+          {visibleAdmin.length > 0 && (
+            <div className="pt-6">
+              {!collapsed && <p className="px-4 text-[10px] font-black text-neutral-700 uppercase tracking-[0.2em] mb-4">Administration</p>}
+              {visibleAdmin.map((item) => {
+                const Icon = item.icon;
+                const active = location.pathname === item.to;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                      active ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" : "text-neutral-500 hover:bg-white/5 hover:text-neutral-300 border border-transparent"
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 shrink-0 ${active ? "text-orange-400" : "group-hover:text-neutral-300"}`} />
+                    {!collapsed && <span className="font-bold text-sm tracking-tight">{item.label}</span>}
+                  </NavLink>
+                );
+              })}
+            </div>
           )}
         </nav>
 
-        {/* User card */}
-        {profile && (
-          <div style={{ borderTop: `1px solid ${S.border}`, padding: collapsed ? "12px 0" : "12px 10px", flexShrink: 0 }}>
-            <Link to="/profile" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, padding: "8px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: `1px solid ${S.border}`, justifyContent: collapsed ? "center" : "flex-start" }}
-              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
-              onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}>
-              <div style={{ width: 30, height: 30, borderRadius: "50%", background: `linear-gradient(135deg,${S.accent},${S.accentD})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-                {profile.full_name?.[0]?.toUpperCase() || "U"}
-              </div>
-              {!collapsed && (
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ color: S.text, fontSize: 12, fontWeight: 600, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile.full_name}</p>
-                  <p style={{ color: S.text3, fontSize: 10, margin: 0, textTransform: "uppercase", letterSpacing: 0.5 }}>{profile.role}</p>
+        <div className="p-4 border-t border-white/5">
+           <button 
+             onClick={() => setCollapsed(!collapsed)}
+             className="w-full flex items-center justify-center p-3 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-500 transition-all"
+           >
+             {collapsed ? <ChevronRight size={20} /> : <div className="flex items-center gap-2"><Menu size={18} /><span className="text-xs font-bold uppercase tracking-widest">Réduire</span></div>}
+           </button>
+        </div>
+      </motion.aside>
+
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 md:hidden"
+            />
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              className="fixed inset-y-0 left-0 w-[280px] bg-[#0f0f1a] z-50 md:hidden flex flex-col shadow-2xl"
+            >
+              <div className="h-20 flex items-center justify-between px-6 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center font-black text-sm">CP</div>
+                  <span className="font-black tracking-tighter text-lg">CIPHERPOOL</span>
                 </div>
-              )}
-            </Link>
-          </div>
+                <button onClick={() => setMobileOpen(false)} className="p-2 text-neutral-500"><X size={20}/></button>
+              </div>
+              <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+                {NAV_MAIN.map((item) => {
+                  const Icon = item.icon;
+                  const active = location.pathname === item.to;
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setMobileOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-4 rounded-xl transition-all ${
+                        active ? "bg-purple-600/10 text-purple-400 border border-purple-500/20" : "text-neutral-500"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-bold text-sm">{item.label}</span>
+                    </NavLink>
+                  );
+                })}
+              </nav>
+            </motion.aside>
+          </>
         )}
-      </aside>
+      </AnimatePresence>
 
-      {/* ── MAIN AREA ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
-        {/* Top bar */}
-        <header style={{
-          height: 56, background: S.sidebar, borderBottom: `1px solid ${S.border}`,
-          display: "flex", alignItems: "center", padding: "0 20px", gap: 12, flexShrink: 0,
-        }}>
-          <button onClick={() => setCollapsed(v => !v)} style={{ width: 32, height: 32, borderRadius: 7, border: `1px solid ${S.border}`, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: S.text2, fontSize: 16, flexShrink: 0 }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-            ☰
-          </button>
-
-          <div style={{ flex: 1 }} />
-
-          {/* Balance */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 8, background: "rgba(0,196,154,0.08)", border: `1px solid rgba(0,196,154,0.18)` }}>
-            <span style={{ fontSize: 14 }}>💎</span>
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, fontWeight: 700, color: S.accent }}>
-              {balance.toLocaleString("fr-FR")}
-            </span>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        {/* Top Header */}
+        <header className="h-20 bg-[#0a0a0f]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 sticky top-0 z-10">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 text-neutral-400 hover:text-white transition-colors">
+              <Menu size={24} />
+            </button>
+            <h2 className="hidden sm:block text-lg font-black tracking-tight uppercase text-neutral-400">
+              {NAV_MAIN.find(n => n.to === location.pathname)?.label || "Platform"}
+            </h2>
           </div>
 
-          {/* Notifications placeholder */}
-          <button style={{ width: 32, height: 32, borderRadius: 7, border: `1px solid ${S.border}`, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: S.text2, position: "relative" }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-            🔔
-          </button>
+          <div className="flex items-center gap-3 md:gap-6">
+            <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-purple-600/10 border border-purple-500/20 rounded-2xl">
+              <span className="text-purple-400">💎</span>
+              <span className="font-black text-sm md:text-base tracking-tighter">{balance.toLocaleString()}</span>
+            </div>
 
-          {/* Logout */}
-          <button onClick={async () => { await supabase.auth.signOut(); navigate("/login"); }}
-            style={{ width: 32, height: 32, borderRadius: 7, border: `1px solid ${S.border}`, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: S.text2 }}
-            title="Déconnexion"
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-            ↩
-          </button>
+            <button className="p-2.5 rounded-xl bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 transition-all relative">
+              <Bell size={20} />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-purple-500 rounded-full border-2 border-[#0a0a0f]" />
+            </button>
+
+            <Link to="/profile" className="flex items-center gap-3 p-1 pr-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-all border border-white/5 group">
+              <div className="w-8 h-8 md:w-9 md:h-9 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center font-black text-sm group-hover:scale-105 transition-transform">
+                {profile?.full_name?.[0]?.toUpperCase() || "U"}
+              </div>
+              <div className="hidden lg:block">
+                <p className="text-xs font-black tracking-tight leading-none mb-1">{profile?.full_name?.split(' ')[0]}</p>
+                <p className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest">{profile?.role}</p>
+              </div>
+            </Link>
+
+            <button onClick={handleLogout} className="p-2.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all">
+              <LogOut size={20} />
+            </button>
+          </div>
         </header>
 
-        {/* Content */}
-        <main style={{ flex: 1, overflowY: "auto", background: S.bg }}>
-          <Outlet context={{ profile, balance, setBalance, refreshProfile }} />
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+          <div className="max-w-7xl mx-auto">
+            <Outlet context={{ profile }} />
+          </div>
         </main>
       </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+      `}</style>
     </div>
   );
 }
