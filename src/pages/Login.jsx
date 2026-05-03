@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { Mail, Lock, AlertCircle, ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -33,129 +33,144 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-950 flex items-center justify-center px-6 relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/5 via-transparent to-brand-secondary/5 pointer-events-none" />
-      
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md relative z-10"
-      >
-        {/* Logo Section */}
-        <div className="text-center mb-12">
+    <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col md:flex-row overflow-hidden font-sans">
+      {/* Left Side: Brand & Visual (Hidden on mobile) */}
+      <div className="hidden md:flex md:w-1/2 relative bg-[#0f0f1a] items-center justify-center p-12 overflow-hidden border-r border-white/5">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px]" />
+        </div>
+        
+        <div className="relative z-10 max-w-lg text-center">
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="w-16 h-16 rounded-xl bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center font-bold text-white text-2xl mx-auto mb-6 shadow-lg shadow-brand-primary/20"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-24 h-24 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-purple-500/20"
           >
-            CP
+            <span className="text-4xl font-black tracking-tighter">CP</span>
           </motion.div>
-          <h1 className="text-3xl font-bold font-display mb-2">CipherPool</h1>
-          <p className="text-neutral-400">Connectez-vous à votre compte</p>
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-5xl font-black mb-6 tracking-tight bg-gradient-to-r from-white via-white to-white/40 bg-clip-text text-transparent"
+          >
+            RETOUR AU COMBAT. <br/>DÉFIE LES MEILLEURS.
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-neutral-400 text-lg leading-relaxed mb-8"
+          >
+            Connecte-toi pour accéder à tes tournois, tes récompenses et ton équipe. La gloire t'attend.
+          </motion.p>
+        </div>
+      </div>
+
+      {/* Right Side: Form */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative">
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center gap-3 mb-12">
+           <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center font-black text-sm">CP</div>
+           <span className="text-xl font-bold tracking-tight">CIPHERPOOL</span>
         </div>
 
-        {/* Error Alert */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 flex gap-3"
-          >
-            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-            <p className="text-red-300 text-sm">{error}</p>
-          </motion.div>
-        )}
-
-        {/* Form Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="p-8 rounded-xl border border-neutral-800 bg-dark-850/50 backdrop-blur-sm"
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="w-full max-w-md"
         >
+          <div className="mb-8">
+            <h1 className="text-3xl font-black mb-2 tracking-tight">Connexion</h1>
+            <p className="text-neutral-500">Heureux de te revoir parmi nous.</p>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex gap-3 items-center"
+              >
+                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                <p className="text-red-300 text-sm font-medium">{error}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <form onSubmit={handleLogin} className="space-y-6">
-            {/* Email Input */}
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-2">
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
-                <input
-                  type="email"
-                  placeholder="votre@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-dark-800 border border-neutral-700 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-brand-primary/50 focus:ring-1 focus:ring-brand-primary/30 transition-all duration-200"
-                />
+            <div className="space-y-4">
+              {/* Email */}
+              <div className="group">
+                <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 ml-1 group-focus-within:text-purple-500 transition-colors">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-600 group-focus-within:text-purple-500 transition-colors" />
+                  <input
+                    type="email"
+                    placeholder="nom@exemple.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full bg-[#0f0f1a] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-neutral-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="group">
+                <div className="flex justify-between items-center mb-2 ml-1">
+                  <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest group-focus-within:text-purple-500 transition-colors">Mot de passe</label>
+                  <Link to="/forgot-password" size="sm" className="text-[10px] font-bold text-neutral-600 hover:text-purple-500 transition-colors uppercase tracking-tighter">Oublié ?</Link>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-600 group-focus-within:text-purple-500 transition-colors" />
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full bg-[#0f0f1a] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-neutral-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Password Input */}
-            <div>
-              <label className="block text-sm font-medium text-neutral-300 mb-2">
-                Mot de passe
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-dark-800 border border-neutral-700 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-brand-primary/50 focus:ring-1 focus:ring-brand-primary/30 transition-all duration-200"
-                />
-              </div>
-            </div>
-
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 py-4 rounded-2xl font-bold text-white shadow-xl shadow-purple-500/20 flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50"
             >
               {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Connexion...
-                </>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
                   Se connecter
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="my-6 flex items-center gap-4">
-            <div className="flex-1 h-px bg-neutral-700/50" />
-            <span className="text-neutral-500 text-sm">ou</span>
-            <div className="flex-1 h-px bg-neutral-700/50" />
+          <div className="mt-8 text-center">
+            <p className="text-neutral-500 font-medium">
+              Pas encore de compte ?{" "}
+              <Link to="/register" className="text-purple-500 hover:text-purple-400 font-bold ml-1 transition-colors">
+                Inscris-toi ici
+              </Link>
+            </p>
           </div>
-
-          {/* Register Link */}
-          <p className="text-center text-neutral-400">
-            Pas encore de compte?{" "}
-            <Link
-              to="/register"
-              className="text-brand-primary hover:text-brand-secondary font-semibold transition-colors"
-            >
-              S'inscrire
-            </Link>
-          </p>
         </motion.div>
-
-        {/* Footer */}
-        <p className="text-center text-neutral-500 text-sm mt-6">
-          En vous connectant, vous acceptez nos conditions d'utilisation
-        </p>
-      </motion.div>
+        
+        {/* Footer info */}
+        <div className="mt-auto pt-12 flex gap-8 text-[10px] font-bold text-neutral-700 uppercase tracking-[0.2em]">
+          <span>© 2026 CIPHERPOOL</span>
+          <span className="cursor-pointer hover:text-neutral-500 transition-colors">Privacy</span>
+          <span className="cursor-pointer hover:text-neutral-500 transition-colors">Terms</span>
+        </div>
+      </div>
     </div>
   );
 }

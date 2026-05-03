@@ -1,229 +1,84 @@
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowRight, Zap, Trophy, Users, Gamepad2, Sparkles } from "lucide-react";
+import { ArrowRight, Trophy, Users, Shield, Zap, Star } from "lucide-react";
 
 export default function Home() {
   const navigate = useNavigate();
 
-  const features = [
-    {
-      icon: <Trophy className="w-6 h-6" />,
-      title: "Tournois Compétitifs",
-      description: "Participez à des tournois passionnants et gagnez des récompenses",
-    },
-    {
-      icon: <Users className="w-6 h-6" />,
-      title: "Rejoignez des Équipes",
-      description: "Formez ou rejoignez des équipes pour dominer les classements",
-    },
-    {
-      icon: <Gamepad2 className="w-6 h-6" />,
-      title: "Gameplay Immersif",
-      description: "Expérience de jeu optimisée avec des statistiques en temps réel",
-    },
-    {
-      icon: <Zap className="w-6 h-6" />,
-      title: "Récompenses Instantanées",
-      description: "Gagnez des coins et des XP à chaque victoire",
-    },
-  ];
-
-  const stats = [
-    { number: "10K+", label: "Joueurs Actifs" },
-    { number: "500+", label: "Tournois Mensuels" },
-    { number: "1M+", label: "Coins Distribués" },
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: "easeOut" },
-    },
-  };
-
   return (
-    <div className="min-h-screen bg-dark-950 text-neutral-100 overflow-hidden">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-950/80 backdrop-blur-xl border-b border-neutral-800/50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center font-bold text-white text-sm font-display">
-              CP
-            </div>
-            <span className="font-bold text-lg font-display tracking-tight">CipherPool</span>
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
+      {/* Navbar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-sm">CP</div>
+            <span className="font-black text-lg tracking-tighter">CIPHERPOOL</span>
           </div>
-          <div className="flex gap-3">
-            <button 
-              onClick={() => navigate("/login")}
-              className="px-4 py-2 text-neutral-300 hover:text-neutral-100 transition-colors duration-200 font-medium"
-            >
-              Se connecter
-            </button>
-            <button 
-              onClick={() => navigate("/register")}
-              className="px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg font-medium transition-colors duration-200"
-            >
-              S'inscrire
-            </button>
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate("/login")} className="text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest px-2">Login</button>
+            <button onClick={() => navigate("/register")} className="bg-blue-600 text-white px-5 py-2 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md shadow-blue-600/10">Rejoindre</button>
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
-        <motion.div
-          className="max-w-5xl mx-auto text-center"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div
-            variants={itemVariants}
-            className="inline-flex items-center gap-2 mb-6 px-3 py-1 bg-brand-primary/10 border border-brand-primary/30 rounded-full"
-          >
-            <Sparkles className="w-4 h-4 text-brand-primary" />
-            <span className="text-sm font-medium text-brand-primary">Plateforme de Gaming Premium</span>
-          </motion.div>
-
-          <motion.h1
-            variants={itemVariants}
-            className="text-5xl md:text-7xl font-bold mb-6 font-display tracking-tight"
-          >
-            <span className="bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent bg-clip-text text-transparent">
-              Dominez le Jeu
-            </span>
-          </motion.h1>
-
-          <motion.p
-            variants={itemVariants}
-            className="text-lg text-neutral-400 mb-8 max-w-2xl mx-auto leading-relaxed"
-          >
-            La plateforme ultime pour les joueurs de Free Fire. Participez à des tournois, rejoignez des équipes et gagnez des récompenses.
-          </motion.p>
-
-          <motion.div
-            variants={itemVariants}
-            className="flex gap-4 justify-center flex-wrap"
-          >
-            <button
-              onClick={() => navigate("/register")}
-              className="px-6 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 group"
-            >
-              Commencer maintenant
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button
-              onClick={() => navigate("/login")}
-              className="px-6 py-3 bg-dark-800 hover:bg-dark-700 text-neutral-100 border border-neutral-700 rounded-lg font-medium transition-colors duration-200"
-            >
-              Se connecter
-            </button>
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 px-6 border-t border-neutral-800/50">
-        <div className="max-w-6xl mx-auto">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl font-bold text-center mb-16 font-display"
-          >
-            Pourquoi CipherPool?
-          </motion.h2>
-
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                variants={itemVariants}
-                className="group p-6 rounded-xl border border-neutral-800 hover:border-neutral-700 bg-dark-850/50 hover:bg-dark-800/50 transition-all duration-300 cursor-pointer"
-              >
-                <div className="text-brand-primary mb-4 group-hover:scale-110 transition-transform duration-300">
-                  {feature.icon}
-                </div>
-                <h3 className="text-lg font-bold mb-2 font-display">{feature.title}</h3>
-                <p className="text-neutral-400 text-sm leading-relaxed">{feature.description}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-20 px-6 bg-dark-900/50 border-y border-neutral-800/50">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            {stats.map((stat, index) => (
-              <motion.div
-                key={index}
-                className="text-center p-6 rounded-xl border border-neutral-800/50 bg-dark-850/30 hover:bg-dark-800/50 transition-all duration-300"
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <div className="text-5xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent mb-2 font-display">
-                  {stat.number}
-                </div>
-                <p className="text-neutral-400">{stat.label}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-6">
-        <motion.div
-          className="max-w-4xl mx-auto bg-gradient-to-r from-brand-primary/10 to-brand-secondary/10 border border-brand-primary/30 rounded-xl p-12 text-center backdrop-blur-sm"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
-          <h2 className="text-3xl font-bold mb-4 font-display">Prêt à commencer?</h2>
-          <p className="text-neutral-400 mb-8">
-            Rejoignez des milliers de joueurs et commencez votre aventure dès maintenant.
+      {/* Hero */}
+      <section className="pt-32 pb-20 px-6 text-center">
+        <div className="max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] mb-8">
+            <Star size={12} fill="currentColor" /> Plateforme n°1 au Maroc
+          </div>
+          <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] mb-8 text-slate-900">
+            DOMINE LA <br/><span className="text-blue-600 text-outline">COMPÉTITION.</span>
+          </h1>
+          <p className="text-lg text-slate-500 font-medium mb-10 max-w-2xl mx-auto leading-relaxed">
+            Participe à des tournois Free Fire organisés, gagne des prix et grimpe dans le classement national. Simple, rapide et sécurisé.
           </p>
-          <button
-            onClick={() => navigate("/register")}
-            className="px-6 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg font-medium transition-all duration-200 inline-flex items-center gap-2"
-          >
-            Créer un compte gratuit
-            <ArrowRight className="w-5 h-5" />
-          </button>
-        </motion.div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button onClick={() => navigate("/register")} className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3">
+              Commencer <ArrowRight size={20} />
+            </button>
+            <button onClick={() => navigate("/tournaments")} className="px-8 py-4 bg-white border border-slate-200 text-slate-900 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
+              Voir les tournois
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="py-20 px-6 bg-white border-y border-slate-100">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+          {[
+            { icon: <Trophy className="text-blue-600"/>, title: "Tournois Pro", desc: "Organisation rigoureuse et cashprizes garantis pour chaque compétition." },
+            { icon: <Shield className="text-blue-600"/>, title: "Sécurité", desc: "Vérification manuelle des résultats et système anti-cheat performant." },
+            { icon: <Zap className="text-blue-600"/>, title: "Rapidité", desc: "Inscription en 2 clics et retrait des gains sans attente." },
+          ].map((f, i) => (
+            <div key={i} className="text-center">
+              <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-slate-100">{f.icon}</div>
+              <h3 className="text-lg font-black uppercase tracking-tight mb-3">{f.title}</h3>
+              <p className="text-sm text-slate-500 font-medium leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="py-20 px-6">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-center gap-12 md:gap-24">
+          {[
+            { label: "Joueurs", val: "10,000+" },
+            { label: "Tournois", val: "500+" },
+            { label: "Distribués", val: "100k CP" },
+          ].map((s, i) => (
+            <div key={i} className="text-center">
+              <p className="text-4xl font-black text-slate-900 mb-1">{s.val}</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{s.label}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-neutral-800/50 py-8 px-6 text-center text-neutral-500 bg-dark-900/50">
-        <p>&copy; 2026 CipherPool. Tous droits réservés.</p>
+      <footer className="py-12 border-t border-slate-200 text-center">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">© 2026 CIPHERPOOL • TOUS DROITS RÉSERVÉS</p>
       </footer>
     </div>
   );
