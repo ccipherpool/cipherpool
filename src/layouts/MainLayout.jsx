@@ -16,6 +16,8 @@ const NAV_MAIN = [
   { to: "/achievements",  label: "Achievements",      icon: "🏅" },
   { to: "/daily-rewards", label: "Daily Rewards",     icon: "🎁" },
   { to: "/stats",         label: "Mes Stats",         icon: "📈" },
+  { to: "/hall-of-fame",  label: "Hall of Fame",      icon: "🌟" },
+  { to: "/team",          label: "Notre Équipe",      icon: "👥" },
   { to: "/support",       label: "Support",           icon: "🎧" },
   { to: "/profile",       label: "Mon Profil",        icon: "👤" },
 ];

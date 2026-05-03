@@ -57,6 +57,10 @@ import Clans       from "./pages/Clans";
 import ClanDetails from "./pages/ClanDetails";
 import CreateClan  from "./pages/CreateClan";
 
+// Community
+import Team        from "./pages/Team";
+import HallOfFame  from "./pages/HallOfFame";
+
 // Phase 2
 import Achievements from "./pages/Achievements";
 import DailyRewards from "./pages/Dailyrewards"; // ← lowercase r
@@ -98,6 +102,10 @@ export default function App() {
           <Route path="/clans"         element={<Clans />} />
           <Route path="/clans/create"  element={<CreateClan />} />
           <Route path="/clans/:id"     element={<ClanDetails />} />
+
+          {/* Community */}
+          <Route path="/team"          element={<Team />} />
+          <Route path="/hall-of-fame"  element={<HallOfFame />} />
 
           {/* Tournaments */}
           <Route path="/tournaments/:id"         element={<TournamentDetails />} />
