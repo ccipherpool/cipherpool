@@ -1,218 +1,98 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-<<<<<<< HEAD
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion } from "framer-motion";
+import {
+  Trophy, Zap, Target, TrendingUp, Gift, Star,
+  ShoppingBag, BarChart3, Shield, ArrowRight, Flame,
+  Crown, Sword,
+} from "lucide-react";
+import { BauhausCard } from "../components/ui/BauhausCard";
+import { RatingInteraction } from "../components/ui/RatingInteraction";
 
-const T = {
-  bg:      "#0b0b14",
-  card:    "rgba(14,14,28,0.85)",
-  card2:   "rgba(20,20,36,0.9)",
-  border:  "rgba(255,255,255,0.07)",
-  bHov:    "rgba(0,196,154,0.22)",
-  teal:    "#00c49a",
-  tealD:   "#009e7a",
-  amber:   "#f0a030",
-  indigo:  "#818cf8",
-  rose:    "#f43f5e",
-  text:    "#e8e8f4",
-  text2:   "#9898b8",
-  text3:   "#5c5c7a",
-=======
-import { supabase } from "../lib/supabase";
-import { Trophy, Wallet, Zap, Target, ArrowRight, Star, TrendingUp, Award } from "lucide-react";
-import { motion } from "framer-motion";
-import { BackgroundBeams } from "../components/ui/BackgroundBeams";
-import { TextGenerateEffect } from "../components/ui/TextGenerateEffect";
-
-const Dashboard = () => {
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        setProfile(data);
-      }
-      setLoading(false);
-    };
-    fetchProfile();
-  }, []);
-
-  if (loading) return <div className="flex items-center justify-center h-screen bg-[#f4f7f9]"><div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
-
-  const stats = [
-    { label: 'Solde CP', value: profile?.coins || 0, icon: Wallet, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-    { label: 'XP Total', value: profile?.xp || 0, icon: Zap, color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-100' },
-    { label: 'Rang', value: profile?.rank || 'Novice', icon: Trophy, color: 'text-yellow-500', bg: 'bg-yellow-50', border: 'border-yellow-100' },
-    { label: 'Victoires', value: '24', icon: Target, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-  ];
-
+function StatCard({ icon: Icon, label, value, color, accentColor, delay = 0 }) {
   return (
-    <div className="relative min-h-screen overflow-hidden pb-20">
-      <BackgroundBeams className="opacity-20" />
-      
-      <div className="relative z-10 space-y-10 animate-in fade-in duration-700">
-        {/* Welcome Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <TextGenerateEffect words={`Bon retour, ${profile?.full_name?.split(' ')[0] || 'Guerrier'} !`} className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic" />
-            <p className="text-slate-500 font-bold text-sm uppercase tracking-[0.3em] mt-2">Prêt pour ton prochain combat ?</p>
-          </div>
-          <Link to="/tournaments" className="inline-flex items-center gap-3 px-8 py-4 bg-[#1e293b] hover:bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-black/10 group">
-            Voir les tournois <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
-
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((s, i) => (
-            <motion.div 
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className={`bg-white p-6 rounded-[2.5rem] border ${s.border} shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group`}
-            >
-              <div className={`w-12 h-12 ${s.bg} ${s.color} rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110`}>
-                <s.icon size={24} />
-              </div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{s.label}</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tighter">{s.value.toLocaleString()}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Main Content Sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Activity */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="font-black text-sm uppercase tracking-widest text-slate-900 flex items-center gap-2">
-                <TrendingUp size={18} className="text-blue-600" /> Activité Récente
-              </h3>
-              <Link to="/history" className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline">Voir tout</Link>
-            </div>
-            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
-              {[1, 2, 3].map((_, i) => (
-                <div key={i} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-blue-600">
-                      <Trophy size={18} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">Casablanca Cup #{102 + i}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Terminé • +500 CP</p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-black px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full uppercase tracking-widest">Gagné</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Progress & Goals */}
-          <div className="space-y-6">
-            <h3 className="font-black text-sm uppercase tracking-widest text-slate-900 flex items-center gap-2">
-              <Award size={18} className="text-blue-600" /> Progression
-            </h3>
-            <div className="bg-[#1e293b] rounded-[2.5rem] p-8 text-white space-y-8 shadow-xl shadow-blue-900/10">
-              <div className="space-y-4">
-                <div className="flex justify-between items-end">
-                  <div>
-                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Niveau {profile?.level || 1}</p>
-                    <p className="text-xl font-black tracking-tighter uppercase italic">Vers le rang Gold</p>
-                  </div>
-                  <span className="text-xs font-bold text-slate-400">65%</span>
-                </div>
-                <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" style={{ width: "65%" }} />
-                </div>
-                <p className="text-[10px] font-bold text-slate-400 leading-relaxed uppercase tracking-tighter">Continue à participer aux tournois pour débloquer des récompenses exclusives.</p>
-              </div>
-              
-              <button className="w-full py-4 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-50 transition-all shadow-lg">
-                Détails du profil
-              </button>
-            </div>
-          </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4 }}
+      className="relative overflow-hidden rounded-2xl p-5 group hover:-translate-y-1 transition-all duration-300"
+      style={{ background: "#0c0c1a", border: "1px solid rgba(255,255,255,0.06)" }}
+    >
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: `radial-gradient(circle at top right, ${accentColor}08, transparent 60%)` }} />
+      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg,${accentColor}00,${accentColor}40,${accentColor}00)` }} />
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">{label}</p>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}20` }}>
+          <Icon size={16} style={{ color: accentColor }} />
         </div>
       </div>
-    </div>
-  );
->>>>>>> 04dfb98f00ee60be35f7510f962478ebc3c0bc87
-};
-
-const STATUS_CFG = {
-  active:    { label: "EN COURS",   color: T.teal,    bg: "rgba(0,196,154,0.1)",  dot: T.teal },
-  upcoming:  { label: "À VENIR",    color: "#60a5fa", bg: "rgba(96,165,250,0.1)", dot: "#60a5fa" },
-  completed: { label: "TERMINÉ",    color: T.text3,   bg: "rgba(92,92,122,0.08)", dot: T.text3 },
-};
-
-function StatCard({ icon, label, value, color, sub, delay = 0 }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.4 }}
-      style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 14, padding: "20px 22px", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,${color},transparent)`, opacity: 0.7 }} />
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <p style={{ color: T.text3, fontSize: 10, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2, fontWeight: 700, marginBottom: 10 }}>{label}</p>
-          <p style={{ color, fontFamily: "'Bebas Neue',cursive", fontSize: 34, lineHeight: 1, letterSpacing: 1 }}>{value}</p>
-          {sub && <p style={{ color: T.text3, fontSize: 10, marginTop: 4 }}>{sub}</p>}
-        </div>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}15`, border: `1px solid ${color}25`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-          {icon}
-        </div>
-      </div>
+      <p className="text-3xl font-black tracking-tighter" style={{ color }}>{typeof value === "number" ? value.toLocaleString("fr-FR") : value}</p>
     </motion.div>
   );
 }
 
 function TournamentRow({ t, i }) {
-  const s = STATUS_CFG[t.status] || STATUS_CFG.upcoming;
+  const status = {
+    active:    { label: "EN COURS", color: "#06b6d4", bg: "rgba(6,182,212,0.1)" },
+    upcoming:  { label: "À VENIR",  color: "#f97316", bg: "rgba(249,115,22,0.1)" },
+    completed: { label: "TERMINÉ",  color: "rgba(255,255,255,0.25)", bg: "rgba(255,255,255,0.05)" },
+  }[t.status] || { label: "À VENIR", color: "#f97316", bg: "rgba(249,115,22,0.1)" };
+
   return (
-    <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}>
-      <Link to={`/tournaments/${t.id}`}
-        style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 12, background: T.card, border: `1px solid ${T.border}`, transition: "all .2s" }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = T.bHov; e.currentTarget.style.background = T.card2; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.background = T.card; }}>
-        <div style={{ width: 42, height: 42, borderRadius: 11, background: "rgba(0,196,154,0.1)", border: "1px solid rgba(0,196,154,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: i * 0.05 }}
+    >
+      <Link
+        to={`/tournaments/${t.id}`}
+        className="flex items-center gap-4 p-4 rounded-xl group transition-all duration-200"
+        style={{ border: "1px solid rgba(255,255,255,0.04)" }}
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "rgba(6,182,212,0.15)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = ""; e.currentTarget.style.borderColor = "rgba(255,255,255,0.04)"; }}
+      >
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0" style={{ background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.15)" }}>
           🏆
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ color: T.text, fontWeight: 700, fontSize: 14, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</p>
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <span style={{ color: T.amber, fontSize: 11, fontFamily: "'JetBrains Mono',monospace" }}>💰 {(t.prize_coins || 0).toLocaleString()}</span>
-            <span style={{ color: T.text3, fontSize: 11 }}>{t.current_players || 0}/{t.max_players || 0} joueurs</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-white truncate group-hover:text-cyan-400 transition-colors">{t.name}</p>
+          <div className="flex items-center gap-3 mt-0.5">
+            <span className="text-[11px] font-mono text-orange-400">{(t.prize_coins || 0).toLocaleString()} CP</span>
+            <span className="text-[11px] text-white/30">{t.current_players || 0}/{t.max_players || 0} joueurs</span>
           </div>
         </div>
-        <span style={{ padding: "4px 10px", borderRadius: 6, background: s.bg, color: s.color, fontSize: 9, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, letterSpacing: 1, flexShrink: 0 }}>
-          <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: s.dot, marginRight: 5, verticalAlign: "middle" }} />
-          {s.label}
+        <span className="text-[10px] font-black px-2.5 py-1 rounded-full shrink-0" style={{ color: status.color, background: status.bg }}>
+          {status.label}
         </span>
       </Link>
     </motion.div>
   );
 }
 
+const QUICK_ACCESS = [
+  { icon: Trophy,    label: "Tournois",      sub: "Participe",     to: "/tournaments",   accent: "#06b6d4" },
+  { icon: Shield,    label: "Clans",         sub: "Rejoins",       to: "/clans",         accent: "#a78bfa" },
+  { icon: ShoppingBag, label: "Boutique",    sub: "Dépense",       to: "/store",         accent: "#f97316" },
+  { icon: BarChart3, label: "Classement",    sub: "Ton rang",      to: "/leaderboard",   accent: "#34d399" },
+  { icon: Gift,      label: "Daily Bonus",   sub: "Tes bonus",     to: "/daily-rewards", accent: "#f43f5e" },
+  { icon: Star,      label: "Succès",        sub: "Tes badges",    to: "/achievements",  accent: "#fbbf24" },
+];
+
 export default function Dashboard() {
   const { profile, balance } = useOutletContext() || {};
-
   const [tournaments, setTournaments] = useState([]);
-  const [topPlayers,  setTopPlayers]  = useState([]);
+  const [topPlayers, setTopPlayers] = useState([]);
   const [playerStats, setPlayerStats] = useState(null);
-  const [loading,     setLoading]     = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchAll(); }, [profile?.id]);
 
   const fetchAll = async () => {
     try {
       const [{ data: tourney }, { data: top }, { data: stats }] = await Promise.all([
-        supabase.from("tournaments").select("id,name,status,prize_coins,entry_fee,max_players,current_players")
-          .in("status", ["active","upcoming"]).order("created_at", { ascending: false }).limit(5),
+        supabase.from("tournaments").select("id,name,status,prize_coins,max_players,current_players")
+          .in("status", ["active", "upcoming"]).order("created_at", { ascending: false }).limit(6),
         supabase.from("player_stats").select("user_id,total_points,wins,tournaments_played")
           .order("total_points", { ascending: false }).limit(5),
         profile?.id
@@ -241,178 +121,228 @@ export default function Dashboard() {
   const wr      = matches > 0 ? Math.round((wins / matches) * 100) : 0;
   const firstName = profile?.full_name?.split(" ")[0] || "Joueur";
 
-  const QUICK = [
-    { icon: "🏆", label: "TOURNOIS",      sub: "Participe & gagne",  to: "/tournaments",   color: T.teal },
-    { icon: "⚔️", label: "CLANS",         sub: "Rejoins une équipe", to: "/clans",          color: "#a78bfa" },
-    { icon: "🛍️", label: "BOUTIQUE",      sub: "Dépense tes pièces", to: "/store",          color: T.amber },
-    { icon: "📊", label: "CLASSEMENT",    sub: "Vois ton rang",       to: "/leaderboard",    color: "#60a5fa" },
-    { icon: "🎁", label: "DAILY REWARDS", sub: "Récupère tes bonus",  to: "/daily-rewards",  color: "#f43f5e" },
-    { icon: "🏅", label: "ACHIEVEMENTS",  sub: "Tes succès",          to: "/achievements",   color: "#fbbf24" },
-  ];
-
-  if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "80vh" }}>
-      <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-        style={{ width: 36, height: 36, borderRadius: "50%", border: "2px solid rgba(0,196,154,0.15)", borderTopColor: T.teal }} />
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-60">
+        <div className="w-8 h-8 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');`}</style>
-      <div style={{ fontFamily: "'Space Grotesk',sans-serif", color: T.text, padding: "24px 24px 80px", maxWidth: 1200, margin: "0 auto" }}>
+    <div className="space-y-6">
 
-        {/* ── HERO ── */}
-        <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          style={{ borderRadius: 18, background: T.card, border: `1px solid ${T.border}`, marginBottom: 24, overflow: "hidden", position: "relative" }}>
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg,rgba(0,196,154,0.05) 0%,transparent 60%,rgba(240,160,48,0.04) 100%)", pointerEvents: "none" }} />
-          <div style={{ position: "absolute", top: 0, right: 0, width: 300, height: "100%", background: "radial-gradient(ellipse at right,rgba(0,196,154,0.07),transparent 70%)", pointerEvents: "none" }} />
+      {/* ── HERO ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-2xl p-6 md:p-8"
+        style={{ background: "#0c0c1a", border: "1px solid rgba(255,255,255,0.06)" }}
+      >
+        {/* Decorative glow */}
+        <div className="absolute top-0 right-0 w-80 h-80 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 70%)" }} />
+        <div className="absolute bottom-0 left-0 w-60 h-60 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(249,115,22,0.04) 0%, transparent 70%)" }} />
+        <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg,transparent,#06b6d4,transparent)" }} />
 
-          <div style={{ padding: "32px 36px", display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "center", position: "relative" }}>
-            <div>
-              <p style={{ color: T.teal, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: 3, marginBottom: 10, fontWeight: 700 }}>⚡ SAISON 1 ACTIVE</p>
-              <h1 style={{ fontFamily: "'Bebas Neue',cursive", fontSize: "clamp(36px,5vw,54px)", letterSpacing: 2, color: T.text, margin: "0 0 10px", lineHeight: 1 }}>
-                BON RETOUR, <span style={{ color: T.teal }}>{firstName.toUpperCase()}</span>
-              </h1>
-              <p style={{ color: T.text2, fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>
-                Continue à grinder et domine le classement.{" "}
-                {matches > 0 ? `${matches} match${matches > 1 ? "s" : ""} joué${matches > 1 ? "s" : ""}.` : "Lance-toi dans ton premier tournoi !"}
-              </p>
-              <div style={{ display: "flex", gap: 10 }}>
-                <Link to="/tournaments" style={{ padding: "11px 24px", borderRadius: 10, background: `linear-gradient(135deg,${T.teal},${T.tealD})`, color: "#fff", fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: 700, letterSpacing: 1, textDecoration: "none", boxShadow: "0 4px 20px rgba(0,196,154,0.3)" }}>
-                  JOUER MAINTENANT →
-                </Link>
-                <Link to="/daily-rewards" style={{ padding: "11px 20px", borderRadius: 10, background: "rgba(240,160,48,0.1)", border: "1px solid rgba(240,160,48,0.25)", color: T.amber, fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: 700, letterSpacing: 1, textDecoration: "none" }}>
-                  🎁 DAILY
-                </Link>
-              </div>
-            </div>
-
-            <div style={{ minWidth: 200, background: "rgba(255,255,255,0.03)", border: `1px solid ${T.border}`, borderRadius: 14, padding: "20px 24px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
-                <p style={{ color: T.text3, fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: 2 }}>NIVEAU ACTUEL</p>
-                <p style={{ color: T.indigo, fontFamily: "'Bebas Neue',cursive", fontSize: 26, lineHeight: 1 }}>{level}</p>
-              </div>
-              <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 99, overflow: "hidden", marginBottom: 8 }}>
-                <motion.div initial={{ width: 0 }} animate={{ width: `${xpPct}%` }} transition={{ duration: 1.2, ease: [.22,1,.36,1], delay: 0.3 }}
-                  style={{ height: "100%", background: `linear-gradient(90deg,${T.indigo},${T.teal})`, borderRadius: 99, boxShadow: "0 0 10px rgba(129,140,248,0.4)" }} />
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: T.text3, fontFamily: "'JetBrains Mono',monospace", fontSize: 10 }}>{xp.toLocaleString()} XP</span>
-                <span style={{ color: T.text3, fontFamily: "'JetBrains Mono',monospace", fontSize: 10 }}>{xpNext.toLocaleString()}</span>
-              </div>
-              <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between" }}>
-                {[
-                  { val: wins,              color: T.amber,  label: "WINS" },
-                  { val: `${wr}%`,          color: T.teal,   label: "WIN RATE" },
-                  { val: pts.toLocaleString(), color: T.indigo, label: "POINTS" },
-                ].map(s => (
-                  <div key={s.label} style={{ textAlign: "center" }}>
-                    <p style={{ color: s.color, fontFamily: "'Bebas Neue',cursive", fontSize: 20, lineHeight: 1 }}>{s.val}</p>
-                    <p style={{ color: T.text3, fontSize: 9, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{s.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ── STATS ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14, marginBottom: 24 }}>
-          <StatCard delay={0.05} icon="💎" label="PIÈCES"    value={(balance || 0).toLocaleString("fr-FR")} color={T.amber}  sub="Solde actuel" />
-          <StatCard delay={0.1}  icon="⚡" label="XP TOTAL"  value={xp.toLocaleString()}                    color={T.indigo} sub={`Niveau ${level}`} />
-          <StatCard delay={0.15} icon="🏆" label="VICTOIRES" value={wins}                                   color={T.teal}   sub={`${matches} matchs joués`} />
-          <StatCard delay={0.2}  icon="📈" label="WIN RATE"  value={`${wr}%`}                               color={T.rose}   sub="Taux de victoire" />
-        </div>
-
-        {/* ── QUICK ACCESS ── */}
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontFamily: "'Bebas Neue',cursive", fontSize: 20, letterSpacing: 2, color: T.text, marginBottom: 14 }}>
-            ACCÈS <span style={{ color: T.teal }}>RAPIDE</span>
-          </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 12 }}>
-            {QUICK.map((q, i) => (
-              <motion.div key={q.to} initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.05 * i }}>
-                <Link to={q.to}
-                  style={{ display: "block", padding: "16px 14px", borderRadius: 13, background: T.card, border: `1px solid ${T.border}`, textDecoration: "none", transition: "all .2s" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = q.color + "40"; e.currentTarget.style.background = T.card2; e.currentTarget.style.transform = "translateY(-3px)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.background = T.card; e.currentTarget.style.transform = "none"; }}>
-                  <div style={{ fontSize: 24, marginBottom: 10 }}>{q.icon}</div>
-                  <p style={{ color: q.color, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 700, letterSpacing: 1.5, marginBottom: 3 }}>{q.label}</p>
-                  <p style={{ color: T.text3, fontSize: 11 }}>{q.sub}</p>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── TOURNAMENTS + TOP PLAYERS ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20 }}>
-
+        <div className="relative grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-center">
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <h2 style={{ fontFamily: "'Bebas Neue',cursive", fontSize: 20, letterSpacing: 2, color: T.text }}>
-                TOURNOIS <span style={{ color: T.teal }}>ACTIFS</span>
-              </h2>
-              <Link to="/tournaments" style={{ color: T.teal, fontSize: 11, fontFamily: "'JetBrains Mono',monospace", textDecoration: "none", fontWeight: 700 }}>VOIR TOUT →</Link>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {tournaments.length === 0 ? (
-                <div style={{ padding: "40px 0", textAlign: "center", color: T.text3, background: T.card, borderRadius: 14, border: `1px solid ${T.border}` }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>🏆</div>
-                  <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: 3 }}>AUCUN TOURNOI ACTIF</p>
-                </div>
-              ) : tournaments.map((t, i) => <TournamentRow key={t.id} t={t} i={i} />)}
+            <p className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em] mb-2 font-mono">⚡ SAISON 1 ACTIVE</p>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight mb-3">
+              BON RETOUR,{" "}
+              <span style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                {firstName.toUpperCase()}
+              </span>
+            </h1>
+            <p className="text-sm text-white/40 mb-5 font-medium">
+              {matches > 0 ? `${matches} match${matches > 1 ? "s" : ""} joué${matches > 1 ? "s" : ""} — Continue à grinder.` : "Lance-toi dans ton premier tournoi !"}
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/tournaments"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-black transition-all hover:opacity-90 active:scale-95"
+                style={{ background: "linear-gradient(135deg,#06b6d4,#0891b2)" }}
+              >
+                <Sword size={16} /> Jouer maintenant
+              </Link>
+              <Link
+                to="/daily-rewards"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-white/5 active:scale-95"
+                style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)", color: "#f97316" }}
+              >
+                <Gift size={16} /> Daily Bonus
+              </Link>
             </div>
           </div>
 
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <h2 style={{ fontFamily: "'Bebas Neue',cursive", fontSize: 20, letterSpacing: 2, color: T.text }}>
-                TOP <span style={{ color: T.amber }}>JOUEURS</span>
-              </h2>
-              <Link to="/leaderboard" style={{ color: T.teal, fontSize: 11, fontFamily: "'JetBrains Mono',monospace", textDecoration: "none", fontWeight: 700 }}>TOUT →</Link>
+          {/* XP Card */}
+          <div className="min-w-[200px] rounded-xl p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] text-white/30 font-mono uppercase tracking-widest">NIVEAU</span>
+              <span className="text-xl font-black" style={{ color: "#a78bfa" }}>{level}</span>
             </div>
-            <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 14, overflow: "hidden" }}>
-              {topPlayers.length === 0 ? (
-                <div style={{ padding: 24, textAlign: "center", color: T.text3 }}>
-                  <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: 2 }}>AUCUN JOUEUR</p>
+            <div className="h-1.5 rounded-full overflow-hidden mb-2" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${xpPct}%` }}
+                transition={{ duration: 1.2, ease: [.22, 1, .36, 1], delay: 0.3 }}
+                className="h-full rounded-full"
+                style={{ background: "linear-gradient(90deg,#a78bfa,#06b6d4)" }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] text-white/25 font-mono mb-4">
+              <span>{xp.toLocaleString()} XP</span>
+              <span>{xpNext.toLocaleString()}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+              {[
+                { val: wins,            color: "#f97316", label: "WINS" },
+                { val: `${wr}%`,        color: "#06b6d4", label: "WR" },
+                { val: pts.toLocaleString(), color: "#a78bfa", label: "PTS" },
+              ].map(s => (
+                <div key={s.label} className="text-center">
+                  <p className="text-base font-black" style={{ color: s.color }}>{s.val}</p>
+                  <p className="text-[9px] text-white/25 font-mono tracking-widest">{s.label}</p>
                 </div>
-              ) : topPlayers.map((p, i) => (
-                <motion.div key={p.user_id} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.07 * i }}
-                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < topPlayers.length - 1 ? `1px solid ${T.border}` : "none" }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                    background: i === 0 ? "rgba(240,160,48,0.15)" : i === 1 ? "rgba(200,200,220,0.1)" : i === 2 ? "rgba(180,140,60,0.1)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${i === 0 ? "rgba(240,160,48,0.3)" : i === 1 ? "rgba(200,200,220,0.2)" : i === 2 ? "rgba(180,140,60,0.2)" : T.border}`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontFamily: "'Bebas Neue',cursive", fontSize: 14,
-                    color: i === 0 ? T.amber : i === 1 ? "#c8c8dc" : i === 2 ? "#b48c3c" : T.text3,
-                  }}>
-                    {i < 3 ? ["🥇","🥈","🥉"][i] : p.rank}
-                  </div>
-                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg,${T.teal},${T.tealD})`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff", overflow: "hidden" }}>
-                    {p.avatar ? <img src={p.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : p.name[0]?.toUpperCase()}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ color: T.text, fontSize: 13, fontWeight: 600, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
-                    <p style={{ color: T.text3, fontSize: 10, fontFamily: "'JetBrains Mono',monospace", margin: 0 }}>{(p.total_points || 0).toLocaleString()} pts</p>
-                  </div>
-                  <p style={{ color: T.teal, fontSize: 11, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, margin: 0 }}>{p.wins}W</p>
-                </motion.div>
               ))}
-              <div style={{ padding: "12px 16px", borderTop: `1px solid ${T.border}` }}>
-                <Link to="/leaderboard"
-                  style={{ display: "block", textAlign: "center", color: T.teal, fontSize: 11, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, textDecoration: "none", padding: "8px 0" }}
-                  onMouseEnter={e => e.currentTarget.style.opacity = ".7"}
-                  onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
-                  CLASSEMENT COMPLET →
-                </Link>
-              </div>
             </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ── STATS ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <StatCard delay={0.05} icon={Trophy}     label="Pièces"    value={balance || 0}                 color="#f97316"  accentColor="#f97316" />
+        <StatCard delay={0.1}  icon={Zap}        label="XP Total"  value={xp}                           color="#a78bfa"  accentColor="#a78bfa" />
+        <StatCard delay={0.15} icon={Flame}      label="Victoires" value={wins}                         color="#06b6d4"  accentColor="#06b6d4" />
+        <StatCard delay={0.2}  icon={TrendingUp} label="Win Rate"  value={`${wr}%`}                     color="#34d399"  accentColor="#34d399" />
+      </div>
+
+      {/* ── QUICK ACCESS ── */}
+      <div>
+        <h2 className="text-[11px] font-black text-white/30 uppercase tracking-[0.25em] mb-3 flex items-center gap-2">
+          <Zap size={12} className="text-cyan-500" /> Accès Rapide
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {QUICK_ACCESS.map((q, i) => (
+            <motion.div
+              key={q.to}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.05 * i }}
+            >
+              <Link
+                to={q.to}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl group transition-all duration-200 hover:-translate-y-1"
+                style={{ background: "#0c0c1a", border: "1px solid rgba(255,255,255,0.05)" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = q.accent + "25"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)"; }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110" style={{ background: `${q.accent}12`, border: `1px solid ${q.accent}20` }}>
+                  <q.icon size={18} style={{ color: q.accent }} />
+                </div>
+                <div className="text-center">
+                  <p className="text-[11px] font-bold text-white">{q.label}</p>
+                  <p className="text-[10px] text-white/30">{q.sub}</p>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── FEATURED ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <BauhausCard
+          accentColor="#06b6d4"
+          topInscription="CIPHERPOOL ESPORTS"
+          mainText="Rejoins l'Élite"
+          subMainText="Participe aux tournois et grimpe le classement"
+          progressBarInscription="Saison 1"
+          progress={65}
+          progressValue="65%"
+          filledButtonInscription="TOURNOIS"
+          outlinedButtonInscription="PROFIL"
+          onFilledButtonClick={() => window.location.href = "/tournaments"}
+          onOutlinedButtonClick={() => window.location.href = "/profile"}
+        />
+        <div className="rounded-2xl p-6 flex flex-col items-center justify-center gap-4" style={{ background: "#0c0c1a", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] font-mono">⭐ TON EXPÉRIENCE</p>
+          <p className="text-sm text-white/50 text-center">Comment tu trouves CipherPool aujourd'hui ?</p>
+          <RatingInteraction />
+        </div>
+      </div>
+
+      {/* ── TOURNAMENTS + TOP PLAYERS ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 md:gap-6">
+
+        {/* Tournaments */}
+        <div className="rounded-2xl overflow-hidden" style={{ background: "#0c0c1a", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex items-center justify-between p-5 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <h3 className="text-sm font-black flex items-center gap-2">
+              <Trophy size={14} className="text-cyan-500" />
+              <span>Tournois Actifs</span>
+            </h3>
+            <Link to="/tournaments" className="text-[11px] font-bold text-cyan-500 hover:text-cyan-400 flex items-center gap-1 transition-colors">
+              Voir tout <ArrowRight size={12} />
+            </Link>
+          </div>
+          <div className="p-3 space-y-1">
+            {tournaments.length === 0 ? (
+              <div className="py-10 text-center">
+                <div className="text-3xl mb-2">🏆</div>
+                <p className="text-[11px] text-white/25 font-mono uppercase tracking-widest">Aucun tournoi actif</p>
+              </div>
+            ) : (
+              tournaments.map((t, i) => <TournamentRow key={t.id} t={t} i={i} />)
+            )}
+          </div>
+        </div>
+
+        {/* Top Players */}
+        <div className="rounded-2xl overflow-hidden" style={{ background: "#0c0c1a", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex items-center justify-between p-5 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+            <h3 className="text-sm font-black flex items-center gap-2">
+              <Crown size={14} className="text-orange-400" />
+              <span>Top Joueurs</span>
+            </h3>
+            <Link to="/leaderboard" className="text-[11px] font-bold text-cyan-500 hover:text-cyan-400 transition-colors">Tout →</Link>
+          </div>
+          <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.04)" }}>
+            {topPlayers.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-[11px] text-white/25 font-mono uppercase tracking-widest">Aucun joueur</p>
+              </div>
+            ) : (
+              topPlayers.map((p, i) => (
+                <motion.div
+                  key={p.user_id}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.07 * i }}
+                  className="flex items-center gap-3 px-5 py-3.5"
+                >
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0" style={{ background: i < 3 ? ["rgba(249,115,22,0.15)", "rgba(200,200,220,0.08)", "rgba(180,140,60,0.08)"][i] : "rgba(255,255,255,0.04)" }}>
+                    {i < 3 ? ["🥇", "🥈", "🥉"][i] : <span className="text-[11px] font-mono text-white/30">{p.rank}</span>}
+                  </div>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-black shrink-0 overflow-hidden" style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)" }}>
+                    {p.avatar ? <img src={p.avatar} alt="" className="w-full h-full object-cover" /> : p.name[0]?.toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-white truncate">{p.name}</p>
+                    <p className="text-[10px] text-white/30 font-mono">{(p.total_points || 0).toLocaleString()} pts</p>
+                  </div>
+                  <span className="text-[11px] font-bold text-cyan-500 font-mono">{p.wins}W</span>
+                </motion.div>
+              ))
+            )}
+          </div>
+          <div className="p-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+            <Link to="/leaderboard" className="block text-center text-[11px] font-bold text-cyan-500 hover:text-cyan-400 py-2 transition-colors">
+              Classement Complet →
+            </Link>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

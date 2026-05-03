@@ -192,7 +192,7 @@ export default function AdminGrant() {
   }
 
   return (
-    <div className="min-h-screen bg-[#030014] text-white cyber-grid p-8">
+    <div className="text-white space-y-6">
       <div className="max-w-7xl mx-auto">
         
         <div className="flex justify-between items-center mb-8">

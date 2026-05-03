@@ -12,7 +12,12 @@
       "Bash(xargs grep *)",
       "Bash(Get-ChildItem -Path \"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\" -Recurse -Force)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(Get-ChildItem -Path \"src\" -Filter \"*.jsx\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Bash(xargs -I{} basename {})",
+      "Bash(Get-Item \"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\\\\src\\\\pages\\\\Dashboard_NEW.jsx\")",
+      "Bash(Select-Object Name, Length, LastWriteTime)"
     ]
   }
 }

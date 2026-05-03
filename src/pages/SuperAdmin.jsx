@@ -600,25 +600,17 @@ export default function SuperAdmin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#030014] flex items-center justify-center relative overflow-hidden">
-        {/* خلفية متحركة */}
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-purple-600/10 to-cyan-600/10 rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="relative z-10 text-center">
-          <div className="w-20 h-20 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white/60 text-lg">Chargement du panneau de contrôle...</p>
-          <p className="text-white/40 text-sm mt-2">Système de sécurité activé</p>
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="w-10 h-10 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-white/40 text-sm font-mono tracking-widest">CHARGEMENT...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#030014] text-white relative overflow-hidden">
+    <div className="text-white space-y-6 relative overflow-hidden">
       
       {/* خلفية متحركة سينمائية */}
       <div className="fixed inset-0 pointer-events-none">

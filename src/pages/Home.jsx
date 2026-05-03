@@ -1,139 +1,409 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Trophy, Users, Shield, Zap, Star } from "lucide-react";
-import { CircularTestimonials } from "../components/CircularTestimonials";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Trophy, Shield, Zap, Star, Users, Crown } from "lucide-react";
+import { MeshGradient } from "@paper-design/shaders-react";
+import { CircularTestimonials } from "../components/ui/CircularTestimonials";
+import { Typewriter } from "../components/ui/Typewriter";
+import { ContainerScroll } from "../components/ui/ContainerScroll";
+import { MovingBorder } from "../components/ui/MovingBorder";
+import { GlassButton, GlassPanel } from "../components/ui/GlassEffect";
+import { RainbowButton } from "../components/ui/RainbowButton";
+import { SearchComponent } from "../components/ui/SearchComponent";
+
+const testimonials = [
+  {
+    name: "Ahmed Pro",
+    designation: "Gagnant Elite Cup",
+    quote: "CipherPool est la seule plateforme au Maroc qui respecte vraiment les joueurs. Paiements rapides et tournois ultra-pros.",
+    src: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop",
+  },
+  {
+    name: "Yassine Gamer",
+    designation: "Chef de Clan",
+    quote: "L'interface est super fluide sur mobile. On gère nos matchs sans le moindre problème. Top niveau.",
+    src: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop",
+  },
+  {
+    name: "Sara Esports",
+    designation: "Streameuse & Compétitrice",
+    quote: "Une organisation impeccable. C'est vraiment l'avenir de l'esports au Maroc. Je recommande à 100%.",
+    src: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
+  },
+];
+
+const STATS = [
+  { val: "10,000+", label: "Joueurs" },
+  { val: "500+",    label: "Tournois" },
+  { val: "100k",    label: "Cash CP" },
+  { val: "150+",    label: "Clans" },
+];
+
+const FEATURES = [
+  {
+    icon: Trophy,
+    title: "Tournois Pro",
+    desc: "Organisation rigoureuse avec des arbitres dédiés pour chaque match. Du solo au squad.",
+    accent: "#06b6d4",
+  },
+  {
+    icon: Shield,
+    title: "Sécurité Totale",
+    desc: "Vérification manuelle des résultats et système anti-cheat performant.",
+    accent: "#a78bfa",
+  },
+  {
+    icon: Zap,
+    title: "Paiements Flash",
+    desc: "Retire tes gains instantanément via nos partenaires sécurisés.",
+    accent: "#f97316",
+  },
+];
 
 export default function Home() {
   const navigate = useNavigate();
-
-  const testimonials = [
-    {
-      name: "Ahmed Pro",
-      designation: "Gagnant Elite Cup",
-      quote: "CipherPool est la seule plateforme au Maroc qui respecte vraiment les joueurs. Paiements rapides et tournois pro.",
-      src: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop"
-    },
-    {
-      name: "Yassine Gamer",
-      designation: "Chef de Clan",
-      quote: "L'interface est super fluide sur mon téléphone. On gère nos matchs sans aucun problème.",
-      src: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop"
-    },
-    {
-      name: "Sara Esports",
-      designation: "Streameuse",
-      quote: "Une organisation impeccable. C'est l'avenir de l'esports au Maroc.",
-      src: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop"
-    }
-  ];
+  const [navOpen, setNavOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-            <div className="w-8 h-8 bg-[#1e293b] rounded-lg flex items-center justify-center font-black text-white text-sm">CP</div>
-            <span className="font-black text-lg tracking-tighter">CIPHERPOOL</span>
+    <div className="min-h-screen bg-black text-white font-sans overflow-x-hidden">
+
+      {/* ── MESH GRADIENT BACKGROUND ── */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <MeshGradient
+          className="absolute inset-0 w-full h-full"
+          colors={["#000000", "#06b6d4", "#0891b2", "#164e63", "#f97316"]}
+          speed={0.3}
+          backgroundColor="#000000"
+        />
+        <MeshGradient
+          className="absolute inset-0 w-full h-full opacity-30"
+          colors={["#000000", "#ffffff", "#06b6d4", "#f97316"]}
+          speed={0.2}
+          wireframe={true}
+          backgroundColor="transparent"
+        />
+        <div className="absolute inset-0 bg-black/50" />
+      </div>
+
+      {/* ── SVG FILTERS ── */}
+      <svg className="absolute h-0 w-0" aria-hidden="true">
+        <defs>
+          <filter id="home-gooey-filter" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="gooey" />
+            <feComposite in="SourceGraphic" in2="gooey" operator="atop" />
+          </filter>
+          <linearGradient id="cp-hero-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#06b6d4" />
+            <stop offset="50%" stopColor="#ffffff" />
+            <stop offset="100%" stopColor="#f97316" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      {/* ── NAVBAR ── */}
+      <nav
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 h-16"
+        style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+      >
+        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate("/")}>
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-black"
+            style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)" }}
+          >
+            CP
           </div>
-          <div className="flex items-center gap-6">
-            <button onClick={() => navigate("/team")} className="text-xs font-bold text-slate-500 hover:text-blue-600 uppercase tracking-widest transition-colors">Staff</button>
-            <button onClick={() => navigate("/login")} className="text-xs font-bold text-slate-500 hover:text-blue-600 uppercase tracking-widest transition-colors">Login</button>
-            <button onClick={() => navigate("/register")} className="bg-blue-600 text-white px-5 py-2 rounded-full font-bold text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md shadow-blue-600/10">Rejoindre</button>
-          </div>
+          <span className="font-black text-sm tracking-wider text-white">CIPHERPOOL</span>
+        </div>
+
+        <div className="hidden md:flex items-center gap-1">
+          {["Features", "Tournois", "Staff"].map(item => (
+            <button
+              key={item}
+              onClick={() => item === "Staff" ? navigate("/team") : item === "Tournois" ? navigate("/tournaments") : null}
+              className="px-4 py-2 text-xs font-medium text-white/60 hover:text-white rounded-full hover:bg-white/5 transition-all"
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+
+        {/* Login button with gooey effect */}
+        <div className="relative flex items-center group" style={{ filter: "url(#home-gooey-filter)" }}>
+          <button
+            className="absolute right-0 px-2.5 py-2 rounded-full bg-white text-black font-medium text-xs cursor-pointer h-8 flex items-center justify-center -translate-x-10 group-hover:-translate-x-20 z-0 transition-all duration-300"
+            onClick={() => navigate("/register")}
+          >
+            <ArrowRight size={14} />
+          </button>
+          <button
+            className="px-6 py-2 rounded-full bg-white text-black font-bold text-xs cursor-pointer h-8 flex items-center z-10 transition-all duration-300"
+            onClick={() => navigate("/login")}
+          >
+            Login
+          </button>
         </div>
       </nav>
 
-      {/* Hero Section - Toornament Style */}
-      <section className="pt-32 pb-20 px-6 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] mb-6">
-              <Star size={12} fill="currentColor" /> Plateforme n°1 au Maroc
-            </div>
-            <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.95] mb-8 text-slate-900">
-              L'ESPORTS <br/><span className="text-blue-600">PROFESSIONNEL.</span>
-            </h1>
-            <p className="text-lg text-slate-500 font-medium mb-10 max-w-xl leading-relaxed">
-              La plateforme ultime pour les compétitions Free Fire. Participe à des tournois organisés, gagne des prix réels et rejoins l'élite du gaming marocain.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button onClick={() => navigate("/register")} className="px-8 py-4 bg-[#1e293b] text-white rounded-xl font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-black/10 flex items-center justify-center gap-3">
-                Commencer <ArrowRight size={20} />
-              </button>
-              <button onClick={() => navigate("/tournaments")} className="px-8 py-4 bg-white border border-slate-200 text-slate-900 rounded-xl font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
-                Voir les tournois
-              </button>
-            </div>
-          </div>
-          <div className="hidden lg:block relative">
-            <div className="absolute -inset-4 bg-blue-600/5 rounded-[3rem] blur-3xl" />
-            <img 
-              src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80" 
-              alt="Gaming" 
-              className="relative rounded-[2.5rem] shadow-2xl border border-slate-200"
-            />
-          </div>
-        </div>
+      {/* ── HERO ── */}
+      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center text-center px-6 pt-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
+        >
+          <span className="text-xs text-white/80 font-medium tracking-wide">✨ Plateforme n°1 Esports Maroc</span>
+        </motion.div>
+
+        <motion.h1
+          className="text-5xl md:text-7xl lg:text-8xl font-black leading-none tracking-tight mb-6"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+        >
+          <span className="block font-light text-white/80 text-3xl md:text-4xl mb-3 tracking-widest uppercase">
+            <Typewriter text={["L'ESPORTS MAROCAIN", "LES TOURNOIS PRO", "LA COMPÉTITION"]} speed={60} waitTime={2500} />
+          </span>
+          <span
+            className="block text-white"
+            style={{ filter: "drop-shadow(0 0 30px rgba(6,182,212,0.3))" }}
+          >
+            COMMENCE
+          </span>
+          <span
+            className="block font-light italic"
+            style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
+          >
+            ICI.
+          </span>
+        </motion.h1>
+
+        <motion.p
+          className="text-lg text-white/50 max-w-xl mb-10 leading-relaxed"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+        >
+          Participe aux tournois Free Fire organisés, gagne des prix réels et rejoint l'élite du gaming marocain.
+        </motion.p>
+
+        {/* Search CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1.0 }}
+          className="mb-10"
+        >
+          <SearchComponent placeholder="Chercher un tournoi..." />
+        </motion.div>
+
+        <motion.div
+          className="flex flex-col sm:flex-row items-center gap-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1.1 }}
+        >
+          <RainbowButton onClick={() => navigate("/register")} className="px-8 py-3 text-base font-bold">
+            Rejoindre — Gratuit <ArrowRight size={18} />
+          </RainbowButton>
+          <button
+            onClick={() => navigate("/tournaments")}
+            className="px-8 py-3 rounded-xl text-sm font-bold text-white/70 hover:text-white transition-all hover:bg-white/5"
+            style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+          >
+            Voir les tournois
+          </button>
+        </motion.div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+          animate={{ y: [0, 8, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <div className="w-px h-8 bg-gradient-to-b from-white/0 to-white/30" />
+          <div className="w-1 h-1 rounded-full bg-white/30" />
+        </motion.div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-[#f8fafc]">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 px-6">
-          {[
-            { label: "Joueurs", val: "10,000+" },
-            { label: "Tournois", val: "500+" },
-            { label: "Cashprizes", val: "100k CP" },
-            { label: "Clans", val: "150+" },
-          ].map((s, i) => (
-            <div key={i} className="text-center md:text-left border-l-2 border-blue-600 pl-6">
-              <p className="text-3xl font-black text-slate-900 mb-1">{s.val}</p>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{s.label}</p>
-            </div>
+      {/* ── STATS ── */}
+      <section className="relative z-10 py-16 px-6">
+        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
+          {STATS.map((s, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="text-center"
+            >
+              <p
+                className="text-4xl font-black mb-1"
+                style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
+              >
+                {s.val}
+              </p>
+              <p className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">{s.label}</p>
+            </motion.div>
           ))}
         </div>
       </section>
 
-      {/* Testimonials - Using User's Component */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-6 text-center mb-12">
-          <h2 className="text-3xl font-black tracking-tight uppercase italic mb-4">Ils nous font confiance</h2>
-          <p className="text-slate-500 font-medium">Découvrez les retours de nos meilleurs joueurs.</p>
-        </div>
-        <CircularTestimonials testimonials={testimonials} />
+      {/* ── SCROLL 3D PREVIEW ── */}
+      <section className="relative z-10">
+        <ContainerScroll
+          titleComponent={
+            <div className="text-center mb-4">
+              <p className="text-[11px] font-black text-cyan-500 uppercase tracking-[0.3em] mb-3 font-mono">PLATEFORME</p>
+              <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
+                Tout ce dont tu as besoin,
+                <br />
+                <span style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                  dans un seul endroit.
+                </span>
+              </h2>
+            </div>
+          }
+        >
+          <div className="w-full h-full rounded-xl overflow-hidden relative">
+            <img
+              src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1200&q=80"
+              alt="CipherPool Platform"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
+              <div className="text-center">
+                <p className="text-6xl font-black tracking-tighter mb-2" style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>CIPHERPOOL</p>
+                <p className="text-white/60 font-mono text-sm tracking-widest uppercase">Esports Platform Morocco</p>
+              </div>
+            </div>
+          </div>
+        </ContainerScroll>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-20 px-6 bg-[#f8fafc] border-t border-slate-200">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {[
-              { icon: <Trophy className="text-blue-600"/>, title: "Tournois Pro", desc: "Organisation rigoureuse avec des arbitres dédiés pour chaque match." },
-              { icon: <Shield className="text-blue-600"/>, title: "Sécurité Totale", desc: "Vérification manuelle des résultats et système anti-cheat performant." },
-              { icon: <Zap className="text-blue-600"/>, title: "Paiements Flash", desc: "Retire tes gains instantanément via nos partenaires sécurisés." },
-            ].map((f, i) => (
-              <div key={i} className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
-                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 border border-blue-100">{f.icon}</div>
-                <h3 className="text-lg font-black uppercase tracking-tight mb-3">{f.title}</h3>
-                <p className="text-sm text-slate-500 font-medium leading-relaxed">{f.desc}</p>
-              </div>
+      {/* ── FEATURES ── */}
+      <section className="relative z-10 py-20 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <p className="text-[11px] font-black text-cyan-500 uppercase tracking-[0.3em] mb-3 font-mono">POURQUOI CIPHERPOOL</p>
+            <h2 className="text-4xl font-black text-white tracking-tight">Ce qui nous distingue</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {FEATURES.map((f, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15 }}
+              >
+                <MovingBorder
+                  outerClassName="w-full"
+                  className="p-6"
+                  colors={[f.accent]}
+                  duration={4 + i}
+                  borderWidth={1}
+                  radius={16}
+                >
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
+                    style={{ background: `${f.accent}15`, border: `1px solid ${f.accent}20` }}
+                  >
+                    <f.icon size={22} style={{ color: f.accent }} />
+                  </div>
+                  <h3 className="text-lg font-black text-white mb-3 tracking-tight">{f.title}</h3>
+                  <p className="text-sm text-white/40 leading-relaxed">{f.desc}</p>
+                </MovingBorder>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 border-t border-slate-200 bg-white text-center">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-slate-900 rounded flex items-center justify-center font-black text-white text-[10px]">CP</div>
-            <span className="font-black text-sm tracking-tighter">CIPHERPOOL</span>
+      {/* ── TESTIMONIALS ── */}
+      <section className="relative z-10 py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-[11px] font-black text-orange-400 uppercase tracking-[0.3em] mb-3 font-mono">TÉMOIGNAGES</p>
+            <h2 className="text-4xl font-black text-white tracking-tight">
+              Ils nous font{" "}
+              <span style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                confiance
+              </span>
+            </h2>
           </div>
-          <div className="flex gap-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            <button className="hover:text-blue-600 transition-colors">Confidentialité</button>
-            <button className="hover:text-blue-600 transition-colors">Conditions</button>
-            <button className="hover:text-blue-600 transition-colors">Contact</button>
+          <div className="flex justify-center">
+            <CircularTestimonials
+              testimonials={testimonials}
+              colors={{
+                name: "#ffffff",
+                designation: "rgba(255,255,255,0.4)",
+                testimony: "rgba(255,255,255,0.65)",
+                arrowBackground: "#0c0c1a",
+                arrowForeground: "#06b6d4",
+                arrowHoverBackground: "#0891b2",
+              }}
+              fontSizes={{ name: "1.4rem", designation: "0.875rem", quote: "1rem" }}
+            />
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">© 2026 CIPHERPOOL</p>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="relative z-10 py-24 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative overflow-hidden rounded-3xl p-10 md:p-14"
+            style={{ background: "#0c0c1a", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at top, rgba(6,182,212,0.1), transparent 60%)" }} />
+            <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg,transparent,#06b6d4,transparent)" }} />
+            <Crown size={40} className="mx-auto mb-5 text-orange-400 opacity-80" />
+            <h2 className="text-4xl font-black text-white mb-4 tracking-tight">
+              Prêt à{" "}
+              <span style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                dominer
+              </span>
+              {" "}?
+            </h2>
+            <p className="text-white/40 text-base mb-8 leading-relaxed max-w-md mx-auto">
+              Rejoins des milliers de joueurs marocains et prouve tes skills dans des tournois organisés.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <RainbowButton onClick={() => navigate("/register")} className="px-10 py-4 text-base font-bold">
+                Créer un compte — Gratuit
+              </RainbowButton>
+              <button
+                onClick={() => navigate("/login")}
+                className="px-10 py-4 rounded-xl text-sm font-bold text-white/60 hover:text-white transition-all"
+                style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+              >
+                Déjà un compte ? Login
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="relative z-10 py-10 px-6" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-black text-black" style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)" }}>CP</div>
+            <span className="font-black text-sm tracking-wider text-white">CIPHERPOOL</span>
+          </div>
+          <div className="flex gap-6 text-[10px] font-bold text-white/25 uppercase tracking-widest">
+            {["Confidentialité", "Conditions", "Contact"].map(l => (
+              <button key={l} className="hover:text-white/60 transition-colors">{l}</button>
+            ))}
+          </div>
+          <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest">© 2026 CIPHERPOOL</p>
         </div>
       </footer>
     </div>

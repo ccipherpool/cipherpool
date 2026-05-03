@@ -168,14 +168,14 @@ export default function ManageTournament() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center">
-        <div className="text-white/40">Loading tournament data...</div>
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-white">
+    <div className="text-white space-y-6">
       
       <div className="border-b border-white/5 bg-[#11151C]/50">
         <div className="max-w-7xl mx-auto px-8 py-8">

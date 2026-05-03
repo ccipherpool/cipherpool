@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { motion } from "framer-motion";
+import { ChevronLeft } from "lucide-react";
 
 export default function TournamentWaiting() {
   const { id } = useParams();
@@ -11,29 +13,22 @@ export default function TournamentWaiting() {
 
   useEffect(() => {
     fetchData();
-    
-    // اشتراك في التحديثات المباشرة
+
     const subscription = supabase
-      .channel('tournament-waiting')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'tournament_participants',
-          filter: `tournament_id=eq.${id}`
-        },
-        (payload) => {
-          console.log("Update received:", payload);
-          if (payload.new.user_id === userRequest?.user_id) {
-            setUserRequest(payload.new);
-            if (payload.new.status === "approved") {
-              alert("✅ Your request has been approved! Redirecting to tournament room...");
-              navigate(`/tournaments/${id}/room`);
-            }
+      .channel("tournament-waiting-" + id)
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "tournament_participants",
+        filter: `tournament_id=eq.${id}`,
+      }, (payload) => {
+        if (payload.new.user_id === userRequest?.user_id) {
+          setUserRequest(payload.new);
+          if (payload.new.status === "approved") {
+            navigate(`/tournaments/${id}/room`);
           }
         }
-      )
+      })
       .subscribe();
 
     return () => subscription.unsubscribe();
@@ -41,102 +36,108 @@ export default function TournamentWaiting() {
 
   const fetchData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      navigate("/login");
-      return;
-    }
+    if (!user) { navigate("/login"); return; }
 
-    // جلب البطولة
-    const { data: tournamentData } = await supabase
-      .from("tournaments")
-      .select("*")
-      .eq("id", id)
-      .single();
-
+    const { data: tournamentData } = await supabase.from("tournaments").select("*").eq("id", id).single();
     setTournament(tournamentData);
 
-    // جلب طلب المستخدم
     const { data: requestData } = await supabase
-      .from("tournament_participants")
-      .select("*")
-      .eq("tournament_id", id)
-      .eq("user_id", user.id)
-      .single();
+      .from("tournament_participants").select("*").eq("tournament_id", id).eq("user_id", user.id).single();
 
-    if (!requestData) {
-      navigate(`/tournaments/${id}`);
-      return;
-    }
-
+    if (!requestData) { navigate(`/tournaments/${id}`); return; }
     setUserRequest(requestData);
     setLoading(false);
 
-    // إذا كان مقبولاً، نوجه للروم
-    if (requestData.status === "approved") {
-      navigate(`/tournaments/${id}/room`);
-    }
+    if (requestData.status === "approved") navigate(`/tournaments/${id}/room`);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center">
-        <div className="text-white/40">Loading...</div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="flex items-center justify-center py-32">
+      <div className="w-8 h-8 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
+    </div>
+  );
+
+  const STATUS_CFG = {
+    pending:  { icon: "⏳", color: "#f97316", label: "En attente d'approbation", bg: "rgba(249,115,22,0.08)", border: "rgba(249,115,22,0.2)" },
+    approved: { icon: "✅", color: "#10b981", label: "Approuvé ! Redirection...", bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.2)" },
+    rejected: { icon: "❌", color: "#f43f5e", label: "Demande refusée", bg: "rgba(244,63,94,0.08)", border: "rgba(244,63,94,0.2)" },
+  };
+  const st = STATUS_CFG[userRequest?.status] || STATUS_CFG.pending;
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-white">
-      
-      <div className="max-w-3xl mx-auto px-8 py-12 text-center">
-        
-        {/* Status Icon */}
-        <div className="text-8xl mb-8 animate-pulse">
-          {userRequest?.status === "pending" ? "⏳" : 
-           userRequest?.status === "approved" ? "✅" : "❌"}
-        </div>
+    <div className="space-y-5 max-w-xl mx-auto">
+      <button onClick={() => navigate(`/tournaments/${id}`)} className="flex items-center gap-2 text-white/30 hover:text-cyan-400 font-mono text-[10px] uppercase tracking-widest transition-colors">
+        <ChevronLeft size={14} /> Retour au tournoi
+      </button>
 
-        <h1 className="text-4xl font-bold mb-4">
-          {userRequest?.status === "pending" && "Request Pending"}
-          {userRequest?.status === "approved" && "Approved!"}
-          {userRequest?.status === "rejected" && "Request Rejected"}
-        </h1>
+      <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+        className="rounded-2xl p-8 text-center" style={{ background: "#0c0c1a", border: "1px solid rgba(255,255,255,0.06)" }}>
 
-        <p className="text-xl text-white/60 mb-8">
-          {userRequest?.status === "pending" && 
-            "Your request has been sent to the tournament organizer. You'll be notified once approved."}
-          {userRequest?.status === "approved" && 
-            "Redirecting to tournament room..."}
-          {userRequest?.status === "rejected" && 
-            "Your request was declined by the organizer."}
-        </p>
+        {/* Top accent */}
+        <div className="h-px w-full mb-8" style={{ background: `linear-gradient(90deg,transparent,${st.color},transparent)` }} />
+
+        <motion.div
+          animate={userRequest?.status === "pending" ? { opacity: [1, 0.4, 1] } : {}}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="text-6xl mb-6"
+        >
+          {st.icon}
+        </motion.div>
+
+        <h1 className="text-2xl font-black text-white mb-3 tracking-tight">{st.label}</h1>
 
         {userRequest?.status === "pending" && (
-          <div className="space-y-4">
-            <div className="bg-[#11151C] border border-white/5 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-white mb-2">{tournament?.name}</h3>
-              <p className="text-white/40">Waiting for organizer approval</p>
+          <p className="text-sm text-white/40 leading-relaxed mb-6">
+            Ta demande d'inscription a été envoyée. Tu recevras une notification dès que le staff approuve ta participation.
+          </p>
+        )}
+        {userRequest?.status === "approved" && (
+          <p className="text-sm text-white/40 leading-relaxed mb-6">
+            Félicitations ! Tu as été approuvé. Tu vas être redirigé vers la salle du tournoi...
+          </p>
+        )}
+        {userRequest?.status === "rejected" && (
+          <p className="text-sm text-white/40 leading-relaxed mb-6">
+            Ta demande a été refusée par l'organisateur. Tu peux t'inscrire à d'autres tournois.
+          </p>
+        )}
+
+        {/* Tournament card */}
+        {tournament && (
+          <div className="rounded-xl p-4 mb-6 text-left" style={{ background: st.bg, border: `1px solid ${st.border}` }}>
+            <p className="font-bold text-white text-sm mb-1">{tournament.name}</p>
+            <div className="flex gap-4 mt-2">
+              <span className="text-[10px] font-mono text-white/40">💰 {tournament.prize_coins || 0} CP</span>
+              <span className="text-[10px] font-mono text-white/40">👥 {tournament.current_players || 0}/{tournament.max_players || 0}</span>
             </div>
-            
-            <Link
-              to={`/tournaments/${id}`}
-              className="inline-block px-6 py-3 border border-white/10 hover:border-white/30 rounded-lg transition"
-            >
-              ← Back to Tournament
-            </Link>
           </div>
         )}
 
-        {userRequest?.status === "rejected" && (
-          <Link
-            to="/tournaments"
-            className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition"
-          >
-            Browse Other Tournaments
-          </Link>
-        )}
-      </div>
+        {/* Actions */}
+        <div className="flex flex-col gap-3">
+          {userRequest?.status === "approved" && (
+            <Link to={`/tournaments/${id}/room`}
+              className="py-4 rounded-xl font-bold text-xs font-mono tracking-widest flex items-center justify-center gap-2 transition-all"
+              style={{ background: "linear-gradient(135deg,#10b981,#059669)", color: "#000", boxShadow: "0 4px 16px rgba(16,185,129,0.3)" }}>
+              ENTRER DANS LA SALLE →
+            </Link>
+          )}
+          {userRequest?.status === "rejected" && (
+            <Link to="/tournaments"
+              className="py-4 rounded-xl font-bold text-xs font-mono tracking-widest flex items-center justify-center gap-2 transition-all"
+              style={{ background: "linear-gradient(135deg,#06b6d4,#0891b2)", color: "#000", boxShadow: "0 4px 16px rgba(6,182,212,0.3)" }}>
+              VOIR LES AUTRES TOURNOIS →
+            </Link>
+          )}
+          {userRequest?.status === "pending" && (
+            <Link to="/tournaments"
+              className="py-3 rounded-xl font-bold text-xs font-mono tracking-widest flex items-center justify-center gap-2 transition-all text-white/30 hover:text-white/60"
+              style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+              Explorer d'autres tournois
+            </Link>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }

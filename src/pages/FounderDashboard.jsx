@@ -243,14 +243,14 @@ export default function FounderDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center">
-        <div className="text-white/40">Loading...</div>
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-white">
+    <div className="text-white space-y-6">
       
       {/* Header Section with Gradient */}
       <div className="border-b border-white/5 bg-gradient-to-r from-[#11151C] to-[#1A1F2B]">
