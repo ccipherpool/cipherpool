@@ -65,7 +65,13 @@ export default function Home() {
             </div>
             <span className="font-bold text-lg font-display tracking-tight">CipherPool</span>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
+            <button 
+              onClick={() => navigate("/team")}
+              className="px-4 py-2 text-neutral-300 hover:text-neutral-100 transition-colors duration-200 font-medium"
+            >
+              Équipe
+            </button>
             <button 
               onClick={() => navigate("/login")}
               className="px-4 py-2 text-neutral-300 hover:text-neutral-100 transition-colors duration-200 font-medium"
