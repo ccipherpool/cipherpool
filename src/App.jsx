@@ -12,7 +12,7 @@ import GuestRoute     from "./components/GuestRoute";
 import Home     from "./pages/Home";
 import Login    from "./pages/Login";
 import Register from "./pages/Register";
-import Team     from "./pages/Team";
+import StaffPage from "./pages/Team"; // Renamed to avoid conflict with "Teams" or other declarations
 
 // Main Pages
 import Dashboard   from "./pages/Dashboard";
@@ -37,8 +37,8 @@ import FounderRequests  from "./pages/FounderRequests";
 // Admin Pages
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminSupport   from "./pages/AdminSupport";
-import Adminresults   from "./pages/Adminresults";   // ← lowercase r
-import Adminnews      from "./pages/Adminnews";       // ← lowercase n
+import Adminresults   from "./pages/Adminresults";   
+import Adminnews      from "./pages/Adminnews";       
 
 // Super Admin Pages
 import SuperAdmin from "./pages/SuperAdmin";
@@ -51,7 +51,7 @@ import DesignerPanel  from "./pages/Designerpanel";
 
 // Teams
 import Teams       from "./pages/Teams";
-import TeamProfile from "./pages/Teamprofile";   // ← lowercase p
+import TeamProfile from "./pages/Teamprofile";   
 
 // Clans
 import Clans       from "./pages/Clans";
@@ -60,8 +60,8 @@ import CreateClan  from "./pages/CreateClan";
 
 // Phase 2
 import Achievements from "./pages/Achievements";
-import DailyRewards from "./pages/Dailyrewards"; // ← lowercase r
-import PlayerStats  from "./pages/Playerstats";  // ← lowercase s
+import DailyRewards from "./pages/Dailyrewards"; 
+import PlayerStats  from "./pages/Playerstats";  
 import News         from "./pages/News";
 
 export default function App() {
@@ -74,7 +74,7 @@ export default function App() {
           <Route path="/"         element={<GuestRoute><Home /></GuestRoute>} />
           <Route path="/login"    element={<GuestRoute><Login /></GuestRoute>} />
           <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
-          <Route path="/team"     element={<Team />} />
+          <Route path="/team"     element={<StaffPage />} />
         </Route>
 
         {/* ── USER ── */}
