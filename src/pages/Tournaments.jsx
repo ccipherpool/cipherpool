@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { motion } from "framer-motion";
-import { Search, Filter, Trophy, Users, Coins, Flame, Clock, Target } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, Trophy, Users, Coins, Clock, Map as MapIcon, ChevronRight, Zap, Filter } from "lucide-react";
 
 export default function Tournaments() {
   const [tournaments, setTournaments] = useState([]);
@@ -24,7 +24,6 @@ export default function Tournaments() {
         .from("tournaments")
         .select("*")
         .order("created_at", { ascending: false });
-
       setTournaments(data || []);
     } catch (error) {
       console.error("Error fetching tournaments:", error);
@@ -35,221 +34,174 @@ export default function Tournaments() {
 
   const filterTournaments = () => {
     let filtered = tournaments;
-
     if (searchTerm) {
       filtered = filtered.filter((t) =>
         t.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
     if (filterStatus !== "all") {
       filtered = filtered.filter((t) => t.status === filterStatus);
     }
-
     setFilteredTournaments(filtered);
   };
 
-  const getStatusColor = (status) => {
+  const getStatusInfo = (status) => {
     switch (status) {
       case "active":
-        return "from-green-500 to-emerald-600";
+      case "in_progress":
+        return { label: "EN COURS", color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20" };
       case "upcoming":
-        return "from-blue-500 to-cyan-600";
+      case "registration_open":
+      case "open":
+        return { label: "INSCRIPTIONS", color: "text-blue-400", bg: "bg-blue-400/10", border: "border-blue-400/20" };
       case "completed":
-        return "from-gray-500 to-slate-600";
+        return { label: "TERMINÉ", color: "text-neutral-500", bg: "bg-neutral-500/10", border: "border-neutral-500/20" };
       default:
-        return "from-purple-500 to-indigo-600";
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case "active":
-        return "En cours";
-      case "upcoming":
-        return "À venir";
-      case "completed":
-        return "Terminé";
-      default:
-        return status;
+        return { label: "À VENIR", color: "text-purple-400", bg: "bg-purple-400/10", border: "border-purple-400/20" };
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/20 to-slate-950 p-6">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
-        
-        .tournament-card {
-          background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(75, 0, 130, 0.1));
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(139, 92, 246, 0.2);
-          transition: all 0.3s ease;
-        }
-        
-        .tournament-card:hover {
-          background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(75, 0, 130, 0.15));
-          border-color: rgba(139, 92, 246, 0.4);
-          transform: translateY(-4px);
-          box-shadow: 0 20px 40px rgba(139, 92, 246, 0.2);
-        }
-        
-        .status-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
-          letter-spacing: 0.5px;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-      `}</style>
-
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8"
-      >
-        <h1 className="text-4xl font-bold text-white mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-          Tournois
-        </h1>
-        <p className="text-gray-400">Découvrez et participez aux tournois disponibles</p>
-      </motion.div>
-
-      {/* Search and Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4"
-      >
-        <div className="md:col-span-2 relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
-          <input
-            type="text"
-            placeholder="Rechercher un tournoi..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-purple-500/10 border border-purple-500/20 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:bg-purple-500/15 transition-all duration-200"
-          />
+    <div className="space-y-10 pb-20 animate-in fade-in duration-700">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+             <div className="w-12 h-12 bg-purple-600/20 rounded-2xl flex items-center justify-center border border-purple-500/30">
+                <Trophy className="text-purple-400" size={24} />
+             </div>
+             <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic">Tournois</h1>
+          </div>
+          <p className="text-neutral-500 font-medium max-w-md">Découvre les compétitions les plus intenses et gagne des récompenses exclusives.</p>
         </div>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-3 bg-purple-500/10 border border-purple-500/20 rounded-lg text-gray-100 focus:outline-none focus:border-purple-500/50 focus:bg-purple-500/15 transition-all duration-200"
-        >
-          <option value="all" className="bg-slate-900">Tous les statuts</option>
-          <option value="active" className="bg-slate-900">En cours</option>
-          <option value="upcoming" className="bg-slate-900">À venir</option>
-          <option value="completed" className="bg-slate-900">Terminés</option>
-        </select>
-      </motion.div>
+
+        <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+          <div className="relative group flex-1 sm:w-80">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-600 group-focus-within:text-purple-500 transition-colors" size={18} />
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#0f0f1a] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-neutral-600 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all"
+            />
+          </div>
+          <div className="relative">
+            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-600" size={18} />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="appearance-none bg-[#0f0f1a] border border-white/5 rounded-2xl py-4 pl-12 pr-10 text-white font-bold text-sm uppercase tracking-widest outline-none focus:border-purple-500/50 transition-all cursor-pointer"
+            >
+              <option value="all">Tous</option>
+              <option value="active">En cours</option>
+              <option value="upcoming">À venir</option>
+              <option value="completed">Terminés</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* Tournaments Grid */}
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-12 h-12 border-3 border-purple-500/30 border-t-purple-500 rounded-full"
-          />
+        <div className="flex items-center justify-center py-32">
+          <div className="w-12 h-12 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
         </div>
-      ) : filteredTournaments.length > 0 ? (
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          {filteredTournaments.map((tournament, index) => (
-            <motion.div
-              key={tournament.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05, duration: 0.3 }}
-              className="tournament-card p-6 rounded-xl flex flex-col h-full cursor-pointer group"
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-white mb-1 group-hover:text-purple-300 transition-colors">
-                    {tournament.name}
-                  </h3>
-                  <p className="text-sm text-gray-400">{tournament.mode || "Mode Compétitif"}</p>
-                </div>
-                <span className={`status-badge bg-gradient-to-r ${getStatusColor(tournament.status)}`}>
-                  {getStatusLabel(tournament.status)}
-                </span>
-              </div>
-
-              {/* Description */}
-              <p className="text-sm text-gray-400 mb-4 flex-1">
-                {tournament.description || "Tournoi compétitif passionnant"}
-              </p>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-3 gap-3 mb-6 py-4 border-t border-b border-purple-500/10">
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1 text-cyan-400 mb-1">
-                    <Users size={14} />
-                    <span className="text-sm font-semibold">
-                      {tournament.current_players || 0}/{tournament.max_players || 0}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500">Joueurs</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1 text-yellow-400 mb-1">
-                    <Coins size={14} />
-                    <span className="text-sm font-semibold">
-                      {tournament.prize_coins || 0}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500">Prize</p>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1 text-orange-400 mb-1">
-                    <Trophy size={14} />
-                    <span className="text-sm font-semibold">
-                      {tournament.entry_fee || 0}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500">Entrée</p>
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full py-2 rounded-lg font-semibold transition-all duration-200 ${
-                  tournament.status === "active"
-                    ? "bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white"
-                    : tournament.status === "upcoming"
-                    ? "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white"
-                    : "bg-gray-500/20 text-gray-400 cursor-not-allowed"
-                }`}
-                disabled={tournament.status === "completed"}
-              >
-                {tournament.status === "active"
-                  ? "Rejoindre"
-                  : tournament.status === "upcoming"
-                  ? "S'inscrire"
-                  : "Terminé"}
-              </motion.button>
-            </motion.div>
-          ))}
-        </motion.div>
       ) : (
-        <div className="text-center py-24">
-          <Target size={48} className="mx-auto mb-4 text-gray-500" />
-          <p className="text-gray-400 text-lg">Aucun tournoi trouvé</p>
-          <p className="text-gray-500 text-sm mt-2">Essayez de modifier vos critères de recherche</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          <AnimatePresence mode="popLayout">
+            {filteredTournaments.map((t, i) => {
+              const status = getStatusInfo(t.status);
+              return (
+                <motion.div
+                  layout
+                  key={t.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="group relative bg-[#0f0f1a] border border-white/5 rounded-[2.5rem] overflow-hidden hover:border-purple-500/30 transition-all duration-500 shadow-2xl"
+                >
+                  {/* Card Image/Overlay */}
+                  <div className="h-48 bg-gradient-to-br from-purple-900/40 to-indigo-900/40 relative overflow-hidden">
+                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30" />
+                     <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f1a] via-transparent to-transparent" />
+                     
+                     {/* Status Badge */}
+                     <div className={`absolute top-6 right-6 px-4 py-1.5 rounded-full ${status.bg} ${status.border} ${status.color} text-[10px] font-black tracking-[0.2em] backdrop-blur-md`}>
+                        {status.label}
+                     </div>
+
+                     <div className="absolute bottom-4 left-8">
+                        <div className="flex items-center gap-2 text-white/60 text-[10px] font-black uppercase tracking-widest mb-1">
+                           <MapIcon size={12} />
+                           {t.mode || "Bermuda"}
+                        </div>
+                        <h3 className="text-2xl font-black tracking-tighter uppercase italic text-white group-hover:text-purple-400 transition-colors leading-none">
+                           {t.name}
+                        </h3>
+                     </div>
+                  </div>
+
+                  {/* Card Content */}
+                  <div className="p-8 pt-4 space-y-6">
+                     <p className="text-neutral-500 text-sm font-medium line-clamp-2 leading-relaxed">
+                        {t.description || "Rejoins ce tournoi épique et montre tes talents au monde entier. La gloire t'attend."}
+                     </p>
+
+                     {/* Info Bar */}
+                     <div className="grid grid-cols-3 gap-2 py-4 border-y border-white/5">
+                        <div className="text-center">
+                           <p className="text-[10px] font-black text-neutral-600 uppercase tracking-widest mb-1">Prize</p>
+                           <div className="flex items-center justify-center gap-1 text-yellow-400 font-black tracking-tighter">
+                              <Coins size={14} />
+                              {t.prize_coins || 0}
+                           </div>
+                        </div>
+                        <div className="text-center border-x border-white/5">
+                           <p className="text-[10px] font-black text-neutral-600 uppercase tracking-widest mb-1">Slots</p>
+                           <div className="flex items-center justify-center gap-1 text-blue-400 font-black tracking-tighter">
+                              <Users size={14} />
+                              {t.current_players || 0}/{t.max_players || 48}
+                           </div>
+                        </div>
+                        <div className="text-center">
+                           <p className="text-[10px] font-black text-neutral-600 uppercase tracking-widest mb-1">Entrée</p>
+                           <div className="flex items-center justify-center gap-1 text-purple-400 font-black tracking-tighter">
+                              <Zap size={14} />
+                              {t.entry_fee || 0}
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* Action Button */}
+                     <button 
+                       disabled={t.status === "completed"}
+                       className={`w-full py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${
+                         t.status === "completed" 
+                         ? "bg-white/5 text-neutral-600 cursor-not-allowed" 
+                         : "bg-white text-black hover:bg-purple-600 hover:text-white shadow-xl shadow-black/20"
+                       }`}
+                     >
+                        {t.status === "completed" ? "Tournoi Terminé" : "S'inscrire Maintenant"}
+                        {t.status !== "completed" && <ChevronRight size={16} />}
+                     </button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && filteredTournaments.length === 0 && (
+        <div className="text-center py-40 bg-[#0f0f1a] border border-white/5 rounded-[3rem]">
+          <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6">
+             <Trophy size={40} className="text-neutral-700" />
+          </div>
+          <h3 className="text-2xl font-black tracking-tighter uppercase italic mb-2">Aucun tournoi trouvé</h3>
+          <p className="text-neutral-500 font-medium">Reviens plus tard pour de nouvelles compétitions.</p>
         </div>
       )}
     </div>

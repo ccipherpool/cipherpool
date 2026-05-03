@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Trophy, Users, MessageSquare, Store, 
-  Wallet, BarChart3, ArrowRight, Zap 
+  Wallet, BarChart3, ArrowRight, Zap, Star, Shield, Target, TrendingUp
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { motion } from 'framer-motion';
 
 const Dashboard = () => {
   const [profile, setProfile] = useState(null);
@@ -23,63 +24,72 @@ const Dashboard = () => {
   }, []);
 
   if (loading) return (
-    <div className="flex items-center justify-center h-96">
-      <div className="w-8 h-8 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
+    <div className="flex items-center justify-center h-[60vh]">
+      <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
   const stats = [
-    { label: 'Coins', value: profile?.coins || 0, icon: Wallet, color: 'text-yellow-400' },
-    { label: 'XP', value: profile?.xp || 0, icon: Zap, color: 'text-brand-primary' },
-    { label: 'Rank', value: '#1', icon: Trophy, color: 'text-pink-400' },
-    { label: 'Wins', value: '42', icon: BarChart3, color: 'text-blue-400' },
-  ];
-
-  const quickLinks = [
-    { title: 'Join Tournament', desc: 'Compete for prizes', icon: Trophy, path: '/tournaments', color: 'from-brand-primary to-brand-secondary' },
-    { title: 'Global Chat', desc: 'Connect with players', icon: MessageSquare, path: '/chat', color: 'from-blue-500 to-blue-600' },
-    { title: 'My Clan', desc: 'Manage your team', icon: Users, path: '/clans', color: 'from-emerald-500 to-emerald-600' },
-    { title: 'Store', desc: 'Browse items', icon: Store, path: '/store', color: 'from-orange-500 to-orange-600' },
+    { label: 'Cipher Coins', value: profile?.coins || 0, icon: Wallet, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+    { label: 'Total XP', value: profile?.xp || 0, icon: Zap, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+    { label: 'Classement', value: '#12', icon: Trophy, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+    { label: 'Victoires', value: '24', icon: Target, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
   ];
 
   return (
-    <div className="space-y-8 pb-20">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-xl bg-dark-850 border border-neutral-700 p-8 md:p-12">
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-brand-primary/5 to-transparent pointer-events-none" />
+    <div className="space-y-8 pb-20 animate-in fade-in duration-700">
+      {/* Welcome Hero */}
+      <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#14141f] to-[#0a0a0f] border border-white/5 p-8 md:p-12 shadow-2xl">
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-purple-600/10 to-transparent pointer-events-none" />
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-purple-600/20 rounded-full blur-[100px]" />
         
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-          <div className="space-y-4 max-w-md">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-xs font-semibold uppercase tracking-wide">
-              <Zap size={14} />
-              Season 1 Active
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-10">
+          <div className="space-y-6 max-w-xl">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-600/10 border border-purple-500/20 text-purple-400 text-[10px] font-black uppercase tracking-[0.2em]">
+              <Star size={12} fill="currentColor" />
+              Saison 1: L'Éveil des Titans
             </div>
-            <h1 className="text-4xl md:text-5xl font-display font-bold tracking-tight">
-              Welcome back, <span className="text-brand-primary">{profile?.full_name?.split(' ')[0] || 'Player'}</span>
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-none">
+              BON RETOUR, <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
+                {profile?.full_name?.split(' ')[0] || 'GUERRIER'}
+              </span>
             </h1>
-            <p className="text-neutral-400 leading-relaxed">
-              Your stats are ready. Keep grinding and dominate the leaderboard.
+            <p className="text-neutral-400 font-medium text-lg max-w-sm">
+              Prêt pour le prochain combat ? Tes stats sont à jour.
             </p>
-            <Link 
-              to="/tournaments"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg font-semibold transition-colors duration-200 w-fit"
-            >
-              Play Now
-              <ArrowRight size={18} />
-            </Link>
+            <div className="flex flex-wrap gap-4">
+              <Link 
+                to="/tournaments"
+                className="flex items-center gap-3 px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-purple-600/20 active:scale-95"
+              >
+                Jouer maintenant
+                <ArrowRight size={20} />
+              </Link>
+            </div>
           </div>
 
-          {/* Profile Card */}
-          <div className="w-full md:w-80 bg-dark-900 border border-neutral-700 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">Current Level</span>
-              <span className="text-2xl font-display font-bold text-brand-primary">12</span>
-            </div>
-            <div className="space-y-3">
-              <div className="w-full h-2 bg-dark-800 rounded-full overflow-hidden">
-                <div className="w-2/3 h-full bg-gradient-to-r from-brand-primary to-brand-secondary" />
+          {/* Level Progress Card */}
+          <div className="w-full md:w-96 bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-inner">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <p className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] mb-1">Niveau Actuel</p>
+                <h3 className="text-4xl font-black tracking-tighter">LVL {profile?.level || 1}</h3>
               </div>
-              <div className="flex justify-between text-xs text-neutral-400 font-medium">
+              <div className="w-16 h-16 bg-purple-600/20 rounded-2xl flex items-center justify-center border border-purple-500/30">
+                <Shield className="text-purple-400" size={32} />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="w-full h-3 bg-black/40 rounded-full overflow-hidden p-0.5 border border-white/5">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: '65%' }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
+                  className="h-full bg-gradient-to-r from-purple-600 to-indigo-400 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.5)]" 
+                />
+              </div>
+              <div className="flex justify-between text-[10px] font-black text-neutral-500 uppercase tracking-widest">
                 <span>650 XP</span>
                 <span>1000 XP</span>
               </div>
@@ -89,88 +99,76 @@ const Dashboard = () => {
       </section>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {stats.map((stat, i) => (
-          <div key={i} className="card">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wide">{stat.label}</span>
-              <stat.icon size={20} className={stat.color} />
+          <motion.div 
+            key={i}
+            whileHover={{ y: -5 }}
+            className="bg-[#0f0f1a] border border-white/5 p-6 rounded-[2rem] relative overflow-hidden group transition-all"
+          >
+            <div className={`absolute top-0 right-0 w-24 h-24 ${stat.bg} blur-[40px] opacity-0 group-hover:opacity-100 transition-opacity`} />
+            <div className="flex items-center justify-between mb-4 relative z-10">
+              <div className={`p-3 rounded-2xl ${stat.bg} ${stat.color}`}>
+                <stat.icon size={20} />
+              </div>
+              <TrendingUp size={16} className="text-neutral-700" />
             </div>
-            <h3 className="text-3xl font-display font-bold">{stat.value}</h3>
-          </div>
+            <p className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] mb-1 relative z-10">{stat.label}</p>
+            <h3 className="text-3xl font-black tracking-tighter relative z-10">{stat.value.toLocaleString()}</h3>
+          </motion.div>
         ))}
       </div>
 
-      {/* Quick Links */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-display font-bold">Quick Access</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {quickLinks.map((link, i) => (
-            <Link 
-              key={i}
-              to={link.path}
-              className="group relative overflow-hidden rounded-xl border border-neutral-700 bg-dark-850 p-6 hover:border-neutral-600 hover:bg-dark-800 transition-all duration-200"
-            >
-              <div className={`absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l ${link.color} opacity-0 group-hover:opacity-5 transition-opacity duration-200`} />
-              
-              <div className="relative z-10">
-                <div className="w-12 h-12 rounded-lg bg-dark-900 border border-neutral-700 flex items-center justify-center mb-4 group-hover:border-neutral-600 transition-colors duration-200">
-                  <link.icon size={24} className="text-neutral-300" />
-                </div>
-                <h4 className="font-semibold text-neutral-100 mb-1">{link.title}</h4>
-                <p className="text-sm text-neutral-400">{link.desc}</p>
-              </div>
-
-              <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <ArrowRight size={20} className="text-neutral-400" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-xl font-display font-bold">Recent Tournaments</h2>
-          <div className="space-y-3">
+        {/* Left Column: Recent Activity */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black tracking-tighter uppercase italic">Dernières Activités</h2>
+            <Link to="/history" className="text-[10px] font-black text-purple-500 uppercase tracking-widest hover:text-purple-400">Voir tout</Link>
+          </div>
+          <div className="space-y-4">
             {[1, 2, 3].map((_, i) => (
-              <div key={i} className="card-interactive flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-dark-900 border border-neutral-700 flex items-center justify-center flex-shrink-0">
-                  <Trophy size={20} className="text-brand-primary" />
+              <div key={i} className="group flex items-center gap-4 p-5 rounded-[1.5rem] bg-[#0f0f1a] border border-white/5 hover:border-purple-500/30 transition-all cursor-pointer">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center flex-shrink-0 group-hover:bg-purple-600/10 group-hover:border-purple-500/20 transition-all">
+                  <Trophy size={24} className="text-neutral-500 group-hover:text-purple-400 transition-colors" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-neutral-100 truncate">Free Fire Elite Cup #{102 + i}</h4>
-                  <p className="text-xs text-neutral-400">Completed 2 hours ago • 5000 Coins</p>
+                  <h4 className="font-bold text-neutral-200 truncate group-hover:text-white transition-colors">Free Fire Casablanca Cup #{102 + i}</h4>
+                  <p className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">Terminé il y a 2h • +500 Coins</p>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold flex-shrink-0">Won</span>
+                <div className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
+                  Victoire
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="space-y-4">
-          <h2 className="text-xl font-display font-bold">Top Players</h2>
-          <div className="card space-y-4">
+        {/* Right Column: Leaderboard Preview */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black tracking-tighter uppercase italic">Top Joueurs</h2>
+            <BarChart3 size={20} className="text-neutral-700" />
+          </div>
+          <div className="bg-[#0f0f1a] border border-white/5 rounded-[2rem] p-6 space-y-6">
             {[
-              { name: 'Shadow_FF', xp: '12.5k', rank: 1 },
-              { name: 'Cipher_King', xp: '11.2k', rank: 2 },
-              { name: 'Elite_Gamer', xp: '10.8k', rank: 3 },
+              { name: 'Shadow_FF', xp: '12.5k', rank: 1, color: 'text-yellow-400' },
+              { name: 'Cipher_King', xp: '11.2k', rank: 2, color: 'text-neutral-400' },
+              { name: 'Elite_Gamer', xp: '10.8k', rank: 3, color: 'text-orange-400' },
             ].map((player, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-semibold text-sm flex-shrink-0 ${
-                  i === 0 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-dark-900 text-neutral-400'
-                }`}>
-                  {player.rank}
+              <div key={i} className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 bg-white/5 border border-white/5 ${player.color}`}>
+                  #{player.rank}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-neutral-100 truncate">{player.name}</p>
-                  <p className="text-xs text-neutral-400">{player.xp} XP</p>
+                  <p className="font-bold text-sm text-neutral-200 truncate">{player.name}</p>
+                  <p className="text-[10px] font-black text-neutral-600 uppercase tracking-widest">{player.xp} XP</p>
                 </div>
+                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
               </div>
             ))}
-            <button className="w-full py-3 mt-4 border border-neutral-700 hover:bg-dark-800 rounded-lg text-sm font-medium transition-colors duration-200">
-              View Full Leaderboard
+            <button className="w-full py-4 mt-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all">
+              Classement Complet
             </button>
           </div>
         </div>
