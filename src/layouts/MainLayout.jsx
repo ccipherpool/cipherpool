@@ -98,7 +98,7 @@ function Dropdown({ trigger, children, align = "left" }) {
             transition={{ duration: 0.15, ease: [.22, 1, .36, 1] }}
             onClick={() => setOpen(false)}
             className={`absolute top-full mt-2 z-50 rounded-xl overflow-hidden min-w-[190px] ${align === "right" ? "right-0" : "left-0"}`}
-            style={{ background: "#0c0c1a", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}
+            style={{ background: "#090914", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 20px 60px rgba(0,0,0,0.7)" }}
           >
             {children}
           </motion.div>
@@ -108,7 +108,7 @@ function Dropdown({ trigger, children, align = "left" }) {
   );
 }
 
-function DropdownLink({ to, icon: Icon, label, accent = "#06b6d4" }) {
+function DropdownLink({ to, icon: Icon, label, accent = "#818cf8" }) {
   const location = useLocation();
   const active = location.pathname === to;
   return (
@@ -153,9 +153,9 @@ export default function MainLayout() {
   };
 
   if (loading) return (
-    <div className="h-screen bg-[#07070f] flex items-center justify-center">
+    <div className="h-screen flex items-center justify-center" style={{ background: "#030305" }}>
       <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
+        <div className="w-10 h-10 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
         <p className="text-white/30 text-xs font-mono tracking-widest uppercase">Loading...</p>
       </div>
     </div>
@@ -167,19 +167,19 @@ export default function MainLayout() {
   const initials = profile?.full_name?.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() || "?";
 
   return (
-    <div className="min-h-screen text-white font-sans" style={{ background: "#07070f" }}>
+    <div className="min-h-screen text-white font-sans" style={{ background: "#030305" }}>
 
       {/* ════════════════ TOP NAVBAR ════════════════ */}
       <header className="fixed top-0 left-0 right-0 z-50 h-14"
-        style={{ background: "rgba(7,7,15,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        style={{ background: "rgba(3,3,8,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <div className="max-w-screen-2xl mx-auto h-full flex items-center justify-between px-4 md:px-6 gap-4">
 
           {/* LEFT: Logo + Nav */}
           <div className="flex items-center gap-1 min-w-0">
             {/* Logo */}
             <Link to="/dashboard" className="flex items-center gap-2 shrink-0 mr-2">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-black shrink-0"
-                style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)" }}>CP</div>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-white shrink-0"
+                style={{ background: "linear-gradient(135deg,#4f46e5,#818cf8)" }}>CP</div>
               <span className="hidden lg:block font-black text-sm tracking-wider text-white">CIPHERPOOL</span>
             </Link>
 
@@ -191,9 +191,9 @@ export default function MainLayout() {
                 return (
                   <NavLink key={item.to} to={item.to}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all"
-                    style={{ color: active ? "#06b6d4" : "rgba(255,255,255,0.5)", background: active ? "rgba(6,182,212,0.08)" : "transparent" }}
+                    style={{ color: active ? "#818cf8" : "rgba(255,255,255,0.45)", background: active ? "rgba(99,102,241,0.1)" : "transparent" }}
                     onMouseEnter={e => { if (!active) { e.currentTarget.style.color = "#fff"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; } }}
-                    onMouseLeave={e => { if (!active) { e.currentTarget.style.color = "rgba(255,255,255,0.5)"; e.currentTarget.style.background = "transparent"; } }}>
+                    onMouseLeave={e => { if (!active) { e.currentTarget.style.color = "rgba(255,255,255,0.45)"; e.currentTarget.style.background = "transparent"; } }}>
                     <Icon size={14} />
                     {item.label}
                   </NavLink>
@@ -219,11 +219,11 @@ export default function MainLayout() {
           {/* RIGHT: Balance + Admin + Bell + Avatar */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Balance */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full cursor-pointer transition-all"
-              style={{ background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.18)" }}
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full cursor-pointer transition-all hover:opacity-80"
+              style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.22)" }}
               onClick={() => navigate("/wallet")}>
-              <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              <span className="text-cyan-400 text-xs font-black tracking-tight">{balance.toLocaleString()} CP</span>
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#818cf8" }} />
+              <span className="text-xs font-black tracking-tight" style={{ color: "#818cf8" }}>{balance.toLocaleString()} CP</span>
             </div>
 
             {/* Admin dropdown */}
@@ -258,8 +258,8 @@ export default function MainLayout() {
 
             {/* Avatar dropdown */}
             <Dropdown align="right" trigger={() => (
-              <button className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-transparent hover:ring-cyan-500/40 transition-all"
-                style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)" }}>
+              <button className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-transparent hover:ring-indigo-500/40 transition-all"
+                style={{ background: "linear-gradient(135deg,#4f46e5,#818cf8)" }}>
                 {profile?.avatar_url
                   ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
                   : <span className="flex items-center justify-center w-full h-full text-xs font-black text-black">{initials}</span>}
@@ -271,8 +271,8 @@ export default function MainLayout() {
                   <p className="text-sm font-bold text-white truncate">{profile?.full_name}</p>
                   <p className="text-[11px] text-white/35 uppercase tracking-wider font-mono">{profile?.role}</p>
                   <div className="flex items-center gap-1.5 mt-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                    <span className="text-[11px] text-cyan-400 font-bold">{balance.toLocaleString()} CP</span>
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#818cf8" }} />
+                    <span className="text-[11px] font-bold" style={{ color: "#818cf8" }}>{balance.toLocaleString()} CP</span>
                   </div>
                 </div>
                 {/* Links */}
@@ -319,12 +319,12 @@ export default function MainLayout() {
               initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }}
               transition={{ type: "spring", damping: 28, stiffness: 220 }}
               className="fixed left-0 top-0 bottom-0 z-50 w-72 flex flex-col md:hidden overflow-y-auto"
-              style={{ background: "#0c0c1a", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+              style={{ background: "#080814", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
 
               {/* Header */}
               <div className="h-14 flex items-center justify-between px-5 shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-black" style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)" }}>CP</div>
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-white" style={{ background: "linear-gradient(135deg,#4f46e5,#818cf8)" }}>CP</div>
                   <span className="font-black text-sm tracking-wider text-white">CIPHERPOOL</span>
                 </div>
                 <button onClick={() => setMobileOpen(false)} className="text-white/40 hover:text-white p-1"><X size={20} /></button>
@@ -332,9 +332,9 @@ export default function MainLayout() {
 
               {/* Balance */}
               <div className="px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.15)" }}>
-                  <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                  <span className="text-cyan-400 text-sm font-black">{balance.toLocaleString()} CP</span>
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl" style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.18)" }}>
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#818cf8" }} />
+                  <span className="text-sm font-black" style={{ color: "#818cf8" }}>{balance.toLocaleString()} CP</span>
                 </div>
               </div>
 
@@ -347,7 +347,7 @@ export default function MainLayout() {
                   const active = location.pathname === item.to;
                   return (
                     <NavLink key={item.to} to={item.to} onClick={() => setMobileOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active ? "bg-cyan-500/10 text-cyan-400" : "text-white/50 hover:bg-white/5 hover:text-white"}`}>
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active ? "text-indigo-400" : "text-white/50 hover:bg-white/5 hover:text-white"}`} style={active ? { background: "rgba(99,102,241,0.1)" } : {}}>
                       <Icon size={16} />
                       {item.label}
                     </NavLink>
@@ -359,7 +359,7 @@ export default function MainLayout() {
                   const active = location.pathname === item.to;
                   return (
                     <NavLink key={item.to} to={item.to} onClick={() => setMobileOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active ? "bg-cyan-500/10 text-cyan-400" : "text-white/50 hover:bg-white/5 hover:text-white"}`}>
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active ? "text-indigo-400" : "text-white/50 hover:bg-white/5 hover:text-white"}`} style={active ? { background: "rgba(99,102,241,0.1)" } : {}}>
                       <Icon size={16} />
                       {item.label}
                     </NavLink>
@@ -371,7 +371,7 @@ export default function MainLayout() {
                   const active = location.pathname === item.to;
                   return (
                     <NavLink key={item.to} to={item.to} onClick={() => setMobileOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active ? "bg-cyan-500/10 text-cyan-400" : "text-white/50 hover:bg-white/5 hover:text-white"}`}>
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active ? "text-indigo-400" : "text-white/50 hover:bg-white/5 hover:text-white"}`} style={active ? { background: "rgba(99,102,241,0.1)" } : {}}>
                       <Icon size={16} />
                       {item.label}
                     </NavLink>
@@ -399,7 +399,7 @@ export default function MainLayout() {
               {/* User card */}
               <div className="p-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                 <div className="flex items-center gap-3 px-3 py-3 rounded-xl" style={{ background: "rgba(255,255,255,0.03)" }}>
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-black overflow-hidden shrink-0" style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)" }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white overflow-hidden shrink-0" style={{ background: "linear-gradient(135deg,#4f46e5,#818cf8)" }}>
                     {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" /> : initials}
                   </div>
                   <div className="flex-1 min-w-0">

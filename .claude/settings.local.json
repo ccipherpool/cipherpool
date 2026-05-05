@@ -17,7 +17,8 @@
       "Bash(Select-Object -ExpandProperty Name)",
       "Bash(xargs -I{} basename {})",
       "Bash(Get-Item \"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\\\\src\\\\pages\\\\Dashboard_NEW.jsx\")",
-      "Bash(Select-Object Name, Length, LastWriteTime)"
+      "Bash(Select-Object Name, Length, LastWriteTime)",
+      "Bash(not exist *)"
     ]
   }
 }
