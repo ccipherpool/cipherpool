@@ -602,7 +602,7 @@ export default function SuperAdmin() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="w-10 h-10 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-10 h-10 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mx-auto mb-4" />
           <p className="text-white/40 text-sm font-mono tracking-widest">CHARGEMENT...</p>
         </div>
       </div>
@@ -612,20 +612,25 @@ export default function SuperAdmin() {
   return (
     <div className="text-white space-y-6 relative overflow-hidden">
       
-      {/* خلفية متحركة سينمائية */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 -left-40 w-96 h-96 bg-purple-600/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 -right-40 w-96 h-96 bg-cyan-600/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-purple-600/5 to-cyan-600/5 rounded-full blur-3xl"></div>
-        
-        {/* شبكة سيبرانية */}
+      {/* Background cinematic - enhanced particles */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        {/* Main orbs */}
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/25 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-600/25 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: "1.2s" }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] bg-gradient-to-r from-purple-600/8 to-indigo-600/8 rounded-full blur-[80px]"></div>
+        {/* Secondary orbs */}
+        <div className="absolute top-[20%] right-[15%] w-64 h-64 bg-violet-500/15 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: "2s" }}></div>
+        <div className="absolute bottom-[25%] left-[10%] w-48 h-48 bg-blue-600/12 rounded-full blur-[60px] animate-pulse" style={{ animationDelay: "0.5s" }}></div>
+        {/* Small accent dots */}
+        <div className="absolute top-[35%] left-[35%] w-24 h-24 bg-fuchsia-500/20 rounded-full blur-[40px] animate-pulse" style={{ animationDelay: "1.8s" }}></div>
+        <div className="absolute top-[65%] right-[30%] w-32 h-32 bg-purple-400/15 rounded-full blur-[50px] animate-pulse" style={{ animationDelay: "0.8s" }}></div>
+        {/* Cyber grid */}
         <div className="absolute inset-0" style={{
-          backgroundImage: `
-            linear-gradient(rgba(124, 58, 237, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(124, 58, 237, 0.05) 1px, transparent 1px)
-          `,
-          backgroundSize: '50px 50px'
+          backgroundImage: `linear-gradient(rgba(139,92,246,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.06) 1px,transparent 1px)`,
+          backgroundSize: "50px 50px",
         }}></div>
+        {/* Top ambient white glow */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "40vh", background: "radial-gradient(ellipse 70% 40% at 50% 0%, rgba(255,255,255,0.03) 0%, transparent 70%)" }} />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto p-8">

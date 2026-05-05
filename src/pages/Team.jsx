@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
 
 const ROLE_CFG = {
   super_admin: { label: "SUPER ADMIN",  color: "#f97316", icon: "👑", order: 0 },
   founder:     { label: "FONDATEUR",    color: "#f43f5e", icon: "⚡", order: 1 },
   fondateur:   { label: "FONDATEUR",    color: "#f43f5e", icon: "⚡", order: 1 },
-  admin:       { label: "ADMIN",        color: "#06b6d4", icon: "🛡️", order: 2 },
+  admin:       { label: "ADMIN",        color: "#818cf8", icon: "🛡️", order: 2 },
   designer:    { label: "DESIGNER",     color: "#818cf8", icon: "🎨", order: 3 },
 };
 
@@ -23,7 +25,7 @@ function MemberCard({ member, index }) {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        background: hov ? "rgba(20,20,38,0.95)" : "#0c0c1a",
+        background: hov ? "rgba(20,20,42,0.98)" : "rgba(12,12,26,0.95)",
         border: `1px solid ${hov ? role.color + "35" : "rgba(255,255,255,0.06)"}`,
         borderRadius: 16, padding: "28px 24px", textAlign: "center",
         transition: "all 0.25s",
@@ -50,7 +52,7 @@ function MemberCard({ member, index }) {
             ? <img src={member.avatar_url} alt={member.full_name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             : initials}
         </div>
-        <div style={{ position: "absolute", bottom: 3, right: 3, width: 14, height: 14, borderRadius: "50%", background: "#06b6d4", border: "2px solid #07070f", boxShadow: "0 0 8px rgba(6,182,212,0.6)" }} />
+        <div style={{ position: "absolute", bottom: 3, right: 3, width: 14, height: 14, borderRadius: "50%", background: "#818cf8", border: "2px solid #07071a", boxShadow: "0 0 8px rgba(99,102,241,0.5)" }} />
       </div>
 
       {/* Name */}
@@ -86,6 +88,7 @@ function MemberCard({ member, index }) {
 }
 
 export default function Team() {
+  const navigate = useNavigate();
   const [staff,   setStaff]   = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -111,7 +114,7 @@ export default function Team() {
   const groups = [
     { roles: ["super_admin"],           label: "DIRECTION",       color: "#f97316" },
     { roles: ["founder","fondateur"],   label: "FONDATEURS",      color: "#f43f5e" },
-    { roles: ["admin"],                 label: "ADMINISTRATION",  color: "#06b6d4" },
+    { roles: ["admin"],                 label: "ADMINISTRATION",  color: "#818cf8" },
     { roles: ["designer"],              label: "DESIGN",          color: "#818cf8" },
   ];
 
@@ -119,14 +122,21 @@ export default function Team() {
     <div className="space-y-6">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <p className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em] mb-2 font-mono">👥 L'ÉQUIPE</p>
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-white/40 hover:text-white transition-colors mb-5 group"
+        >
+          <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+          <span className="text-[11px] font-mono uppercase tracking-wider">Retour</span>
+        </button>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 font-mono" style={{ color: "#818cf8" }}>👥 L'ÉQUIPE</p>
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <h1 className="text-3xl font-black tracking-tight text-white">
-            L'Équipe <span style={{ background: "linear-gradient(135deg,#06b6d4,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>CipherPool</span>
+            L'Équipe <span style={{ background: "linear-gradient(135deg,#818cf8,#c4b5fd)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>CipherPool</span>
           </h1>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.2)" }}>
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse inline-block" />
-            <span className="text-cyan-400 font-mono text-[10px] font-bold tracking-widest">EN LIGNE — MAROC 🇲🇦</span>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)" }}>
+            <span className="w-2 h-2 rounded-full animate-pulse inline-block" style={{ background: "#818cf8" }} />
+            <span className="font-mono text-[10px] font-bold tracking-widest" style={{ color: "#818cf8" }}>EN LIGNE — MAROC 🇲🇦</span>
           </div>
         </div>
         <p className="text-white/40 text-sm mt-2 max-w-lg">Les personnes qui construisent et gèrent la plateforme esports numéro 1 au Maroc.</p>
@@ -135,7 +145,7 @@ export default function Team() {
       {/* Content */}
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="w-8 h-8 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
         </div>
       ) : staff.length === 0 ? (
         <div className="py-16 text-center rounded-2xl" style={{ background: "#0c0c1a", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -172,7 +182,7 @@ export default function Team() {
           className="grid grid-cols-3 gap-4 pt-4"
         >
           {[
-            { val: staff.length, label: "Membres de l'équipe", color: "#06b6d4" },
+            { val: staff.length, label: "Membres de l'équipe", color: "#818cf8" },
             { val: "24/7", label: "Support disponible", color: "#f97316" },
             { val: "100%", label: "Dédié à la qualité", color: "#818cf8" },
           ].map(s => (

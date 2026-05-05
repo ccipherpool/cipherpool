@@ -3,8 +3,8 @@ import { useOutletContext } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
 
-const CYAN="#00d4ff",INDIGO="#818cf8",VIOLET="#a78bfa",GREEN="#10b981",RED="#f43f5e",AMBER="#fbbf24",BG="#020817",CARD="#0a1628";
-const cx=a=>`rgba(0,212,255,${a})`,gx=a=>`rgba(16,185,129,${a})`,ax=a=>`rgba(251,191,36,${a})`,vx=a=>`rgba(167,139,250,${a})`,rx=a=>`rgba(244,63,94,${a})`;
+const CYAN="#818cf8",INDIGO="#6366f1",VIOLET="#a78bfa",GREEN="#10b981",RED="#f43f5e",AMBER="#fbbf24",BG="#07071a",CARD="rgba(12,12,28,0.98)";
+const cx=a=>`rgba(99,102,241,${a})`,gx=a=>`rgba(16,185,129,${a})`,ax=a=>`rgba(251,191,36,${a})`,vx=a=>`rgba(167,139,250,${a})`,rx=a=>`rgba(244,63,94,${a})`;
 
 function G({children,style,ac}){
   const[h,setH]=useState(false);

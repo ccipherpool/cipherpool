@@ -153,7 +153,7 @@ export default function MainLayout() {
   };
 
   if (loading) return (
-    <div className="h-screen flex items-center justify-center" style={{ background: "#030305" }}>
+    <div className="h-screen flex items-center justify-center" style={{ background: "#07071a" }}>
       <div className="flex flex-col items-center gap-4">
         <div className="w-10 h-10 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
         <p className="text-white/30 text-xs font-mono tracking-widest uppercase">Loading...</p>
@@ -167,11 +167,17 @@ export default function MainLayout() {
   const initials = profile?.full_name?.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() || "?";
 
   return (
-    <div className="min-h-screen text-white font-sans" style={{ background: "#030305" }}>
+    <div className="min-h-screen text-white font-sans" style={{ background: "#07071a" }}>
+      {/* Ambient top glow + grid */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.018) 1px,transparent 1px)", backgroundSize: "60px 60px" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50vh", background: "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 70%)" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "30vh", background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(99,102,241,0.07) 0%, transparent 70%)" }} />
+      </div>
 
       {/* ════════════════ TOP NAVBAR ════════════════ */}
       <header className="fixed top-0 left-0 right-0 z-50 h-14"
-        style={{ background: "rgba(3,3,8,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        style={{ background: "rgba(7,7,26,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="max-w-screen-2xl mx-auto h-full flex items-center justify-between px-4 md:px-6 gap-4">
 
           {/* LEFT: Logo + Nav */}
@@ -301,7 +307,7 @@ export default function MainLayout() {
       </header>
 
       {/* ════════════════ CONTENT ════════════════ */}
-      <main className="pt-14 min-h-screen">
+      <main className="pt-14 min-h-screen relative z-10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
           <Outlet context={{ profile, balance }} />
         </div>

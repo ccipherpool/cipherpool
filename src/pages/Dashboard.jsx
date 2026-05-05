@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { BauhausCard } from "../components/ui/BauhausCard";
 import { RatingInteraction } from "../components/ui/RatingInteraction";
-import { WordsPullUpMultiStyle } from "../components/ui/WordsPullUp";
 
 function StatCard({ icon: Icon, label, value, color, accentColor, delay = 0 }) {
   return (
@@ -138,24 +137,28 @@ export default function Dashboard() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden rounded-2xl p-6 md:p-8"
-        style={{ background: "linear-gradient(135deg,rgba(12,12,26,1),rgba(18,18,40,0.98))", border: "1px solid rgba(255,255,255,0.05)" }}
+        style={{ background: "linear-gradient(135deg,rgba(10,10,24,0.98),rgba(16,16,40,0.98))", border: "1px solid rgba(99,102,241,0.12)" }}
       >
-        {/* Decorative glow */}
-        <div className="absolute top-0 right-0 w-80 h-80 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 70%)" }} />
-        <div className="absolute bottom-0 left-0 w-60 h-60 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(249,115,22,0.04) 0%, transparent 70%)" }} />
-        <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg,transparent,#6366f1,transparent)" }} />
+        {/* Decorative glows */}
+        <div className="absolute top-0 right-0 w-96 h-96 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 65%)" }} />
+        <div className="absolute bottom-0 left-0 w-72 h-72 pointer-events-none" style={{ background: "radial-gradient(circle, rgba(167,139,250,0.06) 0%, transparent 65%)" }} />
+        <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg,transparent,#818cf8,transparent)" }} />
+        <div className="absolute inset-x-0 bottom-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(99,102,241,0.3),transparent)" }} />
 
         <div className="relative grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-center">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 font-mono" style={{ color: "#818cf8" }}>⚡ SAISON 1 ACTIVE</p>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight mb-3">
-              <WordsPullUpMultiStyle
-                segments={[
-                  { text: "BON RETOUR,", style: { color: "#fff" } },
-                  { text: " " + firstName.toUpperCase(), style: { background: "linear-gradient(135deg,#818cf8,#c4b5fd)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" } },
-                ]}
-              />
-            </h1>
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="text-3xl md:text-4xl font-black tracking-tight leading-tight mb-3"
+            >
+              <span className="text-white">BON RETOUR, </span>
+              <span style={{ background: "linear-gradient(135deg,#818cf8,#c4b5fd)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                {firstName.toUpperCase()} 👋
+              </span>
+            </motion.h1>
             <p className="text-sm text-white/40 mb-5 font-medium">
               {matches > 0 ? `${matches} match${matches > 1 ? "s" : ""} joué${matches > 1 ? "s" : ""} — Continue à grinder.` : "Lance-toi dans ton premier tournoi !"}
             </p>

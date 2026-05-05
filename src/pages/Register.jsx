@@ -90,7 +90,7 @@ export default function Register() {
   const inputStyle = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" };
 
   return (
-    <div className="min-h-screen text-white flex overflow-hidden font-sans relative" style={{ background: "#030305" }}>
+    <div className="min-h-screen text-white flex overflow-hidden font-sans relative" style={{ background: "#07071a" }}>
 
       {/* Background ambient */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(79,70,229,0.12) 0%, transparent 70%)" }} />
