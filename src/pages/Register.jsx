@@ -45,6 +45,7 @@ export default function Register() {
     if (formData.password !== formData.confirmPassword) { setError("Les mots de passe ne correspondent pas"); setLoading(false); return; }
     if (formData.password.length < 6) { setError("Mot de passe trop court (6 caractères min)"); setLoading(false); return; }
     try {
+<<<<<<< HEAD
       const { data: authData, error: authError } = await supabase.auth.signUp({ email: formData.email, password: formData.password });
       if (authError) throw authError;
       if (authData.user) {
@@ -61,8 +62,61 @@ export default function Register() {
       }
       setSuccess("Compte créé avec succès ! Bienvenue chez CipherPool.");
       setTimeout(() => navigate("/login"), 2000);
+=======
+      // 1. Sign up user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      if (authData?.user) {
+        // 2. Create profile manually - removing coins/xp as they cause schema error
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .upsert({
+            id: authData.user.id,
+            full_name: formData.fullName,
+            email: formData.email,
+            free_fire_id: formData.freeFireId,
+            role: "user",
+            verification_status: "verified",
+            level: 1
+          }, { onConflict: 'id' });
+
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          // Check if error is about missing columns
+          if (profileError.message.includes("column")) {
+             // Retry with even fewer columns if needed
+             await supabase.from("profiles").upsert({
+                id: authData.user.id,
+                full_name: formData.fullName,
+                email: formData.email,
+                free_fire_id: formData.freeFireId
+             });
+          }
+        }
+
+        // 3. Create initial wallet
+        await supabase.from("wallets").insert({
+          user_id: authData.user.id,
+          balance: 0
+        }).catch(err => console.error("Wallet creation error:", err));
+      }
+
+      setSuccess("Compte créé avec succès! Tu peux maintenant te connecter.");
+      setTimeout(() => navigate("/login"), 2500);
+>>>>>>> db47c855d713f62c01bc3f8e4eb243c6d650ecb8
     } catch (err) {
-      setError(err.message || "Erreur lors de l'inscription");
+      console.error("Registration error:", err);
+      setError(err.message || "Erreur lors de l'inscription.");
     } finally {
       setLoading(false);
     }
@@ -321,3 +375,4 @@ export default function Register() {
     </div>
   );
 }
+// Trigger build Tue May  5 08:51:24 EDT 2026
