@@ -55,7 +55,7 @@ export default function Register() {
       if (authError) throw authError;
 
       if (authData?.user) {
-        // 2. Create profile manually (sometimes triggers don't work)
+        // 2. Create profile manually - removing coins/xp as they cause schema error
         const { error: profileError } = await supabase
           .from("profiles")
           .upsert({
@@ -65,14 +65,21 @@ export default function Register() {
             free_fire_id: formData.freeFireId,
             role: "user",
             verification_status: "verified",
-            coins: 0,
-            xp: 0,
             level: 1
           }, { onConflict: 'id' });
 
         if (profileError) {
           console.error("Profile creation error:", profileError);
-          // Don't throw yet, user might still be created in auth
+          // Check if error is about missing columns
+          if (profileError.message.includes("column")) {
+             // Retry with even fewer columns if needed
+             await supabase.from("profiles").upsert({
+                id: authData.user.id,
+                full_name: formData.fullName,
+                email: formData.email,
+                free_fire_id: formData.freeFireId
+             });
+          }
         }
 
         // 3. Create initial wallet
@@ -86,7 +93,7 @@ export default function Register() {
       setTimeout(() => navigate("/login"), 2500);
     } catch (err) {
       console.error("Registration error:", err);
-      setError(err.message || "Erreur lors de l'inscription. L'email est peut-être déjà utilisé.");
+      setError(err.message || "Erreur lors de l'inscription.");
     } finally {
       setLoading(false);
     }
