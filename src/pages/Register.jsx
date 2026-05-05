@@ -41,35 +41,52 @@ export default function Register() {
     }
 
     try {
+      // 1. Sign up user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+          }
+        }
       });
 
       if (authError) throw authError;
 
-      if (authData.user) {
+      if (authData?.user) {
+        // 2. Create profile manually (sometimes triggers don't work)
         const { error: profileError } = await supabase
           .from("profiles")
-          .insert({
+          .upsert({
             id: authData.user.id,
             full_name: formData.fullName,
             email: formData.email,
             free_fire_id: formData.freeFireId,
             role: "user",
-            verification_status: "verified", // Simplified: auto-verify on registration as requested
+            verification_status: "verified",
             coins: 0,
             xp: 0,
             level: 1
-          });
+          }, { onConflict: 'id' });
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          // Don't throw yet, user might still be created in auth
+        }
+
+        // 3. Create initial wallet
+        await supabase.from("wallets").insert({
+          user_id: authData.user.id,
+          balance: 0
+        }).catch(err => console.error("Wallet creation error:", err));
       }
 
-      setSuccess("Compte créé avec succès! Bienvenue chez CipherPool.");
-      setTimeout(() => navigate("/login"), 2000);
+      setSuccess("Compte créé avec succès! Tu peux maintenant te connecter.");
+      setTimeout(() => navigate("/login"), 2500);
     } catch (err) {
-      setError(err.message || "Erreur lors de l'inscription");
+      console.error("Registration error:", err);
+      setError(err.message || "Erreur lors de l'inscription. L'email est peut-être déjà utilisé.");
     } finally {
       setLoading(false);
     }
