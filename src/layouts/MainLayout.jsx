@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation, NavLink, Link } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import {
   LayoutDashboard, Trophy, BarChart3, Shield, Users2, Newspaper,
