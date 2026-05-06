@@ -144,6 +144,7 @@ export default function Support() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ subject: "", category: "autre", priority: "normal", body: "" });
   const [sending, setSending] = useState(false);
+  const [mobileView, setMobileView] = useState("list"); // "list" | "convo"
   const bottomRef = useRef(null);
 
   const isAdmin = ["admin", "super_admin"].includes(profile?.role);
@@ -338,14 +339,26 @@ export default function Support() {
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(99,102,241,.3); border-radius: 99px; }
         .ticket-row:hover { background: rgba(99,102,241,0.07) !important; }
-        .tab-pill { background: none; border: none; cursor: pointer; padding: 8px 20px; border-radius: 99px; font-family: 'Space Grotesk',sans-serif; font-size: 13px; font-weight: 600; transition: all .2s; }
+        .tab-pill { background: none; border: none; cursor: pointer; padding: 8px 14px; border-radius: 99px; font-family: 'Space Grotesk',sans-serif; font-size: 12px; font-weight: 600; transition: all .2s; }
         .tab-pill.active { background: ${ix(0.18)}; color: ${INDIGO_L}; box-shadow: 0 0 0 1px ${ix(0.35)}; }
         .tab-pill.inactive { color: rgba(255,255,255,.38); }
         .tab-pill.inactive:hover { color: rgba(255,255,255,.65); background: rgba(255,255,255,.04); }
+        .support-grid { display: grid; grid-template-columns: 300px 1fr; gap: 16px; min-height: 520px; }
+        .admin-stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+        @media (max-width: 768px) {
+          .support-grid { grid-template-columns: 1fr !important; }
+          .admin-stats-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .support-header { flex-direction: column; align-items: flex-start !important; }
+          .support-header h1 { font-size: 28px !important; }
+          .sp-hide-on-mobile { display: none !important; }
+          .sp-back-btn { display: flex !important; }
+          .sp-convo-panel { height: 70vh !important; }
+        }
+        .sp-back-btn { display: none; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 10px; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25); color: #818cf8; cursor: pointer; font-family: 'Space Grotesk',sans-serif; font-size: 12px; font-weight: 600; margin-right: auto; }
       `}</style>
 
       {/* ── Header ── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }}>
+      <div className="support-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }}>
         <div>
           <h1
             style={{
@@ -395,7 +408,7 @@ export default function Support() {
 
       {/* ── Admin stat cards ── */}
       {isAdmin && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
+        <div className="admin-stats-grid">
           {[
             [INDIGO_L, tickets.length, "Total", ix],
             [GREEN, tickets.filter((t) => t.status === "open").length, "Ouverts", gx],
@@ -448,10 +461,11 @@ export default function Support() {
           TICKETS TAB
       ══════════════════════════════════════ */}
       {tab === "tickets" && (
-        <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 16, minHeight: 520 }}>
+        <div className="support-grid">
 
           {/* Left — ticket list */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}
+            className={mobileView === "convo" ? "sp-hide-on-mobile" : ""}>
             {isAdmin && (
               <select
                 value={ticketFilter}
@@ -516,7 +530,7 @@ export default function Support() {
                       <div
                         key={t.id}
                         className="ticket-row"
-                        onClick={() => { setSelectedTicket(t); fetchMessages(t.id); }}
+                        onClick={() => { setSelectedTicket(t); fetchMessages(t.id); setMobileView("convo"); }}
                         style={{
                           padding: "13px 14px",
                           borderRadius: 12,
@@ -564,7 +578,7 @@ export default function Support() {
 
           {/* Right — conversation */}
           {selectedTicket ? (
-            <G style={{ display: "flex", flexDirection: "column", height: 580, padding: 0 }}>
+            <G className="sp-convo-panel" style={{ display: "flex", flexDirection: "column", height: 580, padding: 0 }}>
               {/* Conversation header */}
               <div
                 style={{
@@ -578,6 +592,9 @@ export default function Support() {
                   gap: 10,
                 }}
               >
+                <button className="sp-back-btn" onClick={() => { setSelectedTicket(null); setMobileView("list"); }}>
+                  ← Retour
+                </button>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ margin: "0 0 7px", fontSize: 15, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {selectedTicket.subject}

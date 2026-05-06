@@ -52,6 +52,11 @@ export default function Register() {
       });
       if (authError) throw authError;
 
+      // Detect duplicate email (Supabase returns fake user with empty identities)
+      if (authData?.user?.identities?.length === 0) {
+        throw new Error("Un compte avec cet email existe déjà. Connectez-vous.");
+      }
+
       if (authData?.user) {
         const { error: profileError } = await supabase.from("profiles").upsert({
           id: authData.user.id,
@@ -63,13 +68,18 @@ export default function Register() {
           level: 1,
         }, { onConflict: "id" });
 
-        if (profileError?.message?.includes("column")) {
-          await supabase.from("profiles").upsert({
-            id: authData.user.id,
-            full_name: formData.fullName,
-            email: formData.email,
-            free_fire_id: formData.freeFireId,
-          });
+        if (profileError) {
+          if (profileError.message?.includes("column") || profileError.code === "42703") {
+            const { error: e2 } = await supabase.from("profiles").upsert({
+              id: authData.user.id,
+              full_name: formData.fullName,
+              email: formData.email,
+              free_fire_id: formData.freeFireId,
+            }, { onConflict: "id" });
+            if (e2) throw e2;
+          } else {
+            throw profileError;
+          }
         }
 
         await supabase.from("wallets").insert({

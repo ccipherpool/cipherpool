@@ -129,23 +129,41 @@ export default function MainLayout() {
   const location = useLocation();
   const [profile, setProfile] = useState(null);
   const [balance, setBalance] = useState(0);
+  const [equippedItems, setEquippedItems] = useState({});
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const fetchProfile = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { navigate("/login"); return; }
+    const [{ data: prof }, { data: wallet }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("wallets").select("balance").eq("user_id", user.id).single(),
+    ]);
+    if (prof) setProfile(prof);
+    setBalance(wallet?.balance ?? 0);
+    // Fetch equipped items if table exists
+    try {
+      const { data: equipped } = await supabase
+        .from("equipped_items")
+        .select("type, store_items(name, image_url, rarity)")
+        .eq("user_id", user.id);
+      if (equipped?.length) {
+        const map = {};
+        equipped.forEach(e => { if (e.store_items) map[e.type] = e.store_items; });
+        setEquippedItems(map);
+      }
+    } catch (_) {}
+    return user;
+  }, [navigate]);
+
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate("/login"); return; }
-      const [{ data: prof }, { data: wallet }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).single(),
-        supabase.from("wallets").select("balance").eq("user_id", user.id).single(),
-      ]);
-      setProfile(prof);
-      setBalance(wallet?.balance ?? 0);
+      await fetchProfile();
       setLoading(false);
     };
     init();
-  }, [navigate]);
+  }, [fetchProfile]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -309,7 +327,7 @@ export default function MainLayout() {
       {/* ════════════════ CONTENT ════════════════ */}
       <main className="pt-14 min-h-screen relative z-10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-          <Outlet context={{ profile, balance }} />
+          <Outlet context={{ profile, balance, equippedItems, refreshProfile: fetchProfile }} />
         </div>
       </main>
 

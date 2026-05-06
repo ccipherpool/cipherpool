@@ -370,13 +370,28 @@ export default function Profile() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
         .prf{font-family:Space Grotesk,sans-serif;color:rgba(255,255,255,.88);min-height:100vh;background:${BG}}
-        .ptab{background:none;border:none;cursor:pointer;font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:2px;font-weight:600;padding:14px 16px;margin-bottom:-1px;transition:all .2s;white-space:nowrap;position:relative}
+        .ptab{background:none;border:none;cursor:pointer;font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:2px;font-weight:600;padding:12px 12px;margin-bottom:-1px;transition:all .2s;white-space:nowrap;position:relative}
         .ptab:hover{color:rgba(255,255,255,.8)!important}
         .avw:hover .avo{opacity:1!important}
         .rowh{transition:background .15s}.rowh:hover{background:${cx(.04)}!important}
         @keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
         @keyframes scan{0%{top:-100%}100%{top:200%}}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${cx(.22)};border-radius:99px}
+        .prf-hero-inner{max-width:1060px;margin:0 auto;padding:0 32px}
+        .prf-content{max-width:1060px;margin:0 auto;padding:32px 32px 64px}
+        .prf-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+        .prf-perf-grid{display:grid;grid-template-columns:1fr 210px;gap:12px}
+        .prf-wallet-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+        @media(max-width:768px){
+          .prf-hero-inner{padding:0 16px}
+          .prf-content{padding:20px 16px 48px}
+          .prf-stats-grid{grid-template-columns:repeat(2,1fr)}
+          .prf-perf-grid{grid-template-columns:1fr}
+          .prf-wallet-grid{grid-template-columns:repeat(2,1fr)}
+          .prf-hero-name{font-size:26px!important}
+          .prf-avatar-block{gap:16px!important;margin-top:-56px!important}
+          .prf-balance-card{min-width:unset!important;width:100%!important}
+        }
       `}</style>
 
       <div className="prf">
@@ -394,8 +409,9 @@ export default function Profile() {
             <div style={{ position:"absolute",bottom:0,left:0,right:0,height:130,background:`linear-gradient(to top,${BG},transparent)`,pointerEvents:"none" }} />
           </div>
 
-          <div style={{ maxWidth:1060,margin:"0 auto",padding:"0 32px" }}>
+          <div className="prf-hero-inner">
             <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{duration:.5}}
+              className="prf-avatar-block"
               style={{ display:"flex",alignItems:"flex-end",gap:26,marginTop:-72,paddingBottom:28,flexWrap:"wrap" }}>
 
               {/* ── Avatar with menu ── */}
@@ -487,7 +503,7 @@ export default function Profile() {
               <motion.div initial={{opacity:0,x:-18}} animate={{opacity:1,x:0}} transition={{delay:.12,duration:.5,ease:[.22,1,.36,1]}}
                 style={{ flex:1,minWidth:220,paddingBottom:4 }}>
                 <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:8,flexWrap:"wrap" }}>
-                  <h1 style={{ fontFamily:"'Bebas Neue',cursive",fontSize:36,letterSpacing:2,margin:0,lineHeight:1,
+                  <h1 className="prf-hero-name" style={{ fontFamily:"'Bebas Neue',cursive",fontSize:36,letterSpacing:2,margin:0,lineHeight:1,
                     color:eq?.name_color?RARITY[eq.name_color.rarity]?.color||"#fff":"#fff",
                     textShadow:eq?.name_color?`0 0 30px ${RARITY[eq.name_color.rarity]?.glow}`:`0 2px 18px rgba(0,0,0,.6)` }}>
                     {profile?.full_name||"—"}
@@ -524,7 +540,7 @@ export default function Profile() {
               </motion.div>
 
               {/* Balance */}
-              <motion.div initial={{opacity:0,scale:.88}} animate={{opacity:1,scale:1}} transition={{delay:.18,type:"spring",stiffness:220,damping:22}} whileHover={{y:-5}} style={{flexShrink:0,minWidth:168}}>
+              <motion.div initial={{opacity:0,scale:.88}} animate={{opacity:1,scale:1}} transition={{delay:.18,type:"spring",stiffness:220,damping:22}} whileHover={{y:-5}} className="prf-balance-card" style={{flexShrink:0,minWidth:168}}>
                 <G ac={CYAN} style={{ padding:"20px 24px",textAlign:"center" }}>
                   <div style={{ position:"absolute",top:-28,right:-28,width:90,height:90,borderRadius:"50%",background:`radial-gradient(circle,${cx(.18)},transparent)`,pointerEvents:"none" }} />
                   <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.22)",marginBottom:7,position:"relative" }}>SOLDE</p>
@@ -557,13 +573,13 @@ export default function Profile() {
         </div>
 
         {/* ══ CONTENT ═════════════════════════════════════════════ */}
-        <div style={{ maxWidth:1060,margin:"0 auto",padding:"32px 32px 64px" }}>
+        <div className="prf-content">
           <AnimatePresence mode="wait">
 
             {/* STATS */}
             {tab==="stats" && (
               <motion.div key="stats" initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} transition={{duration:.28}}>
-                <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16 }}>
+                <div className="prf-stats-grid">
                   <Kpi label="PARTIES JOUÉES"  value={stats?.total_matches||0} ac={INDIGO} icon="🎮" delay={.04} />
                   <Kpi label="VICTOIRES"        value={stats?.wins||0}          ac={GREEN}  icon="🏆" delay={.08} />
                   <Kpi label="DÉFAITES"         value={stats?.losses||0}        ac={RED}    icon="💀" delay={.12} />
@@ -601,7 +617,7 @@ export default function Profile() {
                   </G>
                 </motion.div>
 
-                <div style={{ display:"grid",gridTemplateColumns:"1fr 210px",gap:12 }}>
+                <div className="prf-perf-grid">
                   <motion.div initial={{opacity:0,x:-12}} animate={{opacity:1,x:0}} transition={{delay:.32}}>
                     <G style={{ padding:"22px 26px",height:"100%" }}>
                       <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:2.5,color:"rgba(255,255,255,.2)",marginBottom:16 }}>INFORMATIONS</p>
@@ -692,7 +708,7 @@ export default function Profile() {
             {/* WALLET */}
             {tab==="wallet" && (
               <motion.div key="wallet" initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}} transition={{duration:.28}}>
-                <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20 }}>
+                <div className="prf-wallet-grid">
                   {[
                     {label:"SOLDE ACTUEL",  val:balance,ac:CYAN,  icon:"💎"},
                     {label:"TOTAL DÉPENSÉ", val:transactions.filter(t=>["purchase","debit","penalty"].includes(t.type)).reduce((s,t)=>s+(t.amount||0),0),ac:RED,   icon:"🛍️"},

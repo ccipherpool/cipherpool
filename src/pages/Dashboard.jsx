@@ -145,43 +145,43 @@ export default function Dashboard() {
         <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg,transparent,#818cf8,transparent)" }} />
         <div className="absolute inset-x-0 bottom-0 h-px" style={{ background: "linear-gradient(90deg,transparent,rgba(99,102,241,0.3),transparent)" }} />
 
-        <div className="relative grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-center">
+        <div className="relative grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 md:gap-6 items-center">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 font-mono" style={{ color: "#818cf8" }}>⚡ SAISON 1 ACTIVE</p>
             <motion.h1
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="text-3xl md:text-4xl font-black tracking-tight leading-tight mb-3"
+              className="text-2xl md:text-4xl font-black tracking-tight leading-tight mb-3"
             >
               <span className="text-white">BON RETOUR, </span>
               <span style={{ background: "linear-gradient(135deg,#818cf8,#c4b5fd)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
                 {firstName.toUpperCase()} 👋
               </span>
             </motion.h1>
-            <p className="text-sm text-white/40 mb-5 font-medium">
+            <p className="text-sm text-white/40 mb-4 font-medium">
               {matches > 0 ? `${matches} match${matches > 1 ? "s" : ""} joué${matches > 1 ? "s" : ""} — Continue à grinder.` : "Lance-toi dans ton premier tournoi !"}
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               <Link
                 to="/tournaments"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-black transition-all hover:opacity-90 active:scale-95"
+                className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
                 style={{ background: "linear-gradient(135deg,#4f46e5,#6366f1)" }}
               >
-                <Sword size={16} /> Jouer maintenant
+                <Sword size={15} /> Jouer maintenant
               </Link>
               <Link
                 to="/daily-rewards"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-white/5 active:scale-95"
+                className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-xl text-sm font-bold transition-all hover:bg-white/5 active:scale-95"
                 style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)", color: "#f97316" }}
               >
-                <Gift size={16} /> Daily Bonus
+                <Gift size={15} /> Daily Bonus
               </Link>
             </div>
           </div>
 
           {/* XP Card */}
-          <div className="min-w-[200px] rounded-xl p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="w-full md:min-w-[200px] md:w-auto rounded-xl p-4 md:p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] text-white/30 font-mono uppercase tracking-widest">NIVEAU</span>
               <span className="text-xl font-black" style={{ color: "#a78bfa" }}>{level}</span>
@@ -199,7 +199,7 @@ export default function Dashboard() {
               <span>{xp.toLocaleString()} XP</span>
               <span>{xpNext.toLocaleString()}</span>
             </div>
-            <div className="grid grid-cols-3 gap-2 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+            <div className="grid grid-cols-3 gap-2 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-around" }}>
               {[
                 { val: wins,            color: "#f97316", label: "WINS" },
                 { val: `${wr}%`,        color: "#818cf8", label: "WR" },
