@@ -4,9 +4,10 @@ import { supabase } from "../lib/supabase";
 import {
   LayoutDashboard, Trophy, BarChart3, Shield, Users2, Newspaper,
   MessageSquare, ShoppingBag, Wallet, Headphones, User, Star,
-  Gift, TrendingUp, Crown, LogOut, Bell, Menu, X, Zap,
+  Gift, TrendingUp, Crown, LogOut, Menu, X, Zap,
   ChevronDown, Settings, Plus, Sword,
 } from "lucide-react";
+import NotificationBell from "../components/NotificationBell";
 import { motion, AnimatePresence } from "framer-motion";
 
 /* ─── Nav definitions ────────────────────────────────────────────── */
@@ -269,10 +270,7 @@ export default function MainLayout() {
             )}
 
             {/* Notifications */}
-            <button className="relative w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-all">
-              <Bell size={15} />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-orange-500" />
-            </button>
+            <NotificationBell userId={profile?.id} />
 
             {/* Avatar dropdown */}
             <Dropdown align="right" trigger={() => (
