@@ -104,13 +104,15 @@ export default function AdminResults() {
           await supabase.from("wallets")
             .update({ balance: (wallet.balance || 0) + coins })
             .eq("id", wallet.id);
-          await supabase.from("wallet_transactions").insert({
-            wallet_id:   wallet.id,
-            user_id:     result.user_id,
-            amount:      coins,
-            type:        "reward",
-            description: `${result.tournaments?.name || "Tournoi"} — Place #${result.placement} · ${result.kills} kills`,
-          }).catch(() => {});
+          try {
+            await supabase.from("wallet_transactions").insert({
+              wallet_id:   wallet.id,
+              user_id:     result.user_id,
+              amount:      coins,
+              type:        "reward",
+              description: `${result.tournaments?.name || "Tournoi"} — Place #${result.placement} · ${result.kills} kills`,
+            });
+          } catch (_) {}
         }
       }
 

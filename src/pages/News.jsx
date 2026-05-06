@@ -48,8 +48,10 @@ export default function News(){
   };
 
   const incrementView=async(id)=>{
-    const{data:nData}=await supabase.from("news").select("views").eq("id",id).single().catch(()=>({data:null}));
-    if(nData)await supabase.from("news").update({views:(nData.views||0)+1}).eq("id",id).catch(()=>{});
+    try {
+      const{data:nData}=await supabase.from("news").select("views").eq("id",id).maybeSingle();
+      if(nData)await supabase.from("news").update({views:(nData.views||0)+1}).eq("id",id);
+    } catch(_){}
   };
 
   const openArticle=(a)=>{setSelected(a);incrementView(a.id);};

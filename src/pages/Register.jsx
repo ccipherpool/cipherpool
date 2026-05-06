@@ -82,10 +82,9 @@ export default function Register() {
           }
         }
 
-        await supabase.from("wallets").insert({
-          user_id: authData.user.id,
-          balance: 0,
-        }).catch(() => {});
+        try {
+          await supabase.from("wallets").insert({ user_id: authData.user.id, balance: 0 });
+        } catch (_) {}
       }
 
       // If session exists → email confirmation not required → go to dashboard
