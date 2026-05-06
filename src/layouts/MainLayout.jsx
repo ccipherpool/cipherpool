@@ -137,11 +137,17 @@ export default function MainLayout() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { navigate("/login"); return; }
     const [{ data: prof }, { data: wallet }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
-      supabase.from("wallets").select("balance").eq("user_id", user.id).single(),
+      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+      supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
     ]);
     if (prof) setProfile(prof);
-    setBalance(wallet?.balance ?? 0);
+    if (wallet) {
+      setBalance(wallet.balance ?? 0);
+    } else {
+      // Create wallet if it doesn't exist yet
+      await supabase.from("wallets").insert({ user_id: user.id, balance: 0 }).select().maybeSingle();
+      setBalance(0);
+    }
     return user;
   }, [navigate]);
 
