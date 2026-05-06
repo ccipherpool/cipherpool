@@ -88,8 +88,14 @@ export default function Register() {
         }).catch(() => {});
       }
 
-      setSuccess("Compte créé avec succès ! Bienvenue chez CipherPool.");
-      setTimeout(() => navigate("/login"), 2500);
+      // If session exists → email confirmation not required → go to dashboard
+      if (authData?.session) {
+        setSuccess("Compte créé ! Redirection...");
+        setTimeout(() => navigate("/dashboard"), 1200);
+      } else {
+        // Email confirmation required
+        setSuccess("✅ Compte créé ! Vérifie ton email et confirme ton inscription avant de te connecter.");
+      }
     } catch (err) {
       const msg = err.message || "";
       if (msg.includes("already registered") || msg.includes("already been registered") || err.status === 422) {

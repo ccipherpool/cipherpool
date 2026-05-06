@@ -43,7 +43,16 @@ export default function Login() {
       if (error) throw error;
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message || "Erreur de connexion");
+      const msg = err.message || "";
+      if (msg.includes("Email not confirmed") || msg.includes("not confirmed")) {
+        setError("📧 Confirme ton email d'abord — vérifie ta boîte mail (et les spams).");
+      } else if (msg.includes("Invalid login") || msg.includes("invalid credentials") || msg.includes("Invalid credentials")) {
+        setError("Email ou mot de passe incorrect.");
+      } else if (msg.includes("rate limit") || msg.includes("too many")) {
+        setError("Trop de tentatives. Attends quelques minutes.");
+      } else {
+        setError(msg || "Erreur de connexion.");
+      }
     } finally {
       setLoading(false);
     }
