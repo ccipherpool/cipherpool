@@ -19,7 +19,10 @@
       "Bash(Get-Item \"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\\\\src\\\\pages\\\\Dashboard_NEW.jsx\")",
       "Bash(Select-Object Name, Length, LastWriteTime)",
       "Bash(not exist *)",
-      "Bash(node --input-type=module --eval \"import\\('./src/pages/Support.jsx'\\).then\\(\\(\\)=>console.log\\('OK'\\)\\).catch\\(e=>console.error\\(e.message\\)\\)\")"
+      "Bash(node --input-type=module --eval \"import\\('./src/pages/Support.jsx'\\).then\\(\\(\\)=>console.log\\('OK'\\)\\).catch\\(e=>console.error\\(e.message\\)\\)\")",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
