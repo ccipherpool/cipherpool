@@ -102,7 +102,8 @@ export default function Dashboard() {
       setTournaments(tourney || []);
       setPlayerStats(stats);
       if (top?.length) {
-        const ids = top.map(t => t.user_id);
+        const ids = top.map(t => t.user_id).filter(Boolean);
+        if (!ids.length) { setLoading(false); return; }
         const { data: profs } = await supabase.from("profiles").select("id,full_name,avatar_url").in("id", ids);
         const pMap = Object.fromEntries((profs || []).map(p => [p.id, p]));
         setTopPlayers(top.map((s, i) => ({ ...s, rank: i + 1, name: pMap[s.user_id]?.full_name || "Joueur", avatar: pMap[s.user_id]?.avatar_url })));

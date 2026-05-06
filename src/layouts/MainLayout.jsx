@@ -142,18 +142,6 @@ export default function MainLayout() {
     ]);
     if (prof) setProfile(prof);
     setBalance(wallet?.balance ?? 0);
-    // Fetch equipped items if table exists
-    try {
-      const { data: equipped } = await supabase
-        .from("equipped_items")
-        .select("type, store_items(name, image_url, rarity)")
-        .eq("user_id", user.id);
-      if (equipped?.length) {
-        const map = {};
-        equipped.forEach(e => { if (e.store_items) map[e.type] = e.store_items; });
-        setEquippedItems(map);
-      }
-    } catch (_) {}
     return user;
   }, [navigate]);
 

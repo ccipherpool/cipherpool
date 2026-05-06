@@ -91,7 +91,16 @@ export default function Register() {
       setSuccess("Compte créé avec succès ! Bienvenue chez CipherPool.");
       setTimeout(() => navigate("/login"), 2500);
     } catch (err) {
-      setError(err.message || "Erreur lors de l'inscription.");
+      const msg = err.message || "";
+      if (msg.includes("already registered") || msg.includes("already been registered") || err.status === 422) {
+        setError("Un compte avec cet email existe déjà. Connectez-vous.");
+      } else if (msg.includes("rate limit") || msg.includes("too many")) {
+        setError("Trop de tentatives. Attendez quelques minutes.");
+      } else if (msg.includes("invalid") && msg.includes("email")) {
+        setError("Adresse email invalide.");
+      } else {
+        setError(msg || "Erreur lors de l'inscription.");
+      }
     } finally {
       setLoading(false);
     }
