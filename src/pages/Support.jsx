@@ -4,42 +4,70 @@ import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 
 /* ═══════════════════════════════════════════════════════
-   CIPHERPOOL — SUPPORT
-   Premium Dark · Indigo palette
+   CIPHERPOOL — SUPPORT PREMIUM
+   Dark Indigo · Glassmorphic Design · Smooth Animations
    ═══════════════════════════════════════════════════════ */
-const INDIGO = "#6366f1";
-const INDIGO_L = "#818cf8";
-const GREEN = "#10b981";
-const RED = "#f43f5e";
-const AMBER = "#fbbf24";
-const ORANGE = "#f97316";
 
-const ix = (a) => `rgba(99,102,241,${a})`;
-const rx = (a) => `rgba(244,63,94,${a})`;
-const gx = (a) => `rgba(16,185,129,${a})`;
-const ax = (a) => `rgba(251,191,36,${a})`;
+// ====================== CONSTANTS & THEME ======================
+const THEME = {
+  primary: "#6366f1",
+  primaryLight: "#818cf8",
+  primaryDark: "#4f46e5",
+  secondary: "#8b5cf6",
+  success: "#10b981",
+  warning: "#f59e0b",
+  error: "#ef4444",
+  info: "#3b82f6",
+  darkBg: "#0f0f1a",
+  cardBg: "rgba(18, 18, 30, 0.95)",
+  borderLight: "rgba(255, 255, 255, 0.08)",
+  textPrimary: "rgba(255, 255, 255, 0.92)",
+  textSecondary: "rgba(255, 255, 255, 0.55)",
+  textMuted: "rgba(255, 255, 255, 0.28)",
+};
 
-const CARD_BG = "linear-gradient(135deg,rgba(12,12,26,1),rgba(20,20,38,0.98))";
-const CARD_BORDER = "rgba(255,255,255,0.06)";
+const GRADIENTS = {
+  primary: `linear-gradient(135deg, ${THEME.primary}, ${THEME.secondary})`,
+  success: `linear-gradient(135deg, ${THEME.success}, #059669)`,
+  warning: `linear-gradient(135deg, ${THEME.warning}, #d97706)`,
+  error: `linear-gradient(135deg, ${THEME.error}, #dc2626)`,
+  card: "linear-gradient(135deg, rgba(18, 18, 30, 0.95), rgba(25, 25, 40, 0.92))",
+};
 
-/* ── Glass card component ── */
-function G({ children, style, ac }) {
-  const [h, setH] = useState(false);
+// Helper pour opacité des couleurs
+const alpha = (color, opacity) => {
+  if (color === THEME.primary) return `rgba(99, 102, 241, ${opacity})`;
+  if (color === THEME.success) return `rgba(16, 185, 129, ${opacity})`;
+  if (color === THEME.error) return `rgba(239, 68, 68, ${opacity})`;
+  if (color === THEME.warning) return `rgba(245, 158, 11, ${opacity})`;
+  return `rgba(255, 255, 255, ${opacity})`;
+};
+
+// ====================== COMPOSANTS UI ======================
+
+// Carte glassmorphique avec effet hover
+const GlassCard = ({ children, accent, className, onClick, style }) => {
+  const [isHovered, setIsHovered] = useState(false);
   return (
-    <div
-      onMouseEnter={() => setH(true)}
-      onMouseLeave={() => setH(false)}
+    <motion.div
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={onClick}
       style={{
+        background: GRADIENTS.card,
+        border: `1px solid ${isHovered && accent ? alpha(accent, 0.3) : THEME.borderLight}`,
+        borderRadius: 20,
+        boxShadow: isHovered ? `0 8px 32px ${alpha(THEME.primary, 0.15)}` : "0 4px 20px rgba(0,0,0,0.3)",
+        transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+        cursor: onClick ? "pointer" : "default",
         position: "relative",
         overflow: "hidden",
-        background: CARD_BG,
-        border: `1px solid ${h && ac ? ac + "30" : CARD_BORDER}`,
-        borderRadius: 16,
-        boxShadow: "0 4px 24px rgba(0,0,0,.5)",
-        transition: "border .22s",
         ...style,
       }}
+      className={className}
     >
+      {/* Accent line top */}
       <div
         style={{
           position: "absolute",
@@ -47,163 +75,187 @@ function G({ children, style, ac }) {
           left: 0,
           right: 0,
           height: 2,
-          background: `linear-gradient(90deg,transparent,${ac || ix(0.4)},transparent)`,
-          opacity: h ? 1 : 0.3,
-          transition: "opacity .22s",
-          pointerEvents: "none",
+          background: accent ? `linear-gradient(90deg, transparent, ${accent}, transparent)` : "transparent",
+          opacity: isHovered ? 0.8 : 0.3,
+          transition: "opacity 0.2s",
         }}
       />
       {children}
-    </div>
+    </motion.div>
   );
-}
+};
 
-/* ── Status badge ── */
-function StatusBadge({ status }) {
-  const cfg = {
-    open: { label: "Ouvert", color: INDIGO_L, bg: ix(0.15), border: ix(0.3) },
-    pending: { label: "En cours", color: AMBER, bg: ax(0.12), border: ax(0.28) },
-    answered: { label: "Répondu", color: GREEN, bg: gx(0.12), border: gx(0.28) },
-    resolved: { label: "Résolu", color: GREEN, bg: gx(0.12), border: gx(0.28) },
-    closed: { label: "Fermé", color: "#94a3b8", bg: "rgba(148,163,184,.1)", border: "rgba(148,163,184,.2)" },
+// Badge de statut avec icône
+const StatusBadge = ({ status }) => {
+  const configs = {
+    open: { label: "Ouvert", color: THEME.primaryLight, bg: alpha(THEME.primary, 0.12), icon: "🟢" },
+    pending: { label: "En cours", color: THEME.warning, bg: alpha(THEME.warning, 0.12), icon: "🟡" },
+    answered: { label: "Répondu", color: THEME.success, bg: alpha(THEME.success, 0.12), icon: "🔵" },
+    resolved: { label: "Résolu", color: THEME.success, bg: alpha(THEME.success, 0.12), icon: "✅" },
+    closed: { label: "Fermé", color: THEME.textMuted, bg: alpha("#fff", 0.05), icon: "🔒" },
   };
-  const c = cfg[status] || cfg.open;
+  const config = configs[status] || configs.open;
+  
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 5,
-        padding: "3px 10px",
-        borderRadius: 99,
+        gap: 6,
+        padding: "4px 12px",
+        borderRadius: 100,
         fontSize: 11,
         fontWeight: 600,
-        letterSpacing: 0.5,
-        color: c.color,
-        background: c.bg,
-        border: `1px solid ${c.border}`,
-        whiteSpace: "nowrap",
+        letterSpacing: 0.3,
+        color: config.color,
+        background: config.bg,
+        border: `1px solid ${alpha(config.color, 0.2)}`,
+        backdropFilter: "blur(4px)",
       }}
     >
-      <span
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: "50%",
-          background: c.color,
-          flexShrink: 0,
-        }}
-      />
-      {c.label}
+      <span style={{ fontSize: 10 }}>{config.icon}</span>
+      {config.label}
     </span>
   );
-}
+};
 
-/* ── Priority badge ── */
-function PriorityBadge({ priority }) {
-  const cfg = {
-    normal: { label: "Normal", color: INDIGO_L, bg: ix(0.12) },
-    urgent: { label: "Urgent", color: ORANGE, bg: "rgba(249,115,22,.12)" },
-    critique: { label: "Critique", color: RED, bg: rx(0.12) },
-    low: { label: "Faible", color: "#94a3b8", bg: "rgba(148,163,184,.1)" },
-    high: { label: "Élevé", color: ORANGE, bg: "rgba(249,115,22,.12)" },
+// Badge de priorité
+const PriorityBadge = ({ priority }) => {
+  const configs = {
+    low: { label: "Basse", color: "#94a3b8", icon: "📌" },
+    normal: { label: "Normale", color: THEME.primaryLight, icon: "⚡" },
+    high: { label: "Haute", color: THEME.warning, icon: "⚠️" },
+    urgent: { label: "Urgente", color: THEME.error, icon: "🚨" },
+    critique: { label: "Critique", color: THEME.error, icon: "💀" },
   };
-  const c = cfg[priority] || cfg.normal;
-  if (priority === "normal" || !priority) return null;
+  const config = configs[priority] || configs.normal;
+  
+  if (priority === "normal") return null;
+  
   return (
     <span
       style={{
         display: "inline-flex",
-        padding: "2px 9px",
-        borderRadius: 99,
+        alignItems: "center",
+        gap: 4,
+        padding: "2px 10px",
+        borderRadius: 100,
         fontSize: 10,
         fontWeight: 600,
-        letterSpacing: 0.5,
-        color: c.color,
-        background: c.bg,
-        whiteSpace: "nowrap",
+        color: config.color,
+        background: alpha(config.color, 0.1),
+        border: `1px solid ${alpha(config.color, 0.2)}`,
       }}
     >
-      {c.label}
+      <span>{config.icon}</span>
+      {config.label}
     </span>
   );
-}
+};
 
+// Input stylisé
+const StyledInput = ({ label, ...props }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    {label && (
+      <label style={{ fontSize: 11, fontWeight: 700, color: THEME.textSecondary, letterSpacing: 0.5, textTransform: "uppercase" }}>
+        {label}
+      </label>
+    )}
+    <input
+      {...props}
+      style={{
+        background: alpha("#fff", 0.03),
+        border: `1px solid ${alpha(THEME.primary, 0.2)}`,
+        borderRadius: 12,
+        color: THEME.textPrimary,
+        padding: "12px 16px",
+        fontSize: 13,
+        outline: "none",
+        transition: "all 0.2s",
+        fontFamily: "inherit",
+        "&:focus": {
+          borderColor: THEME.primary,
+          boxShadow: `0 0 0 3px ${alpha(THEME.primary, 0.1)}`,
+        },
+        ...props.style,
+      }}
+    />
+  </div>
+);
+
+// ====================== COMPOSANT PRINCIPAL ======================
 export default function Support() {
   const { profile } = useOutletContext() || {};
   const [searchParams] = useSearchParams();
+  
+  // États
   const [tickets, setTickets] = useState([]);
   const [adminMessages, setAdminMessages] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState("tickets");
-  const [ticketFilter, setTicketFilter] = useState("all");
-  // New ticket form
+  const [activeTab, setActiveTab] = useState("tickets");
+  const [filter, setFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ subject: "", category: "autre", priority: "normal", body: "" });
+  const [formData, setFormData] = useState({ subject: "", category: "autre", priority: "normal", body: "" });
   const [sending, setSending] = useState(false);
-  const [mobileView, setMobileView] = useState("list"); // "list" | "convo"
-  const bottomRef = useRef(null);
-
+  const [mobileView, setMobileView] = useState("list");
+  
+  const messagesEndRef = useRef(null);
   const isAdmin = ["admin", "super_admin"].includes(profile?.role);
-
-  // Auto-fill from profile edit request
+  
+  // Scroll automatique vers le dernier message
   useEffect(() => {
-    // Fallback: read directly from URL in case searchParams not ready
-    const rawParams = new URLSearchParams(window.location.search);
-    const type = searchParams.get("type") || rawParams.get("type");
-    if (type === "profile_edit") {
-      const g = (k, d = "") => searchParams.get(k) || rawParams.get(k) || d;
-      const name = g("name");
-      const email = g("email");
-      const ffId = g("ffId", "—");
-      const rol = g("role");
-      const level = g("level", "1");
-      const joinDate = g("joinDate");
-      const userId = g("userId");
-      const body = `═══════════════════════════\n📋 DEMANDE DE MODIFICATION DE PROFIL\n═══════════════════════════\n\n👤 Nom actuel : ${name}\n📧 Email : ${email}\n🎮 Free Fire ID : ${ffId}\n🏷️ Rôle : ${rol}\n⚡ Niveau : ${level}\n📅 Inscrit le : ${joinDate}\n🔑 User ID : ${userId}\n\n═══════════════════════════\n✏️ CE QUE JE SOUHAITE MODIFIER :\n\n[Décrivez ici ce que vous souhaitez changer : Nom, Email, Âge, Ville, etc.]\n\n═══════════════════════════`;
-      setForm({ subject: "Demande de modification de profil", category: "compte", priority: "normal", body });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+  
+  // Pré-remplissage automatique depuis URL (modification profil)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("type") === "profile_edit") {
+      setFormData({
+        subject: "Demande de modification de profil",
+        category: "compte",
+        priority: "normal",
+        body: `📋 DEMANDE DE MODIFICATION DE PROFIL\n\nNom: ${urlParams.get("name") || ""}\nEmail: ${urlParams.get("email") || ""}\nFree Fire ID: ${urlParams.get("ffId") || ""}\nRôle: ${urlParams.get("role") || ""}\n\nDescription des modifications souhaitées...`,
+      });
       setShowForm(true);
-      setTab("tickets");
     }
-  }, [searchParams, window.location.search]);
-
+  }, []);
+  
+  // Chargement initial des données
   useEffect(() => {
     fetchTickets();
     fetchAdminMessages();
-    const ch = supabase
-      .channel("support_ch_" + profile?.id)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_tickets" }, (p) => {
-        if (isAdmin || p.new.user_id === profile?.id) setTickets((prev) => [p.new, ...prev]);
-      })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "support_tickets" }, (p) => {
-        setTickets((prev) => prev.map((t) => (t.id === p.new.id ? p.new : t)));
-      })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_messages" }, (p) => {
-        if (selectedTicket && p.new.ticket_id === selectedTicket.id) fetchMessages(selectedTicket.id);
+    
+    // Subscription aux changements en temps réel
+    const channel = supabase
+      .channel("support_live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, () => fetchTickets())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "support_messages" }, (payload) => {
+        if (selectedTicket && payload.new.ticket_id === selectedTicket.id) {
+          fetchMessages(selectedTicket.id);
+        }
       })
       .subscribe();
-    return () => supabase.removeChannel(ch);
-  }, [profile?.id, isAdmin]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
+    
+    return () => supabase.removeChannel(channel);
+  }, [profile?.id, selectedTicket]);
+  
   const fetchTickets = async () => {
-    let q = supabase
+    let query = supabase
       .from("support_tickets")
-      .select(
-        `*,user:profiles!support_tickets_user_id_fkey(id,full_name,free_fire_id,role),assigned_to:profiles!support_tickets_assigned_to_fkey(id,full_name,role)`
-      )
+      .select(`*, user:profiles!support_tickets_user_id_fkey(id, full_name, free_fire_id, role, avatar_url)`)
       .order("created_at", { ascending: false });
-    if (!isAdmin) q = q.eq("user_id", profile?.id);
-    const { data } = await q;
+    
+    if (!isAdmin) query = query.eq("user_id", profile?.id);
+    
+    const { data } = await query;
     setTickets(data || []);
     setLoading(false);
   };
+  
   const fetchAdminMessages = async () => {
     const { data } = await supabase
       .from("admin_messages")
@@ -212,530 +264,435 @@ export default function Support() {
       .order("created_at", { ascending: false });
     setAdminMessages(data || []);
   };
-  const fetchMessages = async (id) => {
+  
+  const fetchMessages = async (ticketId) => {
     const { data } = await supabase
       .from("support_messages")
-      .select(`*,sender:profiles!support_messages_sender_id_fkey(id,full_name,role)`)
-      .eq("ticket_id", id)
+      .select(`*, sender:profiles!support_messages_sender_id_fkey(id, full_name, role, avatar_url)`)
+      .eq("ticket_id", ticketId)
       .order("created_at", { ascending: true });
     setMessages(data || []);
   };
-  const markAsRead = async (id) => {
-    await supabase.from("admin_messages").update({ read: true }).eq("id", id);
-    fetchAdminMessages();
-  };
-  const markAllRead = async () => {
-    const ids = adminMessages.filter((m) => !m.read).map((m) => m.id);
-    if (!ids.length) return;
-    await supabase.from("admin_messages").update({ read: true }).in("id", ids);
-    fetchAdminMessages();
-  };
-
+  
   const createTicket = async () => {
-    if (!form.subject.trim()) return;
+    if (!formData.subject.trim()) return;
     setSending(true);
+    
     try {
-      const { data, error } = await supabase
+      const { data: ticket, error } = await supabase
         .from("support_tickets")
-        .insert([{ user_id: profile?.id, subject: form.subject, category: form.category, priority: form.priority, status: "open" }])
+        .insert([{
+          user_id: profile?.id,
+          subject: formData.subject,
+          category: formData.category,
+          priority: formData.priority,
+          status: "open"
+        }])
         .select()
         .single();
-      if (error || !data) throw error;
-      if (form.body.trim()) {
-        await supabase.from("support_messages").insert([{ ticket_id: data.id, sender_id: profile?.id, message: form.body.trim() }]);
-      } else {
-        await supabase.from("support_messages").insert([{ ticket_id: data.id, sender_id: profile?.id, message: form.subject }]);
-      }
-      setTickets((prev) => [data, ...prev]);
-      setSelectedTicket(data);
-      fetchMessages(data.id);
+      
+      if (error) throw error;
+      
+      await supabase.from("support_messages").insert([{
+        ticket_id: ticket.id,
+        sender_id: profile?.id,
+        message: formData.body || formData.subject
+      }]);
+      
+      await fetchTickets();
+      setSelectedTicket(ticket);
+      await fetchMessages(ticket.id);
       setShowForm(false);
-      setForm({ subject: "", category: "autre", priority: "normal", body: "" });
-      setTab("tickets");
-    } catch (e) {
-      console.error(e);
+      setFormData({ subject: "", category: "autre", priority: "normal", body: "" });
+    } catch (err) {
+      console.error("Erreur création ticket:", err);
     } finally {
       setSending(false);
     }
   };
-
+  
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedTicket) return;
-    const { error } = await supabase
-      .from("support_messages")
-      .insert([{ ticket_id: selectedTicket.id, sender_id: profile?.id, message: newMessage.trim() }]);
+    
+    const { error } = await supabase.from("support_messages").insert([{
+      ticket_id: selectedTicket.id,
+      sender_id: profile?.id,
+      message: newMessage.trim()
+    }]);
+    
     if (!error) {
       setNewMessage("");
-      fetchMessages(selectedTicket.id);
+      await fetchMessages(selectedTicket.id);
     }
   };
-
-  const assignToMe = async () => {
-    if (!selectedTicket || !isAdmin) return;
-    await supabase.from("support_tickets").update({ assigned_to: profile?.id, status: "pending" }).eq("id", selectedTicket.id);
-    fetchTickets();
-    setSelectedTicket({ ...selectedTicket, assigned_to: profile, status: "pending" });
-  };
-
+  
   const closeTicket = async () => {
-    if (!selectedTicket) return;
-    await supabase.from("support_tickets").update({ status: "closed" }).eq("id", selectedTicket.id);
-    fetchTickets();
+    await supabase
+      .from("support_tickets")
+      .update({ status: "closed" })
+      .eq("id", selectedTicket.id);
+    await fetchTickets();
     setSelectedTicket(null);
   };
-
-  const catIcon = { tournoi: "🎮", coins: "💰", compte: "👤", paiement: "💳", classement: "📊", autre: "❓" };
-
-  const filtered = tickets.filter((t) => {
-    if (ticketFilter === "all") return true;
-    if (ticketFilter === "open") return t.status === "open";
-    if (ticketFilter === "urgent") return ["urgent", "critique"].includes(t.priority);
-    if (ticketFilter === "mine") return t.assigned_to?.id === profile?.id;
-    if (ticketFilter === "closed") return t.status === "closed";
+  
+  const markAsRead = async (id) => {
+    await supabase.from("admin_messages").update({ read: true }).eq("id", id);
+    fetchAdminMessages();
+  };
+  
+  const markAllRead = async () => {
+    const unreadIds = adminMessages.filter(m => !m.read).map(m => m.id);
+    if (unreadIds.length) {
+      await supabase.from("admin_messages").update({ read: true }).in("id", unreadIds);
+      fetchAdminMessages();
+    }
+  };
+  
+  // Filtrage des tickets
+  const filteredTickets = tickets.filter(ticket => {
+    if (filter === "all") return true;
+    if (filter === "open") return ticket.status === "open";
+    if (filter === "urgent") return ["urgent", "critique", "high"].includes(ticket.priority);
+    if (filter === "mine") return ticket.assigned_to === profile?.id;
+    if (filter === "closed") return ticket.status === "closed";
     return true;
   });
-
-  const unread = adminMessages.filter((m) => !m.read).length;
-
-  if (loading)
+  
+  const unreadCount = adminMessages.filter(m => !m.read).length;
+  const categoriesIcons = { tournoi: "🎮", coins: "💰", compte: "👤", paiement: "💳", classement: "📊", autre: "💬" };
+  
+  if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 320 }}>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 400 }}>
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           style={{
-            width: 36,
-            height: 36,
-            border: `2px solid ${ix(0.12)}`,
-            borderTopColor: INDIGO,
+            width: 40,
+            height: 40,
+            border: `2px solid ${alpha(THEME.primary, 0.2)}`,
+            borderTopColor: THEME.primary,
             borderRadius: "50%",
           }}
         />
       </div>
     );
-
+  }
+  
   return (
-    <div className="space-y-6" style={{ fontFamily: "'Space Grotesk',sans-serif", color: "rgba(255,255,255,.88)" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-        .sp-in {
-          background: rgba(99,102,241,0.06);
-          border: 1px solid rgba(99,102,241,0.2);
-          border-radius: 10px;
-          color: #fff;
-          padding: 10px 14px;
-          font-family: 'Space Grotesk', sans-serif;
-          font-size: 13.5px;
-          outline: none;
-          transition: border .2s, box-shadow .2s;
-          width: 100%;
-        }
-        .sp-in:focus {
-          border-color: #6366f1;
-          box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
-        }
-        .sp-in::placeholder { color: rgba(255,255,255,.25); }
-        select.sp-in option { background: #0d0d1a; color: #fff; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: rgba(99,102,241,.3); border-radius: 99px; }
-        .ticket-row:hover { background: rgba(99,102,241,0.07) !important; }
-        .tab-pill { background: none; border: none; cursor: pointer; padding: 8px 14px; border-radius: 99px; font-family: 'Space Grotesk',sans-serif; font-size: 12px; font-weight: 600; transition: all .2s; }
-        .tab-pill.active { background: ${ix(0.18)}; color: ${INDIGO_L}; box-shadow: 0 0 0 1px ${ix(0.35)}; }
-        .tab-pill.inactive { color: rgba(255,255,255,.38); }
-        .tab-pill.inactive:hover { color: rgba(255,255,255,.65); background: rgba(255,255,255,.04); }
-        .support-grid { display: grid; grid-template-columns: 300px 1fr; gap: 16px; min-height: 520px; }
-        .admin-stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
-        @media (max-width: 768px) {
-          .support-grid { grid-template-columns: 1fr !important; }
-          .admin-stats-grid { grid-template-columns: repeat(2,1fr) !important; }
-          .support-header { flex-direction: column; align-items: flex-start !important; }
-          .support-header h1 { font-size: 28px !important; }
-          .sp-hide-on-mobile { display: none !important; }
-          .sp-back-btn { display: flex !important; }
-          .sp-convo-panel { height: 70vh !important; }
-        }
-        .sp-back-btn { display: none; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 10px; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25); color: #818cf8; cursor: pointer; font-family: 'Space Grotesk',sans-serif; font-size: 12px; font-weight: 600; margin-right: auto; }
-      `}</style>
-
-      {/* ── Header ── */}
-      <div className="support-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }}>
-        <div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 38,
-              fontWeight: 800,
-              letterSpacing: -1,
-              lineHeight: 1.1,
-              background: `linear-gradient(135deg, ${INDIGO_L} 0%, #c4b5fd 50%, ${INDIGO_L} 100%)`,
+    <div style={{ padding: "20px 24px", maxWidth: 1400, margin: "0 auto", fontFamily: "'Inter', system-ui, sans-serif" }}>
+      
+      {/* ==================== HEADER ==================== */}
+      <div style={{ marginBottom: 32 }}>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}
+        >
+          <div>
+            <h1 style={{ 
+              fontSize: 42, fontWeight: 800, margin: 0,
+              background: GRADIENTS.primary,
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-            }}
-          >
-            SUPPORT
-          </h1>
-          <p style={{ margin: "6px 0 0", fontSize: 13, color: "rgba(255,255,255,.38)", fontWeight: 500 }}>
-            {isAdmin ? "Gestion des tickets — vue administrateur" : "Besoin d'aide ? Notre équipe vous répond rapidement."}
-          </p>
-        </div>
-        {!isAdmin && (
-          <motion.button
-            whileHover={{ scale: 1.03, y: -1 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => setShowForm(true)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "11px 22px",
-              background: `linear-gradient(135deg, ${ix(0.22)}, ${ix(0.1)})`,
-              border: `1px solid ${ix(0.38)}`,
-              borderRadius: 12,
-              color: INDIGO_L,
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 700,
-              letterSpacing: 0.5,
-              fontFamily: "'Space Grotesk',sans-serif",
-              boxShadow: `0 4px 20px ${ix(0.2)}`,
-            }}
-          >
-            <span style={{ fontSize: 17, lineHeight: 1 }}>+</span>
-            Nouveau ticket
-          </motion.button>
-        )}
+              letterSpacing: -1
+            }}>
+              Centre d'Aide
+            </h1>
+            <p style={{ color: THEME.textSecondary, marginTop: 8, fontSize: 14 }}>
+              {isAdmin ? "Gestion des tickets support" : "Une question ? Notre équipe vous répond sous 24h"}
+            </p>
+          </div>
+          
+          {!isAdmin && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowForm(true)}
+              style={{
+                background: GRADIENTS.primary,
+                border: "none",
+                borderRadius: 12,
+                padding: "12px 24px",
+                color: "white",
+                fontWeight: 600,
+                fontSize: 14,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                boxShadow: `0 4px 14px ${alpha(THEME.primary, 0.3)}`,
+              }}
+            >
+              <span style={{ fontSize: 18 }}>+</span>
+              Nouveau ticket
+            </motion.button>
+          )}
+        </motion.div>
       </div>
-
-      {/* ── Admin stat cards ── */}
+      
+      {/* ==================== STATS ADMIN ==================== */}
       {isAdmin && (
-        <div className="admin-stats-grid">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: 16,
+            marginBottom: 32,
+          }}
+        >
           {[
-            [INDIGO_L, tickets.length, "Total", ix],
-            [GREEN, tickets.filter((t) => t.status === "open").length, "Ouverts", gx],
-            [AMBER, tickets.filter((t) => ["urgent", "critique"].includes(t.priority)).length, "Urgents", ax],
-            [INDIGO_L, tickets.filter((t) => t.assigned_to?.id === profile?.id).length, "Mes tickets", ix],
-          ].map(([color, val, lb, cx2]) => (
-            <G key={lb} ac={color} style={{ padding: "20px 22px" }}>
-              <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,.3)", letterSpacing: 1, textTransform: "uppercase" }}>{lb}</p>
-              <p style={{ margin: 0, fontSize: 32, fontWeight: 800, color, lineHeight: 1, textShadow: `0 0 28px ${color}55` }}>{val}</p>
-            </G>
+            { label: "Total tickets", value: tickets.length, color: THEME.primary, icon: "🎫" },
+            { label: "Tickets ouverts", value: tickets.filter(t => t.status === "open").length, color: THEME.success, icon: "🟢" },
+            { label: "Urgents", value: tickets.filter(t => ["urgent", "critique"].includes(t.priority)).length, color: THEME.error, icon: "🚨" },
+            { label: "Non assignés", value: tickets.filter(t => !t.assigned_to && t.status !== "closed").length, color: THEME.warning, icon: "📋" },
+          ].map((stat, idx) => (
+            <GlassCard key={idx} accent={stat.color} style={{ padding: "20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <span style={{ fontSize: 28 }}>{stat.icon}</span>
+                <span style={{ fontSize: 32, fontWeight: 800, color: stat.color }}>{stat.value}</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, color: THEME.textSecondary, fontWeight: 500 }}>{stat.label}</p>
+            </GlassCard>
           ))}
-        </div>
+        </motion.div>
       )}
-
-      {/* ── Tab switcher ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px", background: "rgba(255,255,255,.03)", border: `1px solid ${CARD_BORDER}`, borderRadius: 99, width: "fit-content" }}>
+      
+      {/* ==================== TABS ==================== */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 24, borderBottom: `1px solid ${THEME.borderLight}`, paddingBottom: 12 }}>
         {[
-          ["tickets", isAdmin ? "Gestion tickets" : "Mes tickets", "🎟️"],
-          ["announcements", "Annonces", "📢"],
-        ].map(([k, lb, ic]) => (
-          <button key={k} onClick={() => setTab(k)} className={`tab-pill ${tab === k ? "active" : "inactive"}`} style={{ position: "relative" }}>
-            {ic} {lb}
-            {k === "announcements" && unread > 0 && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: 2,
-                  right: 4,
-                  minWidth: 17,
-                  height: 17,
-                  borderRadius: 99,
-                  background: RED,
-                  fontSize: 9,
-                  fontWeight: 700,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  padding: "0 4px",
-                }}
-              >
-                {unread}
+          { id: "tickets", label: "🎟️ Tickets", count: tickets.length },
+          { id: "announcements", label: "📢 Annonces", count: unreadCount }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              background: activeTab === tab.id ? alpha(THEME.primary, 0.15) : "transparent",
+              border: activeTab === tab.id ? `1px solid ${alpha(THEME.primary, 0.3)}` : "1px solid transparent",
+              borderRadius: 12,
+              padding: "8px 20px",
+              color: activeTab === tab.id ? THEME.primaryLight : THEME.textSecondary,
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
+              transition: "all 0.2s",
+              position: "relative",
+            }}
+          >
+            {tab.label}
+            {tab.count > 0 && tab.id === "announcements" && (
+              <span style={{
+                position: "absolute",
+                top: -6,
+                right: -6,
+                background: THEME.error,
+                borderRadius: 10,
+                padding: "2px 6px",
+                fontSize: 10,
+                fontWeight: "bold",
+                color: "white",
+              }}>
+                {tab.count}
               </span>
             )}
           </button>
         ))}
       </div>
-
-      {/* ══════════════════════════════════════
-          TICKETS TAB
-      ══════════════════════════════════════ */}
-      {tab === "tickets" && (
-        <div className="support-grid">
-
-          {/* Left — ticket list */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}
-            className={mobileView === "convo" ? "sp-hide-on-mobile" : ""}>
+      
+      {/* ==================== CONTENU TICKETS ==================== */}
+      {activeTab === "tickets" && (
+        <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 20 }}>
+          
+          {/* Liste des tickets */}
+          <div style={{ display: mobileView === "convo" ? "none" : "block" }}>
             {isAdmin && (
               <select
-                value={ticketFilter}
-                onChange={(e) => setTicketFilter(e.target.value)}
-                className="sp-in"
-                style={{ width: "100%", cursor: "pointer" }}
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                style={{
+                  width: "100%",
+                  background: alpha("#fff", 0.03),
+                  border: `1px solid ${THEME.borderLight}`,
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  color: THEME.textPrimary,
+                  fontSize: 13,
+                  marginBottom: 16,
+                  cursor: "pointer",
+                }}
               >
-                <option value="all">Tous les tickets</option>
-                <option value="open">Ouverts</option>
-                <option value="urgent">Urgents</option>
-                <option value="mine">Mes tickets</option>
-                <option value="closed">Fermés</option>
+                <option value="all">📋 Tous les tickets</option>
+                <option value="open">🟢 Ouverts</option>
+                <option value="urgent">🚨 Urgents</option>
+                <option value="mine">👤 Mes tickets</option>
+                <option value="closed">🔒 Fermés</option>
               </select>
             )}
-
-            <G style={{ flex: 1, padding: 0, overflow: "hidden" }}>
-              <div
-                style={{
-                  padding: "14px 18px 12px",
-                  borderBottom: `1px solid ${CARD_BORDER}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,.3)", letterSpacing: 1, textTransform: "uppercase" }}>
-                  {filtered.length} ticket{filtered.length !== 1 ? "s" : ""}
+            
+            <GlassCard style={{ padding: 0, overflow: "hidden" }}>
+              <div style={{ padding: "16px 20px", borderBottom: `1px solid ${THEME.borderLight}` }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: THEME.textSecondary }}>
+                  {filteredTickets.length} ticket{filteredTickets.length !== 1 ? "s" : ""}
                 </span>
               </div>
-
-              {filtered.length === 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "56px 24px", gap: 12 }}>
-                  <div style={{ fontSize: 44, opacity: 0.2 }}>🎟️</div>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.22)", textAlign: "center" }}>
-                    Aucun ticket pour le moment
-                  </p>
-                  {!isAdmin && (
-                    <button
-                      onClick={() => setShowForm(true)}
-                      style={{
-                        marginTop: 4,
-                        padding: "7px 18px",
-                        background: ix(0.12),
-                        border: `1px solid ${ix(0.28)}`,
-                        borderRadius: 99,
-                        color: INDIGO_L,
-                        cursor: "pointer",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        fontFamily: "'Space Grotesk',sans-serif",
-                      }}
-                    >
-                      Créer un ticket
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div style={{ maxHeight: 500, overflowY: "auto", padding: "8px" }}>
-                  {filtered.map((t) => {
-                    const active = selectedTicket?.id === t.id;
-                    return (
-                      <div
-                        key={t.id}
-                        className="ticket-row"
-                        onClick={() => { setSelectedTicket(t); fetchMessages(t.id); setMobileView("convo"); }}
-                        style={{
-                          padding: "13px 14px",
-                          borderRadius: 12,
-                          cursor: "pointer",
-                          marginBottom: 4,
-                          transition: "background .18s",
-                          background: active ? ix(0.14) : "transparent",
-                          border: `1px solid ${active ? ix(0.35) : "transparent"}`,
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 7 }}>
-                          <p
-                            style={{
-                              margin: 0,
-                              fontSize: 13,
-                              fontWeight: 600,
-                              color: "rgba(255,255,255,.85)",
-                              flex: 1,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {t.subject}
-                          </p>
-                          <StatusBadge status={t.status} />
-                        </div>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                          <span style={{ fontSize: 11 }}>{catIcon[t.category] || "❓"}</span>
-                          {isAdmin && t.user && (
-                            <span style={{ fontSize: 11, color: "rgba(255,255,255,.35)", fontWeight: 500 }}>{t.user.full_name}</span>
-                          )}
-                          <PriorityBadge priority={t.priority} />
-                        </div>
-                        <p style={{ margin: "7px 0 0", fontSize: 11, color: "rgba(255,255,255,.22)", fontFamily: "'JetBrains Mono',monospace" }}>
-                          {new Date(t.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </G>
-          </div>
-
-          {/* Right — conversation */}
-          {selectedTicket ? (
-            <G className="sp-convo-panel" style={{ display: "flex", flexDirection: "column", height: 580, padding: 0 }}>
-              {/* Conversation header */}
-              <div
-                style={{
-                  padding: "16px 22px",
-                  borderBottom: `1px solid ${CARD_BORDER}`,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexShrink: 0,
-                  flexWrap: "wrap",
-                  gap: 10,
-                }}
-              >
-                <button className="sp-back-btn" onClick={() => { setSelectedTicket(null); setMobileView("list"); }}>
-                  ← Retour
-                </button>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: "0 0 7px", fontSize: 15, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {selectedTicket.subject}
-                  </p>
-                  <div style={{ display: "flex", gap: 7, flexWrap: "wrap", alignItems: "center" }}>
-                    <StatusBadge status={selectedTicket.status} />
-                    <PriorityBadge priority={selectedTicket.priority} />
-                    {isAdmin && selectedTicket.user && (
-                      <span style={{ fontSize: 11, color: "rgba(255,255,255,.4)", fontWeight: 500 }}>
-                        👤 {selectedTicket.user.full_name}
-                      </span>
-                    )}
-                    {selectedTicket.assigned_to && (
-                      <span style={{ fontSize: 11, color: INDIGO_L, fontWeight: 500 }}>
-                        → {selectedTicket.assigned_to.full_name}
-                      </span>
-                    )}
+              
+              <div style={{ maxHeight: 600, overflowY: "auto" }}>
+                {filteredTickets.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "60px 20px" }}>
+                    <div style={{ fontSize: 48, opacity: 0.3, marginBottom: 12 }}>🎫</div>
+                    <p style={{ color: THEME.textMuted, fontSize: 13 }}>Aucun ticket trouvé</p>
                   </div>
-                </div>
-                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  {isAdmin && !selectedTicket.assigned_to && (
-                    <button
-                      onClick={assignToMe}
+                ) : (
+                  filteredTickets.map(ticket => (
+                    <motion.div
+                      key={ticket.id}
+                      whileHover={{ x: 4 }}
+                      onClick={() => {
+                        setSelectedTicket(ticket);
+                        fetchMessages(ticket.id);
+                        setMobileView("convo");
+                      }}
                       style={{
-                        padding: "7px 16px",
-                        background: ix(0.12),
-                        border: `1px solid ${ix(0.3)}`,
-                        borderRadius: 10,
-                        color: INDIGO_L,
+                        padding: "16px 20px",
+                        borderBottom: `1px solid ${THEME.borderLight}`,
                         cursor: "pointer",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        fontFamily: "'Space Grotesk',sans-serif",
+                        background: selectedTicket?.id === ticket.id ? alpha(THEME.primary, 0.08) : "transparent",
+                        transition: "background 0.2s",
                       }}
                     >
-                      Prendre en charge
-                    </button>
-                  )}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: THEME.textPrimary }}>
+                          {ticket.subject}
+                        </p>
+                        <StatusBadge status={ticket.status} />
+                      </div>
+                      
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 12 }}>{categoriesIcons[ticket.category] || "💬"}</span>
+                        {isAdmin && ticket.user && (
+                          <span style={{ fontSize: 11, color: THEME.textSecondary }}>
+                            {ticket.user.full_name}
+                          </span>
+                        )}
+                        <PriorityBadge priority={ticket.priority} />
+                      </div>
+                      
+                      <p style={{ margin: 0, fontSize: 11, color: THEME.textMuted }}>
+                        {new Date(ticket.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+            </GlassCard>
+          </div>
+          
+          {/* Conversation */}
+          {selectedTicket ? (
+            <GlassCard style={{ display: "flex", flexDirection: "column", height: 620, padding: 0, overflow: "hidden" }}>
+              {/* Header conversation */}
+              <div style={{ padding: "20px 24px", borderBottom: `1px solid ${THEME.borderLight}`, background: alpha(THEME.primary, 0.02) }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
+                      <button
+                        onClick={() => { setSelectedTicket(null); setMobileView("list"); }}
+                        style={{ display: "none", background: "none", border: "none", color: THEME.primaryLight, cursor: "pointer", fontSize: 20 }}
+                        className="mobile-back-btn"
+                      >
+                        ←
+                      </button>
+                      <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{selectedTicket.subject}</h3>
+                    </div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                      <StatusBadge status={selectedTicket.status} />
+                      <PriorityBadge priority={selectedTicket.priority} />
+                      {selectedTicket.user && (
+                        <span style={{ fontSize: 12, color: THEME.textSecondary }}>👤 {selectedTicket.user.full_name}</span>
+                      )}
+                    </div>
+                  </div>
+                  
                   {selectedTicket.status !== "closed" && (
                     <button
                       onClick={closeTicket}
                       style={{
-                        padding: "7px 16px",
-                        background: rx(0.1),
-                        border: `1px solid ${rx(0.28)}`,
+                        background: alpha(THEME.error, 0.1),
+                        border: `1px solid ${alpha(THEME.error, 0.3)}`,
                         borderRadius: 10,
-                        color: RED,
-                        cursor: "pointer",
+                        padding: "8px 16px",
+                        color: THEME.error,
                         fontSize: 12,
                         fontWeight: 600,
-                        fontFamily: "'Space Grotesk',sans-serif",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
                       }}
                     >
-                      Fermer
+                      Fermer le ticket
                     </button>
                   )}
                 </div>
               </div>
-
+              
               {/* Messages */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ flex: 1, overflowY: "auto", padding: "24px", display: "flex", flexDirection: "column", gap: 16 }}>
                 {messages.length === 0 && (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1 }}>
-                    <p style={{ fontSize: 13, color: "rgba(255,255,255,.2)", fontStyle: "italic" }}>Aucun message pour l'instant.</p>
+                  <div style={{ textAlign: "center", padding: "40px" }}>
+                    <p style={{ color: THEME.textMuted }}>Aucun message yet. Commencez la conversation !</p>
                   </div>
                 )}
-                {messages.map((msg) => {
-                  const mine = msg.sender_id === profile?.id;
+                
+                {messages.map((msg, idx) => {
+                  const isOwn = msg.sender_id === profile?.id;
                   const isAdminMsg = ["admin", "super_admin"].includes(msg.sender?.role);
+                  
                   return (
-                    <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start" }}>
-                      <div
-                        style={{
-                          maxWidth: "72%",
-                          padding: "12px 16px",
-                          borderRadius: mine ? "16px 4px 16px 16px" : "4px 16px 16px 16px",
-                          background: mine
-                            ? `linear-gradient(135deg,${ix(0.3)},${ix(0.15)})`
-                            : "linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))",
-                          border: `1px solid ${mine ? ix(0.4) : "rgba(255,255,255,.08)"}`,
-                          boxShadow: "0 4px 16px rgba(0,0,0,.3)",
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6, flexWrap: "wrap" }}>
-                          <span
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: mine ? INDIGO_L : isAdminMsg ? "#c4b5fd" : "rgba(255,255,255,.7)",
-                            }}
-                          >
-                            {mine ? "Vous" : msg.sender?.full_name || "—"}
-                          </span>
-                          {isAdminMsg && !mine && (
-                            <span
-                              style={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                color: "#a78bfa",
-                                background: "rgba(167,139,250,.15)",
-                                padding: "1px 8px",
-                                borderRadius: 99,
-                              }}
-                            >
-                              {msg.sender?.role === "super_admin" ? "Super Admin" : "Admin"}
-                            </span>
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      style={{ display: "flex", justifyContent: isOwn ? "flex-end" : "flex-start" }}
+                    >
+                      <div style={{ maxWidth: "70%", display: "flex", flexDirection: "column", alignItems: isOwn ? "flex-end" : "flex-start" }}>
+                        <div style={{
+                          background: isOwn ? GRADIENTS.primary : alpha("#fff", 0.05),
+                          borderRadius: isOwn ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                          padding: "12px 18px",
+                          border: `1px solid ${isOwn ? alpha(THEME.primary, 0.3) : THEME.borderLight}`,
+                        }}>
+                          {!isOwn && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: isAdminMsg ? THEME.secondary : THEME.textSecondary }}>
+                                {msg.sender?.full_name || "Support"}
+                              </span>
+                              {isAdminMsg && (
+                                <span style={{ fontSize: 9, background: alpha(THEME.secondary, 0.2), padding: "2px 8px", borderRadius: 100, color: THEME.secondary }}>
+                                  {msg.sender?.role === "super_admin" ? "Super Admin" : "Admin"}
+                                </span>
+                              )}
+                            </div>
                           )}
+                          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.5, color: THEME.textPrimary, whiteSpace: "pre-wrap" }}>
+                            {msg.message}
+                          </p>
                         </div>
-                        <p style={{ margin: 0, color: "rgba(255,255,255,.82)", fontSize: 13.5, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>
-                          {msg.message}
-                        </p>
-                        <p
-                          style={{
-                            margin: "7px 0 0",
-                            fontSize: 10,
-                            color: "rgba(255,255,255,.25)",
-                            fontFamily: "'JetBrains Mono',monospace",
-                            textAlign: mine ? "right" : "left",
-                          }}
-                        >
-                          {new Date(msg.created_at).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                        </p>
+                        <span style={{ fontSize: 10, color: THEME.textMuted, marginTop: 4, padding: "0 8px" }}>
+                          {new Date(msg.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
                       </div>
                     </motion.div>
                   );
                 })}
-                <div ref={bottomRef} />
+                <div ref={messagesEndRef} />
               </div>
-
-              {/* Message input */}
+              
+              {/* Input message */}
               {selectedTicket.status !== "closed" && (
-                <div
-                  style={{
-                    padding: "14px 22px",
-                    borderTop: `1px solid ${CARD_BORDER}`,
-                    display: "flex",
-                    gap: 10,
-                    flexShrink: 0,
-                    alignItems: "flex-end",
-                  }}
-                >
+                <div style={{ padding: "16px 24px", borderTop: `1px solid ${THEME.borderLight}`, display: "flex", gap: 12 }}>
                   <textarea
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
@@ -745,410 +702,324 @@ export default function Support() {
                         sendMessage();
                       }
                     }}
-                    placeholder="Votre message… (Entrée pour envoyer)"
+                    placeholder="Écrivez votre message... (Enter pour envoyer)"
                     rows={2}
                     style={{
                       flex: 1,
-                      background: "rgba(99,102,241,0.06)",
-                      border: `1px solid ${ix(0.2)}`,
-                      borderRadius: 12,
-                      color: "#fff",
+                      background: alpha("#fff", 0.03),
+                      border: `1px solid ${THEME.borderLight}`,
+                      borderRadius: 14,
+                      color: THEME.textPrimary,
                       padding: "10px 14px",
-                      fontSize: 13.5,
-                      outline: "none",
+                      fontSize: 13,
                       resize: "none",
-                      fontFamily: "'Space Grotesk',sans-serif",
-                      transition: "border .2s, box-shadow .2s",
+                      fontFamily: "inherit",
+                      outline: "none",
                     }}
-                    onFocus={(e) => { e.target.style.borderColor = INDIGO; e.target.style.boxShadow = `0 0 0 3px ${ix(0.15)}`; }}
-                    onBlur={(e) => { e.target.style.borderColor = ix(0.2); e.target.style.boxShadow = "none"; }}
                   />
                   <motion.button
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.96 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={sendMessage}
                     disabled={!newMessage.trim()}
                     style={{
-                      padding: "10px 22px",
-                      height: "fit-content",
-                      background: newMessage.trim() ? `linear-gradient(135deg, ${INDIGO}, #7c3aed)` : "rgba(255,255,255,.05)",
-                      border: `1px solid ${newMessage.trim() ? ix(0.5) : "rgba(255,255,255,.08)"}`,
-                      borderRadius: 12,
-                      color: newMessage.trim() ? "#fff" : "rgba(255,255,255,.25)",
-                      cursor: newMessage.trim() ? "pointer" : "default",
+                      background: newMessage.trim() ? GRADIENTS.primary : alpha("#fff", 0.05),
+                      border: "none",
+                      borderRadius: 14,
+                      padding: "0 24px",
+                      color: newMessage.trim() ? "white" : THEME.textMuted,
+                      fontWeight: 600,
                       fontSize: 13,
-                      fontWeight: 700,
-                      fontFamily: "'Space Grotesk',sans-serif",
-                      transition: "all .2s",
-                      boxShadow: newMessage.trim() ? `0 4px 16px ${ix(0.3)}` : "none",
-                      whiteSpace: "nowrap",
+                      cursor: newMessage.trim() ? "pointer" : "default",
+                      transition: "all 0.2s",
                     }}
                   >
-                    Envoyer →
+                    Envoyer
                   </motion.button>
                 </div>
               )}
-
-              {selectedTicket.status === "closed" && (
-                <div
-                  style={{
-                    padding: "12px 22px",
-                    borderTop: `1px solid ${CARD_BORDER}`,
-                    textAlign: "center",
-                    flexShrink: 0,
-                    background: "rgba(148,163,184,.04)",
-                  }}
-                >
-                  <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,.3)", fontWeight: 500 }}>
-                    Ce ticket est fermé · Créez un nouveau ticket si besoin
-                  </p>
-                </div>
-              )}
-            </G>
+            </GlassCard>
           ) : (
-            <G style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+            <GlassCard style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
               <div style={{ textAlign: "center" }}>
-                <motion.div
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                  style={{ fontSize: 56, marginBottom: 16, opacity: 0.18 }}
-                >
-                  💬
-                </motion.div>
-                <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,.3)" }}>
-                  Sélectionnez un ticket
-                </p>
-                {!isAdmin && (
-                  <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,.18)", fontWeight: 500 }}>
-                    ou créez-en un nouveau ci-dessous
-                  </p>
-                )}
+                <div style={{ fontSize: 64, opacity: 0.3, marginBottom: 16 }}>💬</div>
+                <p style={{ color: THEME.textSecondary, fontSize: 14 }}>Sélectionnez un ticket pour voir la conversation</p>
               </div>
-            </G>
+            </GlassCard>
           )}
         </div>
       )}
-
-      {/* ══════════════════════════════════════
-          ANNOUNCEMENTS TAB
-      ══════════════════════════════════════ */}
-      {tab === "announcements" && (
-        <G style={{ padding: 0, overflow: "hidden" }}>
-          <div
-            style={{
-              padding: "16px 24px",
-              borderBottom: `1px solid ${CARD_BORDER}`,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.5)", letterSpacing: 0.5 }}>
-              📢 Annonces officielles
-            </span>
-            {unread > 0 && (
+      
+      {/* ==================== ANNONCES ==================== */}
+      {activeTab === "announcements" && (
+        <GlassCard style={{ padding: 0, overflow: "hidden" }}>
+          <div style={{ padding: "20px 24px", borderBottom: `1px solid ${THEME.borderLight}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontWeight: 700, fontSize: 16 }}>📢 Annonces officielles</span>
+            {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
                 style={{
+                  background: alpha(THEME.primary, 0.1),
+                  border: `1px solid ${alpha(THEME.primary, 0.3)}`,
+                  borderRadius: 10,
+                  padding: "6px 14px",
+                  color: THEME.primaryLight,
                   fontSize: 12,
                   fontWeight: 600,
-                  color: INDIGO_L,
-                  background: ix(0.1),
-                  border: `1px solid ${ix(0.25)}`,
-                  borderRadius: 8,
-                  padding: "5px 14px",
                   cursor: "pointer",
-                  fontFamily: "'Space Grotesk',sans-serif",
                 }}
               >
                 Tout marquer lu
               </button>
             )}
           </div>
-          {adminMessages.length === 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px", gap: 14 }}>
-              <motion.div
-                animate={{ opacity: [0.2, 0.5, 0.2] }}
-                transition={{ duration: 2.5, repeat: Infinity }}
-                style={{ fontSize: 52 }}
-              >
-                📭
-              </motion.div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,.22)" }}>
-                Aucune annonce pour le moment
-              </p>
-            </div>
-          ) : (
-            <div style={{ padding: "12px" }}>
-              {adminMessages.map((msg) => (
+          
+          <div style={{ padding: "16px" }}>
+            {adminMessages.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 20px" }}>
+                <div style={{ fontSize: 48, opacity: 0.3, marginBottom: 12 }}>📭</div>
+                <p style={{ color: THEME.textMuted }}>Aucune annonce pour le moment</p>
+              </div>
+            ) : (
+              adminMessages.map(msg => (
                 <motion.div
                   key={msg.id}
-                  whileHover={{ x: 2 }}
+                  whileHover={{ x: 4 }}
                   onClick={() => !msg.read && markAsRead(msg.id)}
                   style={{
-                    padding: "18px 22px",
-                    borderRadius: 13,
-                    marginBottom: 8,
+                    padding: "20px",
+                    borderRadius: 16,
+                    marginBottom: 12,
+                    background: msg.read ? "transparent" : alpha(THEME.primary, 0.05),
+                    border: `1px solid ${msg.read ? THEME.borderLight : alpha(THEME.primary, 0.2)}`,
                     cursor: msg.read ? "default" : "pointer",
-                    background: msg.read ? "rgba(255,255,255,.02)" : ix(0.06),
-                    border: `1px solid ${msg.read ? CARD_BORDER : ix(0.2)}`,
-                    borderLeft: `3px solid ${msg.read ? "rgba(99,102,241,.18)" : INDIGO}`,
-                    transition: "all .2s",
                     position: "relative",
                   }}
                 >
                   {!msg.read && (
-                    <motion.div
-                      animate={{ opacity: [1, 0.3, 1] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                      style={{
-                        position: "absolute",
-                        top: 14,
-                        right: 14,
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: INDIGO_L,
-                        boxShadow: `0 0 8px ${INDIGO}`,
-                      }}
-                    />
+                    <div style={{
+                      position: "absolute",
+                      top: 16,
+                      right: 16,
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: THEME.primary,
+                      boxShadow: `0 0 8px ${THEME.primary}`,
+                    }} />
                   )}
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 20 }}>{msg.type === "warning" ? "⚠️" : msg.type === "update" ? "🔄" : "📢"}</span>
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#fff" }}>{msg.title}</p>
-                    <span
-                      style={{
-                        marginLeft: "auto",
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "rgba(255,255,255,.28)",
-                        background: "rgba(255,255,255,.04)",
-                        padding: "2px 9px",
-                        borderRadius: 99,
-                        border: `1px solid rgba(255,255,255,.06)`,
-                      }}
-                    >
-                      {msg.is_global ? "📢 Général" : "📩 Personnel"}
+                  
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 24 }}>{msg.type === "warning" ? "⚠️" : msg.type === "update" ? "🔄" : "📢"}</span>
+                    <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{msg.title}</h4>
+                    <span style={{
+                      fontSize: 10,
+                      background: alpha("#fff", 0.05),
+                      padding: "2px 10px",
+                      borderRadius: 100,
+                      color: THEME.textSecondary,
+                    }}>
+                      {msg.is_global ? "🌍 Général" : "👤 Personnel"}
                     </span>
                   </div>
-                  <p style={{ margin: 0, color: "rgba(255,255,255,.55)", fontSize: 13.5, lineHeight: 1.7 }}>{msg.content}</p>
-                  <p
-                    style={{
-                      margin: "10px 0 0",
-                      fontSize: 11,
-                      color: "rgba(255,255,255,.22)",
-                      fontFamily: "'JetBrains Mono',monospace",
-                    }}
-                  >
+                  
+                  <p style={{ margin: "0 0 12px", fontSize: 13.5, lineHeight: 1.6, color: THEME.textSecondary }}>
+                    {msg.content}
+                  </p>
+                  
+                  <p style={{ margin: 0, fontSize: 11, color: THEME.textMuted }}>
                     {new Date(msg.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </motion.div>
-              ))}
-            </div>
-          )}
-        </G>
+              ))
+            )}
+          </div>
+        </GlassCard>
       )}
-
-      {/* ══════════════════════════════════════
-          MODAL — Nouveau ticket
-      ══════════════════════════════════════ */}
+      
+      {/* ==================== MODAL NOUVEAU TICKET ==================== */}
       <AnimatePresence>
         {showForm && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            onClick={() => setShowForm(false)}
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(5,5,18,.88)",
-              backdropFilter: "blur(14px)",
+              background: "rgba(0,0,0,0.8)",
+              backdropFilter: "blur(12px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              zIndex: 50,
+              zIndex: 1000,
               padding: 20,
             }}
-            onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}
           >
             <motion.div
-              initial={{ scale: 0.92, opacity: 0, y: 24 }}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.92, opacity: 0, y: 24 }}
-              transition={{ type: "spring", stiffness: 280, damping: 26 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
               style={{
-                background: CARD_BG,
-                border: `1px solid ${ix(0.28)}`,
-                borderRadius: 20,
-                padding: "32px 34px",
+                background: GRADIENTS.card,
+                border: `1px solid ${THEME.borderLight}`,
+                borderRadius: 24,
+                padding: "32px",
                 maxWidth: 560,
                 width: "100%",
                 maxHeight: "90vh",
                 overflowY: "auto",
-                boxShadow: `0 28px 80px rgba(0,0,0,.75), 0 0 0 1px ${ix(0.08)}`,
-                position: "relative",
               }}
             >
-              {/* Modal accent line */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 2,
-                  background: `linear-gradient(90deg, transparent, ${INDIGO}, #7c3aed, transparent)`,
-                  borderRadius: "20px 20px 0 0",
-                }}
-              />
-
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
                 <div>
-                  <h2 style={{ margin: "0 0 4px", fontSize: 20, fontWeight: 800, color: "#fff" }}>Nouveau ticket</h2>
-                  <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,.35)", fontWeight: 500 }}>Notre équipe vous répondra sous 24h</p>
+                  <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>Nouveau ticket</h2>
+                  <p style={{ margin: "4px 0 0", color: THEME.textSecondary, fontSize: 13 }}>Décrivez-nous votre problème</p>
                 </div>
                 <button
                   onClick={() => setShowForm(false)}
                   style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    background: rx(0.1),
-                    border: `1px solid ${rx(0.25)}`,
-                    color: RED,
+                    background: alpha(THEME.error, 0.1),
+                    border: `1px solid ${alpha(THEME.error, 0.3)}`,
+                    borderRadius: 12,
+                    width: 36,
+                    height: 36,
+                    fontSize: 18,
+                    color: THEME.error,
                     cursor: "pointer",
-                    fontSize: 16,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
                   }}
                 >
                   ✕
                 </button>
               </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                {/* Subject */}
-                <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.45)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
-                    Sujet *
-                  </label>
-                  <input
-                    className="sp-in"
-                    value={form.subject}
-                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    placeholder="Décrivez votre problème en une ligne…"
-                  />
-                </div>
-
-                {/* Category + Priority */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                <StyledInput
+                  label="Sujet *"
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  placeholder="Ex: Problème de connexion, Paiement non reçu..."
+                />
+                
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.45)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: THEME.textSecondary, display: "block", marginBottom: 8 }}>
                       Catégorie
                     </label>
-                    <select className="sp-in" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} style={{ cursor: "pointer" }}>
-                      <option value="compte">👤 Compte / Profil</option>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      style={{
+                        width: "100%",
+                        background: alpha("#fff", 0.03),
+                        border: `1px solid ${THEME.borderLight}`,
+                        borderRadius: 12,
+                        padding: "10px 12px",
+                        color: THEME.textPrimary,
+                        fontSize: 13,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <option value="compte">👤 Compte</option>
                       <option value="tournoi">🎮 Tournoi</option>
-                      <option value="coins">💰 Pièces / Wallet</option>
+                      <option value="coins">💰 Coins</option>
                       <option value="paiement">💳 Paiement</option>
-                      <option value="classement">📊 Classement</option>
-                      <option value="autre">❓ Autre</option>
+                      <option value="autre">💬 Autre</option>
                     </select>
                   </div>
+                  
                   <div>
-                    <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.45)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: THEME.textSecondary, display: "block", marginBottom: 8 }}>
                       Priorité
                     </label>
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 8 }}>
                       {[
-                        ["normal", "Normal", "#94a3b8"],
-                        ["urgent", "Urgent", ORANGE],
-                        ["critique", "Critique", RED],
-                      ].map(([v, lb, c]) => (
+                        { value: "low", label: "Basse", color: "#94a3b8" },
+                        { value: "normal", label: "Normale", color: THEME.primary },
+                        { value: "urgent", label: "Urgente", color: THEME.error },
+                      ].map(opt => (
                         <button
-                          key={v}
-                          onClick={() => setForm({ ...form, priority: v })}
+                          key={opt.value}
+                          onClick={() => setFormData({ ...formData, priority: opt.value })}
                           style={{
                             flex: 1,
-                            padding: "9px 0",
+                            background: formData.priority === opt.value ? alpha(opt.color, 0.15) : "transparent",
+                            border: `1px solid ${formData.priority === opt.value ? alpha(opt.color, 0.4) : THEME.borderLight}`,
                             borderRadius: 10,
-                            border: `1px solid ${form.priority === v ? c + "55" : "rgba(255,255,255,.08)"}`,
-                            background: form.priority === v ? `${c}18` : "transparent",
-                            color: form.priority === v ? c : "rgba(255,255,255,.35)",
-                            cursor: "pointer",
+                            padding: "8px 0",
+                            color: formData.priority === opt.value ? opt.color : THEME.textSecondary,
                             fontSize: 11,
-                            fontWeight: 700,
-                            fontFamily: "'Space Grotesk',sans-serif",
-                            transition: "all .18s",
+                            fontWeight: 600,
+                            cursor: "pointer",
                           }}
                         >
-                          {lb}
+                          {opt.label}
                         </button>
                       ))}
                     </div>
                   </div>
                 </div>
-
-                {/* Body */}
+                
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.45)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>
-                    Message / Détails
+                  <label style={{ fontSize: 11, fontWeight: 700, color: THEME.textSecondary, display: "block", marginBottom: 8 }}>
+                    Description détaillée
                   </label>
                   <textarea
-                    className="sp-in"
-                    value={form.body}
-                    onChange={(e) => setForm({ ...form, body: e.target.value })}
-                    rows={8}
-                    placeholder="Décrivez votre demande en détail…"
-                    style={{ resize: "vertical", minHeight: 140 }}
+                    value={formData.body}
+                    onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+                    rows={6}
+                    placeholder="Décrivez votre problème en détail pour que nous puissions vous aider au mieux..."
+                    style={{
+                      width: "100%",
+                      background: alpha("#fff", 0.03),
+                      border: `1px solid ${THEME.borderLight}`,
+                      borderRadius: 12,
+                      padding: "12px",
+                      color: THEME.textPrimary,
+                      fontSize: 13,
+                      resize: "vertical",
+                      fontFamily: "inherit",
+                    }}
                   />
                 </div>
-
-                {/* Actions */}
-                <div style={{ display: "flex", gap: 10, paddingTop: 4 }}>
+                
+                <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
                   <button
                     onClick={() => setShowForm(false)}
                     style={{
                       flex: 1,
-                      padding: "12px 0",
-                      border: `1px solid rgba(255,255,255,.1)`,
-                      borderRadius: 12,
-                      color: "rgba(255,255,255,.45)",
                       background: "transparent",
-                      cursor: "pointer",
+                      border: `1px solid ${THEME.borderLight}`,
+                      borderRadius: 12,
+                      padding: "12px",
+                      color: THEME.textSecondary,
                       fontSize: 13,
                       fontWeight: 600,
-                      fontFamily: "'Space Grotesk',sans-serif",
-                      transition: "all .2s",
+                      cursor: "pointer",
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = ix(0.3); e.currentTarget.style.color = "rgba(255,255,255,.7)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,.1)"; e.currentTarget.style.color = "rgba(255,255,255,.45)"; }}
                   >
                     Annuler
                   </button>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={createTicket}
-                    disabled={!form.subject.trim() || sending}
+                    disabled={!formData.subject.trim() || sending}
                     style={{
                       flex: 2,
-                      padding: "12px 0",
-                      background: form.subject.trim() ? `linear-gradient(135deg, ${INDIGO}, #7c3aed)` : "rgba(255,255,255,.05)",
-                      border: `1px solid ${form.subject.trim() ? ix(0.5) : "rgba(255,255,255,.06)"}`,
+                      background: formData.subject.trim() ? GRADIENTS.primary : alpha("#fff", 0.05),
+                      border: "none",
                       borderRadius: 12,
-                      color: form.subject.trim() ? "#fff" : "rgba(255,255,255,.25)",
-                      cursor: form.subject.trim() ? "pointer" : "default",
-                      fontSize: 14,
-                      fontWeight: 700,
-                      fontFamily: "'Space Grotesk',sans-serif",
-                      transition: "all .2s",
-                      boxShadow: form.subject.trim() ? `0 4px 20px ${ix(0.3)}` : "none",
+                      padding: "12px",
+                      color: formData.subject.trim() ? "white" : THEME.textMuted,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: formData.subject.trim() ? "pointer" : "default",
                     }}
                   >
-                    {sending ? "Envoi en cours…" : "Envoyer au support ✓"}
+                    {sending ? "Envoi en cours..." : "Envoyer le ticket"}
                   </motion.button>
                 </div>
               </div>
@@ -1156,6 +1027,18 @@ export default function Support() {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* Styles responsive */}
+      <style>{`
+        @media (max-width: 768px) {
+          .mobile-back-btn {
+            display: flex !important;
+          }
+          .support-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
