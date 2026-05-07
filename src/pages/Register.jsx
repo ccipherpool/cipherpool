@@ -1,28 +1,46 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { Mail, Lock, User, AlertCircle, CheckCircle, ArrowRight, Gamepad2, ShieldCheck, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-function Shape({ className, delay = 0, width = 400, height = 100, rotate = 0, gradient = "from-indigo-500/[0.12]" }) {
+const CYAN   = "#00d4ff";
+const VIOLET = "#8b5cf6";
+const BG     = "#020617";
+
+function CyberBg() {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -100, rotate: rotate - 12 }}
-      animate={{ opacity: 1, y: 0, rotate }}
-      transition={{ duration: 2.4, delay, ease: [0.23, 0.86, 0.39, 0.96], opacity: { duration: 1.2 } }}
-      className={`absolute pointer-events-none ${className}`}
-    >
-      <motion.div
-        animate={{ y: [0, 14, 0] }}
-        transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
-        style={{ width, height }}
-      >
-        <div
-          className={`absolute inset-0 rounded-full bg-gradient-to-r to-transparent ${gradient}`}
-          style={{ border: "1.5px solid rgba(255,255,255,0.1)", backdropFilter: "blur(2px)", boxShadow: "0 8px 32px rgba(255,255,255,0.04)" }}
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+      <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse 70% 60% at 80% 30%, rgba(139,92,246,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 70% at 20% 70%, rgba(0,212,255,0.08) 0%, transparent 60%)` }} />
+      <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.7, 0.4] }} transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+        style={{ position: "absolute", top: "5%", right: "10%", width: 380, height: 380, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.14), transparent 70%)", filter: "blur(40px)" }} />
+      <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+        style={{ position: "absolute", bottom: "5%", left: "8%", width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,212,255,0.1), transparent 70%)", filter: "blur(40px)" }} />
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.012) 2px, rgba(0,212,255,0.012) 4px)" }} />
+      <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(rgba(139,92,246,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.035) 1px, transparent 1px)`, backgroundSize: "60px 60px" }} />
+    </div>
+  );
+}
+
+function NeonInput({ label, icon, type = "text", placeholder, name, value, onChange, required: req = true }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <div>
+      <label style={{ display: "block", fontSize: 10, fontWeight: 800, letterSpacing: 3, color: focused ? CYAN : "rgba(255,255,255,0.25)", marginBottom: 7, transition: "color 0.2s", fontFamily: "monospace" }}>{label}</label>
+      <div style={{ position: "relative" }}>
+        <div style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: focused ? CYAN : "rgba(255,255,255,0.2)", transition: "color 0.2s", pointerEvents: "none", fontSize: 15 }}>{icon}</div>
+        <input
+          type={type} name={name} placeholder={placeholder} value={value} onChange={onChange} required={req}
+          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+          style={{
+            width: "100%", padding: "12px 14px 12px 40px", borderRadius: 11, fontSize: 13, color: "#fff",
+            background: "rgba(0,212,255,0.02)", outline: "none", boxSizing: "border-box",
+            border: `1px solid ${focused ? "rgba(0,212,255,0.38)" : "rgba(255,255,255,0.07)"}`,
+            boxShadow: focused ? "0 0 0 3px rgba(0,212,255,0.06), 0 0 18px rgba(0,212,255,0.07)" : "none",
+            transition: "all 0.22s",
+          }}
         />
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 
@@ -33,335 +51,163 @@ export default function Register() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const handleChange = e => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const handleChange = e => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError(""); setSuccess("");
-    setLoading(true);
+    setError(""); setSuccess(""); setLoading(true);
     if (formData.password !== formData.confirmPassword) { setError("Les mots de passe ne correspondent pas"); setLoading(false); return; }
     if (formData.password.length < 6) { setError("Mot de passe trop court (6 caractères min)"); setLoading(false); return; }
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
+        email: formData.email, password: formData.password,
         options: { data: { full_name: formData.fullName } },
       });
       if (authError) throw authError;
-
-      // Detect duplicate email (Supabase returns fake user with empty identities)
-      if (authData?.user?.identities?.length === 0) {
-        throw new Error("Un compte avec cet email existe déjà. Connectez-vous.");
-      }
-
+      if (authData?.user?.identities?.length === 0) throw new Error("Un compte avec cet email existe déjà. Connectez-vous.");
       if (authData?.user) {
-        const { error: profileError } = await supabase.from("profiles").upsert({
-          id: authData.user.id,
-          full_name: formData.fullName,
-          email: formData.email,
-          free_fire_id: formData.freeFireId,
-          role: "user",
-          verification_status: "verified",
-          level: 1,
-        }, { onConflict: "id" });
-
+        const { error: profileError } = await supabase.from("profiles").upsert({ id: authData.user.id, full_name: formData.fullName, email: formData.email, free_fire_id: formData.freeFireId, role: "user", verification_status: "verified", level: 1 }, { onConflict: "id" });
         if (profileError) {
           if (profileError.message?.includes("column") || profileError.code === "42703") {
-            const { error: e2 } = await supabase.from("profiles").upsert({
-              id: authData.user.id,
-              full_name: formData.fullName,
-              email: formData.email,
-              free_fire_id: formData.freeFireId,
-            }, { onConflict: "id" });
+            const { error: e2 } = await supabase.from("profiles").upsert({ id: authData.user.id, full_name: formData.fullName, email: formData.email, free_fire_id: formData.freeFireId }, { onConflict: "id" });
             if (e2) throw e2;
-          } else {
-            throw profileError;
-          }
+          } else { throw profileError; }
         }
-
-        try {
-          await supabase.from("wallets").insert({ user_id: authData.user.id, balance: 0 });
-        } catch (_) {}
+        try { await supabase.from("wallets").insert({ user_id: authData.user.id, balance: 0 }); } catch (_) {}
       }
-
-      // If session exists → email confirmation not required → go to dashboard
-      if (authData?.session) {
-        setSuccess("Compte créé ! Redirection...");
-        setTimeout(() => navigate("/dashboard"), 1200);
-      } else {
-        // Email confirmation required
-        setSuccess("✅ Compte créé ! Vérifie ton email et confirme ton inscription avant de te connecter.");
-      }
+      if (authData?.session) { setSuccess("Compte créé ! Redirection..."); setTimeout(() => navigate("/dashboard"), 1200); }
+      else { setSuccess("✅ Compte créé ! Vérifie ton email et confirme ton inscription avant de te connecter."); }
     } catch (err) {
       const msg = err.message || "";
-      if (msg.includes("already registered") || msg.includes("already been registered") || err.status === 422) {
-        setError("Un compte avec cet email existe déjà. Connectez-vous.");
-      } else if (msg.includes("rate limit") || msg.includes("too many")) {
-        setError("Trop de tentatives. Attendez quelques minutes.");
-      } else if (msg.includes("invalid") && msg.includes("email")) {
-        setError("Adresse email invalide.");
-      } else {
-        setError(msg || "Erreur lors de l'inscription.");
-      }
-    } finally {
-      setLoading(false);
-    }
+      if (msg.includes("already registered") || msg.includes("already been registered") || err.status === 422) setError("Un compte avec cet email existe déjà. Connectez-vous.");
+      else if (msg.includes("rate limit") || msg.includes("too many")) setError("Trop de tentatives. Attendez quelques minutes.");
+      else if (msg.includes("invalid") && msg.includes("email")) setError("Adresse email invalide.");
+      else setError(msg || "Erreur lors de l'inscription.");
+    } finally { setLoading(false); }
   };
 
-  const inputStyle = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" };
-
   return (
-    <div className="min-h-screen text-white flex overflow-hidden font-sans relative" style={{ background: "#07071a" }}>
+    <div style={{ minHeight: "100vh", background: BG, display: "flex", overflow: "hidden", position: "relative", fontFamily: "'Inter','Space Grotesk',sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+        ::placeholder{color:rgba(255,255,255,0.15)!important}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes pulse-dot{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+        .reg-left{display:none}@media(min-width:900px){.reg-left{display:flex!important;flex-direction:column!important}}
+        .reg-mobile{display:flex}@media(min-width:900px){.reg-mobile{display:none!important}}
+      `}</style>
+      <CyberBg />
 
-      {/* Background ambient */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(79,70,229,0.12) 0%, transparent 70%)" }} />
-      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 50% at 0% 80%, rgba(139,92,246,0.06) 0%, transparent 70%)" }} />
+      {/* LEFT */}
+      <div className="reg-left" style={{ position: "relative", zIndex: 10, flex: "0 0 46%", flexDirection: "column", justifyContent: "center", padding: "64px 60px" }}>
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 56 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg,${VIOLET},${CYAN})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, color: "#fff", fontFamily: "Orbitron,sans-serif", boxShadow: `0 0 24px rgba(139,92,246,0.5)` }}>CP</div>
+          <span style={{ fontFamily: "Orbitron,sans-serif", fontWeight: 900, fontSize: 18, letterSpacing: 4, color: "#fff" }}>CIPHERPOOL</span>
+        </motion.div>
 
-      {/* Floating shapes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <Shape delay={0.3} width={550} height={130} rotate={-12} gradient="from-violet-500/[0.13]" className="right-[-6%] top-[15%]" />
-        <Shape delay={0.5} width={400} height={100} rotate={14}  gradient="from-indigo-500/[0.11]" className="left-[-4%] top-[55%]" />
-        <Shape delay={0.4} width={240} height={68}  rotate={8}   gradient="from-blue-500/[0.10]"   className="right-[5%] bottom-[10%]" />
-        <Shape delay={0.6} width={170} height={50}  rotate={-20} gradient="from-indigo-400/[0.09]" className="left-[18%] top-[6%]" />
-        <Shape delay={0.7} width={120} height={38}  rotate={30}  gradient="from-violet-400/[0.07]" className="right-[24%] top-[3%]" />
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <p style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, letterSpacing: 4, color: VIOLET, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: VIOLET, display: "inline-block", animation: "pulse-dot 2s infinite" }} />
+            REJOINS L'ÉLITE
+          </p>
+          <h1 style={{ fontFamily: "Orbitron,sans-serif", fontWeight: 900, fontSize: "clamp(28px,3.5vw,46px)", lineHeight: 1.1, color: "#fff", marginBottom: 20 }}>
+            DOMINE LE JEU.<br />
+            <span style={{ background: `linear-gradient(90deg,${VIOLET},${CYAN})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>ÉCRIS L'HISTOIRE.</span>
+          </h1>
+          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.7, maxWidth: 360 }}>
+            La plateforme n°1 pour les tournois Free Fire au Maroc. Crée ton compte et commence à gagner.
+          </p>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 44 }}>
+          {[
+            { val: "10K+",    label: "Joueurs",      c: CYAN    },
+            { val: "500+",    label: "Tournois",     c: VIOLET  },
+            { val: "100k CP", label: "Distribués",   c: "#f97316" },
+            { val: "150+",    label: "Clans actifs", c: "#10b981" },
+          ].map((s, i) => (
+            <motion.div key={s.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.35 + i * 0.05 }}
+              style={{ padding: "16px 18px", borderRadius: 14, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <p style={{ fontFamily: "Orbitron,sans-serif", fontSize: 20, fontWeight: 900, color: s.c, lineHeight: 1 }}>{s.val}</p>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{s.label}</p>
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
 
-      {/* Left panel */}
-      <div className="hidden md:flex md:w-5/12 relative z-10 items-center justify-center p-12">
-        <div className="max-w-md text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 text-3xl font-black text-white"
-            style={{ background: "linear-gradient(135deg,#4f46e5,#818cf8)", boxShadow: "0 0 60px rgba(79,70,229,0.45), 0 0 120px rgba(79,70,229,0.15)" }}
-          >
-            CP
-          </motion.div>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-4xl font-black mb-5 tracking-tight leading-tight"
-          >
-            DOMINE LE JEU.
-            <br />
-            <span style={{ background: "linear-gradient(135deg,#818cf8,#c4b5fd)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              REJOINS L'ÉLITE.
-            </span>
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="text-white/40 text-sm leading-relaxed mb-8"
-          >
-            La plateforme n°1 pour les tournois Free Fire au Maroc. Gagne des récompenses réelles.
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="grid grid-cols-2 gap-3"
-          >
-            {[
-              { val: "10K+", label: "Joueurs" },
-              { val: "500+", label: "Tournois" },
-              { val: "100k CP", label: "Distribués" },
-              { val: "150+", label: "Clans" },
-            ].map((s, i) => (
-              <div key={i} className="p-3 rounded-xl text-center" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <p className="text-xl font-black" style={{ background: "linear-gradient(135deg,#818cf8,#c4b5fd)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{s.val}</p>
-                <p className="text-[10px] text-white/30 mt-0.5">{s.label}</p>
-              </div>
-            ))}
-          </motion.div>
-
-          <motion.a
-            href="https://t.me/cipherpool"
-            target="_blank"
-            rel="noopener noreferrer"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.65 }}
-            className="mt-6 flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl text-sm font-semibold w-full transition-all hover:-translate-y-0.5"
-            style={{ background: "rgba(0,136,204,0.1)", border: "1px solid rgba(0,136,204,0.25)", color: "#39b0e3" }}
-          >
-            <Send size={15} />
-            Rejoindre la communauté Telegram
-          </motion.a>
-        </div>
-      </div>
-
-      {/* Right panel */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 relative z-10">
-        <div className="md:hidden flex items-center gap-2.5 mb-8">
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-black text-white" style={{ background: "linear-gradient(135deg,#4f46e5,#818cf8)" }}>CP</div>
-          <span className="font-black text-lg tracking-wider">CIPHERPOOL</span>
+      {/* RIGHT (FORM) */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 20px", position: "relative", zIndex: 10 }}>
+        <div className="reg-mobile" style={{ alignItems: "center", gap: 10, marginBottom: 28 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg,${VIOLET},${CYAN})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: "#fff", fontFamily: "Orbitron,sans-serif" }}>CP</div>
+          <span style={{ fontFamily: "Orbitron,sans-serif", fontWeight: 900, fontSize: 15, letterSpacing: 3, color: "#fff" }}>CIPHERPOOL</span>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="w-full max-w-md"
-        >
-          <div
-            className="p-7 rounded-3xl"
-            style={{ background: "rgba(8,8,20,0.88)", backdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 0 80px rgba(79,70,229,0.07), 0 32px 80px rgba(0,0,0,0.4)" }}
-          >
-            <div className="mb-6">
-              <h1 className="text-2xl font-black mb-1.5 tracking-tight">Inscription</h1>
-              <p className="text-white/35 text-sm">Commence ton aventure en quelques secondes.</p>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: "100%", maxWidth: 440 }}>
+          <div style={{
+            padding: "32px 28px", borderRadius: 24, position: "relative",
+            background: "rgba(5,7,18,0.87)", backdropFilter: "blur(24px)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            boxShadow: `0 0 0 1px rgba(139,92,246,0.07), 0 32px 80px rgba(0,0,0,0.55), 0 0 80px rgba(139,92,246,0.05)`,
+          }}>
+            <div style={{ position: "absolute", top: 0, left: "15%", right: "15%", height: 1, background: `linear-gradient(90deg,transparent,${VIOLET},${CYAN},transparent)` }} />
+
+            <div style={{ marginBottom: 24 }}>
+              <h1 style={{ fontFamily: "Orbitron,sans-serif", fontWeight: 900, fontSize: 21, color: "#fff", marginBottom: 5, letterSpacing: 1 }}>INSCRIPTION</h1>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Commence ton aventure en quelques secondes.</p>
             </div>
 
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
               {error && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                  className="mb-5 p-3.5 rounded-xl flex gap-2.5 items-center"
-                  style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
-                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-                  <p className="text-red-300 text-xs">{error}</p>
+                  style={{ marginBottom: 16, padding: "11px 14px", borderRadius: 11, background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.2)", color: "#fca5a5", fontSize: 13 }}>
+                  {error}
                 </motion.div>
               )}
               {success && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                  className="mb-5 p-3.5 rounded-xl flex gap-2.5 items-center"
-                  style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
-                  <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
-                  <p className="text-green-300 text-xs">{success}</p>
+                  style={{ marginBottom: 16, padding: "11px 14px", borderRadius: 11, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", color: "#6ee7b7", fontSize: 13 }}>
+                  {success}
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <form onSubmit={handleRegister} className="space-y-4">
-              {[
-                { name: "fullName",   label: "Nom complet",  icon: User,     type: "text",  placeholder: "Mohamed Alami" },
-                { name: "freeFireId", label: "ID Free Fire", icon: Gamepad2, type: "text",  placeholder: "123456789" },
-                { name: "email",      label: "Email",        icon: Mail,     type: "email", placeholder: "nom@exemple.com" },
-              ].map(field => (
-                <div key={field.name} className="group">
-                  <label className="block text-[10px] font-black text-white/25 uppercase tracking-[0.2em] mb-1.5 group-focus-within:text-indigo-400 transition-colors">{field.label}</label>
-                  <div className="relative">
-                    <field.icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-indigo-400 transition-colors" />
-                    <input
-                      type={field.type}
-                      name={field.name}
-                      placeholder={field.placeholder}
-                      value={formData[field.name]}
-                      onChange={handleChange}
-                      required
-                      className="w-full rounded-xl py-3.5 pl-11 pr-4 text-white text-sm placeholder-white/15 outline-none transition-all"
-                      style={inputStyle}
-                      onFocus={e => e.target.style.borderColor = "rgba(99,102,241,0.45)"}
-                      onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.07)"}
-                    />
-                  </div>
-                </div>
-              ))}
+            <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <NeonInput label="NOM COMPLET" icon="👤" name="fullName" placeholder="Mohamed Alami" value={formData.fullName} onChange={handleChange} />
+              <NeonInput label="ID FREE FIRE" icon="🎮" name="freeFireId" placeholder="123456789" value={formData.freeFireId} onChange={handleChange} />
+              <NeonInput label="ADRESSE EMAIL" icon="✉️" type="email" name="email" placeholder="nom@exemple.com" value={formData.email} onChange={handleChange} />
 
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { name: "password",        label: "Mot de passe", icon: Lock,        placeholder: "••••••••" },
-                  { name: "confirmPassword", label: "Confirmation",  icon: ShieldCheck, placeholder: "••••••••" },
-                ].map(field => (
-                  <div key={field.name} className="group">
-                    <label className="block text-[10px] font-black text-white/25 uppercase tracking-[0.2em] mb-1.5 group-focus-within:text-indigo-400 transition-colors">{field.label}</label>
-                    <div className="relative">
-                      <field.icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-indigo-400 transition-colors" />
-                      <input
-                        type="password"
-                        name={field.name}
-                        placeholder={field.placeholder}
-                        value={formData[field.name]}
-                        onChange={handleChange}
-                        required
-                        className="w-full rounded-xl py-3.5 pl-11 pr-4 text-white text-sm placeholder-white/15 outline-none transition-all"
-                        style={inputStyle}
-                        onFocus={e => e.target.style.borderColor = "rgba(99,102,241,0.45)"}
-                        onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.07)"}
-                      />
-                    </div>
-                  </div>
-                ))}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <NeonInput label="MOT DE PASSE" icon="🔒" type="password" name="password" placeholder="••••••••" value={formData.password} onChange={handleChange} />
+                <NeonInput label="CONFIRMATION" icon="🛡️" type="password" name="confirmPassword" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-4 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 hover:opacity-90 mt-2"
-                style={{ background: "linear-gradient(135deg,#4f46e5,#6366f1)", boxShadow: "0 8px 30px rgba(79,70,229,0.35)" }}
+              <button type="submit" disabled={loading}
+                style={{
+                  padding: "13px", borderRadius: 13, border: "none", cursor: loading ? "not-allowed" : "pointer", marginTop: 4,
+                  background: `linear-gradient(135deg,${VIOLET},${CYAN})`,
+                  color: "#fff", fontFamily: "Orbitron,sans-serif", fontWeight: 700, fontSize: 12, letterSpacing: 2,
+                  boxShadow: `0 8px 30px rgba(139,92,246,0.35)`,
+                  opacity: loading ? 0.6 : 1, transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                }}
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.boxShadow = `0 12px 40px rgba(139,92,246,0.5)`; }}
+                onMouseLeave={e => e.currentTarget.style.boxShadow = `0 8px 30px rgba(139,92,246,0.35)`}
               >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>Créer mon compte <ArrowRight size={16} /></>
-                )}
+                {loading
+                  ? <div style={{ width: 20, height: 20, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                  : <>CRÉER MON COMPTE →</>
+                }
               </button>
             </form>
 
-            {/* Community section */}
-            <div className="mt-6">
-              <div className="relative flex items-center justify-center mb-4">
-                <div className="border-t border-white/[0.06] absolute w-full" />
-                <div className="px-4 relative text-white/25 text-[10px] font-mono uppercase tracking-widest" style={{ background: "rgba(8,8,20,0.88)" }}>
-                  communauté
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <a
-                  href="https://t.me/cipherpool"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl transition-all hover:-translate-y-0.5"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(0,136,204,0.35)"; e.currentTarget.style.background = "rgba(0,136,204,0.07)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
-                >
-                  <Send size={15} color="#39b0e3" />
-                  <span className="text-[10px] text-white/30 font-mono">Telegram</span>
-                </a>
-                <a
-                  href="#"
-                  className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl transition-all hover:-translate-y-0.5"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(88,101,242,0.35)"; e.currentTarget.style.background = "rgba(88,101,242,0.07)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="#5865F2">
-                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.102 18.084.116 18.11.135 18.127a19.861 19.861 0 0 0 5.993 3.029.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.029.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
-                  </svg>
-                  <span className="text-[10px] text-white/30 font-mono">Discord</span>
-                </a>
-                <div
-                  className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl transition-all hover:-translate-y-0.5 cursor-pointer"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(249,115,22,0.35)"; e.currentTarget.style.background = "rgba(249,115,22,0.07)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
-                >
-                  <span className="text-lg leading-none">🎮</span>
-                  <span className="text-[10px] text-white/30 font-mono">Free Fire</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 text-center">
-              <p className="text-sm text-white/30">
-                Déjà un compte ?{" "}
-                <Link to="/login" className="font-bold text-indigo-400 hover:text-indigo-300 transition-colors">Connexion</Link>
-              </p>
-            </div>
+            <p style={{ textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.3)", marginTop: 20 }}>
+              Déjà un compte ?{" "}
+              <Link to="/login" style={{ color: CYAN, fontWeight: 700, textDecoration: "none" }}>Se connecter →</Link>
+            </p>
           </div>
         </motion.div>
 
-        <div className="mt-6 flex gap-6 text-[10px] font-bold text-white/15 uppercase tracking-[0.2em]">
-          <span>© 2026 CIPHERPOOL</span>
-          <span className="cursor-pointer hover:text-white/30 transition-colors">Privacy</span>
-          <span className="cursor-pointer hover:text-white/30 transition-colors">Terms</span>
-        </div>
+        <p style={{ marginTop: 20, fontSize: 11, color: "rgba(255,255,255,0.12)", fontFamily: "monospace", letterSpacing: 2 }}>© 2026 CIPHERPOOL · Tous droits réservés</p>
       </div>
     </div>
   );
 }
-// Trigger build Tue May  5 08:51:24 EDT 2026

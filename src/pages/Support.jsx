@@ -10,20 +10,20 @@ import { motion, AnimatePresence } from "framer-motion";
 
 // ====================== CONSTANTS & THEME ======================
 const THEME = {
-  primary: "#6366f1",
-  primaryLight: "#818cf8",
-  primaryDark: "#4f46e5",
+  primary: "#00d4ff",
+  primaryLight: "#22e5ff",
+  primaryDark: "#0099cc",
   secondary: "#8b5cf6",
   success: "#10b981",
   warning: "#f59e0b",
-  error: "#ef4444",
-  info: "#3b82f6",
-  darkBg: "#0f0f1a",
-  cardBg: "rgba(18, 18, 30, 0.95)",
-  borderLight: "rgba(255, 255, 255, 0.08)",
+  error: "#f43f5e",
+  info: "#60a5fa",
+  darkBg: "#020617",
+  cardBg: "rgba(5, 12, 31, 0.97)",
+  borderLight: "rgba(255, 255, 255, 0.07)",
   textPrimary: "rgba(255, 255, 255, 0.92)",
-  textSecondary: "rgba(255, 255, 255, 0.55)",
-  textMuted: "rgba(255, 255, 255, 0.28)",
+  textSecondary: "rgba(255, 255, 255, 0.5)",
+  textMuted: "rgba(255, 255, 255, 0.25)",
 };
 
 const GRADIENTS = {
@@ -31,15 +31,18 @@ const GRADIENTS = {
   success: `linear-gradient(135deg, ${THEME.success}, #059669)`,
   warning: `linear-gradient(135deg, ${THEME.warning}, #d97706)`,
   error: `linear-gradient(135deg, ${THEME.error}, #dc2626)`,
-  card: "linear-gradient(135deg, rgba(18, 18, 30, 0.95), rgba(25, 25, 40, 0.92))",
+  card: "linear-gradient(135deg, rgba(5,12,31,0.97), rgba(8,16,38,0.95))",
 };
 
 // Helper pour opacité des couleurs
 const alpha = (color, opacity) => {
-  if (color === THEME.primary) return `rgba(99, 102, 241, ${opacity})`;
-  if (color === THEME.success) return `rgba(16, 185, 129, ${opacity})`;
-  if (color === THEME.error) return `rgba(239, 68, 68, ${opacity})`;
-  if (color === THEME.warning) return `rgba(245, 158, 11, ${opacity})`;
+  if (color === THEME.primary)  return `rgba(0, 212, 255, ${opacity})`;
+  if (color === THEME.secondary) return `rgba(139, 92, 246, ${opacity})`;
+  if (color === THEME.success)  return `rgba(16, 185, 129, ${opacity})`;
+  if (color === THEME.error)    return `rgba(244, 63, 94, ${opacity})`;
+  if (color === THEME.warning)  return `rgba(245, 158, 11, ${opacity})`;
+  if (color === THEME.info)     return `rgba(96, 165, 250, ${opacity})`;
+  if (color === THEME.primaryLight) return `rgba(34, 229, 255, ${opacity})`;
   return `rgba(255, 255, 255, ${opacity})`;
 };
 
@@ -381,24 +384,30 @@ export default function Support() {
   }
   
   return (
-    <div style={{ padding: "20px 24px", maxWidth: 1400, margin: "0 auto", fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <>
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+      @keyframes flow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    `}</style>
+    <div style={{ maxWidth: 1400, margin: "0 auto", fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
 
       {/* ==================== HEADER ==================== */}
       <div style={{ marginBottom: 28 }}>
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
           style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
           <div>
-            <h1 style={{ fontSize: 38, fontWeight: 800, margin: 0, background: GRADIENTS.primary, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: -1 }}>
-              Assistance CipherPool
+            <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: 4, color: THEME.primary, marginBottom: 10 }}>🎧 CENTRE D'ASSISTANCE</p>
+            <h1 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: 26, fontWeight: 900, margin: 0, letterSpacing: 2, background: GRADIENTS.primary, backgroundSize: "200% 200%", animation: "flow 4s ease infinite", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              CIPHER SUPPORT
             </h1>
-            <p style={{ color: THEME.textSecondary, marginTop: 6, fontSize: 14 }}>
+            <p style={{ color: THEME.textSecondary, marginTop: 8, fontSize: 13 }}>
               {isAdmin ? "Gestion des tickets support — panneau admin" : "Tickets, annonces officielles et aide rapide en un seul espace."}
             </p>
           </div>
           {!isAdmin && (
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowForm(true)}
-              style={{ background: GRADIENTS.primary, border: "none", borderRadius: 12, padding: "12px 24px", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, boxShadow: `0 4px 14px ${alpha(THEME.primary, 0.3)}` }}>
-              <span style={{ fontSize: 18 }}>+</span> Nouveau ticket
+              style={{ background: GRADIENTS.primary, border: "none", borderRadius: 12, padding: "12px 24px", color: "#000", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 11, letterSpacing: 1.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, boxShadow: `0 4px 20px ${alpha(THEME.primary, 0.35)}` }}>
+              <span style={{ fontSize: 16 }}>+</span> NOUVEAU TICKET
             </motion.button>
           )}
         </motion.div>
@@ -1079,5 +1088,6 @@ export default function Support() {
         }
       `}</style>
     </div>
+    </>
   );
 }
