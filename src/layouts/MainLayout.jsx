@@ -8,6 +8,8 @@ import {
   ChevronDown, Settings, Plus, Sword,
 } from "lucide-react";
 import NotificationBell from "../components/NotificationBell";
+import AnnouncementModal from "../components/AnnouncementModal";
+import TermsModal from "../components/TermsModal";
 import { motion, AnimatePresence } from "framer-motion";
 
 /* ─── Nav definitions ────────────────────────────────────────────── */
@@ -322,6 +324,10 @@ export default function MainLayout() {
           <Outlet context={{ profile, balance, equippedItems, refreshProfile: fetchProfile }} />
         </div>
       </main>
+
+      {/* ════════════════ GLOBAL MODALS ════════════════ */}
+      <TermsModal />
+      <AnnouncementModal />
 
       {/* ════════════════ MOBILE DRAWER ════════════════ */}
       <AnimatePresence>

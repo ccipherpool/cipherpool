@@ -201,7 +201,8 @@ export default function Support() {
   const [formData, setFormData] = useState({ subject: "", category: "autre", priority: "normal", body: "" });
   const [sending, setSending] = useState(false);
   const [mobileView, setMobileView] = useState("list");
-  
+  const [heroSearch, setHeroSearch] = useState("");
+
   const messagesEndRef = useRef(null);
   const isAdmin = ["admin", "super_admin"].includes(profile?.role);
   
@@ -381,55 +382,61 @@ export default function Support() {
   
   return (
     <div style={{ padding: "20px 24px", maxWidth: 1400, margin: "0 auto", fontFamily: "'Inter', system-ui, sans-serif" }}>
-      
+
       {/* ==================== HEADER ==================== */}
-      <div style={{ marginBottom: 32 }}>
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}
-        >
+      <div style={{ marginBottom: 28 }}>
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
           <div>
-            <h1 style={{ 
-              fontSize: 42, fontWeight: 800, margin: 0,
-              background: GRADIENTS.primary,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              letterSpacing: -1
-            }}>
-              Centre d'Aide
+            <h1 style={{ fontSize: 38, fontWeight: 800, margin: 0, background: GRADIENTS.primary, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", letterSpacing: -1 }}>
+              Assistance CipherPool
             </h1>
-            <p style={{ color: THEME.textSecondary, marginTop: 8, fontSize: 14 }}>
-              {isAdmin ? "Gestion des tickets support" : "Une question ? Notre équipe vous répond sous 24h"}
+            <p style={{ color: THEME.textSecondary, marginTop: 6, fontSize: 14 }}>
+              {isAdmin ? "Gestion des tickets support — panneau admin" : "Tickets, annonces officielles et aide rapide en un seul espace."}
             </p>
           </div>
-          
           {!isAdmin && (
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowForm(true)}
-              style={{
-                background: GRADIENTS.primary,
-                border: "none",
-                borderRadius: 12,
-                padding: "12px 24px",
-                color: "white",
-                fontWeight: 600,
-                fontSize: 14,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                boxShadow: `0 4px 14px ${alpha(THEME.primary, 0.3)}`,
-              }}
-            >
-              <span style={{ fontSize: 18 }}>+</span>
-              Nouveau ticket
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setShowForm(true)}
+              style={{ background: GRADIENTS.primary, border: "none", borderRadius: 12, padding: "12px 24px", color: "white", fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, boxShadow: `0 4px 14px ${alpha(THEME.primary, 0.3)}` }}>
+              <span style={{ fontSize: 18 }}>+</span> Nouveau ticket
             </motion.button>
           )}
         </motion.div>
       </div>
+
+      {/* ==================== HERO (non-admin) ==================== */}
+      {!isAdmin && (
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          style={{ marginBottom: 32, padding: "28px 32px", background: "linear-gradient(135deg,rgba(99,102,241,.07),rgba(139,92,246,.04))", borderRadius: 22, border: "1px solid rgba(99,102,241,.15)", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -60, right: -60, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,.1),transparent 70%)", pointerEvents: "none" }} />
+          <h2 style={{ margin: "0 0 6px", fontSize: 24, fontWeight: 800, color: "#fff", position: "relative" }}>
+            Comment pouvons-nous vous aider ?
+          </h2>
+          <p style={{ color: THEME.textSecondary, marginBottom: 20, fontSize: 13, position: "relative" }}>
+            Trouvez une réponse rapidement ou contactez notre équipe.
+          </p>
+          <input
+            value={heroSearch}
+            onChange={e => setHeroSearch(e.target.value)}
+            placeholder="🔍 Rechercher une aide…"
+            style={{ width: "100%", maxWidth: 500, background: "rgba(255,255,255,.05)", border: "1px solid rgba(99,102,241,.25)", borderRadius: 12, padding: "13px 18px", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box", marginBottom: 22, position: "relative", display: "block" }}
+          />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))", gap: 12, position: "relative" }}>
+            {[
+              { icon: "📚", title: "Centre d'aide", desc: "Questions fréquentes.", act: () => {} },
+              { icon: "💬", title: "Contacter-nous", desc: "Créer un ticket support.", act: () => setShowForm(true) },
+              { icon: "🎮", title: "Tournois", desc: "Problèmes liés aux matchs.", act: () => { setFormData(f => ({...f, category:"tournoi"})); setShowForm(true); } },
+              { icon: "💳", title: "Paiement", desc: "Wallet, coins et paiements.", act: () => { setFormData(f => ({...f, category:"paiement"})); setShowForm(true); } },
+            ].map(card => (
+              <GlassCard key={card.title} accent={THEME.primary} onClick={card.act} style={{ padding: 20, cursor: "pointer" }}>
+                <div style={{ fontSize: 28, marginBottom: 10 }}>{card.icon}</div>
+                <h3 style={{ margin: "0 0 5px", color: "#fff", fontSize: 14, fontWeight: 700 }}>{card.title}</h3>
+                <p style={{ margin: 0, fontSize: 12, color: THEME.textSecondary }}>{card.desc}</p>
+              </GlassCard>
+            ))}
+          </div>
+        </motion.div>
+      )}
       
       {/* ==================== STATS ADMIN ==================== */}
       {isAdmin && (
@@ -541,9 +548,17 @@ export default function Support() {
               
               <div style={{ maxHeight: 600, overflowY: "auto" }}>
                 {filteredTickets.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "60px 20px" }}>
-                    <div style={{ fontSize: 48, opacity: 0.3, marginBottom: 12 }}>🎫</div>
-                    <p style={{ color: THEME.textMuted, fontSize: 13 }}>Aucun ticket trouvé</p>
+                  <div style={{ textAlign: "center", padding: "52px 20px" }}>
+                    <div style={{ fontSize: 44, opacity: 0.25, marginBottom: 12 }}>🎫</div>
+                    <p style={{ color: THEME.textMuted, fontSize: 13, marginBottom: 16 }}>
+                      {isAdmin ? "Aucun ticket trouvé." : "Vous n'avez encore ouvert aucun ticket."}
+                    </p>
+                    {!isAdmin && (
+                      <button onClick={() => setShowForm(true)}
+                        style={{ padding: "10px 24px", borderRadius: 12, background: GRADIENTS.primary, border: "none", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                        Créer mon premier ticket
+                      </button>
+                    )}
                   </div>
                 ) : (
                   filteredTickets.map(ticket => (
@@ -837,6 +852,30 @@ export default function Support() {
         </GlassCard>
       )}
       
+      {/* ==================== FAQ ==================== */}
+      {!isAdmin && activeTab === "tickets" && (
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+          style={{ marginTop: 28 }}>
+          <GlassCard style={{ padding: "24px 28px" }}>
+            <h3 style={{ margin: "0 0 20px", fontSize: 17, fontWeight: 700, color: "#fff" }}>❓ FAQ rapide</h3>
+            {[
+              ["Combien de temps pour une réponse ?", "Généralement sous 24h ouvrables. Les tickets urgents sont traités en priorité."],
+              ["Comment modifier mon profil ?", "Créez un ticket catégorie Compte / Profil avec vos informations. Notre équipe le fera sous 24h."],
+              ["Problème de coins ?", "Choisissez la catégorie Pièces / Wallet et décrivez le problème. Indiquez le montant et la date."],
+              ["Je n'arrive pas à rejoindre un tournoi ?", "Vérifiez votre Free Fire ID dans votre profil, puis créez un ticket catégorie Tournois."],
+              ["Comment contacter le support rapidement ?", "Cliquez sur + Nouveau ticket en haut à droite de cette page."],
+            ].map(([q, a]) => (
+              <details key={q} style={{ paddingBottom: 14, marginBottom: 14, borderBottom: `1px solid ${THEME.borderLight}` }}>
+                <summary style={{ cursor: "pointer", fontWeight: 700, fontSize: 14, color: THEME.textPrimary, listStyle: "none", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ color: THEME.primary }}>▸</span> {q}
+                </summary>
+                <p style={{ margin: "10px 0 0 22px", fontSize: 13, color: THEME.textSecondary, lineHeight: 1.7 }}>{a}</p>
+              </details>
+            ))}
+          </GlassCard>
+        </motion.div>
+      )}
+
       {/* ==================== MODAL NOUVEAU TICKET ==================== */}
       <AnimatePresence>
         {showForm && (

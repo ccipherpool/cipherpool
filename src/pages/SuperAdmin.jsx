@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { PERMISSIONS, checkPermission } from "../utils/permissions";
+import { PERMISSIONS, checkPermission, can } from "../utils/permissions";
+import StaffTab from "./superadmin/tabs/StaffTab";
 
 // inject Orbitron/Rajdhani fonts for role modal
 if (typeof document !== "undefined" && !document.getElementById("sa-fonts")) {
@@ -176,7 +177,7 @@ export default function SuperAdmin() {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .in("role", ["admin", "super_admin"])
+        .in("role", ["admin", "super_admin", "founder", "fondateur", "designer"])
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -774,7 +775,7 @@ export default function SuperAdmin() {
           {[
             { id: "dashboard", label: "📊 DASHBOARD", color: "purple" },
             { id: "users", label: `👥 UTILISATEURS (${users.length})`, color: "blue" },
-            { id: "admins", label: `🛡️ ADMINS (${admins.length})`, color: "cyan" },
+            { id: "staff", label: `👥 STAFF (${admins.length})`, color: "cyan" },
             { id: "tournaments", label: `🏆 TOURNOIS (${tournaments.length})`, color: "green" },
             { id: "reports", label: `🚨 RAPPORTS (${reports.length})`, color: "red" },
             { id: "economy", label: "💰 ÉCONOMIE", color: "yellow" },
@@ -1116,75 +1117,13 @@ export default function SuperAdmin() {
             </motion.div>
           )}
 
-          {/* Admins Tab */}
-          {activeTab === "admins" && (
-            <motion.div
-              key="admins"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <div className="bg-[#0a0a1a] border border-purple-500/20 rounded-2xl p-6">
-                <h2 className="text-lg font-bold text-white mb-4">GESTION DES ADMINS</h2>
-                
-                {admins.length === 0 ? (
-                  <p className="text-white/40">Aucun admin</p>
-                ) : (
-                  <div className="space-y-4">
-                    {admins.map(admin => (
-                      <motion.div
-                        key={admin.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        whileHover={{ scale: 1.02, x: 4 }}
-                        className="bg-[#11152b] rounded-xl p-4 border border-purple-500/20 hover:border-purple-500 transition-all"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium text-white">{admin.username || admin.full_name || admin.email?.split("@")[0] || "Admin"}</p>
-                            <p className="text-sm text-white/60">{admin.email}</p>
-                            <div className="flex gap-2 mt-2">
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                admin.role === 'super_admin' 
-                                  ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' 
-                                  : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                              }`}>
-                                {admin.role === 'super_admin' ? 'SUPER ADMIN' : 'ADMIN'}
-                              </span>
-                              <span className="px-2 py-1 bg-[#1a1f35] text-white/60 rounded-full text-xs border border-white/10">
-                                {new Date(admin.created_at).toLocaleDateString('fr-FR')}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            {admin.role !== 'super_admin' && (
-                              <>
-                                <motion.button
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => updateUserRole(admin.id, 'user')}
-                                  className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-lg text-xs hover:bg-orange-500/30 transition-all"
-                                >
-                                  Rétrograder
-                                </motion.button>
-                                <motion.button
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => deleteUser(admin.id)}
-                                  className="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-xs hover:bg-red-500/30 transition-all"
-                                >
-                                  Supprimer
-                                </motion.button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
+          {/* Staff Tab */}
+          {activeTab === "staff" && (
+            <StaffTab
+              users={users}
+              updateUserRole={updateUserRole}
+              currentUserRole={profile?.role}
+            />
           )}
 
           {/* Tournaments Tab */}

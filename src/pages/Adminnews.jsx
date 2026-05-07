@@ -85,11 +85,20 @@ export default function AdminNews() {
       ({ error } = await supabase.from("news").update(payload).eq("id", editing.id));
     } else {
       ({ error } = await supabase.from("news").insert([payload]));
+      // Send global notification to all users
+      if (!error) {
+        await supabase.from("admin_messages").insert([{
+          title: payload.title,
+          content: payload.excerpt,
+          type: "announcement",
+          is_global: true,
+        }]);
+      }
     }
 
     setSaving(false);
     if (error) { setMsg("❌ Erreur: " + error.message); return; }
-    setMsg(editing ? "✅ Article modifié !" : "✅ Article publié !");
+    setMsg(editing ? "✅ Article modifié !" : "✅ Article publié et notifié !");
     setShowForm(false);
     fetchArticles();
   };
