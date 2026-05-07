@@ -116,8 +116,32 @@ export default function AdminResults() {
         }
       }
 
+      // ── 3. Send notification to player ──────────────────────
+      const coins = result.estimated_coins || result.points * 10;
+      try {
+        if (action === "approve") {
+          await supabase.from("admin_messages").insert({
+            user_id:   result.user_id,
+            is_global: false,
+            type:      "tournament",
+            title:     `✅ Résultat validé — ${result.tournaments?.name || "Tournoi"}`,
+            content:   `Ta performance a été vérifiée ! Place #${result.placement} · ${result.kills} kills · ${result.points} points. Tu reçois +${coins} pièces sur ton portefeuille.`,
+            read:      false,
+          });
+        } else {
+          await supabase.from("admin_messages").insert({
+            user_id:   result.user_id,
+            is_global: false,
+            type:      "warning",
+            title:     `❌ Résultat refusé — ${result.tournaments?.name || "Tournoi"}`,
+            content:   `Ton résultat soumis pour la place #${result.placement} n'a pas pu être validé. Contacte le support si tu penses qu'il y a une erreur.`,
+            read:      false,
+          });
+        }
+      } catch (_) {}
+
       setMsg(action === "approve"
-        ? `✅ Validé — ${result.points} pts + ${result.estimated_coins || result.points * 10} pièces attribués`
+        ? `✅ Validé — ${result.points} pts + ${coins} pièces attribués`
         : "❌ Refusé");
       setSelected(null);
       fetchResults();
