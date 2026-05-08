@@ -209,7 +209,6 @@ export default function Home() {
   return (
     <div style={{ background: BG, color: "#f8fafc", fontFamily: "Space Grotesk,sans-serif", overflowX: "hidden", position: "relative" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: ${cx(.3)}; border-radius: 99px; }

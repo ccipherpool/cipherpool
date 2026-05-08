@@ -192,7 +192,7 @@ export default function MainLayout() {
 
       {/* ════════════════ TOP NAVBAR ════════════════ */}
       <header className="fixed top-0 left-0 right-0 z-50 h-14"
-        style={{ background: "rgba(7,7,26,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        style={{ background: "rgba(7,7,26,0.97)", backdropFilter: "blur(24px)", borderBottom: "1px solid rgba(99,102,241,0.12)", boxShadow: "0 1px 0 rgba(99,102,241,0.08), 0 4px 24px rgba(0,0,0,0.4)" }}>
         <div className="max-w-screen-2xl mx-auto h-full flex items-center justify-between px-4 md:px-6 gap-4">
 
           {/* LEFT: Logo + Nav */}
@@ -200,8 +200,8 @@ export default function MainLayout() {
             {/* Logo */}
             <Link to="/dashboard" className="flex items-center gap-2 shrink-0 mr-2">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-white shrink-0"
-                style={{ background: "linear-gradient(135deg,#4f46e5,#818cf8)" }}>CP</div>
-              <span className="hidden lg:block font-black text-sm tracking-wider text-white">CIPHERPOOL</span>
+                style={{ background: "linear-gradient(135deg,#4f46e5,#818cf8)", boxShadow: "0 0 20px rgba(79,70,229,0.45), 0 0 0 1px rgba(129,140,248,0.15)" }}>CP</div>
+              <span className="hidden lg:block font-black text-sm tracking-wider text-white" style={{ fontFamily: "Orbitron, sans-serif", letterSpacing: "0.12em" }}>CIPHERPOOL</span>
             </Link>
 
             {/* Primary nav — desktop */}
@@ -211,12 +211,13 @@ export default function MainLayout() {
                 const Icon = item.icon;
                 return (
                   <NavLink key={item.to} to={item.to}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all"
-                    style={{ color: active ? "#818cf8" : "rgba(255,255,255,0.45)", background: active ? "rgba(99,102,241,0.1)" : "transparent" }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all relative overflow-hidden"
+                    style={{ color: active ? "#818cf8" : "rgba(255,255,255,0.45)", background: active ? "rgba(99,102,241,0.12)" : "transparent", boxShadow: active ? "inset 0 0 0 1px rgba(99,102,241,0.18)" : "none" }}
                     onMouseEnter={e => { if (!active) { e.currentTarget.style.color = "#fff"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; } }}
                     onMouseLeave={e => { if (!active) { e.currentTarget.style.color = "rgba(255,255,255,0.45)"; e.currentTarget.style.background = "transparent"; } }}>
                     <Icon size={14} />
                     {item.label}
+                    {active && <span style={{ position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "70%", height: 2, background: "linear-gradient(90deg,transparent,#818cf8,transparent)", borderRadius: 99 }} />}
                   </NavLink>
                 );
               })}
@@ -240,10 +241,10 @@ export default function MainLayout() {
           {/* RIGHT: Balance + Admin + Bell + Avatar */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Balance */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full cursor-pointer transition-all hover:opacity-80"
-              style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.22)" }}
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full cursor-pointer transition-all hover:opacity-90"
+              style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.28)", boxShadow: "0 0 16px rgba(99,102,241,0.12), inset 0 0 0 1px rgba(129,140,248,0.06)" }}
               onClick={() => navigate("/wallet")}>
-              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#818cf8" }} />
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#818cf8", boxShadow: "0 0 6px #818cf8" }} />
               <span className="text-xs font-black tracking-tight" style={{ color: "#818cf8" }}>{balance.toLocaleString()} CP</span>
             </div>
 

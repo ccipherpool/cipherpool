@@ -89,7 +89,6 @@ export default function Register() {
   return (
     <div style={{ minHeight: "100vh", background: BG, display: "flex", overflow: "hidden", position: "relative", fontFamily: "'Inter','Space Grotesk',sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         ::placeholder{color:rgba(255,255,255,0.15)!important}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes pulse-dot{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}

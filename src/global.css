@@ -1,38 +1,52 @@
 /* ── Fonts ── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Root Variables ── */
+/* ── Design System — CipherPool 2026 ── */
 :root {
-  --color-bg-primary: #0a0a0f;
-  --color-bg-secondary: #14141f;
-  --color-bg-tertiary: #1a1a2e;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #a3a3a3;
-  --color-brand: #8b5cf6;
+  /* Background layers */
+  --color-bg-primary:   #020617;
+  --color-bg-secondary: #050b1a;
+  --color-bg-card:      rgba(5, 7, 18, 0.95);
+  --color-bg-tertiary:  #0a0f24;
+
+  /* Accent palette */
+  --color-cyan:   #00d4ff;
+  --color-violet: #8b5cf6;
+  --color-indigo: #818cf8;
+  --color-orange: #f97316;
+  --color-green:  #10b981;
+  --color-red:    #f43f5e;
+
+  /* Text */
+  --color-text-primary:   #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted:     rgba(255, 255, 255, 0.3);
+
+  /* Borders */
+  --color-border:   rgba(255, 255, 255, 0.06);
+  --color-border-2: rgba(255, 255, 255, 0.1);
+
+  /* Brand (legacy compat) */
+  --color-brand: #818cf8;
 }
 
 /* ── Global Styles ── */
-* {
-  @apply transition-colors duration-200;
-}
-
 html, body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -40,12 +54,12 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.3);
-  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.35);
+  border-radius: 99px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.5);
+  background: rgba(129, 140, 248, 0.6);
 }
 
 /* ── Utility Classes ── */

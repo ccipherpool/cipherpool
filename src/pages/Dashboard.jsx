@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion } from "framer-motion";
+import { Wallet, Zap, Trophy, TrendingUp, Shield, ShoppingBag, BarChart3, Gift, Award, Crown } from "lucide-react";
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const CYAN   = "#00d4ff";
@@ -28,7 +29,7 @@ function Counter({ to, duration = 1.2 }) {
 }
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
-function StatCard({ icon, label, value, color, delay = 0 }) {
+function StatCard({ icon: Icon, label, value, color, delay = 0 }) {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.4, ease: [.22,1,.36,1] }}
       style={{ position: "relative", overflow: "hidden", borderRadius: 18, padding: "20px 20px 18px", background: "rgba(5,7,18,0.95)", border: `1px solid ${color}15`, transition: "box-shadow 0.3s" }}
@@ -37,7 +38,9 @@ function StatCard({ icon, label, value, color, delay = 0 }) {
       <div style={{ position: "absolute", inset: 0, opacity: 0, background: `radial-gradient(circle at top right, ${color}10, transparent 65%)`, transition: "opacity 0.4s" }} className="stat-glow" />
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg,transparent,${color}45,transparent)` }} />
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
-        <div style={{ width: 38, height: 38, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", background: `${color}10`, border: `1px solid ${color}20`, fontSize: 17 }}>{icon}</div>
+        <div style={{ width: 38, height: 38, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", background: `${color}10`, border: `1px solid ${color}20` }}>
+          <Icon size={18} style={{ color }} />
+        </div>
         <span style={{ fontFamily: "monospace", fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.18)", letterSpacing: 2, marginTop: 4 }}>{label}</span>
       </div>
       <p style={{ fontFamily: "Orbitron,sans-serif", fontSize: 26, fontWeight: 900, color, lineHeight: 1 }}>
@@ -59,7 +62,9 @@ function TRow({ t, i }) {
         onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,212,255,0.04)"; e.currentTarget.style.borderColor = "rgba(0,212,255,0.14)"; }}
         onMouseLeave={e => { e.currentTarget.style.background = ""; e.currentTarget.style.borderColor = "transparent"; }}
       >
-        <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.14)", flexShrink: 0 }}>🏆</div>
+        <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.14)", flexShrink: 0 }}>
+          <Trophy size={16} style={{ color: CYAN }} />
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
@@ -76,12 +81,12 @@ function TRow({ t, i }) {
 
 // ── Quick link items ──────────────────────────────────────────────────────────
 const QUICK = [
-  { icon: "🏆", label: "Tournois",   sub: "Jouer",     to: "/tournaments",   c: CYAN    },
-  { icon: "🛡️", label: "Clans",      sub: "Rejoins",   to: "/clans",         c: VIOLET  },
-  { icon: "🏪", label: "Boutique",   sub: "Dépense",   to: "/store",         c: ORANGE  },
-  { icon: "📊", label: "Classement", sub: "Ton rang",  to: "/leaderboard",   c: "#60a5fa" },
-  { icon: "🎁", label: "Daily",      sub: "Bonus",     to: "/daily-rewards", c: RED     },
-  { icon: "🎖️", label: "Succès",    sub: "Badges",    to: "/achievements",  c: "#fbbf24" },
+  { icon: Trophy,      label: "Tournois",   sub: "Jouer",     to: "/tournaments",   c: CYAN      },
+  { icon: Shield,      label: "Clans",      sub: "Rejoins",   to: "/clans",         c: VIOLET    },
+  { icon: ShoppingBag, label: "Boutique",   sub: "Dépense",   to: "/store",         c: ORANGE    },
+  { icon: BarChart3,   label: "Classement", sub: "Ton rang",  to: "/leaderboard",   c: "#60a5fa" },
+  { icon: Gift,        label: "Daily",      sub: "Bonus",     to: "/daily-rewards", c: RED       },
+  { icon: Award,       label: "Succès",     sub: "Badges",    to: "/achievements",  c: "#fbbf24" },
 ];
 
 export default function Dashboard() {
@@ -134,7 +139,6 @@ export default function Dashboard() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes flow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
         @keyframes pulse{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
@@ -238,10 +242,10 @@ export default function Dashboard() {
 
         {/* ── STAT CARDS ── */}
         <div className="db-stats">
-          <StatCard delay={0.05} icon="💰" label="PIÈCES CP"  value={balance || 0}  color={ORANGE} />
-          <StatCard delay={0.10} icon="⚡" label="XP TOTAL"   value={xp}            color={VIOLET} />
-          <StatCard delay={0.15} icon="🏆" label="VICTOIRES"  value={wins}          color={CYAN}   />
-          <StatCard delay={0.20} icon="📈" label="WIN RATE"   value={`${wr}%`}      color={GREEN}  />
+          <StatCard delay={0.05} icon={Wallet}     label="PIÈCES CP"  value={balance || 0}  color={ORANGE} />
+          <StatCard delay={0.10} icon={Zap}        label="XP TOTAL"   value={xp}            color={VIOLET} />
+          <StatCard delay={0.15} icon={Trophy}     label="VICTOIRES"  value={wins}          color={CYAN}   />
+          <StatCard delay={0.20} icon={TrendingUp} label="WIN RATE"   value={`${wr}%`}      color={GREEN}  />
         </div>
 
         {/* ── QUICK ACCESS ── */}
@@ -255,7 +259,9 @@ export default function Dashboard() {
                   onMouseEnter={e => { e.currentTarget.style.borderColor = `${q.c}35`; e.currentTarget.style.background = `${q.c}07`; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
                 >
-                  <div style={{ width: 44, height: 44, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background: `${q.c}10`, border: `1px solid ${q.c}20`, fontSize: 20 }}>{q.icon}</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background: `${q.c}10`, border: `1px solid ${q.c}20` }}>
+                    <q.icon size={20} style={{ color: q.c }} />
+                  </div>
                   <div style={{ textAlign: "center" }}>
                     <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginBottom: 2 }}>{q.label}</p>
                     <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>{q.sub}</p>
@@ -274,7 +280,9 @@ export default function Dashboard() {
             style={{ borderRadius: 20, overflow: "hidden", background: "rgba(4,6,16,0.95)", border: "1px solid rgba(255,255,255,0.06)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>🏆</div>
+                <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Trophy size={15} style={{ color: CYAN }} />
+                </div>
                 <span style={{ fontWeight: 800, fontSize: 14 }}>Tournois Actifs</span>
               </div>
               <Link to="/tournaments" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: CYAN, textDecoration: "none" }}>
@@ -296,7 +304,9 @@ export default function Dashboard() {
             style={{ borderRadius: 20, overflow: "hidden", background: "rgba(4,6,16,0.95)", border: "1px solid rgba(255,255,255,0.06)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 20px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>👑</div>
+                <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Crown size={15} style={{ color: ORANGE }} />
+                </div>
                 <span style={{ fontWeight: 800, fontSize: 14 }}>Top Joueurs</span>
               </div>
               <Link to="/leaderboard" style={{ fontSize: 12, fontWeight: 700, color: ORANGE, textDecoration: "none" }}>Tout →</Link>
