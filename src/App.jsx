@@ -146,13 +146,22 @@ export default function App() {
 
         {/* ── 404 ── */}
         <Route path="*" element={
-          <div style={{ minHeight:"100vh", background:"#0a0a0f", display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <div style={{ textAlign:"center" }}>
-              <h1 style={{ fontSize:80, fontFamily:"'Bebas Neue',cursive", color:"#8b3dff", margin:0, textShadow:"0 0 40px rgba(139,61,255,.7)" }}>404</h1>
-              <p style={{ color:"rgba(255,255,255,.3)", fontFamily:"'JetBrains Mono',monospace", letterSpacing:4, fontSize:12, marginBottom:32 }}>PAGE NON TROUVÉE</p>
-              <a href="/dashboard" style={{ padding:"13px 32px", borderRadius:12, background:"linear-gradient(135deg,#8b3dff,#4f46e5)", color:"#fff", fontFamily:"'JetBrains Mono',monospace", fontSize:11, letterSpacing:2, textDecoration:"none", boxShadow:"0 8px 32px rgba(139,61,255,.5)" }}>
-                ← ACCUEIL
-              </a>
+          <div className="min-h-screen bg-obsidian flex items-center justify-center p-8">
+            <div className="text-center">
+              <h1 className="text-9xl font-heading font-black text-white/5 relative">
+                404
+                <span className="absolute inset-0 flex items-center justify-center text-5xl text-mint drop-shadow-neon-mint">
+                  LOST IN ARENA
+                </span>
+              </h1>
+              <p className="text-slate-500 font-black text-xs uppercase tracking-[0.5em] mt-8 mb-12">
+                System protocol error: target resource not found.
+              </p>
+              <Link to="/dashboard">
+                <Button variant="primary" size="lg">
+                  Return to Command Center
+                </Button>
+              </Link>
             </div>
           </div>
         } />

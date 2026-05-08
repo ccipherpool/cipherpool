@@ -1,367 +1,214 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { useOutletContext } from "react-router-dom";
+import { 
+  Trophy, 
+  Search, 
+  Filter, 
+  Sword, 
+  Users2, 
+  Wallet, 
+  Calendar, 
+  ChevronRight,
+  Sparkles,
+  Zap,
+  Flame,
+  Target
+} from "lucide-react";
+import Button from "../components/ui/Button";
 
-const CYAN   = "#00d4ff";
-const VIOLET = "#8b5cf6";
-const ORANGE = "#f97316";
-const GREEN  = "#10b981";
-const RED    = "#f43f5e";
-const BG     = "#020617";
-
-const STATUS = {
-  active:    { label: "EN COURS",  color: CYAN,   bg: "rgba(0,212,255,0.1)",   glow: "rgba(0,212,255,0.25)"   },
-  upcoming:  { label: "À VENIR",   color: ORANGE, bg: "rgba(249,115,22,0.1)",  glow: "rgba(249,115,22,0.2)"  },
-  completed: { label: "TERMINÉ",   color: "rgba(255,255,255,0.25)", bg: "rgba(255,255,255,0.04)", glow: "transparent" },
+const STATUS_CONFIG = {
+  active: { label: "Live Now", color: "text-mint", bg: "bg-mint/10", border: "border-mint/20" },
+  upcoming: { label: "Upcoming", color: "text-cyber-gold", bg: "bg-cyber-gold/10", border: "border-cyber-gold/20" },
+  completed: { label: "Finished", color: "text-slate-500", bg: "bg-slate-500/10", border: "border-white/5" },
 };
 
-const FILTERS = [
-  { key: "all",       label: "TOUS" },
-  { key: "active",    label: "EN COURS" },
-  { key: "upcoming",  label: "À VENIR" },
-  { key: "completed", label: "TERMINÉS" },
-];
-
-function TCard({ t, i, userBalance }) {
-  const [hovered, setHovered] = useState(false);
-  const s    = STATUS[t.status] || STATUS.upcoming;
-  const pct  = t.max_players > 0 ? Math.round((t.current_players / t.max_players) * 100) : 0;
-  const full = t.current_players >= t.max_players;
-  const canJoin   = !full && t.status !== "completed";
-  const canAfford = (userBalance || 0) >= (t.entry_fee || 0);
-  const free = (t.entry_fee || 0) === 0;
+const TournamentCard = ({ t, i, balance }) => {
+  const status = STATUS_CONFIG[t.status] || STATUS_CONFIG.upcoming;
+  const progress = t.max_players > 0 ? (t.current_players / t.max_players) * 100 : 0;
+  const canAfford = (balance || 0) >= (t.entry_fee || 0);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: i * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        position: "relative", overflow: "hidden", borderRadius: 16, display: "flex",
-        flexDirection: "column", cursor: "default",
-        background: hovered ? `linear-gradient(145deg,${s.color}08,#050c1f)` : "#050c1f",
-        border: `1px solid ${hovered ? s.color + "35" : "rgba(255,255,255,0.07)"}`,
-        boxShadow: hovered ? `0 8px 40px ${s.glow},0 0 0 1px ${s.color}12` : "0 2px 12px rgba(0,0,0,0.4)",
-        transition: "all 0.3s cubic-bezier(0.22,1,0.36,1)",
-        transform: hovered ? "translateY(-4px)" : "none",
-      }}
+      transition={{ delay: i * 0.05, duration: 0.4 }}
+      className="glass-card group overflow-hidden flex flex-col h-full"
     >
-      {/* Top accent line */}
-      <div style={{ height: 2, background: `linear-gradient(90deg,${s.color},${s.color}60,transparent)` }} />
-
-      {/* Background glow blob */}
-      <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: `radial-gradient(circle,${s.glow},transparent 70%)`, pointerEvents: "none", opacity: hovered ? 1 : 0.4, transition: "opacity 0.3s" }} />
-
-      <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", flex: 1, position: "relative" }}>
-
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: 13, fontWeight: 700, color: "#fff", letterSpacing: 1, marginBottom: 5, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {t.name}
-            </h3>
-            <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: 1 }}>
-              {t.mode || "Mode Compétitif"}
-            </p>
+      {/* Card Header Image/Pattern */}
+      <div className="relative h-40 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-obsidian-light to-transparent z-10" />
+        <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${t.status === 'active' ? 'from-mint to-transparent' : 'from-cyber-gold to-transparent'}`} />
+        <div className="absolute top-4 right-4 z-20">
+          <div className={`px-3 py-1 rounded-full ${status.bg} ${status.border} border backdrop-blur-md flex items-center gap-1.5`}>
+            {t.status === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-mint animate-pulse" />}
+            <span className={`text-[10px] font-black uppercase tracking-widest ${status.color}`}>
+              {status.label}
+            </span>
           </div>
-          <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fontWeight: 700, letterSpacing: 1.5, padding: "5px 10px", borderRadius: 20, flexShrink: 0, display: "flex", alignItems: "center", gap: 5, color: s.color, background: s.bg, border: `1px solid ${s.color}25` }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: s.color, boxShadow: `0 0 6px ${s.color}`, display: "inline-block" }} />
-            {s.label}
-          </span>
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+           <Trophy size={64} className={`${t.status === 'active' ? 'text-mint' : 'text-white/20'} opacity-20`} />
+        </div>
+        <div className="absolute bottom-4 left-6 z-20">
+           <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight leading-none group-hover:text-mint transition-colors">
+            {t.name}
+           </h3>
+        </div>
+      </div>
+
+      <div className="p-6 flex-1 flex flex-col">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-3 gap-2 mb-6">
+          <div className="p-2 rounded-xl bg-white/5 border border-white/5 text-center">
+            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Prize</p>
+            <p className="text-xs font-black text-cyber-gold">{t.prize_coins} CP</p>
+          </div>
+          <div className="p-2 rounded-xl bg-white/5 border border-white/5 text-center">
+            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Entry</p>
+            <p className="text-xs font-black text-white">{t.entry_fee === 0 ? 'FREE' : `${t.entry_fee} CP`}</p>
+          </div>
+          <div className="p-2 rounded-xl bg-white/5 border border-white/5 text-center">
+            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Mode</p>
+            <p className="text-xs font-black text-mint uppercase">{t.mode || 'SOLO'}</p>
+          </div>
         </div>
 
-        {/* Description */}
-        {t.description && (
-          <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.6, marginBottom: 16, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-            {t.description}
-          </p>
-        )}
-
-        {/* Stats row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
-          {[
-            { emoji: "👥", val: `${t.current_players||0}/${t.max_players||0}`, label: "JOUEURS", color: "#60a5fa" },
-            { emoji: "💰", val: (t.prize_coins||0).toLocaleString(), label: "PRIZE", color: ORANGE },
-            { emoji: "🎟️", val: free ? "FREE" : String(t.entry_fee), label: "ENTRÉE", color: free ? CYAN : RED },
-          ].map(stat => (
-            <div key={stat.label} style={{ textAlign: "center", padding: "10px 6px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ fontSize: 14, marginBottom: 4 }}>{stat.emoji}</div>
-              <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: 700, color: stat.color, marginBottom: 2 }}>{stat.val}</p>
-              <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 7, color: "rgba(255,255,255,0.2)", letterSpacing: 2 }}>{stat.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Fill bar */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 1 }}>REMPLISSAGE</span>
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fontWeight: 700, color: full ? RED : s.color }}>{pct}%</span>
+        {/* Players Progress */}
+        <div className="space-y-2 mb-6">
+          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+            <span className="text-slate-500">Squads Enrolled</span>
+            <span className="text-white">{t.current_players} / {t.max_players}</span>
           </div>
-          <div style={{ height: 3, borderRadius: 99, overflow: "hidden", background: "rgba(255,255,255,0.05)" }}>
-            <motion.div
+          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+            <motion.div 
               initial={{ width: 0 }}
-              animate={{ width: `${pct}%` }}
-              transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: i * 0.06 + 0.3 }}
-              style={{ height: "100%", borderRadius: 99, background: full ? `linear-gradient(90deg,${RED},#b91c1c)` : `linear-gradient(90deg,${s.color},${s.color}88)`, boxShadow: `0 0 8px ${s.color}50` }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 1, delay: 0.2 }}
+              className={`h-full bg-gradient-to-r ${t.status === 'active' ? 'from-mint to-mint-dark' : 'from-cyber-gold to-cyber-gold-dark'}`} 
             />
           </div>
         </div>
 
-        {/* CTA */}
-        <Link to={`/tournaments/${t.id}`} style={{ marginTop: "auto", textDecoration: "none" }}>
-          <motion.button
-            whileHover={{ scale: canJoin ? 1.02 : 1 }}
-            whileTap={{ scale: canJoin ? 0.97 : 1 }}
-            style={{
-              width: "100%", padding: "11px 0", borderRadius: 10, border: "none",
-              fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: 700,
-              letterSpacing: 2, cursor: canJoin ? "pointer" : "not-allowed",
-              transition: "all 0.2s",
-              background: !canJoin
-                ? "rgba(255,255,255,0.04)"
-                : canAfford
-                  ? `linear-gradient(135deg,${s.color},${s.color}bb)`
-                  : "rgba(249,115,22,0.12)",
-              color: !canJoin ? "rgba(255,255,255,0.2)" : canAfford ? "#000" : ORANGE,
-              boxShadow: canJoin && canAfford ? `0 4px 20px ${s.color}30` : "none",
-            }}
-          >
-            {full ? "COMPLET" : t.status === "completed" ? "VOIR RÉSULTATS" : !canAfford ? `💰 ${t.entry_fee} REQUIS` : t.status === "active" ? "REJOINDRE →" : "S'INSCRIRE →"}
-          </motion.button>
-        </Link>
+        {/* Description/Requirements */}
+        <div className="mb-6 flex-1">
+          <p className="text-xs text-slate-500 font-medium line-clamp-2">
+            {t.description || "Join the high-stakes battle. Requires Level 5+ and verified Free Fire ID."}
+          </p>
+        </div>
+
+        {/* Action Button */}
+        <div className="mt-auto">
+          <Link to={`/tournaments/${t.id}`} className="block">
+            <Button 
+              variant={t.status === 'active' ? 'primary' : 'outline'} 
+              className="w-full"
+              disabled={t.status === 'completed'}
+            >
+              {t.status === 'completed' ? 'Tournament Ended' : !canAfford ? `Need ${t.entry_fee} CP` : t.status === 'active' ? 'Enter Arena' : 'Join Bracket'}
+            </Button>
+          </Link>
+        </div>
       </div>
     </motion.div>
   );
-}
+};
 
 export default function Tournaments() {
-  const { balance } = useOutletContext() || {};
+  const { profile } = useOutletContext() || {};
   const [tournaments, setTournaments] = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [search, setSearch]           = useState("");
-  const [filter, setFilter]           = useState("all");
-  const [sortBy, setSortBy]           = useState("newest");
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
 
-  useEffect(() => { fetchTournaments(); }, []);
-
-  const fetchTournaments = async () => {
-    setLoading(true);
-    try {
-      const { data } = await supabase.from("tournaments").select("*").order("created_at", { ascending: false });
+  useEffect(() => {
+    const fetchTournaments = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from("tournaments")
+        .select("*")
+        .order("created_at", { ascending: false });
       setTournaments(data || []);
-    } catch (_) {}
-    setLoading(false);
-  };
+      setLoading(false);
+    };
+    fetchTournaments();
+  }, []);
 
-  const filtered = tournaments
-    .filter(t => filter === "all" || t.status === filter)
-    .filter(t => !search || t.name.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => {
-      if (sortBy === "prize")   return (b.prize_coins || 0) - (a.prize_coins || 0);
-      if (sortBy === "players") return (b.current_players || 0) - (a.current_players || 0);
-      return new Date(b.created_at) - new Date(a.created_at);
-    });
-
-  const counts = {
-    all:       tournaments.length,
-    active:    tournaments.filter(t => t.status === "active").length,
-    upcoming:  tournaments.filter(t => t.status === "upcoming").length,
-    completed: tournaments.filter(t => t.status === "completed").length,
-  };
+  const filtered = tournaments.filter(t => {
+    const matchesFilter = filter === "all" || t.status === filter;
+    const matchesSearch = t.name.toLowerCase().includes(search.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-        @keyframes flow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
-        @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.4)} }
-        .trn-hero-grid { display:grid; grid-template-columns:1fr auto; align-items:end; gap:24px; }
-        .trn-stats-bar { display:flex; gap:32px; }
-        .trn-filters { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-        .trn-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-        @media(max-width:1024px) { .trn-grid{grid-template-columns:repeat(2,1fr)} }
-        @media(max-width:640px) {
-          .trn-hero-grid{grid-template-columns:1fr}
-          .trn-stats-bar{gap:16px}
-          .trn-grid{grid-template-columns:1fr}
-          .trn-filters{gap:8px}
-        }
-      `}</style>
-
-      <div style={{ fontFamily: "'Space Grotesk',sans-serif", color: "rgba(255,255,255,0.88)" }}>
-
-        {/* ── HERO ── */}
-        <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          style={{ position: "relative", overflow: "hidden", padding: "36px 0 32px", marginBottom: 28 }}
-        >
-          {/* Glow blobs */}
-          <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-            <div style={{ position: "absolute", top: -60, left: -40, width: 320, height: 320, borderRadius: "50%", background: `radial-gradient(circle,rgba(0,212,255,0.08),transparent 70%)` }} />
-            <div style={{ position: "absolute", top: -40, right: -60, width: 250, height: 250, borderRadius: "50%", background: `radial-gradient(circle,rgba(139,92,246,0.07),transparent 70%)` }} />
-            <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px)`, backgroundSize: "40px 40px" }} />
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-4xl font-heading font-black tracking-tighter uppercase">
+            ACTIVE <span className="text-mint">BRACKETS</span>
+          </h1>
+          <p className="text-slate-500 font-medium mt-1">
+            Browse and join available tournaments. Prove your skills and earn rewards.
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-mint transition-colors" size={18} />
+            <input 
+              type="text" 
+              placeholder="Search brackets..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-obsidian-light border border-white/5 rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-mint/30 w-full md:w-64"
+            />
           </div>
-
-          {/* 2px top line */}
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${CYAN},${VIOLET},transparent)` }} />
-
-          <div className="trn-hero-grid" style={{ position: "relative" }}>
-            <div>
-              <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: 4, color: CYAN, marginBottom: 10, fontWeight: 600 }}>
-                🏆 COMPÉTITIONS FREE FIRE
-              </p>
-              <h1 style={{ fontFamily: "'Orbitron',sans-serif", fontSize: 32, fontWeight: 900, letterSpacing: 2, lineHeight: 1.1, margin: 0 }}>
-                <span style={{ color: "#fff" }}>TOURNOIS</span>{" "}
-                <span style={{ background: `linear-gradient(135deg,${CYAN},${VIOLET})`, backgroundSize: "200% 200%", animation: "flow 4s ease infinite", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                  CIPHER
-                </span>
-              </h1>
-              <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 10 }}>
-                Rejoins la compétition, prouve ta valeur, empoche les prix
-              </p>
-            </div>
-
-            <div className="trn-stats-bar">
-              {[
-                { val: counts.active,   label: "Actifs",  color: CYAN,   pulse: true },
-                { val: counts.upcoming, label: "À venir", color: ORANGE },
-                { val: counts.all,      label: "Total",   color: "rgba(255,255,255,0.4)" },
-              ].map(s => (
-                <div key={s.label} style={{ textAlign: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 4 }}>
-                    {s.pulse && <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.color, animation: "pulse-dot 2s ease infinite", display: "inline-block" }} />}
-                    <p style={{ fontFamily: "'Orbitron',sans-serif", fontSize: 26, fontWeight: 800, color: s.color, lineHeight: 1, margin: 0, textShadow: s.pulse ? `0 0 20px ${s.color}60` : "none" }}>{s.val}</p>
-                  </div>
-                  <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, color: "rgba(255,255,255,0.25)", letterSpacing: 2 }}>{s.label.toUpperCase()}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ── FILTER BAR ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12, duration: 0.4 }}
-          style={{ marginBottom: 24, padding: "16px 20px", borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)" }}
-        >
-          <div className="trn-filters">
-            {/* Search */}
-            <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
-              <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14, opacity: 0.3 }}>🔍</span>
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-                placeholder="Rechercher un tournoi..."
-                style={{
-                  width: "100%", padding: "10px 14px 10px 38px", borderRadius: 10,
-                  background: "rgba(255,255,255,0.04)",
-                  border: `1px solid ${searchFocused ? CYAN + "50" : "rgba(255,255,255,0.08)"}`,
-                  boxShadow: searchFocused ? `0 0 0 3px ${CYAN}12` : "none",
-                  color: "#fff", fontFamily: "'Space Grotesk',sans-serif", fontSize: 13,
-                  outline: "none", transition: "all 0.2s", boxSizing: "border-box",
-                }}
-              />
-            </div>
-
-            {/* Status pills */}
-            {FILTERS.map(f => (
-              <motion.button
-                key={f.key}
-                onClick={() => setFilter(f.key)}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  padding: "9px 14px", borderRadius: 10, cursor: "pointer", border: "none",
-                  fontFamily: "'JetBrains Mono',monospace", fontSize: 10, fontWeight: 700,
-                  letterSpacing: 1.5, transition: "all 0.2s", whiteSpace: "nowrap",
-                  background: filter === f.key ? `linear-gradient(135deg,${CYAN},${VIOLET})` : "rgba(255,255,255,0.04)",
-                  color: filter === f.key ? "#000" : "rgba(255,255,255,0.35)",
-                  boxShadow: filter === f.key ? `0 4px 16px ${CYAN}30` : "none",
-                }}
-              >
-                {f.label}
-                {counts[f.key] > 0 && (
-                  <span style={{ marginLeft: 6, opacity: filter === f.key ? 0.6 : 0.4, fontFamily: "'JetBrains Mono',monospace" }}>
-                    ({counts[f.key]})
-                  </span>
-                )}
-              </motion.button>
-            ))}
-
-            {/* Sort */}
-            <select
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value)}
-              style={{
-                padding: "9px 12px", borderRadius: 10, cursor: "pointer", outline: "none",
-                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.45)", fontFamily: "'JetBrains Mono',monospace",
-                fontSize: 10, letterSpacing: 1,
-              }}
-            >
-              <option value="newest">RÉCENTS</option>
-              <option value="prize">PRIZE ↓</option>
-              <option value="players">JOUEURS ↓</option>
-            </select>
-          </div>
-        </motion.div>
-
-        {/* ── CONTENT ── */}
-        <AnimatePresence mode="wait">
-          {loading ? (
-            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="trn-grid">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} style={{ height: 320, borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", animation: `pulse-dot ${1.2 + i * 0.1}s ease infinite` }} />
-                ))}
-              </div>
-            </motion.div>
-          ) : filtered.length === 0 ? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              style={{ padding: "80px 0", textAlign: "center", borderRadius: 16, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
-            >
-              <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3, repeat: Infinity }}>
-                <div style={{ fontSize: 56, marginBottom: 16 }}>🏆</div>
-              </motion.div>
-              <p style={{ fontFamily: "'Orbitron',sans-serif", fontSize: 12, letterSpacing: 3, color: "rgba(255,255,255,0.2)", marginBottom: 8 }}>
-                AUCUN TOURNOI TROUVÉ
-              </p>
-              {search && (
-                <button onClick={() => setSearch("")} style={{ marginTop: 12, padding: "8px 20px", borderRadius: 8, background: `rgba(0,212,255,0.08)`, border: `1px solid ${CYAN}25`, color: CYAN, fontFamily: "'JetBrains Mono',monospace", fontSize: 10, letterSpacing: 1.5, cursor: "pointer" }}>
-                  EFFACER RECHERCHE
-                </button>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {/* Result count */}
-              <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 2, marginBottom: 14 }}>
-                {filtered.length} TOURNOI{filtered.length > 1 ? "S" : ""} TROUVÉ{filtered.length > 1 ? "S" : ""}
-              </p>
-              <div className="trn-grid">
-                {filtered.map((t, i) => (
-                  <TCard key={t.id} t={t} i={i} userBalance={balance} />
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        </div>
       </div>
-    </>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2 pb-2">
+        {['all', 'active', 'upcoming', 'completed'].map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+              filter === f 
+                ? 'bg-mint text-obsidian border-mint shadow-neon-mint' 
+                : 'bg-white/5 text-slate-500 border-white/5 hover:border-white/10'
+            }`}
+          >
+            {f === 'all' ? 'All Events' : f}
+          </button>
+        ))}
+      </div>
+
+      {/* Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[1,2,3,4,5,6,7,8].map(i => (
+            <div key={i} className="glass-card h-96 animate-pulse bg-white/5" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="py-20 text-center glass-card">
+          <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6">
+             <Sword size={40} className="text-slate-700" />
+          </div>
+          <h3 className="text-xl font-heading font-black text-white uppercase mb-2">No Tournaments Found</h3>
+          <p className="text-slate-500 max-w-xs mx-auto text-sm">
+            We couldn't find any tournaments matching your criteria. Try adjusting your filters.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filtered.map((t, i) => (
+            <TournamentCard key={t.id} t={t} i={i} balance={profile?.coins} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
