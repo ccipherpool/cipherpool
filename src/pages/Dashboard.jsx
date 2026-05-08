@@ -17,7 +17,10 @@ import {
   Flame,
   Star,
   Medal,
-  Wallet
+  Wallet,
+  Activity,
+  ShieldCheck,
+  Cpu
 } from "lucide-react";
 import { 
   AreaChart, 
@@ -27,338 +30,322 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  Cell
 } from 'recharts';
+import { MovingBorder } from "../components/ui/MovingBorder";
 
-// Mock data for charts
 const chartData = [
-  { name: 'Mon', wins: 2, points: 400 },
-  { name: 'Tue', wins: 3, points: 700 },
-  { name: 'Wed', wins: 1, points: 550 },
-  { name: 'Thu', wins: 5, points: 1200 },
-  { name: 'Fri', wins: 4, points: 900 },
-  { name: 'Sat', wins: 6, points: 1500 },
-  { name: 'Sun', wins: 8, points: 2100 },
+  { name: '01', points: 400 },
+  { name: '02', points: 700 },
+  { name: '03', points: 550 },
+  { name: '04', points: 1200 },
+  { name: '05', points: 900 },
+  { name: '06', points: 1500 },
+  { name: '07', points: 2100 },
 ];
 
-const BentoCard = ({ children, className = "", delay = 0 }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay, duration: 0.5, ease: "easeOut" }}
-    className={`glass-card p-6 relative overflow-hidden group ${className}`}
-  >
-    {children}
-  </motion.div>
-);
+const BentoCell = ({ children, className = "", delay = 0, hasBorder = false }) => {
+  const content = (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className={`relative h-full w-full p-8 flex flex-col group ${!hasBorder ? 'ultra-glass bg-white/[0.02]' : ''} ${className}`}
+    >
+      {children}
+    </motion.div>
+  );
 
-const StatMiniCard = ({ icon: Icon, label, value, trend, colorClass, delay = 0 }) => (
-  <BentoCard delay={delay} className="flex flex-col justify-between">
-    <div className="flex items-start justify-between">
-      <div className={`p-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 group-hover:${colorClass} transition-colors`}>
-        <Icon size={18} />
+  if (hasBorder) {
+    return (
+      <div className={className}>
+        <MovingBorder 
+          duration={5} 
+          colors={["#10B981", "#8B5CF6", "#F5C518"]}
+          borderWidth={2}
+          radius={32}
+          className="bg-obsidian-light/60 backdrop-blur-3xl"
+        >
+          {content}
+        </MovingBorder>
       </div>
-      {trend && (
-        <span className={`text-[10px] font-bold ${trend > 0 ? 'text-mint' : 'text-red-400'} flex items-center gap-0.5 bg-white/5 px-1.5 py-0.5 rounded`}>
-          {trend > 0 ? '+' : ''}{trend}%
-        </span>
-      )}
-    </div>
-    <div className="mt-4">
-      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</p>
-      <p className="text-2xl font-heading font-black text-white mt-1">{value}</p>
-    </div>
-  </BentoCard>
-);
+    );
+  }
+
+  return content;
+};
 
 export default function Dashboard() {
   const { profile } = useOutletContext() || {};
   const [tournaments, setTournaments] = useState([]);
-  const [topPlayers, setTopPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const [tourneysRes, topRes] = await Promise.all([
-          supabase.from("tournaments").select("*").in("status", ["active", "upcoming"]).limit(4),
-          supabase.from("player_stats").select("user_id, total_points, wins").order("total_points", { ascending: false }).limit(5)
-        ]);
-
-        setTournaments(tourneysRes.data || []);
-        
-        if (topRes.data) {
-          const userIds = topRes.data.map(t => t.user_id);
-          const { data: profs } = await supabase.from("profiles").select("id, username, avatar_url").in("id", userIds);
-          const profMap = Object.fromEntries((profs || []).map(p => [p.id, p]));
-          setTopPlayers(topRes.data.map((s, i) => ({
-            ...s,
-            rank: i + 1,
-            username: profMap[s.user_id]?.username || "Player",
-            avatar: profMap[s.user_id]?.avatar_url
-          })));
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      const { data } = await supabase.from("tournaments").select("*").in("status", ["active", "upcoming"]).limit(3);
+      setTournaments(data || []);
+      setLoading(false);
     };
     fetchData();
   }, []);
 
-  if (loading) return null; // Handled by MainLayout loading state usually, but just in case
-
   return (
-    <div className="space-y-6">
-      {/* Header Info */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-heading font-black tracking-tighter">
-            COMMAND <span className="text-mint">CENTER</span>
+    <div className="space-y-10 pb-20">
+      {/* Dashboard Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+             <div className="w-2 h-2 rounded-full bg-mint shadow-neon-mint animate-pulse" />
+             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-mint">System Status: Optimal</span>
+          </div>
+          <h1 className="text-5xl md:text-7xl font-heading font-black tracking-tighter uppercase leading-none">
+            COMMAND <span className="text-gradient-mint">CENTER</span>
           </h1>
-          <p className="text-slate-500 font-medium mt-1">
-            Welcome back, <span className="text-white">{profile?.username || profile?.email?.split('@')[0]}</span>. System protocols active.
+          <p className="text-slate-500 font-medium text-lg">
+            Welcome back, <span className="text-white">Agent {profile?.username || profile?.email?.split('@')[0]}</span>. Tactical data synced.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="bg-obsidian-light border border-white/5 px-4 py-2 rounded-xl flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-mint animate-pulse shadow-[0_0_8px_#10B981]" />
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Server: EU-MAROC</span>
-          </div>
-          <div className="bg-obsidian-light border border-white/5 px-4 py-2 rounded-xl flex items-center gap-3">
-            <Clock size={14} className="text-slate-500" />
-            <span className="text-xs font-bold text-white">08 MAY 2026</span>
-          </div>
+
+        <div className="flex items-center gap-4">
+           <div className="ultra-glass bg-white/[0.02] border-white/5 px-6 py-4 flex items-center gap-4">
+              <Cpu size={20} className="text-slate-600" />
+              <div className="h-10 w-[1px] bg-white/5" />
+              <div className="text-right">
+                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Cluster</p>
+                <p className="text-xs font-mono font-bold text-white uppercase">MA-NORTH-01</p>
+              </div>
+           </div>
+           <div className="ultra-glass bg-white/[0.02] border-white/5 px-6 py-4 flex items-center gap-4">
+              <Clock size={20} className="text-slate-600" />
+              <div className="h-10 w-[1px] bg-white/5" />
+              <div className="text-right">
+                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Local Sync</p>
+                <p className="text-xs font-mono font-bold text-white uppercase">08:42:15</p>
+              </div>
+           </div>
         </div>
       </div>
 
-      {/* Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-auto gap-6">
+      {/* Radical Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-12 grid-rows-auto gap-8">
         
-        {/* Hero Section - Featured Tournament */}
-        <BentoCard className="md:col-span-3 md:row-span-2 min-h-[400px] !p-0" delay={0.1}>
-          <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/40 to-transparent z-10" />
-          <img 
-            src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070" 
-            className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-700"
-            alt="Hero"
-          />
-          <div className="absolute inset-0 z-20 p-8 flex flex-col justify-end">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="bg-mint text-obsidian px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">Live Now</span>
-              <span className="bg-white/10 backdrop-blur-md text-white px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">Free Fire Elite</span>
-            </div>
-            <h2 className="text-5xl font-heading font-black tracking-tighter mb-2 max-w-2xl leading-[0.9]">
-              ULTIMATE <span className="text-cyber-gold">CHAMPIONSHIP</span> 2026
-            </h2>
-            <p className="text-slate-300 max-w-lg mb-6 text-sm font-medium">
-              Join the most competitive tournament of the season. 50,000 CP Prize Pool and exclusive titles await the winners.
-            </p>
-            <div className="flex items-center gap-4">
-              <button className="bg-mint hover:bg-mint-dark text-obsidian px-8 py-3 rounded-xl font-heading font-black text-xs tracking-widest transition-all hover:scale-105 active:scale-95 shadow-neon-mint">
-                JOIN NOW
-              </button>
-              <button className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-6 py-3 rounded-xl font-heading font-black text-xs tracking-widest transition-all">
-                VIEW DETAILS
-              </button>
-            </div>
-          </div>
-        </BentoCard>
+        {/* Main Hero Card */}
+        <BentoCell className="md:col-span-8 md:row-span-2 min-h-[500px] !p-0 overflow-hidden" hasBorder={true} delay={0.1}>
+           <div className="absolute inset-0 z-0">
+             <img 
+               src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070" 
+               className="w-full h-full object-cover opacity-30 grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000"
+               alt="hero"
+             />
+             <div className="absolute inset-0 bg-gradient-to-t from-obsidian-deep via-obsidian-deep/60 to-transparent" />
+           </div>
+           
+           <div className="relative z-10 p-12 h-full flex flex-col justify-end items-start gap-6">
+              <div className="flex items-center gap-3 bg-mint/10 backdrop-blur-md border border-mint/20 px-4 py-1.5 rounded-full">
+                 <div className="w-1.5 h-1.5 rounded-full bg-mint animate-pulse" />
+                 <span className="text-[10px] font-black uppercase tracking-widest text-mint">Priority Event</span>
+              </div>
+              <h2 className="text-6xl md:text-8xl font-heading font-black tracking-tighter text-white leading-[0.85] uppercase">
+                ULTIMATE<br/><span className="text-cyber-gold">LEGENDS</span>
+              </h2>
+              <p className="max-w-xl text-slate-300 text-lg font-medium leading-relaxed">
+                Stage 4 of the National Championship is now live. Complete tactical objectives to secure your position in the elite bracket.
+              </p>
+              <div className="flex items-center gap-6 mt-4">
+                 <button className="bg-mint text-obsidian px-10 py-5 rounded-2xl font-heading font-black text-xs tracking-widest uppercase hover:scale-105 active:scale-95 transition-all shadow-neon-mint">
+                   Synchronize Now
+                 </button>
+                 <button className="bg-white/5 border border-white/10 backdrop-blur-xl text-white px-10 py-5 rounded-2xl font-heading font-black text-xs tracking-widest uppercase hover:bg-white/10 transition-all">
+                   View Objectives
+                 </button>
+              </div>
+           </div>
+        </BentoCell>
 
-        {/* Profile Card */}
-        <BentoCard className="md:col-span-1 md:row-span-2 flex flex-col" delay={0.2}>
-          <div className="flex flex-col items-center text-center mb-8">
-            <div className="relative mb-4 group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-mint to-cyber-gold rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative w-24 h-24 rounded-2xl bg-obsidian border-2 border-white/10 overflow-hidden">
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} className="w-full h-full object-cover" alt="Avatar" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-3xl font-heading font-black text-mint">
-                    {profile?.username?.[0]?.toUpperCase() || 'P'}
-                  </div>
-                )}
+        {/* Profile Summary */}
+        <BentoCell className="md:col-span-4 md:row-span-2 flex flex-col items-center justify-center text-center gap-8" delay={0.2}>
+           <div className="relative group">
+              <div className="absolute -inset-4 bg-gradient-to-r from-mint via-cyber-gold to-electric-purple rounded-[3rem] blur-2xl opacity-20 group-hover:opacity-40 transition-all duration-1000 animate-pulse-slow" />
+              <div className="relative w-48 h-48 rounded-[2.5rem] bg-obsidian-deep border-2 border-white/10 p-2">
+                 <div className="w-full h-full rounded-[2rem] bg-gradient-to-br from-mint to-mint-dark flex items-center justify-center overflow-hidden">
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} className="w-full h-full object-cover" alt="avatar" />
+                    ) : (
+                      <span className="text-6xl font-heading font-black text-obsidian">{profile?.username?.[0]?.toUpperCase() || 'P'}</span>
+                    )}
+                 </div>
+                 <div className="absolute -bottom-4 -right-4 bg-cyber-gold text-obsidian px-4 py-2 rounded-2xl font-black text-sm shadow-neon-gold border-4 border-obsidian-deep">
+                   LVL {profile?.level || 1}
+                 </div>
               </div>
-              <div className="absolute -bottom-2 -right-2 bg-mint text-obsidian w-8 h-8 rounded-lg flex items-center justify-center border-4 border-obsidian font-black text-xs">
-                {profile?.level || 1}
+           </div>
+           
+           <div className="space-y-2">
+              <h3 className="text-3xl font-heading font-black text-white uppercase tracking-tight">{profile?.username || "Agent"}</h3>
+              <div className="flex items-center justify-center gap-3">
+                 <ShieldCheck size={16} className="text-mint" />
+                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Verified Combatant</span>
               </div>
-            </div>
-            <h3 className="text-xl font-heading font-black text-white">{profile?.username || "Player"}</h3>
-            <p className="text-[10px] font-black text-mint uppercase tracking-[0.2em] mt-1">Master Guardian</p>
-          </div>
+           </div>
 
-          <div className="space-y-4 flex-1">
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                <span>Experience</span>
-                <span className="text-white">{(profile?.xp || 0) % 1000} / 1000 XP</span>
+           <div className="w-full space-y-4 px-4">
+              <div className="space-y-2">
+                 <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    <span>Rank Progression</span>
+                    <span className="text-white">740/1000 XP</span>
+                 </div>
+                 <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: "74%" }}
+                      transition={{ duration: 1.5, ease: "easeOut" }}
+                      className="h-full bg-gradient-to-r from-mint via-mint/80 to-mint-dark rounded-full shadow-neon-mint" 
+                    />
+                 </div>
               </div>
-              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${((profile?.xp || 0) % 1000) / 10}%` }}
-                  transition={{ duration: 1, delay: 0.5 }}
-                  className="h-full bg-gradient-to-r from-mint to-mint-dark" 
-                />
-              </div>
-            </div>
+           </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-4">
-              <div className="p-3 bg-white/5 rounded-xl border border-white/5 text-center">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Wins</p>
-                <p className="text-xl font-heading font-black text-mint">24</p>
+           <div className="grid grid-cols-2 gap-4 w-full mt-4">
+              <div className="bg-white/[0.03] border border-white/5 rounded-3xl p-5 group hover:border-mint/30 transition-all duration-500">
+                 <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Win Rate</p>
+                 <p className="text-2xl font-heading font-black text-mint">64%</p>
               </div>
-              <div className="p-3 bg-white/5 rounded-xl border border-white/5 text-center">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Ratio</p>
-                <p className="text-xl font-heading font-black text-cyber-gold">2.4</p>
+              <div className="bg-white/[0.03] border border-white/5 rounded-3xl p-5 group hover:border-cyber-gold/30 transition-all duration-500">
+                 <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Combat K/D</p>
+                 <p className="text-2xl font-heading font-black text-cyber-gold">2.4</p>
               </div>
-            </div>
+           </div>
+        </BentoCell>
 
-            <div className="pt-4 mt-auto">
-              <Link to="/profile" className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-xs font-black tracking-widest uppercase">
-                View Detailed Stats <ArrowUpRight size={14} />
+        {/* Tactical Performance Chart */}
+        <BentoCell className="md:col-span-6 md:row-span-2 min-h-[400px]" delay={0.3}>
+           <div className="flex items-center justify-between mb-10">
+              <div>
+                <h4 className="text-xl font-heading font-black text-white uppercase tracking-tight">Tactical Performance</h4>
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Combat Frequency Overlay</p>
+              </div>
+              <div className="p-3 bg-white/5 rounded-2xl">
+                 <Activity size={20} className="text-mint animate-pulse" />
+              </div>
+           </div>
+           <div className="flex-1 w-full min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorPointsV4" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" vertical={false} />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#475569', fontSize: 10, fontWeight: 900, fontFamily: 'JetBrains Mono' }}
+                    dy={15}
+                  />
+                  <YAxis hide />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#030406', 
+                      border: '1px solid rgba(16,185,129,0.3)',
+                      borderRadius: '16px',
+                      fontSize: '10px',
+                      fontFamily: 'JetBrains Mono',
+                      color: '#fff'
+                    }}
+                    cursor={{ stroke: 'rgba(16,185,129,0.2)', strokeWidth: 2 }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="points" 
+                    stroke="#10B981" 
+                    strokeWidth={4}
+                    fillOpacity={1} 
+                    fill="url(#colorPointsV4)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+           </div>
+        </BentoCell>
+
+        {/* Live Deployments (Tournaments) */}
+        <BentoCell className="md:col-span-6 md:row-span-2" delay={0.4}>
+           <div className="flex items-center justify-between mb-8">
+              <h4 className="text-xl font-heading font-black text-white uppercase tracking-tight">Active Deployments</h4>
+              <Link to="/tournaments" className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-colors">
+                 <ArrowUpRight size={20} className="text-slate-500" />
               </Link>
-            </div>
-          </div>
-        </BentoCard>
-
-        {/* Quick Stats Mini Cards */}
-        <StatMiniCard icon={Flame} label="Daily Streak" value="7 Days" trend={14} colorClass="text-orange-400" delay={0.3} />
-        <StatMiniCard icon={Medal} label="Tournament Rank" value="#124" trend={-2} colorClass="text-cyber-gold" delay={0.4} />
-        <StatMiniCard icon={Users2} label="Clan Rank" value="Elite" trend={5} colorClass="text-mint" delay={0.5} />
-        <StatMiniCard icon={Wallet} label="Total Earnings" value="12.5k" colorClass="text-mint" delay={0.6} />
-
-        {/* Chart - Performance Trend */}
-        <BentoCard className="md:col-span-2 md:row-span-2" delay={0.7}>
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h3 className="text-lg font-heading font-black text-white uppercase tracking-tight">Performance Trend</h3>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Last 7 Sessions</p>
-            </div>
-            <div className="flex gap-2">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-mint" />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Points</span>
-              </div>
-            </div>
-          </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorPoints" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }}
-                  dy={10}
-                />
-                <YAxis hide />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#12141C', 
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    fontFamily: 'Satoshi'
-                  }}
-                  itemStyle={{ color: '#10B981', fontWeight: 'bold' }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="points" 
-                  stroke="#10B981" 
-                  strokeWidth={3}
-                  fillOpacity={1} 
-                  fill="url(#colorPoints)" 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </BentoCard>
-
-        {/* Live Tournaments Grid */}
-        <BentoCard className="md:col-span-1 md:row-span-2" delay={0.8}>
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-heading font-black text-white uppercase tracking-tight">Active Battle</h3>
-            <Link to="/tournaments" className="text-mint hover:text-mint-dark transition-colors">
-              <ArrowUpRight size={20} />
-            </Link>
-          </div>
-          <div className="space-y-4">
-            {tournaments.map((t, i) => (
-              <Link key={t.id} to={`/tournaments/${t.id}`} className="block group/item">
-                <div className="flex items-center gap-4 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-mint/20 hover:bg-white/10 transition-all">
-                  <div className="w-12 h-12 rounded-lg bg-mint/10 flex items-center justify-center text-mint group-hover/item:scale-110 transition-transform">
-                    <Sword size={24} />
+           </div>
+           <div className="space-y-4">
+              {tournaments.map((t, i) => (
+                <Link key={i} to={`/tournaments/${t.id}`} className="block group/item">
+                  <div className="flex items-center gap-6 p-5 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-mint/30 hover:bg-white/[0.04] transition-all duration-500">
+                     <div className="w-16 h-16 rounded-2xl bg-obsidian-deep border border-white/5 flex items-center justify-center text-mint group-hover/item:scale-110 transition-transform duration-500">
+                        <Sword size={28} />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-1">
+                           <p className="font-bold text-white uppercase tracking-tight group-hover/item:text-mint transition-colors truncate">{t.name}</p>
+                           {t.status === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-mint animate-pulse shadow-neon-mint" />}
+                        </div>
+                        <div className="flex items-center gap-4">
+                           <span className="text-[10px] font-black text-cyber-gold uppercase tracking-[0.2em]">{t.prize_coins} CP PRIZE</span>
+                           <span className="text-slate-700">/</span>
+                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.current_players}/{t.max_players} UNITS</span>
+                        </div>
+                     </div>
+                     <ChevronRight size={18} className="text-slate-800 group-hover/item:text-white group-hover/item:translate-x-1 transition-all" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white truncate group-hover/item:text-mint transition-colors">{t.name}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] font-black text-cyber-gold uppercase tracking-tighter">{t.prize_coins} CP</span>
-                      <span className="text-slate-600">•</span>
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">{t.current_players}/{t.max_players}</span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </BentoCard>
+                </Link>
+              ))}
+           </div>
+        </BentoCell>
 
-        {/* Leaderboard Card */}
-        <BentoCard className="md:col-span-1 md:row-span-2" delay={0.9}>
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-heading font-black text-white uppercase tracking-tight">Hall of Fame</h3>
-            <div className="p-1.5 rounded-lg bg-cyber-gold/10 text-cyber-gold">
-              <Crown size={16} />
-            </div>
-          </div>
-          <div className="space-y-4">
-            {topPlayers.map((p, i) => (
-              <div key={p.user_id} className="flex items-center gap-3">
-                <div className={`w-6 h-6 rounded flex items-center justify-center font-heading font-black text-[10px] ${
-                  i === 0 ? 'bg-cyber-gold text-obsidian shadow-[0_0_10px_#F5C518]' :
-                  i === 1 ? 'bg-slate-300 text-obsidian' :
-                  i === 2 ? 'bg-orange-400 text-obsidian' :
-                  'bg-white/5 text-slate-500'
-                }`}>
-                  {i + 1}
-                </div>
-                <div className="w-8 h-8 rounded-lg bg-obsidian-lighter border border-white/10 overflow-hidden shrink-0">
-                  {p.avatar ? (
-                    <img src={p.avatar} className="w-full h-full object-cover" alt="" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-slate-500">
-                      {p.username[0]}
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-white truncate">{p.username}</p>
-                  <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{p.total_points} PTS</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-black text-mint uppercase tracking-tighter">{p.wins}W</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6 pt-4 border-t border-white/5">
-            <Link to="/leaderboard" className="flex items-center justify-center gap-2 w-full text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest transition-colors">
-              Full Standings <ChevronRight size={12} />
-            </Link>
-          </div>
-        </BentoCard>
+        {/* Utility Cells */}
+        <BentoCell className="md:col-span-3 flex flex-col justify-between h-48" delay={0.5}>
+           <div className="flex justify-between items-start">
+             <div className="p-3 bg-white/5 rounded-2xl text-cyber-gold"><Wallet size={24} /></div>
+             <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Assets</span>
+           </div>
+           <div>
+             <p className="text-3xl font-heading font-black text-white">12.5k</p>
+             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyber-gold">Cyber Points</p>
+           </div>
+        </BentoCell>
+
+        <BentoCell className="md:col-span-3 flex flex-col justify-between h-48" delay={0.6}>
+           <div className="flex justify-between items-start">
+             <div className="p-3 bg-white/5 rounded-2xl text-mint"><Trophy size={24} /></div>
+             <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Standing</span>
+           </div>
+           <div>
+             <p className="text-3xl font-heading font-black text-white">#124</p>
+             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-mint">National Rank</p>
+           </div>
+        </BentoCell>
+
+        <BentoCell className="md:col-span-3 flex flex-col justify-between h-48" delay={0.7}>
+           <div className="flex justify-between items-start">
+             <div className="p-3 bg-white/5 rounded-2xl text-electric-purple"><Flame size={24} /></div>
+             <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Activity</span>
+           </div>
+           <div>
+             <p className="text-3xl font-heading font-black text-white">07 Days</p>
+             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-electric-purple">Combat Streak</p>
+           </div>
+        </BentoCell>
+
+        <BentoCell className="md:col-span-3 flex flex-col justify-between h-48" delay={0.8}>
+           <div className="flex justify-between items-start">
+             <div className="p-3 bg-white/5 rounded-2xl text-slate-400"><Medal size={24} /></div>
+             <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Honors</span>
+           </div>
+           <div>
+             <p className="text-3xl font-heading font-black text-white">24</p>
+             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Tactical Badges</p>
+           </div>
+        </BentoCell>
 
       </div>
     </div>
