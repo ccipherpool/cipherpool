@@ -44,7 +44,6 @@ import Adminnews      from "./pages/Adminnews";
 // Super Admin Pages
 import SuperAdmin from "./pages/SuperAdmin";
 import AdminGrant from "./pages/AdminGrant";
-import SeasonsManager from "./pages/superadmin/SeasonsManager";
 
 // Store / Designer
 import Store          from "./pages/Store";
@@ -65,11 +64,10 @@ import Team        from "./pages/Team"; // User-facing Team page
 import HallOfFame  from "./pages/HallOfFame";
 
 // Phase 2
-import Achievements  from "./pages/Achievements";
-import DailyRewards  from "./pages/Dailyrewards";
-import PlayerStats   from "./pages/Playerstats";
-import News          from "./pages/News";
-import SubmitResult  from "./pages/Submitresult";
+import Achievements from "./pages/Achievements";
+import DailyRewards from "./pages/Dailyrewards"; 
+import PlayerStats  from "./pages/Playerstats";  
+import News         from "./pages/News";
 
 export default function App() {
   return (
@@ -92,17 +90,17 @@ export default function App() {
         <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route path="/dashboard"    element={<Dashboard />} />
           <Route path="/tournaments"  element={<Tournaments />} />
+          <Route path="/arena"        element={<Navigate to="/tournaments" replace />} />
           <Route path="/leaderboard"  element={<Leaderboard />} />
           <Route path="/profile"      element={<Profile />} />
           <Route path="/support"      element={<Support />} />
           <Route path="/wallet"       element={<Wallet />} />
           <Route path="/chat"         element={<GlobalChat />} />
           <Route path="/store"        element={<Store />} />
-          <Route path="/news"           element={<News />} />
-          <Route path="/stats"          element={<PlayerStats />} />
-          <Route path="/achievements"   element={<Achievements />} />
-          <Route path="/daily-rewards"  element={<DailyRewards />} />
-          <Route path="/submit-result"  element={<SubmitResult />} />
+          <Route path="/news"         element={<News />} />
+          <Route path="/stats"        element={<PlayerStats />} />
+          <Route path="/achievements" element={<Achievements />} />
+          <Route path="/daily-rewards" element={<DailyRewards />} />
 
           {/* French Aliases for Users */}
           <Route path="/tournois"     element={<Navigate to="/tournaments" replace />} />
@@ -155,9 +153,8 @@ export default function App() {
 
         {/* ── SUPER ADMIN ── */}
         <Route element={<ProtectedRoute allowedRoles={["super_admin"]}><MainLayout /></ProtectedRoute>}>
-          <Route path="/super-admin"          element={<SuperAdmin />} />
-          <Route path="/super-admin/grant"    element={<AdminGrant />} />
-          <Route path="/super-admin/seasons"  element={<SeasonsManager />} />
+          <Route path="/super-admin"       element={<SuperAdmin />} />
+          <Route path="/super-admin/grant" element={<AdminGrant />} />
         </Route>
 
         {/* ── 404 ── */}
