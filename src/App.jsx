@@ -152,8 +152,9 @@ export default function App() {
 
         {/* ── SUPER ADMIN ── */}
         <Route element={<ProtectedRoute allowedRoles={["super_admin"]}><MainLayout /></ProtectedRoute>}>
-          <Route path="/super-admin"       element={<SuperAdmin />} />
-          <Route path="/super-admin/grant" element={<AdminGrant />} />
+          <Route path="/super-admin"          element={<SuperAdmin />} />
+          <Route path="/super-admin/grant"    element={<AdminGrant />} />
+          <Route path="/super-admin/seasons"  element={<SeasonsManager />} />
         </Route>
 
         {/* ── 404 ── */}

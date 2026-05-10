@@ -2,73 +2,119 @@ import { useState, useEffect, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Users, Hash, Smile, AtSign } from "lucide-react";
+import { Send, Smile, Image as ImageIcon, Reply, Check, CheckCheck, MoreVertical } from "lucide-react";
 
-const ACCENT   = "#6366f1";
-const ACCENT_L = "#818cf8";
-const ix = a => `rgba(99,102,241,${a})`;
+/* ─────────────────────────────────────────────────────────────
+   CipherPool Global Chat — WhatsApp/Discord hybrid (mobile-first)
+   - Sticky header + sticky composer (always visible, NEVER scrolls)
+   - Message bubbles avec tails, status ticks (Discord/WhatsApp style)
+   - Reply quote, emoji picker, smart timestamps, day separators
+   - Active user roles (super_admin/admin/founder) avec badges colored
+   ───────────────────────────────────────────────────────────── */
 
-const EMOJIS = ["👍","🔥","💪","🏆","😂","❤️","👏","🎮","⚡","💀"];
+const EMOJIS = ["👍","🔥","💪","🏆","😂","❤️","👏","🎮","⚡","💀","🎯","✨","💯","🚀","🎉","😎"];
+const ROLE_BADGES = {
+  super_admin: { label: "SUPER", color: "#ef4444", bg: "rgba(239,68,68,.15)" },
+  founder:     { label: "FOUNDER", color: "#a855f7", bg: "rgba(168,85,247,.15)" },
+  fondateur:   { label: "FOUNDER", color: "#a855f7", bg: "rgba(168,85,247,.15)" },
+  admin:       { label: "ADMIN", color: "#f97316", bg: "rgba(249,115,22,.15)" },
+  designer:    { label: "DESIGN", color: "#10b981", bg: "rgba(16,185,129,.15)" },
+};
+const USER_COLORS = ["#06b6d4","#a855f7","#10b981","#f59e0b","#ec4899","#14b8a6","#8b5cf6","#22d3ee"];
 
-function Avatar({ name, url, size = 36, color }) {
-  const initials = name?.split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase() || "?";
-  const bg = color || "#4f46e5";
-  return (
-    <div style={{ width: size, height: size, borderRadius: 10, background: `linear-gradient(135deg,${bg},${bg}99)`, flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.33, fontWeight: 700, color: "#fff", border: "1px solid rgba(255,255,255,.1)" }}>
-      {url ? <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}
-    </div>
-  );
+function colorFromId(id = "") {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return USER_COLORS[Math.abs(h) % USER_COLORS.length];
 }
 
-const COLORS = ["#6366f1","#8b5cf6","#06b6d4","#10b981","#f59e0b","#ef4444","#ec4899","#14b8a6"];
-function userColor(id) { return COLORS[(id?.charCodeAt(0) || 0) % COLORS.length]; }
+function initialsFrom(name) {
+  if (!name) return "?";
+  return name.trim().split(/\s+/).slice(0, 2).map(s => s[0]).join("").toUpperCase();
+}
 
-function timeLabel(dateStr) {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diff = (now - d) / 1000;
-  if (diff < 60)    return "À l'instant";
-  if (diff < 3600)  return `${Math.floor(diff/60)} min`;
-  if (diff < 86400) return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+function dayKey(d) {
+  const x = new Date(d);
+  return `${x.getFullYear()}-${x.getMonth()}-${x.getDate()}`;
+}
+function daySeparator(d) {
+  const x = new Date(d);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const yest  = new Date(today); yest.setDate(yest.getDate() - 1);
+  const dd    = new Date(x); dd.setHours(0,0,0,0);
+  if (+dd === +today) return "Aujourd'hui";
+  if (+dd === +yest)  return "Hier";
+  return x.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
+function timeShort(d) {
+  return new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function Avatar({ name, url, size = 36, color }) {
+  return (
+    <div
+      style={{
+        width: size, height: size, borderRadius: size,
+        background: url ? "transparent" : `linear-gradient(135deg, ${color}, ${color}aa)`,
+        flexShrink: 0, overflow: "hidden",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: size * 0.36, fontWeight: 800, color: "#fff",
+        boxShadow: `0 2px 12px ${color}30`,
+      }}
+    >
+      {url ? (
+        <img
+          src={url} alt=""
+          onError={(e) => { e.target.style.display = "none"; }}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : initialsFrom(name)}
+    </div>
+  );
 }
 
 export default function GlobalChat() {
   const { profile } = useOutletContext() || {};
   const [messages, setMessages] = useState([]);
-  const [newMsg, setNewMsg]     = useState("");
-  const [loading, setLoading]   = useState(true);
-  const [onlineCount, setOnline] = useState(0);
+  const [newMsg, setNewMsg] = useState("");
+  const [loading, setLoading] = useState(true);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [sending, setSending]   = useState(false);
+  const [sending, setSending] = useState(false);
+  const [replyTo, setReplyTo] = useState(null);
+  const [onlineCount, setOnlineCount] = useState(0);
+  const scrollRef = useRef(null);
   const bottomRef = useRef(null);
-  const inputRef  = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    loadMessages();
-    setOnline(Math.floor(Math.random() * 120) + 30);
+    load();
+    setOnlineCount(Math.floor(Math.random() * 80) + 12);
     const ch = supabase
-      .channel("globalchat_v2")
+      .channel("globalchat_v3")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, async (p) => {
         const { data } = await supabase
           .from("chat_messages")
-          .select("*, sender:profiles(id, full_name, avatar_url, role)")
+          .select("*, sender:profiles(id, full_name, username, avatar_url, role)")
           .eq("id", p.new.id)
           .maybeSingle();
         if (data) setMessages(prev => [...prev, data]);
       })
       .subscribe();
     return () => supabase.removeChannel(ch);
+    // eslint-disable-next-line
   }, []);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages.length]);
 
-  const loadMessages = async () => {
+  const load = async () => {
+    setLoading(true);
     const { data } = await supabase
       .from("chat_messages")
-      .select("*, sender:profiles(id, full_name, avatar_url, role)")
+      .select("*, sender:profiles(id, full_name, username, avatar_url, role)")
       .order("created_at", { ascending: true })
-      .limit(80);
+      .limit(120);
     setMessages(data || []);
     setLoading(false);
   };
@@ -78,183 +124,386 @@ export default function GlobalChat() {
     const txt = newMsg.trim();
     if (!txt || !profile?.id || sending) return;
     setSending(true);
+    const replyPayload = replyTo ? { reply_to_id: replyTo.id, reply_to_preview: replyTo.content?.slice(0, 80) } : {};
     setNewMsg("");
+    setReplyTo(null);
     try {
-      await supabase.from("chat_messages").insert({ sender_id: profile.id, channel: "global", content: txt });
+      await supabase.from("chat_messages").insert({
+        sender_id: profile.id,
+        channel: "global",
+        content: txt,
+        ...replyPayload,
+      });
     } catch (_) {}
     setSending(false);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
+
+  const addEmoji = (em) => {
+    setNewMsg(p => p + em);
+    setShowEmoji(false);
     inputRef.current?.focus();
   };
 
-  const addEmoji = (em) => { setNewMsg(p => p + em); setShowEmoji(false); inputRef.current?.focus(); };
-
-  const ROLE_COLOR = { super_admin: "#f43f5e", admin: "#f97316", founder: "#a78bfa", fondateur: "#a78bfa", designer: "#10b981", user: "rgba(255,255,255,.35)" };
-
-  if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-      <div style={{ width: 32, height: 32, border: `2px solid ${ix(.12)}`, borderTopColor: ACCENT, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
-  );
+  // Group messages by day + consecutive same-sender within 3 minutes
+  const grouped = [];
+  let lastDay = null;
+  let lastSender = null;
+  let lastTime = 0;
+  messages.forEach((m) => {
+    const k = dayKey(m.created_at);
+    if (k !== lastDay) {
+      grouped.push({ type: "day", id: `d-${k}`, label: daySeparator(m.created_at) });
+      lastDay = k;
+      lastSender = null;
+    }
+    const t = new Date(m.created_at).getTime();
+    const sameUserBurst = lastSender === m.sender_id && t - lastTime < 3 * 60 * 1000;
+    grouped.push({ type: "msg", data: m, grouped: sameUserBurst });
+    lastSender = m.sender_id;
+    lastTime = t;
+  });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 112px)", fontFamily: "'Space Grotesk',sans-serif", color: "rgba(255,255,255,.88)" }}>
+    <div
+      data-testid="global-chat"
+      style={{
+        // Fill the parent main area — header + scroll + composer
+        display: "flex", flexDirection: "column",
+        height: "calc(100vh - 8rem)", // mobile: top nav (56) + bottom nav (76) ≈ 132px
+        maxHeight: "calc(100dvh - 8rem)",
+        margin: "-1rem -1rem -1rem -1rem", // edge-to-edge inside main padding
+        background: "linear-gradient(180deg,#080820 0%,#0a0a1f 100%)",
+        borderRadius: 18, overflow: "hidden",
+        border: "1px solid rgba(255,255,255,0.06)",
+      }}
+    >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-        .chat-in::-webkit-scrollbar{width:4px}
-        .chat-in::-webkit-scrollbar-thumb{background:${ix(.25)};border-radius:99px}
-        .chat-msg-row{display:flex;gap:10px;padding:6px 0;align-items:flex-end}
-        .chat-msg-row:hover .chat-time{opacity:1}
-        .chat-time{opacity:0;transition:opacity .2s;font-size:10px;color:rgba(255,255,255,.2);font-family:'JetBrains Mono',monospace;white-space:nowrap;margin-bottom:4px}
-        .emoji-btn{background:none;border:none;cursor:pointer;font-size:20px;padding:4px 6px;border-radius:8px;transition:background .15s}
-        .emoji-btn:hover{background:rgba(255,255,255,.08)}
-        textarea.chat-input{resize:none;outline:none;background:transparent;color:#fff;font-family:'Space Grotesk',sans-serif;font-size:14px;line-height:1.5;width:100%;border:none}
-        textarea.chat-input::placeholder{color:rgba(255,255,255,.2)}
+        .cipher-chat-scroll::-webkit-scrollbar { width: 3px; }
+        .cipher-chat-scroll::-webkit-scrollbar-thumb { background: rgba(124,58,237,.3); border-radius: 99px; }
+        @keyframes pulseDot { 0%,100% { opacity:1 } 50% { opacity:.45 } }
+        .bubble-in  { animation: bubbleIn .22s cubic-bezier(.2,.9,.3,1.2); }
+        @keyframes bubbleIn { from { opacity:0; transform: translateY(6px) scale(.97); } to { opacity:1; transform: none; } }
       `}</style>
 
-      {/* ── Header ── */}
-      <div style={{ padding: "14px 20px", borderBottom: `1px solid ${ix(.12)}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(8,8,24,.6)", backdropFilter: "blur(16px)", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 12, background: `linear-gradient(135deg,${ix(.25)},${ix(.08)})`, border: `1px solid ${ix(.3)}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Hash size={17} style={{ color: ACCENT_L }} />
-          </div>
-          <div>
-            <p style={{ margin: 0, fontWeight: 700, fontSize: 15, letterSpacing: 0.3 }}>Chat Global</p>
-            <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,.3)", fontFamily: "'JetBrains Mono',monospace" }}>
-              {messages.length} messages · Canal public
+      {/* ── HEADER (sticky) ── */}
+      <div
+        data-testid="chat-header"
+        style={{
+          flexShrink: 0,
+          padding: "12px 16px",
+          display: "flex", alignItems: "center", gap: 12,
+          background: "rgba(8,8,28,0.92)", backdropFilter: "blur(20px)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          position: "sticky", top: 0, zIndex: 5,
+        }}
+      >
+        <div style={{
+          width: 42, height: 42, borderRadius: 12,
+          background: "linear-gradient(135deg,#7c3aed,#a855f7)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 6px 20px rgba(124,58,237,.3)",
+          fontSize: 18, fontWeight: 900, color: "#fff",
+        }}>#</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "#fff", letterSpacing: 0.2 }}>Chat Global</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", animation: "pulseDot 2s infinite" }} />
+            <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,.5)", fontWeight: 600 }}>
+              {onlineCount} en ligne · {messages.length} messages
             </p>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 99, background: "rgba(16,185,129,.08)", border: "1px solid rgba(16,185,129,.2)" }}>
-          <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981", animation: "pulse-dot 2s infinite" }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#10b981" }}>{onlineCount} en ligne</span>
-        </div>
-        <style>{`@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}`}</style>
+        <button
+          aria-label="Options"
+          style={{
+            width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,.04)",
+            border: "1px solid rgba(255,255,255,.06)", color: "rgba(255,255,255,.6)",
+            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+          }}
+        >
+          <MoreVertical size={18} />
+        </button>
       </div>
 
-      {/* ── Messages ── */}
-      <div className="chat-in" style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
-        {messages.length === 0 && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 12 }}>
-            <div style={{ fontSize: 48, opacity: 0.15 }}>💬</div>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,.2)", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 2 }}>SOYEZ LE PREMIER À ÉCRIRE</p>
+      {/* ── MESSAGES SCROLL ── */}
+      <div
+        ref={scrollRef}
+        className="cipher-chat-scroll"
+        data-testid="chat-messages"
+        style={{
+          flex: 1, overflowY: "auto", overflowX: "hidden",
+          padding: "16px 12px 12px",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        {loading && (
+          <div style={{ display: "flex", justifyContent: "center", paddingTop: 40 }}>
+            <div style={{
+              width: 28, height: 28, border: "2px solid rgba(168,85,247,.15)",
+              borderTopColor: "#a855f7", borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
           </div>
         )}
 
-        {messages.map((msg, i) => {
-          const isMe = msg.sender_id === profile?.id || msg.sender?.id === profile?.id;
-          const sender = msg.sender || {};
-          const col = userColor(sender.id || msg.sender_id);
-          const roleLabel = sender.role && sender.role !== "user" ? sender.role?.replace("_", " ").toUpperCase() : null;
-          const roleColor = ROLE_COLOR[sender.role] || "rgba(255,255,255,.3)";
-          const prev = messages[i - 1];
-          const sameUser = prev && (prev.sender_id === msg.sender_id) && (new Date(msg.created_at) - new Date(prev.created_at) < 120000);
+        {!loading && messages.length === 0 && (
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            padding: 40, gap: 12, opacity: 0.5,
+          }}>
+            <div style={{ fontSize: 56 }}>💬</div>
+            <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,.4)", fontWeight: 600 }}>
+              Pas encore de messages
+            </p>
+            <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,.25)" }}>
+              Sois le premier à écrire 👋
+            </p>
+          </div>
+        )}
+
+        {grouped.map((item) => {
+          if (item.type === "day") {
+            return (
+              <div key={item.id} style={{
+                display: "flex", justifyContent: "center", margin: "16px 0 12px",
+              }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase",
+                  padding: "4px 12px", borderRadius: 99,
+                  background: "rgba(255,255,255,.04)", color: "rgba(255,255,255,.4)",
+                  border: "1px solid rgba(255,255,255,.05)",
+                }}>{item.label}</span>
+              </div>
+            );
+          }
+          const m = item.data;
+          const isMe = m.sender_id === profile?.id;
+          const sender = m.sender || {};
+          const senderName = sender.full_name || sender.username || "Joueur";
+          const senderColor = colorFromId(sender.id || m.sender_id || "");
+          const roleBadge = ROLE_BADGES[sender.role];
+          const grouped = item.grouped;
 
           return (
-            <motion.div
-              key={msg.id || i}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.18 }}
-              className="chat-msg-row"
-              style={{ flexDirection: isMe ? "row-reverse" : "row", marginTop: sameUser ? 2 : 12 }}
+            <div
+              key={m.id}
+              data-testid={`chat-msg-${m.id}`}
+              className="bubble-in"
+              style={{
+                display: "flex",
+                flexDirection: isMe ? "row-reverse" : "row",
+                gap: 8,
+                margin: grouped ? "1px 0" : "10px 0 1px",
+                paddingRight: isMe ? 4 : 40,
+                paddingLeft: isMe ? 40 : 4,
+              }}
             >
-              {!sameUser ? (
-                <Avatar name={sender.full_name} url={sender.avatar_url} color={col} />
-              ) : (
-                <div style={{ width: 36, flexShrink: 0 }} />
+              {/* Avatar (only on first bubble of burst) */}
+              {!isMe && (
+                <div style={{ width: 36, flexShrink: 0 }}>
+                  {!grouped && <Avatar name={senderName} url={sender.avatar_url} color={senderColor} />}
+                </div>
               )}
 
-              <div style={{ maxWidth: "68%", display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start", gap: 3 }}>
-                {!sameUser && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: isMe ? ACCENT_L : col }}>
-                      {isMe ? "Vous" : sender.full_name || "Joueur"}
-                    </span>
-                    {roleLabel && (
-                      <span style={{ fontSize: 9, fontWeight: 700, color: roleColor, background: `${roleColor}18`, border: `1px solid ${roleColor}30`, padding: "1px 7px", borderRadius: 99, letterSpacing: 0.5 }}>
-                        {roleLabel}
-                      </span>
+              {/* Bubble column */}
+              <div style={{ maxWidth: "75%", display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start" }}>
+                {/* Sender row (only on first bubble of burst & not me) */}
+                {!isMe && !grouped && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, paddingLeft: 12 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: senderColor }}>{senderName}</span>
+                    {roleBadge && (
+                      <span style={{
+                        fontSize: 9, fontWeight: 800, letterSpacing: 0.6,
+                        padding: "2px 6px", borderRadius: 4,
+                        background: roleBadge.bg, color: roleBadge.color,
+                        border: `1px solid ${roleBadge.color}33`,
+                      }}>{roleBadge.label}</span>
                     )}
                   </div>
                 )}
+
+                {/* Reply quote */}
+                {m.reply_to_preview && (
+                  <div style={{
+                    fontSize: 11, color: "rgba(255,255,255,.5)",
+                    background: "rgba(255,255,255,.03)",
+                    borderLeft: `3px solid ${isMe ? "#a855f7" : senderColor}`,
+                    padding: "4px 8px", borderRadius: 6, marginBottom: 4,
+                    maxWidth: "100%", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  }}>
+                    ↪ {m.reply_to_preview}
+                  </div>
+                )}
+
+                {/* The bubble */}
                 <div
+                  onDoubleClick={() => setReplyTo({ id: m.id, content: m.content, sender: senderName })}
                   style={{
-                    padding: "9px 14px",
-                    borderRadius: isMe ? "16px 4px 16px 16px" : "4px 16px 16px 16px",
+                    padding: "8px 13px",
+                    borderRadius: isMe
+                      ? (grouped ? "18px 6px 6px 18px" : "18px 6px 18px 18px")
+                      : (grouped ? "6px 18px 18px 6px" : "6px 18px 18px 18px"),
                     background: isMe
-                      ? `linear-gradient(135deg,${ix(.28)},${ix(.15)})`
-                      : "rgba(255,255,255,.05)",
-                    border: `1px solid ${isMe ? ix(.38) : "rgba(255,255,255,.07)"}`,
-                    boxShadow: isMe ? `0 4px 16px ${ix(.12)}` : "none",
+                      ? "linear-gradient(135deg,#7c3aed,#9333ea)"
+                      : "rgba(255,255,255,.06)",
+                    border: isMe ? "1px solid rgba(168,85,247,.4)" : "1px solid rgba(255,255,255,.06)",
+                    boxShadow: isMe ? "0 4px 14px rgba(124,58,237,.25)" : "none",
                     wordBreak: "break-word",
+                    fontSize: 14, lineHeight: 1.45, color: "#fff",
                   }}
                 >
-                  <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: "rgba(255,255,255,.9)" }}>{msg.content}</p>
+                  {m.content}
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", gap: 3,
+                    marginLeft: 8, fontSize: 10, opacity: 0.55,
+                    verticalAlign: "baseline",
+                  }}>
+                    {timeShort(m.created_at)}
+                    {isMe && <CheckCheck size={11} style={{ marginLeft: 2 }} />}
+                  </span>
                 </div>
-                <span className="chat-time">{timeLabel(msg.created_at)}</span>
               </div>
-            </motion.div>
+            </div>
           );
         })}
         <div ref={bottomRef} />
       </div>
 
-      {/* ── Input ── */}
-      <div style={{ padding: "12px 20px", flexShrink: 0, position: "relative" }}>
-        <div style={{ background: "rgba(8,8,24,.9)", border: `1px solid ${ix(.2)}`, borderRadius: 16, padding: "10px 14px", display: "flex", alignItems: "flex-end", gap: 10, backdropFilter: "blur(16px)", boxShadow: `0 0 0 1px ${ix(.06)}` }}>
+      {/* ── REPLY BANNER ── */}
+      <AnimatePresence>
+        {replyTo && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            style={{
+              flexShrink: 0,
+              padding: "8px 14px",
+              display: "flex", alignItems: "center", gap: 10,
+              background: "rgba(168,85,247,.08)",
+              borderTop: "1px solid rgba(168,85,247,.2)",
+              borderBottom: "1px solid rgba(168,85,247,.2)",
+            }}
+          >
+            <Reply size={14} style={{ color: "#a855f7", flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: "#a855f7", letterSpacing: 0.8 }}>
+                RÉPONDRE À {replyTo.sender?.toUpperCase()}
+              </p>
+              <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,.55)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {replyTo.content}
+              </p>
+            </div>
+            <button
+              onClick={() => setReplyTo(null)}
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,.4)", cursor: "pointer", padding: 4 }}
+              aria-label="Annuler"
+            >✕</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Emoji picker */}
-          <div style={{ position: "relative" }}>
-            <button onClick={() => setShowEmoji(o => !o)} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 6px", borderRadius: 8, color: showEmoji ? ACCENT_L : "rgba(255,255,255,.25)", fontSize: 18, transition: "color .2s" }}>
-              <Smile size={18} />
-            </button>
-            <AnimatePresence>
-              {showEmoji && (
-                <motion.div
-                  initial={{ opacity: 0, scale: .9, y: 8 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: .9, y: 8 }}
-                  style={{ position: "absolute", bottom: "calc(100% + 8px)", left: 0, background: "#080820", border: `1px solid ${ix(.2)}`, borderRadius: 12, padding: 8, display: "flex", gap: 4, flexWrap: "wrap", width: 220, boxShadow: "0 16px 40px rgba(0,0,0,.6)" }}
-                >
-                  {EMOJIS.map(em => (
-                    <button key={em} className="emoji-btn" onClick={() => addEmoji(em)}>{em}</button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+      {/* ── COMPOSER (sticky bottom) ── */}
+      <div
+        data-testid="chat-composer"
+        style={{
+          flexShrink: 0,
+          padding: "10px 12px max(10px, env(safe-area-inset-bottom)) 12px",
+          background: "rgba(8,8,28,0.97)", backdropFilter: "blur(20px)",
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          position: "sticky", bottom: 0, zIndex: 5,
+        }}
+      >
+        <AnimatePresence>
+          {showEmoji && (
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.96 }}
+              style={{
+                position: "absolute", bottom: "calc(100% - 4px)", left: 12, right: 12,
+                background: "#0d0d24", borderRadius: 14,
+                border: "1px solid rgba(255,255,255,.08)",
+                padding: 10, display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 4,
+                boxShadow: "0 -8px 32px rgba(0,0,0,.5)",
+              }}
+            >
+              {EMOJIS.map(em => (
+                <button
+                  key={em}
+                  onClick={() => addEmoji(em)}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    fontSize: 22, padding: 6, borderRadius: 8, transition: "background .15s",
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = "rgba(255,255,255,.06)"}
+                  onMouseOut={(e) => e.currentTarget.style.background = "none"}
+                >{em}</button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <form
+          onSubmit={send}
+          style={{
+            display: "flex", alignItems: "flex-end", gap: 8,
+            background: "rgba(255,255,255,.04)",
+            border: "1px solid rgba(255,255,255,.08)",
+            borderRadius: 22, padding: "6px 6px 6px 12px",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setShowEmoji(o => !o)}
+            aria-label="Emoji"
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: showEmoji ? "#a855f7" : "rgba(255,255,255,.4)",
+              padding: 6, flexShrink: 0,
+            }}
+          >
+            <Smile size={20} />
+          </button>
 
           <textarea
             ref={inputRef}
-            className="chat-input"
+            data-testid="chat-input"
             value={newMsg}
-            onChange={e => setNewMsg(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder="Écris un message… (Entrée pour envoyer)"
+            onChange={(e) => setNewMsg(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+            placeholder="Écris un message…"
             rows={1}
-            style={{ maxHeight: 80 }}
+            style={{
+              flex: 1, resize: "none", outline: "none", border: "none",
+              background: "transparent", color: "#fff",
+              fontFamily: "inherit", fontSize: 14, lineHeight: 1.4,
+              maxHeight: 100, padding: "8px 0",
+            }}
           />
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={send}
+            type="submit"
+            data-testid="chat-send-btn"
+            whileTap={{ scale: 0.92 }}
             disabled={!newMsg.trim() || sending}
             style={{
-              width: 38, height: 38, borderRadius: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", cursor: newMsg.trim() ? "pointer" : "default",
-              background: newMsg.trim() ? `linear-gradient(135deg,${ACCENT},#7c3aed)` : "rgba(255,255,255,.05)",
-              border: `1px solid ${newMsg.trim() ? ix(.5) : "rgba(255,255,255,.06)"}`,
-              boxShadow: newMsg.trim() ? `0 4px 16px ${ix(.3)}` : "none",
+              width: 40, height: 40, borderRadius: 20, flexShrink: 0,
+              border: "none", cursor: newMsg.trim() ? "pointer" : "default",
+              background: newMsg.trim()
+                ? "linear-gradient(135deg,#7c3aed,#a855f7)"
+                : "rgba(255,255,255,.06)",
+              color: newMsg.trim() ? "#fff" : "rgba(255,255,255,.25)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: newMsg.trim() ? "0 4px 16px rgba(124,58,237,.4)" : "none",
               transition: "all .2s",
             }}
           >
-            <Send size={15} style={{ color: newMsg.trim() ? "#fff" : "rgba(255,255,255,.2)" }} />
+            <Send size={16} />
           </motion.button>
-        </div>
-        <p style={{ textAlign: "center", fontSize: 10, color: "rgba(255,255,255,.12)", fontFamily: "'JetBrains Mono',monospace", marginTop: 6, letterSpacing: 1 }}>
-          SHIFT+ENTRÉE pour nouvelle ligne
-        </p>
+        </form>
       </div>
     </div>
   );
