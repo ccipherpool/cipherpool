@@ -9,33 +9,7 @@ import React, {
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface Testimonial {
-  quote: string;
-  name: string;
-  designation: string;
-  src: string;
-}
-interface Colors {
-  name?: string;
-  designation?: string;
-  testimony?: string;
-  arrowBackground?: string;
-  arrowForeground?: string;
-  arrowHoverBackground?: string;
-}
-interface FontSizes {
-  name?: string;
-  designation?: string;
-  quote?: string;
-}
-interface CircularTestimonialsProps {
-  testimonials: Testimonial[];
-  autoplay?: boolean;
-  colors?: Colors;
-  fontSizes?: FontSizes;
-}
-
-function calculateGap(width: number) {
+function calculateGap(width) {
   const minWidth = 1024;
   const maxWidth = 1456;
   const minGap = 60;
@@ -51,7 +25,7 @@ export const CircularTestimonials = ({
   autoplay = true,
   colors = {},
   fontSizes = {},
-}: CircularTestimonialsProps) => {
+}) => {
   // Color & font config
   const colorName = colors.name ?? "#fff";
   const colorDesignation = colors.designation ?? "#94a3b8";
@@ -69,8 +43,8 @@ export const CircularTestimonials = ({
   const [hoverNext, setHoverNext] = useState(false);
   const [containerWidth, setContainerWidth] = useState(1200);
 
-  const imageContainerRef = useRef<HTMLDivElement>(null);
-  const autoplayIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const imageContainerRef = useRef(null);
+  const autoplayIntervalRef = useRef(null);
 
   const testimonialsLength = useMemo(() => testimonials.length, [testimonials]);
   const activeTestimonial = useMemo(
@@ -104,7 +78,7 @@ export const CircularTestimonials = ({
 
   // Keyboard navigation
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
+    const handleKey = (e) => {
       if (e.key === "ArrowLeft") handlePrev();
       if (e.key === "ArrowRight") handleNext();
     };
@@ -124,7 +98,7 @@ export const CircularTestimonials = ({
   }, [testimonialsLength]);
 
   // Compute transforms for each image (always show 3: left, center, right)
-  function getImageStyle(index: number): React.CSSProperties {
+  function getImageStyle(index) {
     const gap = calculateGap(containerWidth);
     const maxStickUp = gap * 0.8;
     const offset = (index - activeIndex + testimonialsLength) % testimonialsLength;

@@ -16,28 +16,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 
-interface FormInputProps {
-    icon: React.ReactNode;
-    type: string;
-    placeholder: string;
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    required?: boolean;
-}
-
-interface SocialButtonProps {
-    icon: React.ReactNode;
-    name: string;
-}
-
-interface ToggleSwitchProps {
-    checked: boolean;
-    onChange: () => void;
-    id: string;
-}
-
 // FormInput Component
-const FormInput: React.FC<FormInputProps> = ({ icon, type, placeholder, value, onChange, required }) => {
+const FormInput = ({ icon, type, placeholder, value, onChange, required }) => {
     return (
         <div className="relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
@@ -56,7 +36,7 @@ const FormInput: React.FC<FormInputProps> = ({ icon, type, placeholder, value, o
 };
 
 // SocialButton Component
-const SocialButton: React.FC<SocialButtonProps> = ({ icon }) => {
+const SocialButton = ({ icon }) => {
     return (
         <button type="button" className="flex items-center justify-center p-4 bg-white/[0.03] border border-white/5 rounded-2xl text-white/40 hover:bg-white/[0.08] hover:text-white transition-all duration-300">
             {icon}
@@ -65,7 +45,7 @@ const SocialButton: React.FC<SocialButtonProps> = ({ icon }) => {
 };
 
 // ToggleSwitch Component
-const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ checked, onChange, id }) => {
+const ToggleSwitch = ({ checked, onChange, id }) => {
     return (
         <div className="relative inline-block w-10 h-5 cursor-pointer" onClick={onChange}>
             <input
@@ -83,8 +63,8 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ checked, onChange, id }) =>
 };
 
 // VideoBackground Component
-const VideoBackground: React.FC<{ videoUrl: string }> = ({ videoUrl }) => {
-    const videoRef = useRef<HTMLVideoElement>(null);
+const VideoBackground = ({ videoUrl }) => {
+    const videoRef = useRef(null);
 
     useEffect(() => {
         if (videoRef.current) {
@@ -119,9 +99,9 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [remember, setRemember] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState(null);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
@@ -134,7 +114,7 @@ export default function Login() {
 
             if (authError) throw authError;
             navigate("/dashboard");
-        } catch (err: any) {
+        } catch (err) {
             setError(err.message);
         } finally {
             setLoading(false);
