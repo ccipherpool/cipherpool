@@ -347,8 +347,8 @@ export default function SuperAdmin() {
   return (
     <div className="text-white space-y-6 relative overflow-hidden">
 
-      {/* Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      {/* Background — desktop only (blurs are too heavy for mobile GPU) */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden hidden md:block">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/25 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-600/25 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: "1.2s" }} />
         <div className="absolute top-[20%] right-[15%] w-64 h-64 bg-violet-500/15 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: "2s" }} />

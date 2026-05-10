@@ -1,31 +1,22 @@
 import { useEffect, useRef } from "react";
 
-const COLORS = [
-  "#FF0080",
-  "#7928CA",
-  "#0070F3",
-  "#00DFD8",
-  "#FF4D4D",
-  "#FFD700",
-];
+const COLORS = ["#FF0080", "#7928CA", "#0070F3", "#00DFD8", "#FF4D4D", "#FFD700"];
 
 export const LiquidCursor = () => {
+  const isTouch = typeof window !== "undefined" && window.matchMedia("(hover: none)").matches;
   const canvasRef = useRef(null);
   const pointsRef = useRef([]);
   const mouseRef = useRef({ x: 0, y: 0, lastX: 0, lastY: 0, moved: false });
   const rafRef = useRef(null);
 
   useEffect(() => {
+    if (isTouch) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     window.addEventListener("resize", resize);
     resize();
 
@@ -41,20 +32,13 @@ export const LiquidCursor = () => {
       const speed = Math.random() * 0.5;
       const color = COLORS[Math.floor(Math.random() * COLORS.length)];
       pointsRef.current.push({
-        x,
-        y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        life: 1,
-        maxLife: 1,
-        radius: Math.random() * 20 + 10,
-        color,
+        x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        life: 1, radius: Math.random() * 20 + 10, color,
       });
     };
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
       if (mouseRef.current.moved) {
         const dist = Math.hypot(
           mouseRef.current.x - mouseRef.current.lastX,
@@ -72,23 +56,11 @@ export const LiquidCursor = () => {
         mouseRef.current.lastX = mouseRef.current.x;
         mouseRef.current.lastY = mouseRef.current.y;
         mouseRef.current.moved = false;
-      } else {
-        mouseRef.current.lastX = mouseRef.current.x;
-        mouseRef.current.lastY = mouseRef.current.y;
       }
-
       for (let i = pointsRef.current.length - 1; i >= 0; i--) {
         const p = pointsRef.current[i];
-        p.life -= 0.01;
-        p.x += p.vx;
-        p.y += p.vy;
-        p.radius *= 0.99;
-
-        if (p.life <= 0 || p.radius < 0.5) {
-          pointsRef.current.splice(i, 1);
-          continue;
-        }
-
+        p.life -= 0.01; p.x += p.vx; p.y += p.vy; p.radius *= 0.99;
+        if (p.life <= 0 || p.radius < 0.5) { pointsRef.current.splice(i, 1); continue; }
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fillStyle = p.color;
@@ -96,10 +68,8 @@ export const LiquidCursor = () => {
         ctx.fill();
         ctx.globalAlpha = 1;
       }
-
       rafRef.current = requestAnimationFrame(animate);
     };
-
     animate();
 
     return () => {
@@ -107,29 +77,23 @@ export const LiquidCursor = () => {
       window.removeEventListener("mousemove", handleMouseMove);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, []);
+  }, [isTouch]);
 
+  if (isTouch) return null;
   return (
     <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
       <svg className="hidden">
         <defs>
           <filter id="liquid-cursor-filter">
             <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
-            <feColorMatrix
-              in="blur"
-              mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
-              result="goo"
-            />
+            <feColorMatrix in="blur" mode="matrix"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
             <feComposite in="SourceGraphic" in2="goo" operator="atop" />
           </filter>
         </defs>
       </svg>
-      <canvas
-        ref={canvasRef}
-        className="w-full h-full block"
-        style={{ filter: "url(#liquid-cursor-filter)" }}
-      />
+      <canvas ref={canvasRef} className="w-full h-full block"
+        style={{ filter: "url(#liquid-cursor-filter)" }} />
     </div>
   );
 };

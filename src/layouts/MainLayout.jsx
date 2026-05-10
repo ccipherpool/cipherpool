@@ -11,7 +11,8 @@ import { BackgroundBeams } from "../components/ui/BackgroundBeams";
 import {
   LayoutDashboard, Trophy, BarChart3, User, Ticket,
   ShieldAlert, LogOut, Sparkles, X, Menu,
-  Wallet, MessageSquare, Star, ShoppingBag, Crown, Users2
+  Wallet, MessageSquare, Star, ShoppingBag, Crown, Users2,
+  Newspaper, Gift, TrendingUp, Users
 } from "lucide-react";
 
 const MOBILE_BOTTOM_NAV = [
@@ -27,12 +28,16 @@ const DRAWER_NAV = [
   { path: "/tournaments",   icon: Trophy,          label: "Tournois"     },
   { path: "/leaderboard",   icon: BarChart3,       label: "Classement"   },
   { path: "/store",         icon: ShoppingBag,     label: "Boutique"     },
+  { path: "/news",          icon: Newspaper,       label: "Actualités"   },
   { path: "/profile",       icon: User,            label: "Profil"       },
   { path: "/wallet",        icon: Wallet,          label: "Portefeuille" },
+  { path: "/stats",         icon: TrendingUp,      label: "Mes Stats"    },
+  { path: "/daily-rewards", icon: Gift,            label: "Récompenses"  },
   { path: "/support",       icon: Ticket,          label: "Support"      },
   { path: "/chat",          icon: MessageSquare,   label: "Chat"         },
   { path: "/achievements",  icon: Star,            label: "Succès"       },
   { path: "/clans",         icon: Users2,          label: "Clans"        },
+  { path: "/teams",         icon: Users,           label: "Équipes"      },
   { path: "/hall-of-fame",  icon: Crown,           label: "Hall of Fame" },
 ];
 
@@ -226,10 +231,10 @@ export default function MainLayout() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}
-                initial={{ opacity: 0, filter: "blur(10px)", y: 20 }}
-                animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-                exit={{ opacity: 0, filter: "blur(10px)", y: -20 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               >
                 <Outlet context={{ profile, refreshProfile: fetchProfile }} />
               </motion.div>
@@ -282,8 +287,8 @@ export default function MainLayout() {
         </nav>
       </div>
 
-      {/* Background Decor */}
-      <div className="fixed inset-0 pointer-events-none z-0">
+      {/* Background Decor — desktop only (too heavy for mobile) */}
+      <div className="fixed inset-0 pointer-events-none z-0 hidden md:block">
         <BackgroundBeams className="opacity-20" />
         <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-mint/5 blur-[150px] rounded-full animate-pulse-slow" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-electric-purple/5 blur-[150px] rounded-full animate-pulse-slow [animation-delay:2s]" />

@@ -65,10 +65,11 @@ import Team        from "./pages/Team"; // User-facing Team page
 import HallOfFame  from "./pages/HallOfFame";
 
 // Phase 2
-import Achievements from "./pages/Achievements";
-import DailyRewards from "./pages/Dailyrewards"; 
-import PlayerStats  from "./pages/Playerstats";  
-import News         from "./pages/News";
+import Achievements  from "./pages/Achievements";
+import DailyRewards  from "./pages/Dailyrewards";
+import PlayerStats   from "./pages/Playerstats";
+import News          from "./pages/News";
+import SubmitResult  from "./pages/Submitresult";
 
 export default function App() {
   return (
@@ -97,10 +98,11 @@ export default function App() {
           <Route path="/wallet"       element={<Wallet />} />
           <Route path="/chat"         element={<GlobalChat />} />
           <Route path="/store"        element={<Store />} />
-          <Route path="/news"         element={<News />} />
-          <Route path="/stats"        element={<PlayerStats />} />
-          <Route path="/achievements" element={<Achievements />} />
-          <Route path="/daily-rewards" element={<DailyRewards />} />
+          <Route path="/news"           element={<News />} />
+          <Route path="/stats"          element={<PlayerStats />} />
+          <Route path="/achievements"   element={<Achievements />} />
+          <Route path="/daily-rewards"  element={<DailyRewards />} />
+          <Route path="/submit-result"  element={<SubmitResult />} />
 
           {/* French Aliases for Users */}
           <Route path="/tournois"     element={<Navigate to="/tournaments" replace />} />
