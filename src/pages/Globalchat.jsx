@@ -92,12 +92,14 @@ export default function GlobalChat() {
     const ch = supabase
       .channel("globalchat_v3")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, async (p) => {
-        const { data } = await supabase
-          .from("chat_messages")
-          .select("*, sender:profiles(id, full_name, username, avatar_url, role)")
-          .eq("id", p.new.id)
+        const msg = p.new;
+        if (!msg?.id) return;
+        const { data: sp } = await supabase
+          .from("profiles")
+          .select("id, full_name, username, avatar_url, role")
+          .eq("id", msg.sender_id)
           .maybeSingle();
-        if (data) setMessages(prev => [...prev, data]);
+        setMessages(prev => [...prev, { ...msg, sender: sp || null }]);
       })
       .subscribe();
     return () => supabase.removeChannel(ch);
@@ -110,12 +112,18 @@ export default function GlobalChat() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data: msgs } = await supabase
       .from("chat_messages")
-      .select("*, sender:profiles(id, full_name, username, avatar_url, role)")
+      .select("id, sender_id, channel, content, reply_to_id, reply_to_preview, created_at")
       .order("created_at", { ascending: true })
       .limit(120);
-    setMessages(data || []);
+    if (!msgs?.length) { setMessages([]); setLoading(false); return; }
+    const ids = [...new Set(msgs.map(m => m.sender_id).filter(Boolean))];
+    const { data: profs } = ids.length
+      ? await supabase.from("profiles").select("id, full_name, username, avatar_url, role").in("id", ids)
+      : { data: [] };
+    const pm = Object.fromEntries((profs || []).map(p => [p.id, p]));
+    setMessages(msgs.map(m => ({ ...m, sender: pm[m.sender_id] || null })));
     setLoading(false);
   };
 

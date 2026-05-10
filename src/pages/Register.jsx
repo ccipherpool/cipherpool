@@ -130,17 +130,21 @@ export default function Register() {
                 <div className="mb-8 flex justify-center">
                     <Link to="/" className="inline-flex items-center gap-2 text-white/40 hover:text-white transition-colors group">
                         <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em]">Return to HQ</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em]">Retour à l'accueil</span>
                     </Link>
                 </div>
 
                 <div className="ultra-glass p-10 border-white/5">
                     <div className="mb-10 text-center">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-4 rotate-3 mx-auto"
+                            style={{ background: "linear-gradient(135deg, #4f46e5, #10b981)", boxShadow: "0 0 24px rgba(16,185,129,0.25)" }}>
+                            <span className="text-white font-black text-base -rotate-3">CP</span>
+                        </div>
                         <h2 className="text-4xl font-heading font-black mb-2 relative group text-white">
-                            UNIT<span className="text-mint">ENLIST</span>
+                            CIPHER<span className="text-mint">POOL</span>
                         </h2>
                         <p className="text-white/40 font-mono text-[10px] uppercase tracking-[0.4em] flex flex-col items-center space-y-1">
-                            <span className="animate-pulse tracking-widest">Create your tactical account</span>
+                            <span className="animate-pulse tracking-widest">Créer un compte</span>
                         </p>
                     </div>
 
@@ -148,7 +152,7 @@ export default function Register() {
                         <FormInput
                             icon={<User size={18} />}
                             type="text"
-                            placeholder="Full Name / Handle"
+                            placeholder="Nom d'utilisateur"
                             value={formData.username}
                             onChange={(e) => setFormData({...formData, username: e.target.value})}
                             required
@@ -157,7 +161,7 @@ export default function Register() {
                         <FormInput
                             icon={<Mail size={18} />}
                             type="email"
-                            placeholder="Email address"
+                            placeholder="Adresse email"
                             value={formData.email}
                             onChange={(e) => setFormData({...formData, email: e.target.value})}
                             required
@@ -175,7 +179,7 @@ export default function Register() {
                             <FormInput
                                 icon={<Lock size={18} />}
                                 type={showPassword ? "text" : "password"}
-                                placeholder="Secure Password"
+                                placeholder="Mot de passe"
                                 value={formData.password}
                                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                                 required
@@ -198,7 +202,7 @@ export default function Register() {
                                     className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 p-4 rounded-2xl text-red-500 text-[10px] font-black uppercase tracking-widest"
                                 >
                                     <AlertCircle size={16} />
-                                    <span>Deployment Failed: {error}</span>
+                                    <span>{error}</span>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -209,15 +213,15 @@ export default function Register() {
                                 disabled={loading}
                                 className="w-full py-5 rounded-2xl bg-mint text-obsidian font-heading font-black text-sm uppercase tracking-[0.2em] transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {loading ? 'SYNCHRONIZING...' : 'Deploy Unit'}
+                                {loading ? 'Création...' : "Créer mon compte"}
                             </button>
                         </div>
                     </form>
 
                     <p className="mt-10 text-center text-[10px] font-black uppercase tracking-widest text-white/40">
-                        Already enlisted?{' '}
+                        Déjà un compte?{' '}
                         <Link to="/login" className="text-mint hover:text-white transition-colors font-bold">
-                            Authorize Access
+                            Se connecter
                         </Link>
                     </p>
                 </div>

@@ -78,12 +78,18 @@ export default function Support() {
   };
 
   const fetchMessages = async (ticketId) => {
-    const { data } = await supabase
+    const { data: msgs } = await supabase
       .from("support_messages")
-      .select("*, sender:profiles(id, username, full_name, role, avatar_url)")
+      .select("id, ticket_id, sender_id, message, created_at")
       .eq("ticket_id", ticketId)
       .order("created_at", { ascending: true });
-    setMessages(data || []);
+    if (!msgs?.length) { setMessages([]); return; }
+    const ids = [...new Set(msgs.map(m => m.sender_id).filter(Boolean))];
+    const { data: profs } = ids.length
+      ? await supabase.from("profiles").select("id, username, full_name, role, avatar_url").in("id", ids)
+      : { data: [] };
+    const pm = Object.fromEntries((profs || []).map(p => [p.id, p]));
+    setMessages(msgs.map(m => ({ ...m, sender: pm[m.sender_id] || null })));
   };
 
   const createTicket = async () => {

@@ -2,17 +2,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { 
-    Eye, 
-    EyeOff, 
-    Mail, 
-    Lock, 
-    Globe, 
-    MessageSquare, 
-    Gamepad2,
+import {
+    Eye,
+    EyeOff,
+    Mail,
+    Lock,
+    Send,
     ChevronLeft,
-    AlertCircle,
-    Sparkles
+    AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -140,17 +137,21 @@ export default function Login() {
                 <div className="mb-8 flex justify-center">
                     <Link to="/" className="inline-flex items-center gap-2 text-white/40 hover:text-white transition-colors group">
                         <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em]">Return to HQ</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em]">Retour à l'accueil</span>
                     </Link>
                 </div>
 
                 <div className="ultra-glass p-10 border-white/5">
                     <div className="mb-10 text-center">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-4 rotate-3 mx-auto"
+                            style={{ background: "linear-gradient(135deg, #4f46e5, #10b981)", boxShadow: "0 0 24px rgba(16,185,129,0.25)" }}>
+                            <span className="text-white font-black text-base -rotate-3">CP</span>
+                        </div>
                         <h2 className="text-4xl font-heading font-black mb-2 relative group text-white">
-                            NEXUS<span className="text-mint">GATE</span>
+                            CIPHER<span className="text-mint">POOL</span>
                         </h2>
                         <p className="text-white/40 font-mono text-[10px] uppercase tracking-[0.4em] flex flex-col items-center space-y-1">
-                            <span className="animate-pulse tracking-widest">Secure Login Protocol</span>
+                            <span className="animate-pulse tracking-widest">Connexion au serveur</span>
                         </p>
                     </div>
 
@@ -158,7 +159,7 @@ export default function Login() {
                         <FormInput
                             icon={<Mail size={18} />}
                             type="email"
-                            placeholder="Email address"
+                            placeholder="Adresse email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -168,7 +169,7 @@ export default function Login() {
                             <FormInput
                                 icon={<Lock size={18} />}
                                 type={showPassword ? "text" : "password"}
-                                placeholder="Account Password"
+                                placeholder="Mot de passe"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
@@ -193,11 +194,11 @@ export default function Login() {
                                     htmlFor="remember-me"
                                     className="text-[10px] font-black uppercase tracking-widest text-white/60 cursor-pointer hover:text-white transition-colors"
                                 >
-                                    Remember me
+                                    Se souvenir
                                 </label>
                             </div>
-                            <a href="#" className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">
-                                Reset Key?
+                            <a href="#" className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-mint transition-colors">
+                                Mot de passe oublié?
                             </a>
                         </div>
 
@@ -210,7 +211,7 @@ export default function Login() {
                                     className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 p-4 rounded-2xl text-red-500 text-[10px] font-black uppercase tracking-widest"
                                 >
                                     <AlertCircle size={16} />
-                                    <span>Access Denied: {error}</span>
+                                    <span>{error}</span>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -220,7 +221,7 @@ export default function Login() {
                             disabled={loading}
                             className="w-full py-5 rounded-2xl bg-mint text-obsidian font-heading font-black text-sm uppercase tracking-[0.2em] transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'SYNCHRONIZING...' : 'Enter NexusGate'}
+                            {loading ? 'Connexion...' : 'Se connecter'}
                         </button>
                     </form>
 
@@ -228,21 +229,34 @@ export default function Login() {
                         <div className="relative flex items-center justify-center">
                             <div className="border-t border-white/5 absolute w-full"></div>
                             <div className="bg-transparent px-4 relative text-white/20 text-[8px] font-black uppercase tracking-[0.4em]">
-                                quick access via
+                                Rejoindre via
                             </div>
                         </div>
 
-                        <div className="mt-6 grid grid-cols-3 gap-4">
-                            <SocialButton icon={<Globe size={20} />} name="Google" />
-                            <SocialButton icon={<MessageSquare size={20} />} name="X" />
-                            <SocialButton icon={<Gamepad2 size={20} />} name="Discord" />
+                        <div className="mt-6 grid grid-cols-3 gap-3">
+                            <a href="https://t.me/cipherpool" target="_blank" rel="noopener noreferrer"
+                                className="flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border border-white/5 hover:border-blue-400/30 hover:bg-blue-400/5 transition-all group bg-white/[0.02]">
+                                <Send size={18} className="text-white/30 group-hover:text-blue-400 transition-colors" />
+                                <span className="text-[8px] font-black uppercase tracking-widest text-white/20 group-hover:text-white/60 transition-colors">Telegram</span>
+                            </a>
+                            <a href="https://discord.gg/cipherpool" target="_blank" rel="noopener noreferrer"
+                                className="flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border border-white/5 hover:border-indigo-400/30 hover:bg-indigo-400/5 transition-all group bg-white/[0.02]">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-white/30 group-hover:text-indigo-400 transition-colors">
+                                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.093.12 18.128.15 18.15a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+                                </svg>
+                                <span className="text-[8px] font-black uppercase tracking-widest text-white/20 group-hover:text-white/60 transition-colors">Discord</span>
+                            </a>
+                            <div className="flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border border-white/5 hover:border-orange-400/30 hover:bg-orange-400/5 transition-all group cursor-pointer bg-white/[0.02]">
+                                <span className="text-lg text-white/30 group-hover:text-orange-400 transition-colors leading-none">🔥</span>
+                                <span className="text-[8px] font-black uppercase tracking-widest text-white/20 group-hover:text-white/60 transition-colors">Free Fire</span>
+                            </div>
                         </div>
                     </div>
 
                     <p className="mt-10 text-center text-[10px] font-black uppercase tracking-widest text-white/40">
-                        Don't have an account?{' '}
+                        Pas encore de compte?{' '}
                         <Link to="/register" className="text-mint hover:text-white transition-colors font-bold">
-                            Create Account
+                            S'inscrire
                         </Link>
                     </p>
                 </div>

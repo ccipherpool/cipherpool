@@ -59,9 +59,40 @@ const KPICard = ({ label, value, icon: Icon, colorClass, delay = 0 }) => (
 export default function Profile() {
   const { profile: ap, refreshProfile } = useOutletContext() || {};
   const [activeTab, setActiveTab] = useState("overview");
+  const [showEdit, setShowEdit] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState(null);
   const { profile: dp, stats, achievements, recentMatches, loading } = useProfileData(ap?.id);
-  
+
   const profile = dp || ap;
+
+  const openEdit = () => {
+    setEditForm({
+      username: profile?.username || "",
+      bio: profile?.bio || "",
+      free_fire_id: profile?.free_fire_id || "",
+      city: profile?.city || "",
+      country: profile?.country || "",
+    });
+    setShowEdit(true);
+  };
+
+  const saveProfile = async () => {
+    if (!profile?.id || saving) return;
+    setSaving(true);
+    const { error } = await supabase.from("profiles").update({
+      username: editForm.username.trim(),
+      bio: editForm.bio.trim(),
+      free_fire_id: editForm.free_fire_id.trim(),
+      city: editForm.city.trim(),
+      country: editForm.country.trim(),
+    }).eq("id", profile.id);
+    if (!error) {
+      await refreshProfile?.();
+      setShowEdit(false);
+    }
+    setSaving(false);
+  };
 
   if (loading) return null;
 
@@ -126,7 +157,7 @@ export default function Profile() {
 
           {/* Header Actions */}
           <div className="flex gap-3">
-            <Button variant="outline" size="md" className="gap-2">
+            <Button variant="outline" size="md" className="gap-2" onClick={openEdit}>
               <Settings size={16} /> Edit Profile
             </Button>
             <Button variant="primary" size="md" className="gap-2">
@@ -228,6 +259,75 @@ export default function Profile() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* ── Edit Profile Modal ── */}
+      <AnimatePresence>
+        {showEdit && editForm && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[300]"
+              onClick={() => setShowEdit(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 20 }}
+              transition={{ duration: 0.25 }}
+              className="fixed inset-0 z-[310] flex items-center justify-center p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-full max-w-md rounded-[2rem] border border-white/10 p-8 space-y-5"
+                style={{ background: "rgba(7,7,26,0.97)", backdropFilter: "blur(40px)" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-xl font-heading font-black text-white uppercase tracking-tight">Modifier le Profil</h2>
+                  <button onClick={() => setShowEdit(false)} className="p-2 text-slate-500 hover:text-white transition-colors">✕</button>
+                </div>
+
+                {[
+                  { key: "username",     label: "Nom d'utilisateur", placeholder: "Ex: ShadowKill" },
+                  { key: "free_fire_id", label: "ID Free Fire",      placeholder: "Ex: 123456789"  },
+                  { key: "city",         label: "Ville",             placeholder: "Ex: Casablanca"  },
+                  { key: "country",      label: "Pays",              placeholder: "Ex: Maroc"       },
+                ].map(({ key, label, placeholder }) => (
+                  <div key={key}>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1 block">{label}</label>
+                    <input
+                      value={editForm[key]}
+                      onChange={e => setEditForm(f => ({ ...f, [key]: e.target.value }))}
+                      placeholder={placeholder}
+                      className="w-full px-4 py-3 rounded-xl text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-mint/40 transition-colors"
+                    />
+                  </div>
+                ))}
+
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1 block">Bio</label>
+                  <textarea
+                    value={editForm.bio}
+                    onChange={e => setEditForm(f => ({ ...f, bio: e.target.value }))}
+                    placeholder="Décris ton style de jeu..."
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl text-sm text-white bg-white/5 border border-white/10 focus:outline-none focus:border-mint/40 transition-colors resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setShowEdit(false)}
+                    className="flex-1 py-3 rounded-xl border border-white/10 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-white hover:border-white/20 transition-colors">
+                    Annuler
+                  </button>
+                  <button onClick={saveProfile} disabled={saving}
+                    className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest text-obsidian disabled:opacity-50 transition-all"
+                    style={{ background: "linear-gradient(135deg, #4f46e5, #10b981)" }}>
+                    {saving ? "Sauvegarde..." : "Sauvegarder"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
