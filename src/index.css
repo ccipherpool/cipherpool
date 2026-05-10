@@ -4,19 +4,26 @@
 
 /* ===== 2026 ULTRA PREMIUM THEME ===== */
 :root {
-  --obsidian: #030406;
-  --obsidian-deep: #010203;
+  --obsidian: #050505; /* Deep Space Black */
+  --obsidian-deep: #020202;
   --obsidian-light: #0D0E12;
+  
+  --cyber-cyan: #00f2ff; /* Cyber Cyan */
+  --cyber-cyan-glow: rgba(0, 242, 255, 0.4);
+  
+  --neon-purple: #7000ff; /* Neon Purple */
+  --neon-purple-glow: rgba(112, 0, 255, 0.4);
+  
+  --electric-pink: #ff0055; /* Electric Pink */
+  
   --mint: #10B981;
   --mint-glow: rgba(16, 185, 129, 0.4);
-  --cyber-gold: #F5C518;
-  --cyber-gold-glow: rgba(245, 197, 24, 0.4);
-  --electric-purple: #8B5CF6;
-  --electric-purple-glow: rgba(139, 92, 246, 0.4);
+  
   --text-primary: #FFFFFF;
   --text-secondary: #94A3B8;
-  --glass-bg: rgba(3, 4, 6, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 /* ===== Global Reset & Base ===== */
@@ -24,11 +31,10 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  cursor: none !important; /* Force custom cursor */
 }
 
 html, body {
-  background: var(--obsidian-deep);
+  background: var(--obsidian);
   color: var(--text-primary);
   font-family: 'Satoshi', 'Inter', sans-serif;
   scroll-behavior: smooth;
@@ -44,32 +50,57 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ===== 2026 Advanced Utilities ===== */
 @layer components {
+  /* Effet Glassmorphism (Cartes Translucides) */
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Effet Neon Glow (Boutons et Bordures) */
+  .neon-button {
+    background: transparent;
+    color: var(--cyber-cyan);
+    border: 2px solid var(--cyber-cyan);
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-transform: uppercase;
+    font-weight: bold;
+    transition: 0.3s;
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .neon-button:hover {
+    background: var(--cyber-cyan);
+    color: #000;
+    box-shadow: 0 0 20px var(--cyber-cyan), 0 0 40px var(--cyber-cyan);
+  }
+
   .ultra-glass {
     @apply bg-obsidian-light/40 backdrop-blur-[20px] border border-white/5 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)];
   }
 
-  .neon-glow-mint {
-    filter: drop-shadow(0 0 15px var(--mint-glow));
+  .neon-glow-cyan {
+    filter: drop-shadow(0 0 15px var(--cyber-cyan-glow));
   }
 
-  .neon-glow-gold {
-    filter: drop-shadow(0 0 15px var(--cyber-gold-glow));
-  }
-
-  .text-gradient-mint {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-mint via-mint/80 to-mint;
+  .text-gradient-cyan {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-cyber-cyan via-cyber-cyan/80 to-cyber-cyan;
   }
 
   .text-gradient-purple {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-electric-purple via-purple-400 to-electric-purple;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-neon-purple via-purple-400 to-neon-purple;
   }
 
   .bento-cell {
     @apply relative overflow-hidden transition-all duration-500 hover:scale-[1.02] active:scale-[0.98];
-  }
-
-  .mask-radial {
-    mask-image: radial-gradient(circle at center, black, transparent 80%);
   }
 }
 

@@ -222,10 +222,10 @@ export default function Home_Redesigned() {
         <section className="py-20 px-6 border-t border-white/10">
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              <StatBox value="10K+" label="Joueurs actifs" delay={0} />
-              <StatBox value="500+" label="Tournois" delay={0.1} />
-              <StatBox value="100K" label="CP distribués" delay={0.2} />
-              <StatBox value="150+" label="Clans" delay={0.3} />
+              <StatBox value="1K+" label="Joueurs actifs" delay={0} />
+              <StatBox value="50+" label="Tournois" delay={0.1} />
+              <StatBox value="10K" label="CP distribués" delay={0.2} />
+              <StatBox value="20+" label="Clans" delay={0.3} />
             </div>
           </div>
         </section>

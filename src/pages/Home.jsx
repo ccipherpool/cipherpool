@@ -13,7 +13,8 @@ import {
   Globe,
   Crown,
   Sword,
-  Play
+  Play,
+  Menu
 } from "lucide-react";
 import { ShaderBackground } from "../components/ui/ShaderBackground";
 import { HeroGeometric } from "../components/ui/HeroGeometric";
@@ -29,17 +30,17 @@ export default function Home() {
       <ShaderBackground className="!absolute inset-0 z-0 opacity-40" />
       
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-[100] h-24 flex items-center px-12 justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-mint rounded-2xl flex items-center justify-center text-obsidian shadow-neon-mint rotate-45 group hover:rotate-90 transition-transform duration-500">
-            <Sparkles size={24} className="-rotate-45 group-hover:rotate-0 transition-transform duration-500" fill="currentColor" />
+      <nav className="fixed top-0 left-0 right-0 z-[100] h-20 md:h-24 flex items-center px-6 md:px-12 justify-between bg-obsidian/40 backdrop-blur-md border-b border-white/5">
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-mint rounded-2xl flex items-center justify-center text-obsidian shadow-neon-mint rotate-45 group hover:rotate-90 transition-transform duration-500">
+            <Sparkles size={20} className="-rotate-45 group-hover:rotate-0 transition-transform duration-500" fill="currentColor" />
           </div>
-          <span className="font-heading font-black text-2xl tracking-tighter text-white">
+          <span className="font-heading font-black text-xl md:text-2xl tracking-tighter text-white">
             CIPHER<span className="text-mint">POOL</span>
           </span>
         </div>
 
-        <div className="hidden md:flex items-center gap-12 bg-white/5 backdrop-blur-xl border border-white/10 px-10 py-3 rounded-full">
+        <div className="hidden lg:flex items-center gap-12 bg-white/5 backdrop-blur-xl border border-white/10 px-10 py-3 rounded-full">
           {['Tournaments', 'Arena', 'Clans', 'Hall of Fame'].map(item => (
             <Link key={item} to={`/${item.toLowerCase().replace(/ /g, '-')}`} className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-mint transition-colors">
               {item}
@@ -47,11 +48,14 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="flex items-center gap-6">
-          <button onClick={() => navigate("/login")} className="text-[10px] font-black uppercase tracking-[0.2em] text-white hover:text-mint transition-colors">Login</button>
-          <Button variant="primary" size="lg" onClick={() => navigate("/register")} className="rounded-2xl">
-            Join Arena
+        <div className="flex items-center gap-3 md:gap-6">
+          <button onClick={() => navigate("/login")} className="text-[10px] font-black uppercase tracking-[0.2em] text-white hover:text-mint transition-colors px-2">Login</button>
+          <Button variant="primary" size="sm" onClick={() => navigate("/register")} className="rounded-xl md:rounded-2xl px-4 md:px-8 py-2 md:py-3 text-[10px] md:text-xs">
+            Join
           </Button>
+          <button className="lg:hidden p-2 text-white/60 hover:text-white">
+            <Menu size={24} />
+          </button>
         </div>
       </nav>
 
@@ -149,7 +153,7 @@ export default function Home() {
                  </div>
                  <div>
                     <h4 className="text-2xl font-heading font-black text-white uppercase">Global Network</h4>
-                    <p className="text-slate-500 font-medium">Connect with 10k+ verified Moroccan warriors.</p>
+                    <p className="text-slate-500 font-medium">Connect with 1k+ verified Moroccan warriors.</p>
                  </div>
                </div>
                <div className="flex -space-x-4">
@@ -159,7 +163,7 @@ export default function Home() {
                     </div>
                   ))}
                   <div className="w-12 h-12 rounded-xl border-4 border-obsidian-deep bg-mint flex items-center justify-center text-obsidian font-black text-xs">
-                    +10k
+                    +1k
                   </div>
                </div>
             </motion.div>
@@ -209,6 +213,25 @@ export default function Home() {
                 <p className="text-[10px] font-black uppercase tracking-widest text-mint">Legal</p>
                 <ul className="space-y-3 text-sm font-medium text-slate-400">
                   <li><button className="hover:text-white transition-colors">Privacy Policy</button></li>
+                  <li><button className="hover:text-white transition-colors">Terms of Service</button></li>
+                  <li><button className="hover:text-white transition-colors">Security Audit</button></li>
+                </ul>
+             </div>
+          </div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto mt-20 pt-10 border-t border-white/5 flex justify-between items-center opacity-50">
+           <p className="text-[10px] font-black uppercase tracking-[0.4em]">© 2026 CipherPool Protocols. All Systems Operational.</p>
+           <div className="flex items-center gap-4">
+              <div className="w-2 h-2 rounded-full bg-mint animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Server-01: EU-Maroc</span>
+           </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+ <li><button className="hover:text-white transition-colors">Privacy Policy</button></li>
                   <li><button className="hover:text-white transition-colors">Terms of Service</button></li>
                   <li><button className="hover:text-white transition-colors">Security Audit</button></li>
                 </ul>

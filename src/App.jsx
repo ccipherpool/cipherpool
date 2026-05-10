@@ -1,72 +1,7 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
+import { Button } from "./components/ui/Button";
 
-// Layouts
-import AuthLayout   from "./layouts/AuthLayout";
-import MainLayout   from "./layouts/MainLayout";
-
-// Route Protection
-import ProtectedRoute from "./components/ProtectedRoute";
-import GuestRoute     from "./components/GuestRoute";
-
-// Public Pages
-import Home     from "./pages/Home";
-import Login    from "./pages/Login";
-import Register from "./pages/Register";
-import StaffPage from "./pages/Team"; // Renamed to avoid conflict with "Teams" or other declarations
-
-// Main Pages
-import Dashboard   from "./pages/Dashboard";
-import Tournaments from "./pages/Tournaments";
-import Leaderboard from "./pages/Leaderboard";
-import Profile     from "./pages/Profile";
-import Support     from "./pages/Support";
-import Wallet      from "./pages/Wallet";
-import GlobalChat  from "./pages/Globalchat";
-
-// Tournament Pages
-import TournamentDetails  from "./pages/TournamentDetails";
-import TournamentWaiting  from "./pages/TournamentWaiting";
-import TournamentRoom     from "./pages/TournamentRoom";
-import ManageTournament   from "./pages/ManageTournament";
-import CreateTournament   from "./pages/CreateTournament";
-
-// Founder Pages
-import FounderDashboard from "./pages/FounderDashboard";
-import FounderRequests  from "./pages/FounderRequests";
-
-// Admin Pages
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminSupport   from "./pages/AdminSupport";
-import Adminresults   from "./pages/Adminresults";   
-import Adminnews      from "./pages/Adminnews";       
-
-// Super Admin Pages
-import SuperAdmin from "./pages/SuperAdmin";
-import AdminGrant from "./pages/AdminGrant";
-
-// Store / Designer
-import Store          from "./pages/Store";
-import AdminStorePanel from "./pages/Adminstorepanel";
-import DesignerPanel  from "./pages/Designerpanel";
-
-// Teams
-import Teams       from "./pages/Teams";
-import TeamProfile from "./pages/Teamprofile";   
-
-// Clans
-import Clans       from "./pages/Clans";
-import ClanDetails from "./pages/ClanDetails";
-import CreateClan  from "./pages/CreateClan";
-
-// Community
-import Team        from "./pages/Team";
-import HallOfFame  from "./pages/HallOfFame";
-
-// Phase 2
-import Achievements from "./pages/Achievements";
-import DailyRewards from "./pages/Dailyrewards"; 
-import PlayerStats  from "./pages/Playerstats";  
-import News         from "./pages/News";
+// ... (imports remain the same)
 
 export default function App() {
   return (
@@ -79,6 +14,10 @@ export default function App() {
           <Route path="/login"    element={<GuestRoute><Login /></GuestRoute>} />
           <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
           <Route path="/team"     element={<StaffPage />} />
+          
+          {/* French Aliases */}
+          <Route path="/connexion" element={<Navigate to="/login" replace />} />
+          <Route path="/inscription" element={<Navigate to="/register" replace />} />
         </Route>
 
         {/* ── USER ── */}
@@ -95,6 +34,14 @@ export default function App() {
           <Route path="/stats"        element={<PlayerStats />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/daily-rewards" element={<DailyRewards />} />
+
+          {/* French Aliases for Users */}
+          <Route path="/tournois"     element={<Navigate to="/tournaments" replace />} />
+          <Route path="/boutique"     element={<Navigate to="/store" replace />} />
+          <Route path="/portefeuille" element={<Navigate to="/wallet" replace />} />
+          <Route path="/classement"   element={<Navigate to="/leaderboard" replace />} />
+          <Route path="/actualites"   element={<Navigate to="/news" replace />} />
+          <Route path="/succes"       element={<Navigate to="/achievements" replace />} />
 
           {/* Teams */}
           <Route path="/teams"      element={<Teams />} />

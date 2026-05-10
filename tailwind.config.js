@@ -31,6 +31,7 @@ export default {
       },
       fontFamily: {
         'heading': ['Unbounded', 'system-ui', 'sans-serif'],
+        'impact': ['Bebas Neue', 'sans-serif'],
         'sans': ['Satoshi', 'Inter', 'system-ui', 'sans-serif'],
         'mono': ['JetBrains Mono', 'monospace'],
       },

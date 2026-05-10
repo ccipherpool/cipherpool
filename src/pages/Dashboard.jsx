@@ -309,7 +309,7 @@ export default function Dashboard() {
              <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Assets</span>
            </div>
            <div>
-             <p className="text-3xl font-heading font-black text-white">12.5k</p>
+             <p className="text-4xl font-impact text-white uppercase leading-none">12.5k</p>
              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyber-gold">Cyber Points</p>
            </div>
         </BentoCell>
@@ -320,7 +320,7 @@ export default function Dashboard() {
              <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Standing</span>
            </div>
            <div>
-             <p className="text-3xl font-heading font-black text-white">#124</p>
+             <p className="text-4xl font-impact text-white uppercase leading-none">#124</p>
              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-mint">National Rank</p>
            </div>
         </BentoCell>
@@ -331,7 +331,7 @@ export default function Dashboard() {
              <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Activity</span>
            </div>
            <div>
-             <p className="text-3xl font-heading font-black text-white">07 Days</p>
+             <p className="text-4xl font-impact text-white uppercase leading-none">07 Days</p>
              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-electric-purple">Combat Streak</p>
            </div>
         </BentoCell>
@@ -342,7 +342,7 @@ export default function Dashboard() {
              <span className="text-[8px] font-black uppercase tracking-widest text-slate-500">Honors</span>
            </div>
            <div>
-             <p className="text-3xl font-heading font-black text-white">24</p>
+             <p className="text-4xl font-impact text-white uppercase leading-none">24</p>
              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Tactical Badges</p>
            </div>
         </BentoCell>

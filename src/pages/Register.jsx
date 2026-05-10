@@ -120,10 +120,10 @@ export default function Register() {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 44 }}>
           {[
-            { val: "10K+",    label: "Joueurs",      c: CYAN    },
-            { val: "500+",    label: "Tournois",     c: VIOLET  },
-            { val: "100k CP", label: "Distribués",   c: "#f97316" },
-            { val: "150+",    label: "Clans actifs", c: "#10b981" },
+            { val: "1K+",     label: "Joueurs",      c: CYAN    },
+            { val: "50+",     label: "Tournois",     c: VIOLET  },
+            { val: "10k CP",  label: "Distribués",   c: "#f97316" },
+            { val: "20+",     label: "Clans actifs", c: "#10b981" },
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.35 + i * 0.05 }}
               style={{ padding: "16px 18px", borderRadius: 14, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}>

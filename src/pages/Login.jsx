@@ -1,191 +1,276 @@
-import { useState } from "react";
+"use client";
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { motion, AnimatePresence } from "framer-motion";
 import { 
-  ShieldCheck, 
-  Lock, 
-  Mail, 
-  ArrowRight, 
-  Sparkles, 
-  ChevronLeft,
-  AlertCircle,
-  Eye,
-  EyeOff,
-  Cpu,
-  Terminal
-} from "lucide-react";
-import { Button } from "../components/ui/Button";
-import { ShaderBackground } from "../components/ui/ShaderBackground";
+    Eye, 
+    EyeOff, 
+    Mail, 
+    Lock, 
+    Chrome, 
+    Twitter, 
+    Gamepad2,
+    ChevronLeft,
+    AlertCircle,
+    Sparkles
+} from 'lucide-react';
+import { motion, AnimatePresence } from "framer-motion";
+
+interface FormInputProps {
+    icon: React.ReactNode;
+    type: string;
+    placeholder: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    required?: boolean;
+}
+
+interface SocialButtonProps {
+    icon: React.ReactNode;
+    name: string;
+}
+
+interface ToggleSwitchProps {
+    checked: boolean;
+    onChange: () => void;
+    id: string;
+}
+
+// FormInput Component
+const FormInput: React.FC<FormInputProps> = ({ icon, type, placeholder, value, onChange, required }) => {
+    return (
+        <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
+                {icon}
+            </div>
+            <input
+                type={type}
+                placeholder={placeholder}
+                value={value}
+                onChange={onChange}
+                required={required}
+                className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/5 rounded-2xl text-white placeholder-white/20 focus:outline-none focus:border-mint/50 focus:bg-white/[0.06] transition-all duration-500 font-mono tracking-widest uppercase text-sm"
+            />
+        </div>
+    );
+};
+
+// SocialButton Component
+const SocialButton: React.FC<SocialButtonProps> = ({ icon }) => {
+    return (
+        <button type="button" className="flex items-center justify-center p-4 bg-white/[0.03] border border-white/5 rounded-2xl text-white/40 hover:bg-white/[0.08] hover:text-white transition-all duration-300">
+            {icon}
+        </button>
+    );
+};
+
+// ToggleSwitch Component
+const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ checked, onChange, id }) => {
+    return (
+        <div className="relative inline-block w-10 h-5 cursor-pointer" onClick={onChange}>
+            <input
+                type="checkbox"
+                id={id}
+                className="sr-only"
+                checked={checked}
+                readOnly
+            />
+            <div className={`absolute inset-0 rounded-full transition-colors duration-200 ease-in-out ${checked ? 'bg-mint' : 'bg-white/10'}`}>
+                <div className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-200 ease-in-out ${checked ? 'transform translate-x-5' : ''}`} />
+            </div>
+        </div>
+    );
+};
+
+// VideoBackground Component
+const VideoBackground: React.FC<{ videoUrl: string }> = ({ videoUrl }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.play().catch(error => {
+                console.error("Video autoplay failed:", error);
+            });
+        }
+    }, []);
+
+    return (
+        <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
+            <div className="absolute inset-0 bg-obsidian/60 backdrop-blur-[2px] z-10" />
+            <video
+                ref={videoRef}
+                className="absolute inset-0 min-w-full min-h-full object-cover w-auto h-auto opacity-40"
+                autoPlay
+                loop
+                muted
+                playsInline
+            >
+                <source src={videoUrl} type="video/mp4" />
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    );
+};
 
 export default function Login() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
+    const navigate = useNavigate();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [remember, setRemember] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
 
-      if (authError) throw authError;
-      navigate("/dashboard");
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+        try {
+            const { error: authError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
 
-  return (
-    <div className="relative min-h-screen bg-obsidian-deep flex items-center justify-center p-6 overflow-hidden">
-      {/* 2026 Background Engine */}
-      <ShaderBackground className="!absolute inset-0 z-0" />
-      
-      {/* Dynamic Decor */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-mint/10 blur-[150px] rounded-full animate-pulse-slow" />
-         <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-electric-purple/10 blur-[150px] rounded-full animate-pulse-slow [animation-delay:2s]" />
-      </div>
+            if (authError) throw authError;
+            navigate("/dashboard");
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-      <motion.div 
-        initial={{ opacity: 0, y: 40, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 w-full max-w-lg"
-      >
-        {/* Terminal Header */}
-        <div className="mb-10 text-center space-y-4">
-           <Link to="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-white transition-colors group mb-8">
-              <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Return to Base</span>
-           </Link>
-           
-           <div className="flex justify-center">
-              <div className="w-20 h-20 bg-mint rounded-[2rem] flex items-center justify-center text-obsidian shadow-neon-mint rotate-45 group hover:rotate-90 transition-transform duration-700">
-                <ShieldCheck size={40} className="-rotate-45 group-hover:rotate-0 transition-transform duration-700" />
-              </div>
-           </div>
+    return (
+        <div className="relative min-h-screen bg-obsidian flex items-center justify-center p-6 overflow-hidden">
+            <VideoBackground videoUrl="https://assets.mixkit.co/videos/preview/mixkit-abstract-blue-and-purple-smoke-background-30043-large.mp4" />
 
-           <div className="space-y-1">
-              <h2 className="text-4xl font-heading font-black tracking-tighter text-white uppercase">Initialize<br/>Access</h2>
-              <div className="flex items-center justify-center gap-3">
-                 <Terminal size={12} className="text-mint" />
-                 <p className="text-[10px] font-mono tracking-[0.4em] text-mint/60 uppercase">Protocol: Secure Uplink v4.0</p>
-              </div>
-           </div>
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="relative z-20 w-full max-w-lg"
+            >
+                {/* Back to Home */}
+                <div className="mb-8 flex justify-center">
+                    <Link to="/" className="inline-flex items-center gap-2 text-white/40 hover:text-white transition-colors group">
+                        <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em]">Return to HQ</span>
+                    </Link>
+                </div>
+
+                <div className="ultra-glass p-10 border-white/5">
+                    <div className="mb-10 text-center">
+                        <h2 className="text-4xl font-heading font-black mb-2 relative group text-white">
+                            NEXUS<span className="text-mint">GATE</span>
+                        </h2>
+                        <p className="text-white/40 font-mono text-[10px] uppercase tracking-[0.4em] flex flex-col items-center space-y-1">
+                            <span className="animate-pulse">Initialize Secure Uplink</span>
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <FormInput
+                            icon={<Mail size={18} />}
+                            type="email"
+                            placeholder="EMAIL_HASH"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+
+                        <div className="relative">
+                            <FormInput
+                                icon={<Lock size={18} />}
+                                type={showPassword ? "text" : "password"}
+                                placeholder="ACCESS_SEQUENCE"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                            <button
+                                type="button"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                                <ToggleSwitch
+                                    checked={remember}
+                                    onChange={() => setRemember(!remember)}
+                                    id="remember-me"
+                                />
+                                <label
+                                    htmlFor="remember-me"
+                                    className="text-[10px] font-black uppercase tracking-widest text-white/60 cursor-pointer hover:text-white transition-colors"
+                                >
+                                    Persistent
+                                </label>
+                            </div>
+                            <a href="#" className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">
+                                Reset Key?
+                            </a>
+                        </div>
+
+                        <AnimatePresence>
+                            {error && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 p-4 rounded-2xl text-red-500 text-[10px] font-black uppercase tracking-widest"
+                                >
+                                    <AlertCircle size={16} />
+                                    <span>Access Denied: {error}</span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-5 rounded-2xl bg-mint text-obsidian font-heading font-black text-sm uppercase tracking-[0.2em] transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? 'SYNCHRONIZING...' : 'ESTABLISH LINK'}
+                        </button>
+                    </form>
+
+                    <div className="mt-10">
+                        <div className="relative flex items-center justify-center">
+                            <div className="border-t border-white/5 absolute w-full"></div>
+                            <div className="bg-transparent px-4 relative text-white/20 text-[8px] font-black uppercase tracking-[0.4em]">
+                                Alternative Protocol
+                            </div>
+                        </div>
+
+                        <div className="mt-6 grid grid-cols-3 gap-4">
+                            <SocialButton icon={<Chrome size={20} />} name="Google" />
+                            <SocialButton icon={<Twitter size={20} />} name="X" />
+                            <SocialButton icon={<Gamepad2 size={20} />} name="Discord" />
+                        </div>
+                    </div>
+
+                    <p className="mt-10 text-center text-[10px] font-black uppercase tracking-widest text-white/40">
+                        Unregistered Unit?{' '}
+                        <Link to="/register" className="text-mint hover:text-white transition-colors">
+                            Initialize Profile
+                        </Link>
+                    </p>
+                </div>
+
+                {/* Footer Decor */}
+                <div className="mt-8 flex justify-center opacity-20">
+                    <div className="flex items-center gap-6 text-[8px] font-mono tracking-[0.4em] text-white uppercase">
+                        <span>AES-256_RSA</span>
+                        <div className="w-1 h-1 bg-mint rounded-full" />
+                        <span>SSL_ENCRYPTED</span>
+                    </div>
+                </div>
+            </motion.div>
         </div>
-
-        {/* Access Terminal Form */}
-        <div className="ultra-glass border-white/10 p-10 space-y-8 relative overflow-hidden group">
-           {/* Scanline Effect */}
-           <div className="absolute top-0 left-0 w-full h-[1px] bg-mint/30 -translate-y-full group-hover:translate-y-[400px] transition-transform duration-[3s] ease-linear repeat-infinite pointer-events-none" />
-           
-           <form onSubmit={handleLogin} className="space-y-6">
-              <div className="space-y-2">
-                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-2 flex items-center gap-2">
-                    <Mail size={12} /> Identity Hash
-                 </label>
-                 <div className="relative">
-                    <input 
-                      type="email" 
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="ENTER_EMAIL_PROTOCOL"
-                      className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:outline-none focus:border-mint/50 focus:bg-white/[0.06] transition-all duration-500 font-mono tracking-widest placeholder:text-slate-700 uppercase"
-                    />
-                 </div>
-              </div>
-
-              <div className="space-y-2">
-                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-2 flex items-center gap-2">
-                    <Lock size={12} /> Access Sequence
-                 </label>
-                 <div className="relative">
-                    <input 
-                      type={showPassword ? "text" : "password"} 
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="ENTER_ACCESS_KEY"
-                      className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:outline-none focus:border-mint/50 focus:bg-white/[0.06] transition-all duration-500 font-mono tracking-widest placeholder:text-slate-700 uppercase"
-                    />
-                    <button 
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 hover:text-white transition-colors"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                 </div>
-              </div>
-
-              <AnimatePresence>
-                {error && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center gap-3 bg-red-400/10 border border-red-400/20 p-4 rounded-xl text-red-400 text-xs font-bold uppercase tracking-widest"
-                  >
-                    <AlertCircle size={16} />
-                    <span>Access Denied: {error}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="pt-4">
-                 <Button 
-                   variant="primary" 
-                   size="xl" 
-                   type="submit" 
-                   loading={loading}
-                   className="w-full py-5 rounded-2xl text-sm tracking-[0.3em] shadow-neon-mint group overflow-hidden"
-                 >
-                   <span className="relative z-10 flex items-center gap-3">
-                     ESTABLISH LINK <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                   </span>
-                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-                 </Button>
-              </div>
-           </form>
-
-           <div className="flex flex-col items-center gap-4 pt-6 border-t border-white/5">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">No active profile?</p>
-              <Link 
-                to="/register" 
-                className="text-xs font-heading font-black text-white hover:text-mint transition-colors uppercase tracking-widest flex items-center gap-2 group"
-              >
-                Create New Unit <Sparkles size={14} className="text-cyber-gold group-hover:scale-125 transition-transform" />
-              </Link>
-           </div>
-        </div>
-
-        {/* Terminal Footer Info */}
-        <div className="mt-12 flex justify-between items-center opacity-30 px-6">
-           <div className="flex items-center gap-4 text-[8px] font-mono tracking-[0.3em] text-slate-500 uppercase">
-              <div className="flex items-center gap-1.5">
-                 <div className="w-1 h-1 rounded-full bg-mint" />
-                 <span>Secure_AES-256</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                 <div className="w-1 h-1 rounded-full bg-mint" />
-                 <span>Encrypted_Link</span>
-              </div>
-           </div>
-           <Cpu size={14} className="text-slate-500" />
-        </div>
-      </motion.div>
-    </div>
-  );
+    );
 }
