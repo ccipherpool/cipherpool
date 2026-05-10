@@ -5,7 +5,7 @@ import {
   Trophy, Shield, Zap, ArrowRight, Sparkles, 
   Swords, Flame, Globe, Crown, Menu, X, Star,
   Award, Users, TrendingUp, Gamepad2, Wallet,
-  ChevronDown, ArrowUpRight, Coffee, Github
+  ChevronDown, ArrowUpRight, Coffee, GitBranch
 } from "lucide-react";
 
 // ═══════════════════════════════════════════════
@@ -539,7 +539,7 @@ export default function Home() {
               ))}
             </div>
             <div className="flex gap-4">
-              {[Coffee, Github].map((Icon, i) => (
+              {[Coffee, GitBranch].map((Icon, i) => (
                 <a key={i} href="#" className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-gray-400 hover:text-cyan-400 hover:border-cyan-500/30 transition-all">
                   <Icon size={18} />
                 </a>
