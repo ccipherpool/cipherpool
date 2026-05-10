@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useOutletContext, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProfileData } from "../hooks/useProfileData";
@@ -62,6 +62,9 @@ export default function Profile() {
   const [showEdit, setShowEdit] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const avatarInputRef = useRef(null);
   const { profile: dp, stats, achievements, recentMatches, loading } = useProfileData(ap?.id);
 
   const profile = dp || ap;
@@ -74,18 +77,42 @@ export default function Profile() {
       city: profile?.city || "",
       country: profile?.country || "",
     });
+    setAvatarPreview(null);
+    setAvatarFile(null);
     setShowEdit(true);
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
   };
 
   const saveProfile = async () => {
     if (!profile?.id || saving) return;
     setSaving(true);
+    let avatarUrl = profile?.avatar_url;
+
+    if (avatarFile) {
+      const ext = avatarFile.name.split(".").pop();
+      const path = `${profile.id}/avatar.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, avatarFile, { upsert: true });
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+        avatarUrl = urlData?.publicUrl + `?t=${Date.now()}`;
+      }
+    }
+
     const { error } = await supabase.from("profiles").update({
       username: editForm.username.trim(),
       bio: editForm.bio.trim(),
       free_fire_id: editForm.free_fire_id.trim(),
       city: editForm.city.trim(),
       country: editForm.country.trim(),
+      ...(avatarUrl !== profile?.avatar_url ? { avatar_url: avatarUrl } : {}),
     }).eq("id", profile.id);
     if (!error) {
       await refreshProfile?.();
@@ -282,6 +309,37 @@ export default function Profile() {
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-xl font-heading font-black text-white uppercase tracking-tight">Modifier le Profil</h2>
                   <button onClick={() => setShowEdit(false)} className="p-2 text-slate-500 hover:text-white transition-colors">✕</button>
+                </div>
+
+                {/* Avatar Upload */}
+                <div className="flex flex-col items-center gap-3">
+                  <div
+                    className="relative w-24 h-24 rounded-[20px] border-2 border-dashed border-white/20 overflow-hidden cursor-pointer hover:border-mint/50 transition-colors group"
+                    onClick={() => avatarInputRef.current?.click()}
+                  >
+                    {(avatarPreview || profile?.avatar_url) ? (
+                      <img
+                        src={avatarPreview || profile.avatar_url}
+                        className="w-full h-full object-cover"
+                        alt="Avatar"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-3xl font-heading font-black text-mint">
+                        {profile?.username?.[0]?.toUpperCase() || 'P'}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white text-[10px] font-black uppercase tracking-widest">Changer</span>
+                    </div>
+                  </div>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Cliquer pour changer la photo</p>
                 </div>
 
                 {[

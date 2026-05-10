@@ -96,7 +96,7 @@ export default function GlobalChat() {
         if (!msg?.id) return;
         const { data: sp } = await supabase
           .from("profiles")
-          .select("id, full_name, username, avatar_url, role")
+          .select("id, username, avatar_url, role")
           .eq("id", msg.sender_id)
           .maybeSingle();
         setMessages(prev => [...prev, { ...msg, sender: sp || null }]);
@@ -114,13 +114,13 @@ export default function GlobalChat() {
     setLoading(true);
     const { data: msgs } = await supabase
       .from("chat_messages")
-      .select("id, sender_id, channel, content, reply_to_id, reply_to_preview, created_at")
+      .select("id, sender_id, content, created_at")
       .order("created_at", { ascending: true })
       .limit(120);
     if (!msgs?.length) { setMessages([]); setLoading(false); return; }
     const ids = [...new Set(msgs.map(m => m.sender_id).filter(Boolean))];
     const { data: profs } = ids.length
-      ? await supabase.from("profiles").select("id, full_name, username, avatar_url, role").in("id", ids)
+      ? await supabase.from("profiles").select("id, username, avatar_url, role").in("id", ids)
       : { data: [] };
     const pm = Object.fromEntries((profs || []).map(p => [p.id, p]));
     setMessages(msgs.map(m => ({ ...m, sender: pm[m.sender_id] || null })));
@@ -132,15 +132,12 @@ export default function GlobalChat() {
     const txt = newMsg.trim();
     if (!txt || !profile?.id || sending) return;
     setSending(true);
-    const replyPayload = replyTo ? { reply_to_id: replyTo.id, reply_to_preview: replyTo.content?.slice(0, 80) } : {};
     setNewMsg("");
     setReplyTo(null);
     try {
       await supabase.from("chat_messages").insert({
         sender_id: profile.id,
-        channel: "global",
         content: txt,
-        ...replyPayload,
       });
     } catch (_) {}
     setSending(false);
@@ -289,7 +286,7 @@ export default function GlobalChat() {
           const m = item.data;
           const isMe = m.sender_id === profile?.id;
           const sender = m.sender || {};
-          const senderName = sender.full_name || sender.username || "Joueur";
+          const senderName = sender.username || "Joueur";
           const senderColor = colorFromId(sender.id || m.sender_id || "");
           const roleBadge = ROLE_BADGES[sender.role];
           const grouped = item.grouped;
