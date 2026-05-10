@@ -2,71 +2,37 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { 
-    Eye, 
-    EyeOff, 
-    Mail, 
-    Lock, 
-    User,
-    Globe, 
-    MessageSquare, 
-    Gamepad2,
-    ChevronLeft,
-    AlertCircle,
-    Sparkles,
-    Hash
-} from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Hash, AlertCircle, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 
-// FormInput Component
-const FormInput = ({ icon, type, placeholder, value, onChange, required }) => {
-    return (
-        <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
-                {icon}
-            </div>
-            <input
-                type={type}
-                placeholder={placeholder}
-                value={value}
-                onChange={onChange}
-                required={required}
-                className="w-full pl-12 pr-4 py-4 bg-white/[0.03] border border-white/5 rounded-2xl text-white placeholder-white/20 focus:outline-none focus:border-mint/50 focus:bg-white/[0.06] transition-all duration-500 font-mono tracking-widest uppercase text-sm"
-            />
+const FormInput = ({ icon, type, placeholder, value, onChange, required }) => (
+    <div className="relative">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60">
+            {icon}
         </div>
-    );
-};
+        <input
+            type={type}
+            placeholder={placeholder}
+            value={value}
+            onChange={onChange}
+            required={required}
+            className="w-full pl-10 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/60 focus:outline-none focus:border-mint/50 transition-colors"
+        />
+    </div>
+);
 
-// VideoBackground Component
 const VideoBackground = ({ videoUrl }) => {
     const videoRef = useRef(null);
-
     useEffect(() => {
         if (videoRef.current) {
-            const playVideo = async () => {
-                try {
-                    await videoRef.current.play();
-                } catch (error) {
-                    console.log("Video playback handled:", error.name);
-                }
-            };
-            playVideo();
+            videoRef.current.play().catch(() => {});
         }
     }, []);
-
     return (
-        <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
-            <div className="absolute inset-0 bg-obsidian/60 backdrop-blur-[2px] z-10" />
-            <video
-                ref={videoRef}
-                className="absolute inset-0 min-w-full min-h-full object-cover w-auto h-auto opacity-40"
-                autoPlay
-                loop
-                muted
-                playsInline
-            >
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
+            <div className="absolute inset-0 bg-black/30 z-10" />
+            <video ref={videoRef} className="absolute inset-0 min-w-full min-h-full object-cover w-auto h-auto" autoPlay loop muted playsInline>
                 <source src={videoUrl} type="video/mp4" />
-                Your browser does not support the video tag.
             </video>
         </div>
     );
@@ -74,12 +40,7 @@ const VideoBackground = ({ videoUrl }) => {
 
 export default function Register() {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        username: '',
-        email: '',
-        password: '',
-        ffid: ''
-    });
+    const [formData, setFormData] = useState({ username: '', email: '', password: '', ffid: '' });
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -88,15 +49,12 @@ export default function Register() {
         e.preventDefault();
         setLoading(true);
         setError(null);
-
         try {
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
             });
-
             if (authError) throw authError;
-
             if (authData.user) {
                 const { error: profileError } = await supabase.from('profiles').insert([{
                     id: authData.user.id,
@@ -107,7 +65,6 @@ export default function Register() {
                 }]);
                 if (profileError) throw profileError;
             }
-
             navigate("/dashboard");
         } catch (err) {
             setError(err.message);
@@ -120,31 +77,39 @@ export default function Register() {
         <div className="relative min-h-screen bg-obsidian flex items-center justify-center p-6 overflow-hidden">
             <VideoBackground videoUrl="https://assets.mixkit.co/videos/preview/mixkit-abstract-blue-and-purple-smoke-background-30043-large.mp4" />
 
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
-                className="relative z-20 w-full max-w-lg"
+                className="relative z-20 w-full max-w-md"
             >
-                {/* Back to HQ */}
-                <div className="mb-8 flex justify-center">
+                <div className="mb-6 flex justify-center">
                     <Link to="/" className="inline-flex items-center gap-2 text-white/40 hover:text-white transition-colors group">
                         <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                         <span className="text-[10px] font-black uppercase tracking-[0.3em]">Retour à l'accueil</span>
                     </Link>
                 </div>
 
-                <div className="ultra-glass p-10 border-white/5">
-                    <div className="mb-10 text-center">
+                <div className="p-8 rounded-2xl backdrop-blur-sm bg-black/50 border border-white/10">
+                    <div className="mb-8 text-center">
                         <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-4 rotate-3 mx-auto"
                             style={{ background: "linear-gradient(135deg, #4f46e5, #10b981)", boxShadow: "0 0 24px rgba(16,185,129,0.25)" }}>
                             <span className="text-white font-black text-base -rotate-3">CP</span>
                         </div>
-                        <h2 className="text-4xl font-heading font-black mb-2 relative group text-white">
-                            CIPHER<span className="text-mint">POOL</span>
+                        <h2 className="text-3xl font-bold mb-2 relative group">
+                            <span className="absolute -inset-1 bg-gradient-to-r from-indigo-600/30 via-mint/30 to-indigo-500/30 blur-xl opacity-75 group-hover:opacity-100 transition-all duration-500 animate-pulse" />
+                            <span className="relative inline-block text-3xl font-bold text-white">
+                                CIPHER<span className="text-mint">POOL</span>
+                            </span>
                         </h2>
-                        <p className="text-white/40 font-mono text-[10px] uppercase tracking-[0.4em] flex flex-col items-center space-y-1">
-                            <span className="animate-pulse tracking-widest">Créer un compte</span>
+                        <p className="text-white/80 flex flex-col items-center space-y-1">
+                            <span className="relative inline-block animate-pulse text-sm">Créer un compte</span>
+                            <span className="text-xs text-white/50 animate-pulse">[Rejoins l'arène]</span>
+                            <div className="flex space-x-2 text-xs text-white/40">
+                                <span className="animate-pulse">⚔️</span>
+                                <span className="animate-bounce">🎮</span>
+                                <span className="animate-pulse">🏆</span>
+                            </div>
                         </p>
                     </div>
 
@@ -154,39 +119,36 @@ export default function Register() {
                             type="text"
                             placeholder="Nom d'utilisateur"
                             value={formData.username}
-                            onChange={(e) => setFormData({...formData, username: e.target.value})}
+                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                             required
                         />
-
                         <FormInput
                             icon={<Mail size={18} />}
                             type="email"
                             placeholder="Adresse email"
                             value={formData.email}
-                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             required
                         />
-
                         <FormInput
                             icon={<Hash size={18} />}
                             type="text"
                             placeholder="Free Fire ID"
                             value={formData.ffid}
-                            onChange={(e) => setFormData({...formData, ffid: e.target.value})}
+                            onChange={(e) => setFormData({ ...formData, ffid: e.target.value })}
                         />
-
                         <div className="relative">
                             <FormInput
                                 icon={<Lock size={18} />}
                                 type={showPassword ? "text" : "password"}
                                 placeholder="Mot de passe"
                                 value={formData.password}
-                                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 required
                             />
                             <button
                                 type="button"
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors focus:outline-none"
                                 onClick={() => setShowPassword(!showPassword)}
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -195,11 +157,11 @@ export default function Register() {
 
                         <AnimatePresence>
                             {error && (
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 p-4 rounded-2xl text-red-500 text-[10px] font-black uppercase tracking-widest"
+                                    className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 p-3 rounded-lg text-red-400 text-xs"
                                 >
                                     <AlertCircle size={16} />
                                     <span>{error}</span>
@@ -207,31 +169,23 @@ export default function Register() {
                             )}
                         </AnimatePresence>
 
-                        <div className="pt-4">
+                        <div className="pt-2">
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-5 rounded-2xl bg-mint text-obsidian font-heading font-black text-sm uppercase tracking-[0.2em] transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full py-3 rounded-lg bg-mint hover:bg-mint/80 text-obsidian font-bold transition-all duration-200 transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-mint/50 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none shadow-lg shadow-mint/20 hover:shadow-mint/40"
                             >
-                                {loading ? 'Création...' : "Créer mon compte"}
+                                {loading ? 'Création...' : 'Créer mon compte'}
                             </button>
                         </div>
                     </form>
 
-                    <p className="mt-10 text-center text-[10px] font-black uppercase tracking-widest text-white/40">
+                    <p className="mt-8 text-center text-sm text-white/60">
                         Déjà un compte?{' '}
-                        <Link to="/login" className="text-mint hover:text-white transition-colors font-bold">
+                        <Link to="/login" className="font-medium text-white hover:text-mint transition-colors">
                             Se connecter
                         </Link>
                     </p>
-                </div>
-
-                <div className="mt-8 flex justify-center opacity-20">
-                    <div className="flex items-center gap-6 text-[8px] font-mono tracking-[0.4em] text-white uppercase">
-                        <span>AES-256_RSA</span>
-                        <div className="w-1 h-1 bg-mint rounded-full" />
-                        <span>SSL_ENCRYPTED</span>
-                    </div>
                 </div>
             </motion.div>
         </div>
