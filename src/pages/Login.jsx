@@ -7,8 +7,8 @@ import {
     EyeOff, 
     Mail, 
     Lock, 
-    Chrome, 
-    Twitter, 
+    Globe, 
+    MessageSquare, 
     Gamepad2,
     ChevronLeft,
     AlertCircle,
@@ -228,8 +228,8 @@ export default function Login() {
                         </div>
 
                         <div className="mt-6 grid grid-cols-3 gap-4">
-                            <SocialButton icon={<Chrome size={20} />} name="Google" />
-                            <SocialButton icon={<Twitter size={20} />} name="X" />
+                            <SocialButton icon={<Globe size={20} />} name="Google" />
+                            <SocialButton icon={<MessageSquare size={20} />} name="X" />
                             <SocialButton icon={<Gamepad2 size={20} />} name="Discord" />
                         </div>
                     </div>
