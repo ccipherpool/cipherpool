@@ -22,7 +22,9 @@
       "Bash(node --input-type=module --eval \"import\\('./src/pages/Support.jsx'\\).then\\(\\(\\)=>console.log\\('OK'\\)\\).catch\\(e=>console.error\\(e.message\\)\\)\")",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(node -e \"const l = require\\('lucide-react'\\); console.log\\('Users2:', !!l.Users2, 'ShoppingBag:', !!l.ShoppingBag, 'Crown:', !!l.Crown\\)\")",
+      "PowerShell(npm run *)"
     ]
   }
 }
