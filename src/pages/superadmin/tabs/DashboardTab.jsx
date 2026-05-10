@@ -1,7 +1,24 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { 
+  ShieldCheck, 
+  AlertCircle, 
+  Wallet, 
+  Trophy, 
+  PlusCircle, 
+  Activity, 
+  TrendingUp, 
+  Users2,
+  ChevronRight,
+  Clock,
+  History
+} from "lucide-react";
 
 export default function DashboardTab({ stats, users, logs, setActiveTab, setFilter, setSelectedUser, setGrantAmount, setGrantReason, setWalletSearch, setShowWalletModal }) {
+  
+  const todayUsers = users.filter(u => new Date(u.created_at).toDateString() === new Date().toDateString()).length;
+  const staffCount = users.filter(u => ["admin", "super_admin", "founder", "designer"].includes(u.role)).length;
+
   return (
     <motion.div
       key="dashboard"
@@ -9,146 +26,168 @@ export default function DashboardTab({ stats, users, logs, setActiveTab, setFilt
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="grid md:grid-cols-2 gap-8"
+      className="grid grid-cols-1 lg:grid-cols-12 gap-8"
     >
-      {/* Actions Rapides */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.1 }}
-        className="bg-[#0a0a1a] border border-purple-500/20 rounded-2xl p-6 relative overflow-hidden group"
-        whileHover={{ boxShadow: "0 20px 40px -10px rgba(124,58,237,0.5)" }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2 relative z-10">
-          <span className="w-1 h-5 bg-purple-500 rounded-full" />
-          ACTIONS RAPIDES
-        </h2>
-        <div className="grid grid-cols-2 gap-4 relative z-10">
-          <motion.button
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => { setActiveTab("users"); setFilter("pending"); }}
-            className="bg-[#11152b] rounded-xl p-4 text-center hover:border-purple-500 transition-all duration-300 border border-transparent group/btn"
-          >
-            <span className="text-2xl mb-2 block group-hover/btn:scale-110 transition-transform">✅</span>
-            <p className="text-sm font-medium">Vérifier ({stats.pendingVerifications})</p>
-          </motion.button>
+      {/* Quick Actions Bento */}
+      <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Action Card 1: Verifications */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => { setActiveTab("users"); setFilter("pending"); }}
+          className="ultra-glass p-8 flex flex-col justify-between group border-amber-500/20 text-left relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+            <ShieldCheck size={120} />
+          </div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-6">
+              <ShieldCheck size={28} />
+            </div>
+            <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">User Verification</h3>
+            <p className="text-slate-500 text-xs font-medium mt-2">Manage unit deployment and identity verification.</p>
+          </div>
+          <div className="mt-8 flex items-end justify-between relative z-10">
+            <div>
+              <p className="text-3xl font-impact text-amber-500">{stats.pendingVerifications || 0}</p>
+              <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Pending Protocols</p>
+            </div>
+            <ChevronRight className="text-slate-700 group-hover:text-white transition-colors" />
+          </div>
+        </motion.button>
 
-          <motion.button
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setActiveTab("reports")}
-            className="bg-[#11152b] rounded-xl p-4 text-center hover:border-purple-500 transition-all duration-300 border border-transparent group/btn"
-          >
-            <span className="text-2xl mb-2 block group-hover/btn:scale-110 transition-transform">🚨</span>
-            <p className="text-sm font-medium">Rapports ({stats.totalReports})</p>
-          </motion.button>
+        {/* Action Card 2: Reports */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setActiveTab("reports")}
+          className="ultra-glass p-8 flex flex-col justify-between group border-red-500/20 text-left relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+            <AlertCircle size={120} />
+          </div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mb-6">
+              <AlertCircle size={28} />
+            </div>
+            <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">Tactical Alerts</h3>
+            <p className="text-slate-500 text-xs font-medium mt-2">Process reported anomalies and disciplinary actions.</p>
+          </div>
+          <div className="mt-8 flex items-end justify-between relative z-10">
+            <div>
+              <p className="text-3xl font-impact text-red-500">{stats.totalReports || 0}</p>
+              <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Active Threats</p>
+            </div>
+            <ChevronRight className="text-slate-700 group-hover:text-white transition-colors" />
+          </div>
+        </motion.button>
 
-          <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
-            <div
-              onClick={() => { setSelectedUser(null); setGrantAmount(""); setGrantReason(""); setWalletSearch(""); setShowWalletModal(true); }}
-              className="block bg-[#11152b] rounded-xl p-4 text-center hover:border-yellow-500 transition-all duration-300 border border-transparent group/btn cursor-pointer"
-            >
-              <span className="text-2xl mb-2 block group-hover/btn:scale-110 transition-transform">💰</span>
-              <p className="text-sm font-medium">Gérer Coins</p>
+        {/* Action Card 3: Economy */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => { setSelectedUser(null); setGrantAmount(""); setGrantReason(""); setWalletSearch(""); setShowWalletModal(true); }}
+          className="ultra-glass p-8 flex flex-col justify-between group border-emerald-500/20 text-left relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Wallet size={120} />
+          </div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-6">
+              <Wallet size={28} />
+            </div>
+            <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">Logistics Sync</h3>
+            <p className="text-slate-500 text-xs font-medium mt-2">Manage CP distribution and transactional audits.</p>
+          </div>
+          <div className="mt-8 flex items-end justify-between relative z-10">
+            <div>
+              <p className="text-3xl font-impact text-emerald-500">{(stats.totalCoins || 0).toLocaleString()}</p>
+              <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">CP In Circulation</p>
+            </div>
+            <ChevronRight className="text-slate-700 group-hover:text-white transition-colors" />
+          </div>
+        </motion.button>
+
+        {/* Action Card 4: Operations */}
+        <Link to="/create-tournament" className="block">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="ultra-glass h-full p-8 flex flex-col justify-between group border-mint/20 text-left relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Trophy size={120} />
+            </div>
+            <div className="relative z-10">
+              <div className="w-12 h-12 rounded-2xl bg-mint/10 text-mint flex items-center justify-center mb-6">
+                <PlusCircle size={28} />
+              </div>
+              <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">Deploy Mission</h3>
+              <p className="text-slate-500 text-xs font-medium mt-2">Initialize new tactical operations and tournaments.</p>
+            </div>
+            <div className="mt-8 flex items-end justify-between relative z-10">
+              <div>
+                <p className="text-3xl font-impact text-mint">{stats.activeTournaments || 0}</p>
+                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Active Ops</p>
+              </div>
+              <ChevronRight className="text-slate-700 group-hover:text-white transition-colors" />
             </div>
           </motion.div>
+        </Link>
+      </div>
 
-          <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
-            <Link
-              to="/create-tournament"
-              className="block bg-[#11152b] rounded-xl p-4 text-center hover:border-purple-500 transition-all duration-300 border border-transparent group/btn"
-            >
-              <span className="text-2xl mb-2 block group-hover/btn:scale-110 transition-transform">🏆</span>
-              <p className="text-sm font-medium">Créer Tournoi</p>
-            </Link>
-          </motion.div>
+      {/* Side Column: Activity & Intel */}
+      <div className="lg:col-span-4 space-y-6">
+        
+        {/* Real-time Intel */}
+        <div className="ultra-glass p-8 space-y-6 border-white/5">
+          <h3 className="text-sm font-heading font-black text-white uppercase tracking-widest flex items-center gap-2">
+            <Activity size={18} className="text-mint animate-pulse" /> Signal Intel
+          </h3>
+          <div className="space-y-4">
+             <div className="flex justify-between items-center py-3 border-b border-white/5">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">New Units Today</span>
+                <span className="text-sm font-bold text-mint">+{todayUsers}</span>
+             </div>
+             <div className="flex justify-between items-center py-3 border-b border-white/5">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Staff Deployment</span>
+                <span className="text-sm font-bold text-purple-400">{staffCount}</span>
+             </div>
+             <div className="flex justify-between items-center py-3">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">System Load</span>
+                <span className="text-sm font-bold text-blue-400">OPTIMAL</span>
+             </div>
+          </div>
         </div>
-      </motion.div>
 
-      {/* Activité Récente */}
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-[#0a0a1a] border border-purple-500/20 rounded-2xl p-6 relative overflow-hidden group"
-        whileHover={{ boxShadow: "0 20px 40px -10px rgba(124,58,237,0.5)" }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2 relative z-10">
-          <span className="w-1 h-5 bg-purple-500 rounded-full" />
-          ACTIVITÉ RÉCENTE
-        </h2>
-        <div className="space-y-3 max-h-64 overflow-y-auto pr-2 relative z-10">
-          {logs.length === 0 ? (
-            <p className="text-white/40 text-center py-4">Aucune activité récente</p>
-          ) : (
-            logs.slice(0, 10).map((log, index) => (
-              <motion.div
-                key={log.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-[#11152b] rounded-lg p-3 hover:bg-[#1a1f35] transition-colors"
-              >
-                <p className="text-sm text-white">
-                  <span className="text-purple-400">
-                    {log?.user_id ? (users.find(u => u.id === log.user_id)?.display_name || log.user_id?.slice(0, 8)) : "Système"}
-                  </span>{" "}
-                  - {log.action}
-                </p>
-                <p className="text-xs text-white/40">{new Date(log.created_at).toLocaleString("fr-FR")}</p>
-              </motion.div>
-            ))
-          )}
+        {/* Audit Log Snippet */}
+        <div className="ultra-glass p-8 flex flex-col h-[300px] border-white/5">
+          <h3 className="text-sm font-heading font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6">
+            <History size={18} className="text-slate-500" /> Recent Audit
+          </h3>
+          <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide">
+            {logs.length === 0 ? (
+              <p className="text-white/20 text-center py-4 text-[10px] font-black uppercase tracking-widest">Audit Trail Empty</p>
+            ) : (
+              logs.slice(0, 10).map((log, index) => (
+                <div key={log.id} className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                   <p className="text-[10px] text-white font-medium line-clamp-1">
+                      <span className="text-mint font-black uppercase tracking-tighter">[{log.action.slice(0,10)}]</span> {log.action}
+                   </p>
+                   <div className="flex justify-between items-center mt-2 opacity-40">
+                      <span className="text-[8px] font-black uppercase tracking-widest">
+                         {log?.user_id ? (users.find(u => u.id === log.user_id)?.username || 'AGENT') : 'SYSTEM'}
+                      </span>
+                      <span className="text-[8px] font-medium">{new Date(log.created_at).toLocaleTimeString()}</span>
+                   </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-      </motion.div>
 
-      {/* Analytiques */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="md:col-span-2 bg-[#0a0a1a] border border-purple-500/20 rounded-2xl p-6 relative overflow-hidden group"
-        whileHover={{ boxShadow: "0 20px 40px -10px rgba(124,58,237,0.5)" }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-cyan-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2 relative z-10">
-          <span className="w-1 h-5 bg-purple-500 rounded-full" />
-          ANALYTIQUES EN TEMPS RÉEL
-        </h2>
-        <div className="grid md:grid-cols-4 gap-4 relative z-10">
-          {(() => {
-            const todayUsers = users.filter(u => new Date(u.created_at).toDateString() === new Date().toDateString()).length;
-            const staffCount = users.filter(u => ["admin", "super_admin", "founder", "designer"].includes(u.role)).length;
-            return (
-              <>
-                <div className="bg-[#11152b] rounded-xl p-4">
-                  <p className="text-sm text-white/40 mb-2">INSCRITS AUJOURD'HUI</p>
-                  <p className="text-2xl font-bold text-white">+{todayUsers}</p>
-                  <p className="text-xs text-green-400 mt-1">Comptes créés</p>
-                </div>
-                <div className="bg-[#11152b] rounded-xl p-4">
-                  <p className="text-sm text-white/40 mb-2">TOURNOIS ACTIFS</p>
-                  <p className="text-2xl font-bold text-white">{stats.activeTournaments}</p>
-                  <p className="text-xs text-blue-400 mt-1">⚡ En cours</p>
-                </div>
-                <div className="bg-[#11152b] rounded-xl p-4">
-                  <p className="text-sm text-white/40 mb-2">TOTAL COINS</p>
-                  <p className="text-2xl font-bold text-yellow-400">{stats.totalCoins.toLocaleString("fr-FR")}</p>
-                  <p className="text-xs text-white/30 mt-1">En circulation</p>
-                </div>
-                <div className="bg-[#11152b] rounded-xl p-4">
-                  <p className="text-sm text-white/40 mb-2">MEMBRES STAFF</p>
-                  <p className="text-2xl font-bold text-purple-400">{staffCount}</p>
-                  <p className="text-xs text-white/30 mt-1">Admins + Founders</p>
-                </div>
-              </>
-            );
-          })()}
-        </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

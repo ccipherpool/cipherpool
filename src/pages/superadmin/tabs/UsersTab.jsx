@@ -1,60 +1,73 @@
 import { motion } from "framer-motion";
+import { 
+  ShieldAlert, 
+  Wallet, 
+  Ban, 
+  Trash2, 
+  CheckCircle2, 
+  MoreVertical, 
+  Search,
+  Filter,
+  User,
+  Crown,
+  Zap,
+  Layout,
+  Activity
+} from "lucide-react";
 
 const ROLE_STYLE = {
-  super_admin: { badge: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",  label: "👑 SUPER"     },
-  admin:       { badge: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",         label: "🛡️ ADMIN"     },
-  designer:    { badge: "bg-pink-500/20 text-pink-400 border-pink-500/30",         label: "🎨 DESIGNER"  },
-  founder:     { badge: "bg-orange-500/20 text-orange-400 border-orange-500/30",   label: "⚡ FONDATEUR" },
-  fondateur:   { badge: "bg-orange-500/20 text-orange-400 border-orange-500/30",   label: "⚡ FONDATEUR" },
-  banned:      { badge: "bg-red-500/20 text-red-400 border-red-500/30",            label: "🚫 BANNI"     },
+  super_admin: { badge: "bg-red-500/10 text-red-500 border-red-500/20",  label: "SUPER", icon: Zap     },
+  admin:       { badge: "bg-orange-500/10 text-orange-400 border-orange-500/20", label: "ADMIN", icon: ShieldAlert },
+  designer:    { badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", label: "DESIGN", icon: Layout },
+  founder:     { badge: "bg-purple-500/10 text-purple-400 border-purple-500/20", label: "FOUNDER", icon: Crown },
+  fondateur:   { badge: "bg-purple-500/10 text-purple-400 border-purple-500/20", label: "FOUNDER", icon: Crown },
+  banned:      { badge: "bg-slate-800 text-slate-500 border-white/5", label: "BANNED", icon: Ban },
 };
 
 function RoleBadge({ role }) {
-  const s = ROLE_STYLE[role] || { badge: "bg-white/10 text-white/50 border-white/10", label: "👤 USER" };
+  const s = ROLE_STYLE[role] || { badge: "bg-white/5 text-slate-400 border-white/5", label: "USER", icon: User };
   return (
-    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${s.badge}`}>
-      {s.label}
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-[8px] font-black rounded-full border ${s.badge} uppercase tracking-widest`}>
+      <s.icon size={10} /> {s.label}
     </span>
   );
 }
 
 function ActionButtons({ user, setSelectedUser, setShowRoleModal, setShowBanModal, setShowWalletModal, unbanUser, deleteUser }) {
   return (
-    <div className="flex gap-1.5 flex-wrap">
-      <motion.button
-        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+    <div className="flex gap-2">
+      <button
         onClick={() => { setSelectedUser(user); setShowRoleModal(true); }}
-        className="px-2.5 py-1.5 bg-purple-500/20 text-purple-400 rounded-lg text-xs hover:bg-purple-500/30 transition-all"
-        title="Changer rôle"
-      >👑</motion.button>
-      <motion.button
-        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+        className="p-2 bg-white/5 border border-white/5 rounded-xl text-slate-500 hover:text-orange-400 hover:border-orange-400/30 transition-all"
+        title="Override Role"
+      ><Crown size={14} /></button>
+      
+      <button
         onClick={() => { setSelectedUser(user); setShowWalletModal(true); }}
-        className="px-2.5 py-1.5 bg-yellow-500/20 text-yellow-400 rounded-lg text-xs hover:bg-yellow-500/30 transition-all"
-        title="Coins"
-      >💰</motion.button>
+        className="p-2 bg-white/5 border border-white/5 rounded-xl text-slate-500 hover:text-emerald-400 hover:border-emerald-400/30 transition-all"
+        title="Sync Assets"
+      ><Wallet size={14} /></button>
+
       {user.role !== "banned" ? (
-        <motion.button
-          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+        <button
           onClick={() => { setSelectedUser(user); setShowBanModal(true); }}
-          className="px-2.5 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs hover:bg-red-500/30 transition-all"
-          title="Ban"
-        >🚫</motion.button>
+          className="p-2 bg-white/5 border border-white/5 rounded-xl text-slate-500 hover:text-red-500 hover:border-red-500/30 transition-all"
+          title="Terminate Access"
+        ><Ban size={14} /></button>
       ) : (
-        <motion.button
-          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+        <button
           onClick={() => unbanUser(user.id)}
-          className="px-2.5 py-1.5 bg-green-500/20 text-green-400 rounded-lg text-xs hover:bg-green-500/30 transition-all"
-          title="Unban"
-        >✅</motion.button>
+          className="p-2 bg-white/5 border border-white/5 rounded-xl text-slate-500 hover:text-mint hover:border-mint/30 transition-all"
+          title="Restore Access"
+        ><CheckCircle2 size={14} /></button>
       )}
+
       {user.role !== "super_admin" && (
-        <motion.button
-          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+        <button
           onClick={() => deleteUser(user.id)}
-          className="px-2.5 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs hover:bg-red-500/30 transition-all"
-          title="Supprimer"
-        >🗑️</motion.button>
+          className="p-2 bg-white/5 border border-white/5 rounded-xl text-slate-500 hover:text-red-600 hover:border-red-600/30 transition-all"
+          title="Purge Data"
+        ><Trash2 size={14} /></button>
       )}
     </div>
   );
@@ -71,143 +84,130 @@ export default function UsersTab({
   return (
     <motion.div
       key="users"
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+      className="space-y-6"
     >
-      <div className="bg-[#0a0a1a] border border-purple-500/20 rounded-2xl p-4 md:p-6">
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-5">
-          <input
-            type="text"
-            placeholder="Rechercher par nom, email ou FF ID..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="flex-1 px-4 py-2.5 bg-[#11152b] border border-purple-500/20 rounded-xl text-white text-sm focus:border-purple-500 transition-all duration-300 outline-none"
-          />
-          <select
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-            className="px-4 py-2.5 bg-[#11152b] border border-purple-500/20 rounded-xl text-white text-sm focus:border-purple-500 transition-all duration-300 outline-none"
-          >
-            <option value="all">TOUS</option>
-            <option value="admins">ADMINS</option>
-            <option value="founders">FONDATEURS</option>
-            <option value="banned">BANNIS</option>
-            <option value="pending">EN ATTENTE</option>
-          </select>
-        </div>
-
-        {/* Mobile: card view */}
-        <div className="md:hidden space-y-3">
-          {displayed.map(user => (
-            <motion.div
-              key={user.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-[#11152b] border border-purple-500/10 rounded-xl p-4"
+      {/* Header & Search */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/[0.02] border border-white/5 p-6 rounded-[2rem]">
+         <div className="relative flex-1 max-w-xl group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-mint transition-colors" size={16} />
+            <input
+              type="text"
+              placeholder="Scan unit registry (ID, Email, Handle)..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-12 pr-6 py-4 bg-white/5 border border-white/5 rounded-2xl text-white text-sm focus:border-mint/30 transition-all outline-none font-mono uppercase"
+            />
+         </div>
+         <div className="flex items-center gap-3">
+            <Filter size={16} className="text-slate-600" />
+            <select
+              value={filter}
+              onChange={e => setFilter(e.target.value)}
+              className="bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-mint/30"
             >
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold text-white text-sm truncate">
-                    {user.display_name || user.username || user.full_name || "Inconnu"}
-                  </p>
-                  <p className="text-xs text-white/40 truncate">{user.email}</p>
-                  {user.free_fire_id && (
-                    <p className="text-xs text-purple-400">FF: {user.free_fire_id}</p>
-                  )}
-                </div>
-                <div className="shrink-0">
-                  <RoleBadge role={user.role} />
-                </div>
-              </div>
+              <option value="all">Total Enlistment</option>
+              <option value="admins">Command Staff</option>
+              <option value="founders">Founders Only</option>
+              <option value="banned">Blacklisted</option>
+              <option value="pending">Awaiting Sync</option>
+            </select>
+         </div>
+      </div>
 
-              <div className="flex items-center gap-4 text-xs text-white/60 mb-3">
-                <span>
-                  {user.banned_until && new Date(user.banned_until) > new Date()
-                    ? <span className="text-red-400 font-bold">BANNI</span>
-                    : <span className="text-green-400 font-bold">ACTIF</span>
-                  }
-                </span>
-                <span className="text-purple-400 font-bold">💰 {(user.coins || 0).toLocaleString()} CP</span>
-                <span>🎮 {user.stats?.tournaments_played || 0}</span>
-                <span className="text-green-400">🏆 {user.stats?.wins || 0}</span>
-              </div>
-
-              <ActionButtons user={user} {...actionProps} />
-            </motion.div>
-          ))}
-
-          {displayed.length === 0 && (
-            <p className="text-center text-white/30 text-sm py-8">Aucun utilisateur trouvé</p>
-          )}
-        </div>
-
-        {/* Desktop: table view */}
+      {/* Grid / Table Container */}
+      <div className="ultra-glass overflow-hidden border-white/5">
+        
+        {/* Desktop View */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-[#11152b]">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs text-white/40">UTILISATEUR</th>
-                <th className="px-4 py-3 text-left text-xs text-white/40">RÔLE</th>
-                <th className="px-4 py-3 text-left text-xs text-white/40">STATUT</th>
-                <th className="px-4 py-3 text-left text-xs text-white/40">SOLDE</th>
-                <th className="px-4 py-3 text-left text-xs text-white/40">MATCHES</th>
-                <th className="px-4 py-3 text-left text-xs text-white/40">VICTOIRES</th>
-                <th className="px-4 py-3 text-left text-xs text-white/40">ACTIONS</th>
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-white/[0.03] border-b border-white/5">
+                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Identified Unit</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Protocol</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Logistics</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-purple-500/10">
+            <tbody className="divide-y divide-white/5">
               {displayed.map(user => (
-                <motion.tr
-                  key={user.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  whileHover={{ backgroundColor: "rgba(124,58,237,0.1)" }}
-                  className="transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-white">{user.display_name || user.username || user.full_name || "Inconnu"}</p>
-                    <p className="text-xs text-white/40">{user.email}</p>
-                    {user.free_fire_id && <p className="text-xs text-purple-400">FF: {user.free_fire_id}</p>}
+                <tr key={user.id} className="hover:bg-white/[0.01] transition-colors group">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-impact text-xl text-slate-600 group-hover:text-mint group-hover:border-mint/30 transition-all">
+                          {user.username?.[0]?.toUpperCase() || 'U'}
+                       </div>
+                       <div>
+                          <p className="font-bold text-white uppercase tracking-tight truncate max-w-[200px]">{user.username || user.full_name || "Unknown"}</p>
+                          <p className="text-[10px] text-slate-600 font-medium truncate max-w-[200px]">{user.email}</p>
+                       </div>
+                    </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-8 py-6">
                     <RoleBadge role={user.role} />
                   </td>
-                  <td className="px-4 py-3">
-                    {user.banned_until && new Date(user.banned_until) > new Date()
-                      ? <span className="text-red-400 text-xs font-bold">BANNI</span>
-                      : <span className="text-green-400 text-xs font-bold">ACTIF</span>
-                    }
+                  <td className="px-8 py-6">
+                    <div className="flex flex-col gap-1">
+                       <div className="flex items-center gap-2">
+                          <Wallet size={12} className="text-cyber-gold" />
+                          <span className="text-[10px] font-black text-white">{(user.coins || 0).toLocaleString()} <span className="text-cyber-gold">CP</span></span>
+                       </div>
+                       <div className="flex items-center gap-2 opacity-40">
+                          <Activity size={12} />
+                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">LVL {user.level || 1}</span>
+                       </div>
+                    </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="text-purple-400 font-bold">{(user.coins || 0).toLocaleString()}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-white">{user.stats?.tournaments_played || 0}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-green-400">{user.stats?.wins || 0}</span>
-                  </td>
-                  <td className="px-4 py-3">
+                  <td className="px-8 py-6">
                     <ActionButtons user={user} {...actionProps} />
                   </td>
-                </motion.tr>
+                </tr>
               ))}
             </tbody>
           </table>
-
-          {displayed.length === 0 && (
-            <p className="text-center text-white/30 text-sm py-8">Aucun utilisateur trouvé</p>
-          )}
         </div>
 
-        {filteredUsers.length > 20 && (
-          <p className="text-center text-white/40 text-sm mt-4">
-            Affichage de 20 / {filteredUsers.length} utilisateurs
-          </p>
+        {/* Mobile View */}
+        <div className="md:hidden divide-y divide-white/5">
+           {displayed.map(user => (
+              <div key={user.id} className="p-6 space-y-6">
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                       <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center font-impact text-white">
+                          {user.username?.[0]?.toUpperCase() || 'U'}
+                       </div>
+                       <div>
+                          <p className="text-sm font-bold text-white uppercase">{user.username || "Unknown"}</p>
+                          <p className="text-[10px] text-slate-600">{user.email}</p>
+                       </div>
+                    </div>
+                    <RoleBadge role={user.role} />
+                 </div>
+                 <div className="flex justify-between items-center bg-black/20 p-4 rounded-xl">
+                    <div>
+                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Assets</p>
+                       <p className="text-xs font-bold text-cyber-gold">{(user.coins || 0).toLocaleString()} CP</p>
+                    </div>
+                    <ActionButtons user={user} {...actionProps} />
+                 </div>
+              </div>
+           ))}
+        </div>
+
+        {displayed.length === 0 && (
+          <div className="py-20 text-center opacity-20">
+             <User size={64} className="mx-auto mb-4" />
+             <p className="text-[10px] font-black uppercase tracking-[0.4em]">Registry Empty</p>
+          </div>
         )}
       </div>
+
+      {filteredUsers.length > 20 && (
+        <div className="text-center pt-4">
+           <p className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em]">Showing top 20 active units</p>
+        </div>
+      )}
     </motion.div>
   );
 }

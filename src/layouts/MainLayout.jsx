@@ -1,43 +1,42 @@
 import { Outlet, useNavigate, useLocation, NavLink, Link } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
-import Sidebar from "./Sidebar";
+import TopNav from "./TopNav";
 import Navbar from "./Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import AnnouncementModal from "../components/AnnouncementModal";
 import TermsModal from "../components/TermsModal";
-import LiquidCursor from "../components/ui/LiquidCursor";
 import { BackgroundBeams } from "../components/ui/BackgroundBeams";
 import {
   LayoutDashboard, Trophy, BarChart3, User, Ticket,
   ShieldAlert, LogOut, Sparkles, X, Menu,
   Wallet, MessageSquare, Star, ShoppingBag, Crown, Users2,
-  Newspaper, Gift, TrendingUp, Users
+  Newspaper, Gift, TrendingUp, Users, Zap
 } from "lucide-react";
 
 const MOBILE_BOTTOM_NAV = [
   { path: "/dashboard",   icon: LayoutDashboard, label: "Home"      },
-  { path: "/tournaments", icon: Trophy,           label: "Tournois"  },
-  { path: "/leaderboard", icon: BarChart3,        label: "Top"       },
-  { path: "/store",       icon: ShoppingBag,      label: "Boutique"  },
-  { path: "/profile",     icon: User,             label: "Profil"    },
+  { path: "/tournaments", icon: Trophy,           label: "Arena"     },
+  { path: "/chat",        icon: MessageSquare,   label: "Chat"      },
+  { path: "/store",       icon: ShoppingBag,      label: "Shop"      },
+  { path: "/wallet",      icon: Wallet,           label: "Assets"    },
 ];
 
 const DRAWER_NAV = [
-  { path: "/dashboard",     icon: LayoutDashboard, label: "Dashboard"    },
-  { path: "/tournaments",   icon: Trophy,          label: "Tournois"     },
-  { path: "/leaderboard",   icon: BarChart3,       label: "Classement"   },
-  { path: "/store",         icon: ShoppingBag,     label: "Boutique"     },
-  { path: "/news",          icon: Newspaper,       label: "Actualités"   },
-  { path: "/profile",       icon: User,            label: "Profil"       },
-  { path: "/wallet",        icon: Wallet,          label: "Portefeuille" },
-  { path: "/stats",         icon: TrendingUp,      label: "Mes Stats"    },
-  { path: "/daily-rewards", icon: Gift,            label: "Récompenses"  },
-  { path: "/support",       icon: Ticket,          label: "Support"      },
-  { path: "/chat",          icon: MessageSquare,   label: "Chat"         },
-  { path: "/achievements",  icon: Star,            label: "Succès"       },
-  { path: "/clans",         icon: Users2,          label: "Clans"        },
-  { path: "/teams",         icon: Users,           label: "Équipes"      },
+  { path: "/dashboard",     icon: LayoutDashboard, label: "Command Center" },
+  { path: "/tournaments",   icon: Trophy,          label: "Operations" },
+  { path: "/leaderboard",   icon: BarChart3,       label: "Rankings" },
+  { path: "/store",         icon: ShoppingBag,     label: "Tactical Store" },
+  { path: "/news",          icon: Newspaper,       label: "Flash News" },
+  { path: "/profile",       icon: User,            label: "Profile Specs" },
+  { path: "/wallet",        icon: Wallet,          label: "Assets" },
+  { path: "/stats",         icon: TrendingUp,      label: "Intelligence" },
+  { path: "/daily-rewards", icon: Gift,            label: "Daily Supplies" },
+  { path: "/support",       icon: Ticket,          label: "Support" },
+  { path: "/chat",          icon: MessageSquare,   label: "Global Arena" },
+  { path: "/achievements",  icon: Star,            label: "Achievements" },
+  { path: "/clans",         icon: Users2,          label: "Tactical Clans" },
+  { path: "/teams",         icon: Users,           label: "Squadrons" },
   { path: "/hall-of-fame",  icon: Crown,           label: "Hall of Fame" },
 ];
 
@@ -95,15 +94,31 @@ export default function MainLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-obsidian-deep text-white flex overflow-hidden">
-      <LiquidCursor />
+    <div className="min-h-screen bg-obsidian-deep text-white flex flex-col overflow-hidden">
       <div className="noise-overlay" />
       <div className="scan-line" />
 
-      {/* Sidebar — desktop only */}
-      <div className="hidden md:block">
-        <Sidebar profile={profile} />
-      </div>
+      {/* Top Navigation — desktop only */}
+      <TopNav profile={profile} />
+
+      {/* Mobile Header */}
+      <nav className="md:hidden fixed top-0 left-0 right-0 z-[90] h-16 flex items-center px-4 border-b border-white/10 bg-obsidian-deep/80 backdrop-blur-xl">
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="p-2 rounded-xl text-slate-400 hover:text-white transition-colors mr-3"
+        >
+          <Menu size={24} />
+        </button>
+        <span className="text-sm font-heading font-black tracking-tighter text-white flex-1">
+          CIPHER<span className="text-mint">POOL</span>
+        </span>
+        <div className="flex items-center gap-3">
+           <Link to="/wallet" className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl">
+              <Wallet size={14} className="text-cyber-gold" />
+              <span className="text-[10px] font-black text-white">{(profile?.coins || 0).toLocaleString()}</span>
+           </Link>
+        </div>
+      </nav>
 
       {/* Mobile Drawer Overlay */}
       <AnimatePresence>
@@ -113,8 +128,7 @@ export default function MainLayout() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] md:hidden"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] md:hidden"
               onClick={() => setMobileMenuOpen(false)}
             />
             <motion.aside
@@ -122,99 +136,52 @@ export default function MainLayout() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed left-0 top-0 bottom-0 w-72 z-[210] md:hidden flex flex-col"
-              style={{ background: "#07071a", borderRight: "1px solid rgba(255,255,255,0.08)" }}
+              className="fixed left-0 top-0 bottom-0 w-80 z-[210] md:hidden flex flex-col bg-obsidian-deep border-r border-white/10"
             >
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
+              <div className="flex items-center justify-between px-6 py-6 border-b border-white/10">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-mint rounded-xl flex items-center justify-center shadow-neon-mint rotate-45">
                     <Sparkles className="text-obsidian -rotate-45" size={16} fill="currentColor" />
                   </div>
-                  <span className="text-sm font-heading font-black tracking-tighter text-white">
-                    CIPHER<span className="text-mint">POOL</span>
-                  </span>
+                  <span className="text-sm font-heading font-black tracking-tighter text-white">CIPHERPOOL</span>
                 </div>
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
-                >
-                  <X size={20} />
-                </button>
+                <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-500"><X size={24} /></button>
               </div>
 
-              {/* User card */}
-              <div className="px-4 py-3 border-b border-white/10">
-                <div className="flex items-center gap-3 bg-white/5 rounded-2xl p-3">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-mint to-mint-dark flex items-center justify-center text-obsidian font-black text-sm shadow-neon-mint shrink-0">
-                    {profile?.username?.[0]?.toUpperCase() || "P"}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-black text-white uppercase tracking-widest truncate">
-                      {profile?.username || "Agent"}
-                    </p>
-                    <p className="text-[9px] text-mint/70 font-bold">
-                      Lvl {profile?.level || 1} · {(profile?.coins || 0).toLocaleString()} CP
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Nav links */}
-              <div className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+              <div className="flex-1 overflow-y-auto px-4 py-6 space-y-1 custom-scrollbar">
                 {DRAWER_NAV.map(item => (
                   <NavLink
                     key={item.path}
                     to={item.path}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
-                        isActive
-                          ? "bg-mint/10 text-mint border border-mint/20"
-                          : "text-slate-400 hover:text-white hover:bg-white/5"
+                      `flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${
+                        isActive ? "bg-mint/10 text-mint border border-mint/20" : "text-slate-400 hover:text-white hover:bg-white/5"
                       }`
                     }
                   >
-                    <item.icon size={18} strokeWidth={2} />
+                    <item.icon size={20} />
                     {item.label}
                   </NavLink>
                 ))}
 
                 {isAdmin && (
-                  <div className="mt-4 pt-4 border-t border-white/10 space-y-0.5">
-                    <p className="text-[9px] uppercase tracking-widest text-slate-600 px-4 pb-2">Admin</p>
+                  <div className="mt-8 pt-6 border-t border-white/10 space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 px-5 mb-4">Command Control</p>
+                    <NavLink to="/admin" className="flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-black uppercase tracking-widest text-slate-400 hover:text-orange-400 hover:bg-orange-400/5 transition-all">
+                       <ShieldAlert size={20} /> Admin Panel
+                    </NavLink>
                     {profile?.role === "super_admin" && (
-                      <NavLink
-                        to="/super-admin"
-                        className={({ isActive }) =>
-                          `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
-                            isActive ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" : "text-slate-400 hover:text-orange-400 hover:bg-white/5"
-                          }`
-                        }
-                      >
-                        <ShieldAlert size={18} /> Super Admin
+                      <NavLink to="/super-admin" className="flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-black uppercase tracking-widest text-slate-400 hover:text-red-400 hover:bg-red-400/5 transition-all">
+                         <Zap size={20} /> Super Admin
                       </NavLink>
                     )}
-                    <NavLink
-                      to="/admin"
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
-                          isActive ? "bg-orange-500/10 text-orange-400 border border-orange-500/20" : "text-slate-400 hover:text-orange-400 hover:bg-white/5"
-                        }`
-                      }
-                    >
-                      <ShieldAlert size={18} /> Admin Panel
-                    </NavLink>
                   </div>
                 )}
               </div>
 
-              {/* Logout */}
-              <div className="px-3 py-4 border-t border-white/10">
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-400 hover:bg-red-400/5 transition-colors"
-                >
-                  <LogOut size={18} /> Déconnexion
+              <div className="p-6 border-t border-white/10">
+                <button onClick={handleLogout} className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-red-500/10 text-red-500 font-black uppercase tracking-widest text-xs">
+                  <LogOut size={18} /> Terminate session
                 </button>
               </div>
             </motion.aside>
@@ -223,75 +190,39 @@ export default function MainLayout() {
       </AnimatePresence>
 
       {/* Main Content Area */}
-      <div className="flex-1 md:ml-72 flex flex-col min-h-screen relative z-10">
-        <Navbar profile={profile} onMenuOpen={() => setMobileMenuOpen(true)} />
-
-        <main className="flex-1 pt-16 md:pt-28 pb-20 md:pb-0 relative overflow-y-auto custom-scrollbar">
-          <div className="p-4 md:p-8 max-w-[1800px] mx-auto min-h-full">
-            <AnimatePresence mode="wait">
-              <motion.div
+      <main className="flex-1 relative h-screen overflow-y-auto custom-scrollbar pt-20 md:pt-32 pb-24 md:pb-12 px-4 md:px-12">
+        <div className="max-w-7xl mx-auto relative z-10">
+          <AnimatePresence mode="wait">
+             <motion.div
                 key={location.pathname}
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              >
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+             >
                 <Outlet context={{ profile, refreshProfile: fetchProfile }} />
-              </motion.div>
-            </AnimatePresence>
-          </div>
+             </motion.div>
+          </AnimatePresence>
+        </div>
+      </main>
 
-          <footer className="hidden md:block p-12 border-t border-white/5 mt-20">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-8 opacity-40 hover:opacity-100 transition-opacity duration-500">
-              <div className="space-y-1">
-                <p className="text-[10px] font-black tracking-[0.3em] uppercase">CipherPool v4.0.0-PRO</p>
-                <p className="text-[9px] font-medium text-slate-500">Global Infrastructure Layer // Casablanca Node</p>
-              </div>
-              <div className="flex items-center gap-10 text-[10px] font-black uppercase tracking-widest">
-                <button className="hover:text-mint transition-colors">Audit</button>
-                <button className="hover:text-mint transition-colors">Privacy</button>
-                <button className="hover:text-mint transition-colors">Protocol</button>
-              </div>
-            </div>
-          </footer>
-        </main>
+      {/* Mobile Bottom Nav */}
+      <nav className="fixed bottom-0 left-0 right-0 md:hidden z-[150] h-16 bg-obsidian-deep/80 backdrop-blur-2xl border-t border-white/10 flex items-center justify-around px-2">
+         {MOBILE_BOTTOM_NAV.map(item => {
+           const isActive = location.pathname === item.path;
+           return (
+             <Link key={item.path} to={item.path} className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'text-mint' : 'text-slate-500'}`}>
+                <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[8px] font-black uppercase tracking-widest">{item.label}</span>
+             </Link>
+           );
+         })}
+      </nav>
 
-        {/* Mobile Bottom Nav */}
-        <nav className="fixed bottom-0 left-0 right-0 md:hidden z-[150] border-t border-white/10"
-          style={{ background: "rgba(7,7,26,0.97)", backdropFilter: "blur(20px)" }}>
-          <div className="flex items-center justify-around px-1 pt-2 pb-4">
-            {MOBILE_BOTTOM_NAV.map(item => {
-              const isActive = location.pathname === item.path ||
-                (item.path !== "/dashboard" && location.pathname.startsWith(item.path + "/"));
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-[56px] ${
-                    isActive ? "text-mint" : "text-slate-500 active:text-white"
-                  }`}
-                >
-                  <item.icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
-                  <span className="text-[9px] font-black uppercase tracking-widest">{item.label}</span>
-                </Link>
-              );
-            })}
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-slate-500 active:text-white min-w-[56px]"
-            >
-              <Menu size={22} strokeWidth={1.8} />
-              <span className="text-[9px] font-black uppercase tracking-widest">Menu</span>
-            </button>
-          </div>
-        </nav>
-      </div>
-
-      {/* Background Decor — desktop only (too heavy for mobile) */}
-      <div className="fixed inset-0 pointer-events-none z-0 hidden md:block">
-        <BackgroundBeams className="opacity-20" />
-        <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-mint/5 blur-[150px] rounded-full animate-pulse-slow" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-electric-purple/5 blur-[150px] rounded-full animate-pulse-slow [animation-delay:2s]" />
+      {/* Simplified Static Background */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-mint/[0.03] blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-electric-purple/[0.03] blur-[120px] rounded-full" />
       </div>
 
       <TermsModal />
