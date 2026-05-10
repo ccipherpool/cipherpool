@@ -1,7 +1,73 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
 import { Button } from "./components/ui/Button";
 
-// ... (imports remain the same)
+// Layouts
+import AuthLayout   from "./layouts/AuthLayout";
+import MainLayout   from "./layouts/MainLayout";
+
+// Route Protection
+import ProtectedRoute from "./components/ProtectedRoute";
+import GuestRoute     from "./components/GuestRoute";
+
+// Public Pages
+import Home     from "./pages/Home";
+import Login    from "./pages/Login";
+import Register from "./pages/Register";
+import StaffPage from "./pages/Team"; // Public "Our Team" page
+
+// Main Pages
+import Dashboard   from "./pages/Dashboard";
+import Tournaments from "./pages/Tournaments";
+import Leaderboard from "./pages/Leaderboard";
+import Profile     from "./pages/Profile";
+import Support     from "./pages/Support";
+import Wallet      from "./pages/Wallet";
+import GlobalChat  from "./pages/Globalchat";
+
+// Tournament Pages
+import TournamentDetails  from "./pages/TournamentDetails";
+import TournamentWaiting  from "./pages/TournamentWaiting";
+import TournamentRoom     from "./pages/TournamentRoom";
+import ManageTournament   from "./pages/ManageTournament";
+import CreateTournament   from "./pages/CreateTournament";
+
+// Founder Pages
+import FounderDashboard from "./pages/FounderDashboard";
+import FounderRequests  from "./pages/FounderRequests";
+
+// Admin Pages
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminSupport   from "./pages/AdminSupport";
+import Adminresults   from "./pages/Adminresults";   
+import Adminnews      from "./pages/Adminnews";       
+
+// Super Admin Pages
+import SuperAdmin from "./pages/SuperAdmin";
+import AdminGrant from "./pages/AdminGrant";
+
+// Store / Designer
+import Store          from "./pages/Store";
+import AdminStorePanel from "./pages/Adminstorepanel";
+import DesignerPanel  from "./pages/Designerpanel";
+
+// Teams
+import Teams       from "./pages/Teams";
+import TeamProfile from "./pages/Teamprofile";   
+
+// Clans
+import Clans       from "./pages/Clans";
+import ClanDetails from "./pages/ClanDetails";
+import CreateClan  from "./pages/CreateClan";
+
+// Community
+import Team        from "./pages/Team"; // User-facing Team page
+import HallOfFame  from "./pages/HallOfFame";
+
+// Phase 2
+import Achievements from "./pages/Achievements";
+import DailyRewards from "./pages/Dailyrewards"; 
+import PlayerStats  from "./pages/Playerstats";  
+import News         from "./pages/News";
 
 export default function App() {
   return (
@@ -53,7 +119,6 @@ export default function App() {
           <Route path="/clans/:id"     element={<ClanDetails />} />
 
           {/* Community */}
-          <Route path="/team"          element={<Team />} />
           <Route path="/hall-of-fame"  element={<HallOfFame />} />
 
           {/* Tournaments */}

@@ -20,6 +20,28 @@ import { ShaderBackground } from "../components/ui/ShaderBackground";
 import { HeroGeometric } from "../components/ui/HeroGeometric";
 import { Button } from "../components/ui/Button";
 import { GooeyText } from "../components/ui/GooeyText";
+import { CircularTestimonials } from "../components/ui/CircularTestimonials";
+
+const testimonials = [
+  {
+    quote: "CipherPool completely changed how I look at competitive gaming in Morocco. The reward system is flawless and instant.",
+    name: "Yassine 'Sniper' B.",
+    designation: "Free Fire Pro Player",
+    src: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop"
+  },
+  {
+    quote: "The cleanest UI I've ever seen on a tournament platform. Everything from registration to result submission is seamless.",
+    name: "Laila M.",
+    designation: "Clan Leader - Zenith Esports",
+    src: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop"
+  },
+  {
+    quote: "Finally a platform that takes anti-cheat seriously. Competitive integrity is at the heart of CipherPool.",
+    name: "Amine K.",
+    designation: "Tournament Organizer",
+    src: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop"
+  }
+];
 
 export default function Home() {
   const navigate = useNavigate();
@@ -170,6 +192,28 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Testimonials Section */}
+        <section className="py-40 px-12 relative bg-obsidian-light/20">
+           <div className="max-w-7xl mx-auto">
+              <div className="mb-20">
+                 <p className="text-[10px] font-black uppercase tracking-[0.5em] text-mint mb-4">Social Proof</p>
+                 <h2 className="text-6xl font-heading font-black text-white uppercase tracking-tighter">WHAT WARRIORS<br/>ARE SAYING</h2>
+              </div>
+              <CircularTestimonials 
+                testimonials={testimonials} 
+                autoplay={true}
+                colors={{
+                  name: "#fff",
+                  designation: "#10B981",
+                  testimony: "#94a3b8",
+                  arrowBackground: "rgba(255,255,255,0.03)",
+                  arrowForeground: "#fff",
+                  arrowHoverBackground: "#10B981"
+                }}
+              />
+           </div>
+        </section>
+
         {/* Final Call to Action */}
         <section className="py-80 px-12 relative text-center">
            <div className="absolute inset-0 bg-gradient-to-t from-mint/10 via-transparent to-transparent pointer-events-none" />
@@ -213,25 +257,6 @@ export default function Home() {
                 <p className="text-[10px] font-black uppercase tracking-widest text-mint">Legal</p>
                 <ul className="space-y-3 text-sm font-medium text-slate-400">
                   <li><button className="hover:text-white transition-colors">Privacy Policy</button></li>
-                  <li><button className="hover:text-white transition-colors">Terms of Service</button></li>
-                  <li><button className="hover:text-white transition-colors">Security Audit</button></li>
-                </ul>
-             </div>
-          </div>
-        </div>
-        
-        <div className="max-w-7xl mx-auto mt-20 pt-10 border-t border-white/5 flex justify-between items-center opacity-50">
-           <p className="text-[10px] font-black uppercase tracking-[0.4em]">© 2026 CipherPool Protocols. All Systems Operational.</p>
-           <div className="flex items-center gap-4">
-              <div className="w-2 h-2 rounded-full bg-mint animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Server-01: EU-Maroc</span>
-           </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
- <li><button className="hover:text-white transition-colors">Privacy Policy</button></li>
                   <li><button className="hover:text-white transition-colors">Terms of Service</button></li>
                   <li><button className="hover:text-white transition-colors">Security Audit</button></li>
                 </ul>
