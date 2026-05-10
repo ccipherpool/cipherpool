@@ -1,71 +1,74 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useOutletContext } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Trophy, 
+  Users2, 
+  Calendar, 
+  MapPin, 
+  ShieldCheck, 
+  Info, 
+  ChevronLeft, 
+  Sword, 
+  Zap, 
+  Wallet,
+  Clock,
+  Share2,
+  AlertCircle,
+  ExternalLink,
+  Target,
+  Flame,
+  Layout
+} from "lucide-react";
+import Button from "../components/ui/Button";
+import { format } from "date-fns";
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
-const CYAN   = "#00d4ff";
-const VIOLET = "#8b5cf6";
-const ORANGE = "#f97316";
-const GREEN  = "#10b981";
-const RED    = "#f43f5e";
-
-const STATUS_MAP = {
-  active:    { label: "EN COURS",  color: CYAN,   glow: "rgba(0,212,255,0.25)"   },
-  upcoming:  { label: "À VENIR",   color: ORANGE, glow: "rgba(249,115,22,0.25)"  },
-  open:      { label: "OUVERT",    color: GREEN,  glow: "rgba(16,185,129,0.25)"  },
-  completed: { label: "TERMINÉ",   color: "rgba(255,255,255,0.3)", glow: "transparent" },
-  cancelled: { label: "ANNULÉ",    color: RED,    glow: "rgba(244,63,94,0.25)"   },
+const STATUS_CONFIG = {
+  active: { label: "Live Now", color: "text-mint", bg: "bg-mint/10", border: "border-mint/20" },
+  upcoming: { label: "Upcoming", color: "text-cyber-gold", bg: "bg-cyber-gold/10", border: "border-cyber-gold/20" },
+  open: { label: "Recruiting", color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/20" },
+  completed: { label: "Finalized", color: "text-slate-500", bg: "bg-slate-500/10", border: "border-white/5" },
+  cancelled: { label: "Aborted", color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/20" },
 };
 
-// ── Pill badge ─────────────────────────────────────────────────────────────────
-function Badge({ color, children }) {
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 99, fontSize: 10, fontWeight: 800, letterSpacing: 2, fontFamily: "monospace", color, background: `${color}15`, border: `1px solid ${color}30` }}>
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: color, display: "inline-block" }} />
-      {children}
-    </span>
-  );
-}
-
-// ── Stat box ──────────────────────────────────────────────────────────────────
-function StatBox({ icon, label, value, color, glow }) {
-  return (
-    <div style={{ textAlign: "center", padding: "16px 12px", borderRadius: 14, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", inset: 0, background: `radial-gradient(circle at 50% 100%, ${glow || color + "15"}, transparent 70%)` }} />
-      <div style={{ fontSize: 20, marginBottom: 8 }}>{icon}</div>
-      <p style={{ fontSize: 16, fontWeight: 900, fontFamily: "monospace", color, marginBottom: 4 }}>{value}</p>
-      <p style={{ fontSize: 9, letterSpacing: 2, color: "rgba(255,255,255,0.25)", fontFamily: "monospace" }}>{label}</p>
-    </div>
-  );
-}
+const TacticalCell = ({ label, value, icon: Icon, color = "text-mint", delay = 0 }) => (
+  <motion.div 
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay }}
+    className="bg-white/[0.02] border border-white/5 p-5 rounded-2xl flex items-center gap-4 group hover:border-mint/20 transition-all"
+  >
+     <div className={`p-3 rounded-xl bg-white/5 ${color} group-hover:scale-110 transition-transform`}>
+        <Icon size={20} />
+     </div>
+     <div>
+        <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{label}</p>
+        <p className="text-sm font-bold text-white uppercase tracking-tight">{value}</p>
+     </div>
+  </motion.div>
+);
 
 export default function TournamentDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { profile } = useOutletContext() || {};
   const [tournament, setTournament] = useState(null);
   const [userRequest, setUserRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
-  const [profile, setProfile] = useState(null);
-  const [isApproved, setIsApproved] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => { fetchData(); }, [id]);
 
   const fetchData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: userData } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      setProfile(userData);
-    }
     const { data: tournamentData, error: tErr } = await supabase.from("tournaments").select("*").eq("id", id).single();
     if (tErr || !tournamentData) { navigate("/tournaments"); return; }
     setTournament(tournamentData);
-    if (user) {
-      const { data: requestData } = await supabase.from("tournament_participants").select("*").eq("tournament_id", id).eq("user_id", user.id).maybeSingle();
+    
+    if (profile?.id) {
+      const { data: requestData } = await supabase.from("tournament_participants").select("*").eq("tournament_id", id).eq("user_id", profile.id).maybeSingle();
       setUserRequest(requestData);
-      setIsApproved(requestData?.status === "approved");
     }
     setLoading(false);
   };
@@ -73,250 +76,285 @@ export default function TournamentDetails() {
   const requestToJoin = async () => {
     if (!profile) { navigate("/login"); return; }
     setError("");
-    if (tournament.status !== "open" && tournament.status !== "upcoming" && tournament.status !== "active") { setError("Les inscriptions sont fermées pour ce tournoi."); return; }
-    if (tournament.current_players >= tournament.max_players) { setError("Ce tournoi est complet."); return; }
+    if (tournament.status === "completed" || tournament.status === "cancelled") { 
+      setError("Recruitment protocols are inactive for this operation."); 
+      return; 
+    }
+    if (tournament.current_players >= tournament.max_players) { 
+      setError("Squad capacity reached. Units full."); 
+      return; 
+    }
+    
+    const canAfford = (profile.coins || 0) >= (tournament.entry_fee || 0);
+    if (!canAfford) {
+        setError(`Insufficient CP. Required: ${tournament.entry_fee} CP.`);
+        return;
+    }
+
     setRequesting(true);
-    const { data: { user } } = await supabase.auth.getUser();
     try {
-      const { error: e } = await supabase.from("tournament_participants").insert([{ tournament_id: id, user_id: user.id, status: "pending" }]);
+      const { error: e } = await supabase.from("tournament_participants").insert([{ 
+        tournament_id: id, 
+        user_id: profile.id, 
+        status: "pending" 
+      }]);
+      
       if (e) {
-        if (e.code === "23505") setError("Vous êtes déjà inscrit à ce tournoi.");
+        if (e.code === "23505") setError("Unit already assigned to this operation.");
         else setError(e.message);
-      } else { navigate(`/tournaments/${id}/waiting`); }
-    } catch { setError("Une erreur est survenue."); }
+      } else { 
+        navigate(`/tournaments/${id}/waiting`); 
+      }
+    } catch { 
+      setError("System malfunction during assignment."); 
+    }
     setRequesting(false);
   };
 
   if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 320 }}>
-      <div style={{ width: 36, height: 36, border: `2px solid rgba(0,212,255,0.15)`, borderTopColor: CYAN, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="h-[400px] flex items-center justify-center">
+       <div className="w-12 h-12 border-4 border-mint/20 border-t-mint rounded-full animate-spin" />
     </div>
   );
 
-  const pct  = tournament.max_players > 0 ? Math.round((tournament.current_players / tournament.max_players) * 100) : 0;
-  const full = tournament.current_players >= tournament.max_players;
-  const s    = STATUS_MAP[tournament.status] || STATUS_MAP.upcoming;
-  const free = (tournament.entry_fee || 0) === 0;
-
-  const RULES = [
-    "Pas de triche ni d'émulateurs autorisés.",
-    "Soyez présents 15 minutes avant le début.",
-    "Les résultats sont validés manuellement par le staff.",
-    "Le fair-play est obligatoire — tout comportement toxique entraîne une disqualification.",
-  ];
+  const status = STATUS_CONFIG[tournament.status] || STATUS_CONFIG.upcoming;
+  const progress = tournament.max_players > 0 ? (tournament.current_players / tournament.max_players) * 100 : 0;
+  const isApproved = userRequest?.status === "approved";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, fontFamily: "'Inter','Space Grotesk',sans-serif" }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}} @keyframes flow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}`}</style>
-
-      {/* ── BACK ── */}
-      <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => navigate("/tournaments")}
-        style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", fontFamily: "monospace", fontSize: 11, letterSpacing: 2, padding: 0, transition: "color 0.2s" }}
-        onMouseEnter={e => e.currentTarget.style.color = CYAN}
-        onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.35)"}
+    <div className="space-y-8 pb-20">
+      {/* Back Button */}
+      <button 
+        onClick={() => navigate("/tournaments")}
+        className="flex items-center gap-2 text-slate-500 hover:text-white transition-colors group"
       >
-        ← RETOUR AUX TOURNOIS
-      </motion.button>
+        <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+        <span className="text-[10px] font-black uppercase tracking-[0.3em]">Return to Operations</span>
+      </button>
 
-      {/* ── CINEMATIC HERO ── */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-        style={{ position: "relative", overflow: "hidden", borderRadius: 22, background: "#070b18", border: `1px solid ${s.color}20` }}>
-        {/* Top accent line */}
-        <div style={{ height: 2, background: `linear-gradient(90deg, ${s.color}, ${VIOLET}, transparent)` }} />
+      {/* Cinematic Hero */}
+      <div className="relative rounded-[2.5rem] overflow-hidden border border-white/10 bg-obsidian-light/40 backdrop-blur-xl h-[400px] md:h-[500px]">
+         <div className="absolute inset-0 z-0">
+            <img 
+              src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070" 
+              className="w-full h-full object-cover opacity-20 grayscale"
+              alt="hero"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-obsidian-deep via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-obsidian-deep/80 via-transparent to-transparent" />
+         </div>
 
-        {/* BG glow */}
-        <div style={{ position: "absolute", top: -80, right: -80, width: 400, height: 400, borderRadius: "50%", background: `radial-gradient(circle, ${s.glow}, transparent 70%)`, filter: "blur(20px)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: -60, left: -60, width: 300, height: 300, borderRadius: "50%", background: `radial-gradient(circle, rgba(139,92,246,0.1), transparent 70%)`, filter: "blur(20px)", pointerEvents: "none" }} />
-
-        <div style={{ padding: "32px 32px 28px", position: "relative" }}>
-          {/* Top badges */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
-            <Badge color={s.color}>{s.label}</Badge>
-            {tournament.mode && <Badge color="rgba(255,255,255,0.35)">{tournament.mode}</Badge>}
-            <Badge color={ORANGE}>FREE FIRE</Badge>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "start" }} className="td-hero-grid">
-            <style>{`.td-hero-grid{grid-template-columns:1fr auto}@media(max-width:640px){.td-hero-grid{grid-template-columns:1fr}}`}</style>
-
-            <div>
-              <h1 style={{ fontFamily: "Orbitron,sans-serif", fontWeight: 900, fontSize: "clamp(22px,4vw,38px)", color: "#fff", marginBottom: 10, lineHeight: 1.15 }}>{tournament.name}</h1>
-              {tournament.description && (
-                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.7, maxWidth: 560 }}>{tournament.description}</p>
-              )}
+         <div className="relative z-10 p-8 md:p-16 h-full flex flex-col justify-end gap-6">
+            <div className="flex flex-wrap items-center gap-3">
+               <div className={`px-4 py-1.5 rounded-full ${status.bg} ${status.border} border backdrop-blur-md flex items-center gap-2`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${status.color.replace('text-', 'bg-')} animate-pulse`} />
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${status.color}`}>{status.label}</span>
+               </div>
+               <span className="bg-white/5 border border-white/10 px-4 py-1.5 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  PLATFORM: FREE FIRE
+               </span>
             </div>
 
-            {/* Prize highlight */}
-            <div style={{ textAlign: "center", padding: "20px 28px", borderRadius: 18, background: `rgba(249,115,22,0.06)`, border: `1px solid rgba(249,115,22,0.2)` }}>
-              <p style={{ fontSize: 10, letterSpacing: 3, color: "rgba(255,255,255,0.3)", fontFamily: "monospace", marginBottom: 6 }}>PRIZE POOL</p>
-              <p style={{ fontFamily: "Orbitron,sans-serif", fontSize: "clamp(24px,3vw,36px)", fontWeight: 900, color: ORANGE, lineHeight: 1 }}>
-                {(tournament.prize_coins || 0).toLocaleString()}
-              </p>
-              <p style={{ fontSize: 11, color: "rgba(249,115,22,0.6)", marginTop: 4, fontFamily: "monospace" }}>CP COINS</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+               <div className="space-y-2">
+                  <h1 className="text-4xl md:text-7xl font-heading font-black text-white uppercase tracking-tighter leading-none">
+                     {tournament.name}
+                  </h1>
+                  <p className="text-slate-400 text-lg max-w-2xl font-medium">
+                     {tournament.description || "Establish dominance in this high-stakes tactical operation. Join the elite."}
+                  </p>
+               </div>
+
+               <div className="bg-white/[0.03] border border-white/10 p-8 rounded-[2.5rem] text-center min-w-[240px] backdrop-blur-md relative group overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyber-gold/5 to-transparent pointer-events-none" />
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4">Tactical Reward</p>
+                  <div className="flex items-baseline justify-center gap-2">
+                     <span className="text-5xl font-heading font-black text-cyber-gold uppercase leading-none">
+                        {(tournament.prize_coins || 0).toLocaleString()}
+                     </span>
+                     <span className="text-xs font-black text-cyber-gold/40 uppercase">CP</span>
+                  </div>
+                  <div className="mt-6 pt-6 border-t border-white/5">
+                     <div className="flex justify-between items-center text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                        <span>EST. DISTRIBUTION</span>
+                        <span className="text-white">IMMEDIATE</span>
+                     </div>
+                  </div>
+               </div>
             </div>
-          </div>
+         </div>
+      </div>
 
-          {/* Stats row */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginTop: 24 }} className="td-stats">
-            <style>{`.td-stats{grid-template-columns:repeat(4,1fr)}@media(max-width:640px){.td-stats{grid-template-columns:repeat(2,1fr)}}`}</style>
-            <StatBox icon="👥" label="JOUEURS" value={`${tournament.current_players || 0}/${tournament.max_players || 0}`} color="#60a5fa" />
-            <StatBox icon="🎟️" label="ENTRÉE" value={free ? "FREE" : `${tournament.entry_fee} CP`} color={free ? CYAN : RED} />
-            <StatBox icon="🗺️" label="MAP" value="Bermuda" color="rgba(255,255,255,0.45)" />
-            <StatBox icon="📅" label="DATE" value={tournament.start_date ? new Date(tournament.start_date).toLocaleDateString("fr-FR") : "TBA"} color={VIOLET} />
-          </div>
-        </div>
-      </motion.div>
-
-      {/* ── MAIN GRID ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20 }} className="td-main">
-        <style>{`.td-main{grid-template-columns:1fr 320px}@media(max-width:900px){.td-main{grid-template-columns:1fr}}`}</style>
-
-        {/* LEFT: info panels */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-          {/* Fill bar */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            style={{ padding: "20px 24px", borderRadius: 18, background: "#070b18", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}>REMPLISSAGE</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 900, color: full ? RED : CYAN }}>{pct}%</span>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{tournament.current_players}/{tournament.max_players} joueurs</span>
-              </div>
-            </div>
-            <div style={{ height: 8, borderRadius: 99, background: "rgba(255,255,255,0.05)", overflow: "hidden" }}>
-              <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1.2, ease: [0.22,1,0.36,1], delay: 0.3 }}
-                style={{ height: "100%", borderRadius: 99, background: full ? `linear-gradient(90deg,${RED},#b91c1c)` : `linear-gradient(90deg,${CYAN},${VIOLET})`, backgroundSize: "200% 100%", animation: "flow 2s linear infinite" }} />
-            </div>
-            {full && <p style={{ marginTop: 8, fontSize: 12, color: RED, fontFamily: "monospace" }}>⚠️ Ce tournoi est complet</p>}
-          </motion.div>
-
-          {/* Rules */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-            style={{ padding: "22px 24px", borderRadius: 18, background: "#070b18", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: 3, color: CYAN, fontFamily: "monospace", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
-              🛡 RÈGLEMENT
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {RULES.map((rule, i) => (
-                <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                  <span style={{ fontFamily: "monospace", fontSize: 10, color: `${CYAN}60`, marginTop: 2, flexShrink: 0 }}>{String(i + 1).padStart(2, "0")}.</span>
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.65 }}>{rule}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Info grid */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            style={{ padding: "22px 24px", borderRadius: 18, background: "#070b18", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: 3, color: "rgba(255,255,255,0.3)", fontFamily: "monospace", marginBottom: 18 }}>INFORMATIONS</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-              {[
-                { label: "Organisateur",  val: "CipherPool Staff" },
-                { label: "Format",        val: tournament.mode || "Solo" },
-                { label: "Plateforme",    val: "Free Fire Mobile" },
-                { label: "Date de début", val: tournament.start_date ? new Date(tournament.start_date).toLocaleDateString("fr-FR") : "À annoncer" },
-              ].map(item => (
-                <div key={item.label}>
-                  <p style={{ fontSize: 9, letterSpacing: 2, color: "rgba(255,255,255,0.2)", fontFamily: "monospace", marginBottom: 5 }}>{item.label.toUpperCase()}</p>
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>{item.val}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* RIGHT: registration panel */}
-        <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 }}
-          style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-
-          <div style={{ padding: "24px 22px", borderRadius: 18, background: "#070b18", border: "1px solid rgba(255,255,255,0.07)", position: "relative", overflow: "hidden" }}>
-            {/* subtle glow */}
-            <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,212,255,0.06), transparent)", pointerEvents: "none" }} />
-
-            <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: 3, color: "rgba(255,255,255,0.3)", fontFamily: "monospace", marginBottom: 20 }}>INSCRIPTION</p>
-
-            {/* Prize / Entry */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, paddingBottom: 18, marginBottom: 18, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-              <div style={{ padding: "14px 12px", borderRadius: 12, background: "rgba(249,115,22,0.07)", border: "1px solid rgba(249,115,22,0.18)", textAlign: "center" }}>
-                <p style={{ fontSize: 9, letterSpacing: 2, color: "rgba(255,255,255,0.3)", fontFamily: "monospace", marginBottom: 6 }}>PRIZE</p>
-                <p style={{ fontFamily: "Orbitron,sans-serif", fontSize: 18, fontWeight: 900, color: ORANGE }}>{(tournament.prize_coins || 0).toLocaleString()}</p>
-                <p style={{ fontSize: 9, color: "rgba(249,115,22,0.5)", fontFamily: "monospace" }}>CP</p>
-              </div>
-              <div style={{ padding: "14px 12px", borderRadius: 12, background: `rgba(${free ? "0,212,255" : "244,63,94"},0.07)`, border: `1px solid rgba(${free ? "0,212,255" : "244,63,94"},0.18)`, textAlign: "center" }}>
-                <p style={{ fontSize: 9, letterSpacing: 2, color: "rgba(255,255,255,0.3)", fontFamily: "monospace", marginBottom: 6 }}>ENTRÉE</p>
-                <p style={{ fontFamily: "Orbitron,sans-serif", fontSize: 18, fontWeight: 900, color: free ? CYAN : RED }}>{free ? "FREE" : tournament.entry_fee}</p>
-                {!free && <p style={{ fontSize: 9, color: `rgba(244,63,94,0.5)`, fontFamily: "monospace" }}>CP</p>}
-              </div>
+      {/* Main Grid Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+         
+         {/* Left Wing: intel */}
+         <div className="lg:col-span-8 space-y-8">
+            
+            {/* Quick Stats Bento */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+               <TacticalCell label="Units" value={`${tournament.current_players}/${tournament.max_players}`} icon={Users2} color="text-blue-400" />
+               <TacticalCell label="Entry Protocol" value={tournament.entry_fee === 0 ? "FREE" : `${tournament.entry_fee} CP`} icon={Wallet} color="text-emerald-400" />
+               <TacticalCell label="Tactical Map" value="BERMUDA" icon={MapPin} color="text-amber-400" />
+               <TacticalCell label="Deployment" value={tournament.start_date ? format(new Date(tournament.start_date), "dd MMM yyyy") : "TBA"} icon={Calendar} color="text-purple-400" />
             </div>
 
-            {/* Error */}
-            <AnimatePresence>
-              {error && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(244,63,94,0.1)", border: "1px solid rgba(244,63,94,0.2)", color: "#fca5a5", fontSize: 13 }}>
-                  {error}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Capacity Status */}
+            <div className="ultra-glass p-8 space-y-6">
+               <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-heading font-black text-white uppercase tracking-tight">Recruitment Status</h3>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{Math.round(progress)}% OCCUPIED</span>
+               </div>
+               <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden p-1 border border-white/5">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-mint via-mint/80 to-mint-dark rounded-full shadow-neon-mint" 
+                  />
+               </div>
+               <p className="text-xs text-slate-500 font-medium">
+                  {tournament.max_players - tournament.current_players} tactical slots remaining for deployment. Join now to secure your position.
+               </p>
+            </div>
 
-            {/* CTA */}
-            {isApproved ? (
-              <Link to={`/tournaments/${id}/room`}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 13, fontFamily: "Orbitron,sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: 2, color: "#000", textDecoration: "none", background: `linear-gradient(135deg,${GREEN},#059669)`, boxShadow: `0 6px 24px rgba(16,185,129,0.35)` }}>
-                ⚡ ACCÉDER À LA SALLE
-              </Link>
-            ) : userRequest?.status === "pending" ? (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 13, fontFamily: "Orbitron,sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: 2, color: ORANGE, background: "rgba(249,115,22,0.1)", border: `1px solid rgba(249,115,22,0.25)` }}>
-                ⏳ DEMANDE EN ATTENTE
-              </div>
-            ) : (
-              <button onClick={requestToJoin} disabled={requesting || full}
-                style={{
-                  width: "100%", padding: "14px", borderRadius: 13, border: "none", cursor: (requesting || full) ? "not-allowed" : "pointer",
-                  fontFamily: "Orbitron,sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: 2,
-                  background: full ? "rgba(255,255,255,0.04)" : `linear-gradient(135deg,${CYAN},${VIOLET})`,
-                  color: full ? "rgba(255,255,255,0.2)" : "#fff",
-                  boxShadow: full ? "none" : `0 6px 24px rgba(0,212,255,0.3)`,
-                  opacity: requesting ? 0.7 : 1, transition: "all 0.2s",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                }}>
-                {requesting
-                  ? <div style={{ width: 18, height: 18, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-                  : full ? "TOURNOI COMPLET" : <>S'INSCRIRE AU TOURNOI 👥</>
-                }
-              </button>
+            {/* Engagement Protocols (Rules) */}
+            <div className="ultra-glass p-8">
+               <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight mb-8 flex items-center gap-3">
+                  <ShieldCheck size={24} className="text-mint" /> Engagement Protocols
+               </h3>
+               <div className="space-y-6">
+                  {[
+                    { t: "Integrity Scan", d: "Anti-cheat protocols active. External software or unauthorized modifiers result in permanent termination." },
+                    { t: "Deployment Window", d: "Units must check-in 15 minutes prior to operation start. Late arrival leads to mission failure." },
+                    { t: "Validation Layer", d: "Match results are audited by senior operators. High-fidelity verification ensures total fairness." },
+                    { t: "Tactical Conduct", d: "Professionalism is mandatory. Toxicity or insubordination will lead to immediate disqualification." }
+                  ].map((rule, i) => (
+                    <div key={i} className="flex gap-6 group">
+                       <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-600 group-hover:text-mint group-hover:bg-mint/10 transition-all shrink-0">
+                          <span className="font-mono text-xs font-bold">0{i+1}</span>
+                       </div>
+                       <div>
+                          <h4 className="text-sm font-bold text-white uppercase mb-1">{rule.t}</h4>
+                          <p className="text-xs text-slate-500 leading-relaxed">{rule.d}</p>
+                       </div>
+                    </div>
+                  ))}
+               </div>
+            </div>
+         </div>
+
+         {/* Right Wing: Registration Actions */}
+         <div className="lg:col-span-4 space-y-6">
+            
+            <div className="ultra-glass p-10 border-mint/20 relative overflow-hidden sticky top-28">
+               <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                  <Target size={120} />
+               </div>
+
+               <div className="mb-10 text-center">
+                  <h3 className="text-2xl font-heading font-black text-white uppercase tracking-tighter">JOIN OPERATION</h3>
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                     <Zap size={14} className="text-mint" fill="currentColor" />
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Authorized Access Only</p>
+                  </div>
+               </div>
+
+               <div className="space-y-6">
+                  {/* Participant Preview */}
+                  <div className="bg-white/5 border border-white/5 p-5 rounded-2xl">
+                     <div className="flex justify-between items-center mb-4">
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Entry Protocol</span>
+                        <span className={`text-xs font-bold ${tournament.entry_fee === 0 ? 'text-mint' : 'text-white'}`}>
+                           {tournament.entry_fee === 0 ? "FREE ADMISSION" : `${tournament.entry_fee} CP`}
+                        </span>
+                     </div>
+                     <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Unit Status</span>
+                        {profile ? (
+                           <span className="text-xs font-bold text-white">READY FOR DEPLOY</span>
+                        ) : (
+                           <span className="text-xs font-bold text-red-400">UNAUTHORIZED</span>
+                        )}
+                     </div>
+                  </div>
+
+                  <AnimatePresence>
+                     {error && (
+                        <motion.div 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-500 text-[10px] font-black uppercase tracking-widest"
+                        >
+                           <AlertCircle size={16} />
+                           <span>Error: {error}</span>
+                        </motion.div>
+                     )}
+                  </AnimatePresence>
+
+                  {isApproved ? (
+                     <Link to={`/tournaments/${id}/room`} className="block">
+                        <button className="w-full py-5 rounded-2xl bg-mint text-obsidian font-heading font-black text-xs uppercase tracking-[0.2em] shadow-neon-mint transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3">
+                           <Sword size={18} /> ENTER MISSION ROOM
+                        </button>
+                     </Link>
+                  ) : userRequest?.status === "pending" ? (
+                     <div className="w-full py-5 rounded-2xl bg-cyber-gold/10 border border-cyber-gold/30 text-cyber-gold font-heading font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3">
+                        <Clock size={18} className="animate-spin" /> ENLISTMENT PENDING
+                     </div>
+                  ) : (
+                     <button 
+                        onClick={requestToJoin}
+                        disabled={requesting || tournament.current_players >= tournament.max_players}
+                        className="w-full py-5 rounded-2xl bg-white text-obsidian font-heading font-black text-xs uppercase tracking-[0.2em] transition-all transform hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:grayscale disabled:transform-none"
+                     >
+                        {requesting ? (
+                           <div className="flex items-center justify-center gap-2">
+                              <RefreshCw size={18} className="animate-spin" /> SYNCHRONIZING...
+                           </div>
+                        ) : tournament.current_players >= tournament.max_players ? (
+                           "CAPACITY EXCEEDED"
+                        ) : (
+                           "INITIALIZE ENLISTMENT"
+                        )}
+                     </button>
+                  )}
+
+                  {!profile && (
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">
+                        <Link to="/login" className="text-mint hover:underline">Authorize Profile</Link> to establish connection
+                     </p>
+                  )}
+               </div>
+
+               <div className="mt-10 pt-10 border-t border-white/5 flex items-center justify-between">
+                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Share Protocol</p>
+                  <div className="flex gap-3">
+                     <button onClick={() => navigator.clipboard.writeText(window.location.href)} className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-mint hover:border-mint/30 transition-all">
+                        <Share2 size={16} />
+                     </button>
+                     <button className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-blue-400 hover:border-blue-400/30 transition-all">
+                        <ExternalLink size={16} />
+                     </button>
+                  </div>
+               </div>
+            </div>
+
+            {/* Admin Quick View (Optional) */}
+            {["admin", "super_admin"].includes(profile?.role) && (
+               <div className="p-6 rounded-3xl border border-orange-500/20 bg-orange-500/5">
+                  <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-4">Command Control</p>
+                  <Link to={`/tournaments/${id}/manage`}>
+                     <Button variant="outline" className="w-full border-orange-500/30 text-orange-500 hover:bg-orange-500 hover:text-white">
+                        Access Control Panel
+                     </Button>
+                  </Link>
+               </div>
             )}
 
-            {!profile && (
-              <p style={{ textAlign: "center", fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 14 }}>
-                <Link to="/login" style={{ color: CYAN, textDecoration: "none", fontWeight: 600 }}>Connecte-toi</Link> pour participer
-              </p>
-            )}
-          </div>
+         </div>
 
-          {/* Share card */}
-          <div style={{ padding: "18px 22px", borderRadius: 18, background: "#070b18", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: 3, color: "rgba(255,255,255,0.2)", fontFamily: "monospace", marginBottom: 12 }}>PARTAGER</p>
-            <div style={{ display: "flex", gap: 8 }}>
-              {[
-                { label: "Telegram", color: "#39b0e3", icon: "✈️" },
-                { label: "Copier",   color: CYAN,      icon: "🔗" },
-              ].map(btn => (
-                <button key={btn.label}
-                  onClick={() => btn.label === "Copier" && navigator.clipboard.writeText(window.location.href)}
-                  style={{ flex: 1, padding: "10px", borderRadius: 10, border: `1px solid ${btn.color}25`, background: `${btn.color}08`, color: btn.color, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
-                  onMouseEnter={e => { e.currentTarget.style.background = `${btn.color}15`; e.currentTarget.style.borderColor = `${btn.color}45`; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = `${btn.color}08`; e.currentTarget.style.borderColor = `${btn.color}25`; }}
-                >
-                  {btn.icon} {btn.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </motion.div>
       </div>
     </div>
   );

@@ -228,7 +228,7 @@ export default function Dashboard() {
               </div>
            </div>
            <div className="flex-1 w-full min-h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" aspect={window.innerWidth < 768 ? 1.5 : 2.5}>
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorPointsV4" x1="0" y1="0" x2="0" y2="1">

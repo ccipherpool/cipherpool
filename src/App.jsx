@@ -90,6 +90,7 @@ export default function App() {
         <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route path="/dashboard"    element={<Dashboard />} />
           <Route path="/tournaments"  element={<Tournaments />} />
+          <Route path="/arena"        element={<Navigate to="/tournaments" replace />} />
           <Route path="/leaderboard"  element={<Leaderboard />} />
           <Route path="/profile"      element={<Profile />} />
           <Route path="/support"      element={<Support />} />

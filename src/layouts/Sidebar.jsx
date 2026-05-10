@@ -15,7 +15,13 @@ import {
   Sparkles,
   Settings,
   Sword,
-  Target
+  Target,
+  MessageSquare,
+  Users2,
+  ShoppingBag,
+  Wallet,
+  Star,
+  Newspaper
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
@@ -61,15 +67,27 @@ export default function Sidebar({ profile }) {
   };
 
   const menuItems = [
-    { path: "/dashboard", icon: LayoutDashboard, label: "Command" },
-    { path: "/tournaments", icon: Trophy, label: "Tournaments" },
-    { path: "/arena", icon: Sword, label: "Arena" },
-    { path: "/leaderboard", icon: BarChart3, label: "Rankings" },
-    { path: "/profile", icon: User, label: "Profile" },
-    { path: "/support", icon: Ticket, label: "Support" },
+    { section: "Tactical Units", items: [
+      { path: "/dashboard", icon: LayoutDashboard, label: "Command" },
+      { path: "/tournaments", icon: Trophy, label: "Tournaments" },
+      { path: "/chat", icon: MessageSquare, label: "Global Chat" },
+      { path: "/clans", icon: Users2, label: "Clans" },
+    ]},
+    { section: "Logistics", items: [
+      { path: "/store", icon: ShoppingBag, label: "Store" },
+      { path: "/wallet", icon: Wallet, label: "Wallet" },
+      { path: "/leaderboard", icon: BarChart3, label: "Rankings" },
+    ]},
+    { section: "Intelligence", items: [
+      { path: "/stats", icon: BarChart3, label: "Military Specs" },
+      { path: "/achievements", icon: Star, label: "Achievements" },
+      { path: "/news", icon: Newspaper, label: "Flash News" },
+      { path: "/support", icon: Ticket, label: "Support" },
+    ]}
   ];
 
-  const isAdmin = ["admin", "super_admin", "founder", "fondateur"].includes(profile?.role);
+  const isFounder = ["founder", "fondateur", "super_admin"].includes(profile?.role);
+  const isDesigner = ["designer", "admin", "super_admin"].includes(profile?.role);
 
   return (
     <aside className="fixed left-0 top-0 w-72 h-screen p-6 flex flex-col z-[100] pointer-events-none">
@@ -77,40 +95,74 @@ export default function Sidebar({ profile }) {
         {/* Logo */}
         <div className="p-8 mb-4">
           <div className="flex items-center gap-4">
-            <div className="relative w-12 h-12 bg-mint rounded-2xl flex items-center justify-center shadow-neon-mint rotate-45">
+            <div className="relative w-12 h-12 bg-mint rounded-2xl flex items-center justify-center shadow-neon-mint rotate-45 group hover:rotate-90 transition-all duration-700">
               <Sparkles className="text-obsidian -rotate-45" size={24} fill="currentColor" />
             </div>
             <div>
               <h1 className="text-lg font-heading font-black tracking-tighter text-white">
                 CIPHER<span className="text-mint">POOL</span>
               </h1>
-              <span className="text-[8px] uppercase tracking-[0.4em] font-black text-mint/50 animate-pulse">v4.0.0 Online</span>
+              <span className="text-[8px] uppercase tracking-[0.4em] font-black text-mint/50 animate-pulse">Tactical v4.2.0</span>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-4 space-y-2 custom-scrollbar">
-          <p className="px-6 text-[8px] uppercase tracking-[0.4em] font-black text-slate-600 mb-6 mt-4">
-            Tactical Units
-          </p>
-          {menuItems.map((item) => (
-            <MenuItem 
-              key={item.path} 
-              item={item} 
-              isActive={location.pathname === item.path} 
-            />
+        <div className="flex-1 overflow-y-auto px-4 space-y-8 custom-scrollbar pb-12">
+          {menuItems.map((group) => (
+            <div key={group.section} className="space-y-2">
+              <p className="px-6 text-[8px] uppercase tracking-[0.4em] font-black text-slate-600 mb-4">
+                {group.section}
+              </p>
+              {group.items.map((item) => (
+                <MenuItem 
+                  key={item.path} 
+                  item={item} 
+                  isActive={location.pathname === item.path} 
+                />
+              ))}
+            </div>
           ))}
 
+          {isFounder && (
+            <div className="pt-6 space-y-2">
+              <p className="px-6 text-[8px] uppercase tracking-[0.4em] font-black text-purple-500/50 mb-4">
+                Operational Command
+              </p>
+              <MenuItem 
+                item={{ path: "/founder", icon: Crown, label: "Founder Hub" }} 
+                isActive={location.pathname === "/founder"} 
+              />
+            </div>
+          )}
+
+          {isDesigner && (
+            <div className="pt-6 space-y-2">
+              <p className="px-6 text-[8px] uppercase tracking-[0.4em] font-black text-emerald-500/50 mb-4">
+                Design Hub
+              </p>
+              <MenuItem 
+                item={{ path: "/designer", icon: Layout, label: "Designer Panel" }} 
+                isActive={location.pathname === "/designer"} 
+              />
+            </div>
+          )}
+
           {isAdmin && (
-            <div className="mt-10 space-y-2">
-              <p className="px-6 text-[8px] uppercase tracking-[0.4em] font-black text-slate-600 mb-6">
+            <div className="pt-6 space-y-2">
+              <p className="px-6 text-[8px] uppercase tracking-[0.4em] font-black text-orange-500/50 mb-4">
                 System Override
               </p>
               <MenuItem 
                 item={{ path: "/admin", icon: ShieldAlert, label: "Control" }} 
                 isActive={location.pathname === "/admin"} 
               />
+              {profile?.role === 'super_admin' && (
+                <MenuItem 
+                  item={{ path: "/super-admin", icon: Zap, label: "Super Admin" }} 
+                  isActive={location.pathname === "/super-admin"} 
+                />
+              )}
             </div>
           )}
         </div>

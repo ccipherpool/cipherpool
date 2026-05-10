@@ -6,7 +6,6 @@ import Navbar from "./Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import AnnouncementModal from "../components/AnnouncementModal";
 import TermsModal from "../components/TermsModal";
-import LiquidCursor from "../components/ui/LiquidCursor";
 import { BackgroundBeams } from "../components/ui/BackgroundBeams";
 import {
   LayoutDashboard, Trophy, BarChart3, User, Ticket,
@@ -91,7 +90,6 @@ export default function MainLayout() {
 
   return (
     <div className="min-h-screen bg-obsidian-deep text-white flex overflow-hidden">
-      <LiquidCursor />
       <div className="noise-overlay" />
       <div className="scan-line" />
 

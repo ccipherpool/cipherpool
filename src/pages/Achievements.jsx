@@ -2,207 +2,261 @@ import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
+import { 
+  Trophy, 
+  Target, 
+  Zap, 
+  Star, 
+  Shield, 
+  Lock, 
+  CheckCircle2, 
+  Search,
+  Filter,
+  Medal,
+  Flame,
+  Layout,
+  ChevronRight
+} from "lucide-react";
+import Button from "../components/ui/Button";
 
-const CYAN="#00d4ff",INDIGO="#818cf8",VIOLET="#a78bfa",GREEN="#10b981",RED="#f43f5e",AMBER="#fbbf24",BG="#020817",CARD="#0a1628";
-const cx=a=>`rgba(0,212,255,${a})`,gx=a=>`rgba(16,185,129,${a})`,ax=a=>`rgba(251,191,36,${a})`,vx=a=>`rgba(167,139,250,${a})`,rx=a=>`rgba(244,63,94,${a})`;
-
-const RARITY={
-  common:   {color:"#94a3b8",glow:"rgba(148,163,184,.3)",bg:"rgba(148,163,184,.07)",border:"rgba(148,163,184,.18)",label:"COMMUN"},
-  rare:     {color:INDIGO,   glow:`rgba(129,140,248,.4)`, bg:`rgba(129,140,248,.08)`,border:`rgba(129,140,248,.22)`,label:"RARE"},
-  epic:     {color:VIOLET,   glow:`rgba(167,139,250,.4)`, bg:`rgba(167,139,250,.08)`,border:`rgba(167,139,250,.22)`,label:"ÉPIQUE"},
-  legendary:{color:AMBER,    glow:`rgba(251,191,36,.4)`,  bg:`rgba(251,191,36,.08)`, border:`rgba(251,191,36,.22)`, label:"LÉGENDAIRE"},
+const RARITY_CONFIG = {
+  common: { color: "text-slate-400", bg: "bg-slate-500/10", border: "border-slate-500/20", glow: "shadow-[0_0_20px_rgba(148,163,184,0.1)]", label: "Common" },
+  rare: { color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", glow: "shadow-[0_0_20px_rgba(59,130,246,0.1)]", label: "Rare" },
+  epic: { color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", glow: "shadow-[0_0_20px_rgba(168,85,247,0.1)]", label: "Epic" },
+  legendary: { color: "text-cyber-gold", bg: "bg-cyber-gold/10", border: "border-cyber-gold/20", glow: "shadow-[0_0_30px_rgba(245,197,24,0.2)]", label: "Legendary" },
 };
 
-const CAT_COLORS={combat:CYAN,tournament:AMBER,social:GREEN,special:VIOLET};
+const CATEGORY_ICONS = {
+  combat: Target,
+  tournament: Trophy,
+  social: Star,
+  special: Zap
+};
 
-export default function Achievements(){
-  const{profile}=useOutletContext()||{};
-  const[all,setAll]=useState([]);
-  const[earned,setEarned]=useState([]);
-  const[filter,setFilter]=useState("all");
-  const[loading,setLoading]=useState(true);
-  const[selected,setSelected]=useState(null);
+export default function Achievements() {
+  const { profile } = useOutletContext() || {};
+  const [all, setAll] = useState([]);
+  const [earned, setEarned] = useState([]);
+  const [filter, setFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
 
-  useEffect(()=>{fetchAll();},[profile?.id]);
+  useEffect(() => { fetchAll(); }, [profile?.id]);
 
-  const fetchAll=async()=>{
+  const fetchAll = async () => {
     setLoading(true);
-    const[{data:achData},{data:earnedData}]=await Promise.all([
-      supabase.from("achievements").select("*").order("rarity",{ascending:true}),
-      profile?.id?supabase.from("user_achievements").select("*,achievement:achievements(*)").eq("user_id",profile.id):{data:[]}
+    const [{ data: achData }, { data: earnedData }] = await Promise.all([
+      supabase.from("achievements").select("*").order("rarity", { ascending: true }),
+      profile?.id ? supabase.from("user_achievements").select("*, achievement:achievements(*)").eq("user_id", profile.id) : { data: [] }
     ]);
-    setAll(achData||[]);
-    setEarned(earnedData||[]);
+    setAll(achData || []);
+    setEarned(earnedData || []);
     setLoading(false);
   };
 
-  const earnedIds=new Set(earned.map(e=>e.achievement_id));
-  const cats=["all","combat","tournament","social","special"];
+  const earnedIds = new Set(earned.map(e => e.achievement_id));
+  const cats = ["all", "combat", "tournament", "social", "special"];
 
-  const filtered=(filter==="earned"
-    ?all.filter(a=>earnedIds.has(a.id))
-    :filter==="locked"
-    ?all.filter(a=>!earnedIds.has(a.id))
-    :filter==="all"
-    ?all
-    :all.filter(a=>a.category===filter)
+  const filtered = (filter === "earned"
+    ? all.filter(a => earnedIds.has(a.id))
+    : filter === "locked"
+    ? all.filter(a => !earnedIds.has(a.id))
+    : filter === "all"
+    ? all
+    : all.filter(a => a.category === filter)
   );
 
-  const pct=all.length>0?Math.round((earnedIds.size/all.length)*100):0;
+  const pct = all.length > 0 ? Math.round((earnedIds.size / all.length) * 100) : 0;
 
-  if(loading)return(
-    <div style={{minHeight:"80vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <motion.div animate={{rotate:360}} transition={{duration:1,repeat:Infinity,ease:"linear"}}
-        style={{width:36,height:36,border:`2px solid ${cx(.12)}`,borderTopColor:CYAN,borderRadius:"50%"}}/>
+  if (loading) return (
+    <div className="h-[400px] flex items-center justify-center">
+       <div className="w-12 h-12 border-4 border-mint/20 border-t-mint rounded-full animate-spin" />
     </div>
   );
 
-  return(<>
-    <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-      .ach{font-family:Space Grotesk,sans-serif;color:rgba(255,255,255,.88);min-height:100vh;background:${BG};padding:32px}
-      ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:${cx(.22)};border-radius:99px}
-    `}</style>
+  return (
+    <div className="space-y-10 pb-20">
+      {/* Header & Overall Progress */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+         <div className="space-y-4 max-w-2xl">
+            <div className="flex items-center gap-3">
+               <div className="w-1.5 h-1.5 rounded-full bg-mint shadow-neon-mint" />
+               <span className="text-[10px] font-black text-mint uppercase tracking-[0.4em]">Honors Protocol</span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-heading font-black text-white uppercase tracking-tighter leading-none">
+               TACTICAL <span className="text-mint">HONORS</span>
+            </h1>
+            <p className="text-slate-500 font-medium text-lg leading-relaxed">
+               Execute objectives to unlock high-fidelity badges and specialized rewards. Every milestone enhances your military standing.
+            </p>
+         </div>
 
-    <div className="ach">
-      {/* HEADER */}
-      <div style={{marginBottom:28}}>
-        <p style={{fontFamily:"JetBrains Mono,monospace",fontSize:10,letterSpacing:3,color:cx(.5),marginBottom:6}}>🏅 SUCCÈS & RÉCOMPENSES</p>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",flexWrap:"wrap",gap:12}}>
-          <h1 style={{fontFamily:"Bebas Neue,cursive",fontSize:46,letterSpacing:3,margin:0,color:"#fff"}}>
-            ACHIEVEMENTS <span style={{color:CYAN}}>{earnedIds.size}/{all.length}</span>
-          </h1>
-          <div style={{textAlign:"right"}}>
-            <p style={{fontFamily:"Bebas Neue,cursive",fontSize:32,color:CYAN,lineHeight:1}}>{pct}%</p>
-            <p style={{fontFamily:"JetBrains Mono,monospace",fontSize:9,color:"rgba(255,255,255,.3)"}}>COMPLÉTÉ</p>
-          </div>
-        </div>
-        {/* Progress bar */}
-        <div style={{marginTop:14,height:6,background:"rgba(255,255,255,.06)",borderRadius:99,overflow:"hidden"}}>
-          <motion.div initial={{width:0}} animate={{width:`${pct}%`}} transition={{duration:1.6,ease:[.22,1,.36,1],delay:.2}}
-            style={{height:"100%",background:`linear-gradient(90deg,${CYAN},${INDIGO})`,borderRadius:99,boxShadow:`0 0 14px ${cx(.5)}`}}/>
-        </div>
-        {/* Cat stats */}
-        <div style={{display:"flex",gap:12,marginTop:14,flexWrap:"wrap"}}>
-          {Object.entries(CAT_COLORS).map(([cat,color])=>{
-            const total=all.filter(a=>a.category===cat).length;
-            const done=all.filter(a=>a.category===cat&&earnedIds.has(a.id)).length;
-            return(
-              <div key={cat} style={{padding:"8px 14px",borderRadius:9,background:`${color}10`,border:`1px solid ${color}20`,display:"flex",gap:8,alignItems:"center"}}>
-                <span style={{fontFamily:"JetBrains Mono,monospace",fontSize:9,color:color,letterSpacing:1,textTransform:"uppercase"}}>{cat}</span>
-                <span style={{fontFamily:"Bebas Neue,cursive",fontSize:14,color:"#fff"}}>{done}/{total}</span>
-              </div>
-            );
-          })}
-        </div>
+         <div className="ultra-glass p-8 min-w-[280px] text-right relative group overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-mint/5 to-transparent pointer-events-none" />
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Sync Progress</p>
+            <p className="text-5xl font-heading font-black text-white">{pct}%</p>
+            <div className="mt-4 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+               <motion.div 
+                 initial={{ width: 0 }}
+                 animate={{ width: `${pct}%` }}
+                 transition={{ duration: 1.5, ease: "easeOut" }}
+                 className="h-full bg-mint shadow-neon-mint" 
+               />
+            </div>
+            <p className="text-[9px] font-bold text-mint/60 uppercase tracking-widest mt-2">{earnedIds.size} / {all.length} Badges Secured</p>
+         </div>
       </div>
 
-      {/* FILTERS */}
-      <div style={{display:"flex",gap:6,marginBottom:20,flexWrap:"wrap"}}>
-        {[["all","TOUS"],["earned","OBTENUS"],["locked","VERROUILLÉS"],...cats.slice(1).map(c=>[c,c.toUpperCase()])].map(([k,l])=>(
-          <button key={k} onClick={()=>setFilter(k)}
-            style={{padding:"7px 16px",borderRadius:8,border:"none",cursor:"pointer",fontFamily:"JetBrains Mono,monospace",fontSize:9,letterSpacing:1.5,
-              background:filter===k?`linear-gradient(135deg,${CYAN},${INDIGO})`:`${cx(.06)}`,
-              color:filter===k?"#000":"rgba(255,255,255,.4)",fontWeight:filter===k?700:400,transition:"all .2s"}}>
-            {l}
-          </button>
-        ))}
+      {/* Filters Bento */}
+      <div className="flex flex-wrap items-center gap-3">
+         {cats.map(c => (
+            <button
+              key={c}
+              onClick={() => setFilter(c)}
+              className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                filter === c 
+                  ? 'bg-mint text-obsidian border-mint shadow-neon-mint' 
+                  : 'bg-white/5 border-white/5 text-slate-500 hover:border-white/10'
+              }`}
+            >
+              {c === 'all' ? 'All Objectives' : c}
+            </button>
+         ))}
+         <div className="h-8 w-[1px] bg-white/5 mx-2" />
+         <button
+           onClick={() => setFilter(filter === 'earned' ? 'all' : 'earned')}
+           className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+             filter === 'earned' 
+               ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+               : 'bg-white/5 border-white/5 text-slate-500 hover:border-white/10'
+           }`}
+         >
+           Secured
+         </button>
       </div>
 
-      {/* GRID */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:12}}>
-        {filtered.map((ach,i)=>{
-          const isEarned=earnedIds.has(ach.id);
-          const r=RARITY[ach.rarity]||RARITY.common;
-          const earnedData=earned.find(e=>e.achievement_id===ach.id);
-          return(
-            <motion.div key={ach.id} initial={{opacity:0,scale:.9}} animate={{opacity:1,scale:1}} transition={{delay:i*.03,type:"spring",stiffness:200}}
-              whileHover={{y:-4,transition:{duration:.15}}} onClick={()=>setSelected(ach)}
-              style={{cursor:"pointer",opacity:isEarned?1:.45,filter:isEarned?"none":"grayscale(40%)"}}>
-              <div style={{position:"relative",overflow:"hidden",background:isEarned?r.bg:CARD,border:`1px solid ${isEarned?r.border:cx(.08)}`,
-                borderRadius:14,padding:"18px 18px",boxShadow:isEarned?`0 0 20px ${r.glow},0 4px 20px rgba(0,0,0,.4)`:`0 4px 20px rgba(0,0,0,.4)`,transition:"all .22s"}}>
-                {isEarned&&<div style={{position:"absolute",top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${r.color},transparent)`,opacity:.8}}/>}
-                <div style={{display:"flex",gap:14,alignItems:"flex-start"}}>
-                  <motion.div animate={isEarned?{scale:[1,1.1,1]}:{}} transition={{duration:2,repeat:Infinity,delay:i*.2}}
-                    style={{fontSize:36,flexShrink:0,filter:isEarned?`drop-shadow(0 0 8px ${r.color}60)`:"none"}}>
-                    {ach.icon}
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+         <AnimatePresence mode="popLayout">
+            {filtered.map((ach, i) => {
+               const isEarned = earnedIds.has(ach.id);
+               const r = RARITY_CONFIG[ach.rarity] || RARITY_CONFIG.common;
+               const CatIcon = CATEGORY_ICONS[ach.category] || Target;
+               
+               return (
+                  <motion.div
+                    layout
+                    key={ach.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ delay: i * 0.03 }}
+                    onClick={() => setSelected(ach)}
+                    className={`glass-card p-6 cursor-pointer group relative overflow-hidden transition-all duration-500 hover:border-mint/30 ${!isEarned ? 'grayscale opacity-60 hover:grayscale-0' : r.glow}`}
+                  >
+                     <div className="flex justify-between items-start mb-6">
+                        <div className={`p-4 rounded-2xl ${isEarned ? 'bg-mint/10 text-mint shadow-neon-mint' : 'bg-white/5 text-slate-700'}`}>
+                           {isEarned ? <ach.icon size={32} /> : <Lock size={32} />}
+                        </div>
+                        <div className={`px-2 py-0.5 rounded-lg border ${r.bg} ${r.border} ${r.color} text-[8px] font-black uppercase tracking-widest`}>
+                           {r.label}
+                        </div>
+                     </div>
+
+                     <div className="space-y-2">
+                        <h3 className="font-heading font-black text-white uppercase tracking-tight truncate">{ach.name}</h3>
+                        <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed">{ach.description}</p>
+                     </div>
+
+                     <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                           {ach.coins_reward > 0 && (
+                              <div className="flex items-center gap-1.5">
+                                 <div className="w-1 h-1 rounded-full bg-cyber-gold" />
+                                 <span className="text-[9px] font-black text-cyber-gold uppercase">+{ach.coins_reward} CP</span>
+                              </div>
+                           )}
+                           {ach.xp_reward > 0 && (
+                              <div className="flex items-center gap-1.5">
+                                 <div className="w-1 h-1 rounded-full bg-mint" />
+                                 <span className="text-[9px] font-black text-mint uppercase">+{ach.xp_reward} XP</span>
+                              </div>
+                           )}
+                        </div>
+                        {isEarned && <CheckCircle2 size={16} className="text-mint" />}
+                     </div>
                   </motion.div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
-                      <p style={{fontSize:14,fontWeight:700,color:isEarned?r.color:"rgba(255,255,255,.5)",lineHeight:1.2}}>{ach.name}</p>
-                      <span style={{fontFamily:"JetBrains Mono,monospace",fontSize:7,color:r.color,background:r.bg,border:`1px solid ${r.border}`,padding:"2px 6px",borderRadius:5,flexShrink:0,marginLeft:6}}>
-                        {r.label}
-                      </span>
-                    </div>
-                    <p style={{fontSize:11,color:"rgba(255,255,255,.35)",lineHeight:1.5,marginBottom:8}}>{ach.description}</p>
-                    <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                      {ach.coins_reward>0&&<span style={{fontFamily:"JetBrains Mono,monospace",fontSize:9,color:CYAN}}>💎 {ach.coins_reward}</span>}
-                      {ach.xp_reward>0&&<span style={{fontFamily:"JetBrains Mono,monospace",fontSize:9,color:INDIGO}}>⚡ {ach.xp_reward} XP</span>}
-                      {isEarned&&earnedData?.earned_at&&
-                        <span style={{fontFamily:"JetBrains Mono,monospace",fontSize:8,color:"rgba(255,255,255,.2)",marginLeft:"auto"}}>
-                          {new Date(earnedData.earned_at).toLocaleDateString("fr-FR")}
-                        </span>}
-                    </div>
+               );
+            })}
+         </AnimatePresence>
+      </div>
+
+      {/* Modal Detail */}
+      <AnimatePresence>
+         {selected && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-obsidian/90 backdrop-blur-xl"
+              onClick={() => setSelected(null)}
+            >
+               <motion.div 
+                 initial={{ scale: 0.95, y: 20 }}
+                 animate={{ scale: 1, y: 0 }}
+                 className="w-full max-w-lg ultra-glass p-12 relative overflow-hidden border-white/10"
+                 onClick={e => e.stopPropagation()}
+               >
+                  {/* Decorative Elements */}
+                  <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+                     <Medal size={160} />
                   </div>
-                </div>
-                {isEarned&&<div style={{position:"absolute",top:10,right:10,width:20,height:20,borderRadius:"50%",background:gx(.15),border:`1px solid ${gx(.3)}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>✓</div>}
-              </div>
+
+                  <div className="text-center space-y-8 relative z-10">
+                     <div className="flex flex-col items-center gap-6">
+                        <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10 shadow-neon-mint text-mint">
+                           <span className="text-7xl">{selected.icon}</span>
+                        </div>
+                        <div className="space-y-2">
+                           <h2 className="text-4xl font-heading font-black text-white uppercase tracking-tighter leading-none">{selected.name}</h2>
+                           <div className={`inline-flex px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${RARITY_CONFIG[selected.rarity].bg} ${RARITY_CONFIG[selected.rarity].color}`}>
+                              {RARITY_CONFIG[selected.rarity].label} Protocol
+                           </div>
+                        </div>
+                     </div>
+
+                     <p className="text-slate-400 text-lg font-medium leading-relaxed max-w-sm mx-auto">
+                        {selected.description}
+                     </p>
+
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl">
+                           <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Combat Reward</p>
+                           <p className="text-2xl font-heading font-black text-cyber-gold">{selected.coins_reward} CP</p>
+                        </div>
+                        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl">
+                           <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">XP Gain</p>
+                           <p className="text-2xl font-heading font-black text-mint">{selected.xp_reward} XP</p>
+                        </div>
+                     </div>
+
+                     <div className={`py-4 rounded-2xl border ${earnedIds.has(selected.id) ? 'bg-mint/10 border-mint/20 text-mint' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em]">
+                           {earnedIds.has(selected.id) ? "OBJECTIVE SECURED" : "OBJECTIVE PENDING"}
+                        </p>
+                     </div>
+
+                     <button 
+                        onClick={() => setSelected(null)}
+                        className="text-slate-600 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors"
+                     >
+                        Close Intel
+                     </button>
+                  </div>
+               </motion.div>
             </motion.div>
-          );
-        })}
-      </div>
-
-      {filtered.length===0&&(
-        <div style={{textAlign:"center",padding:"60px 0"}}>
-          <p style={{fontFamily:"JetBrains Mono,monospace",fontSize:10,letterSpacing:4,color:"rgba(255,255,255,.2)"}}>AUCUN SUCCÈS DANS CETTE CATÉGORIE</p>
-        </div>
-      )}
+         )}
+      </AnimatePresence>
     </div>
-
-    {/* DETAIL MODAL */}
-    <AnimatePresence>
-      {selected&&(
-        <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
-          style={{position:"fixed",inset:0,background:"rgba(2,8,23,.88)",backdropFilter:"blur(14px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:50,padding:20}}
-          onClick={()=>setSelected(null)}>
-          <motion.div initial={{scale:.85,opacity:0}} animate={{scale:1,opacity:1}} exit={{scale:.85,opacity:0}}
-            onClick={e=>e.stopPropagation()}
-            style={{width:"100%",maxWidth:420,background:CARD,border:`1px solid ${(RARITY[selected.rarity]||RARITY.common).border}`,borderRadius:20,padding:"32px",boxShadow:`0 0 40px ${(RARITY[selected.rarity]||RARITY.common).glow},0 24px 80px rgba(0,0,0,.7)`}}>
-            {(()=>{
-              const r=RARITY[selected.rarity]||RARITY.common;
-              const isE=earnedIds.has(selected.id);
-              return(<>
-                <div style={{textAlign:"center",marginBottom:20}}>
-                  <motion.div animate={{scale:[1,1.15,1],rotate:[0,5,-5,0]}} transition={{duration:2,repeat:Infinity}}
-                    style={{fontSize:64,marginBottom:12,display:"inline-block",filter:`drop-shadow(0 0 16px ${r.color}70)`}}>
-                    {selected.icon}
-                  </motion.div>
-                  <h2 style={{fontFamily:"Bebas Neue,cursive",fontSize:30,letterSpacing:2,color:r.color,margin:"0 0 6px"}}>{selected.name}</h2>
-                  <span style={{fontFamily:"JetBrains Mono,monospace",fontSize:9,color:r.color,background:r.bg,border:`1px solid ${r.border}`,padding:"4px 14px",borderRadius:20}}>{r.label}</span>
-                </div>
-                <p style={{color:"rgba(255,255,255,.5)",fontSize:13,textAlign:"center",lineHeight:1.7,marginBottom:20}}>{selected.description}</p>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
-                  {[[`💎 ${selected.coins_reward}`,"COINS REWARD",CYAN],[`⚡ ${selected.xp_reward}`,"XP REWARD",INDIGO]].map(([v,l,c])=>(
-                    <div key={l} style={{textAlign:"center",padding:"12px",borderRadius:10,background:cx(.04),border:`1px solid ${cx(.08)}`}}>
-                      <p style={{fontFamily:"Bebas Neue,cursive",fontSize:22,color:c,lineHeight:1}}>{v}</p>
-                      <p style={{fontFamily:"JetBrains Mono,monospace",fontSize:8,color:"rgba(255,255,255,.25)",letterSpacing:1,marginTop:4}}>{l}</p>
-                    </div>
-                  ))}
-                </div>
-                <div style={{textAlign:"center",padding:"12px",borderRadius:10,background:isE?gx(.08):rx(.06),border:`1px solid ${isE?gx(.2):rx(.15)}`}}>
-                  <p style={{fontFamily:"JetBrains Mono,monospace",fontSize:11,color:isE?GREEN:RED,letterSpacing:1}}>
-                    {isE?"✅ SUCCÈS OBTENU":"🔒 NON DÉBLOQUÉ"}
-                  </p>
-                  {isE&&earned.find(e=>e.achievement_id===selected.id)?.earned_at&&
-                    <p style={{fontFamily:"JetBrains Mono,monospace",fontSize:9,color:"rgba(255,255,255,.25)",marginTop:4}}>
-                      {new Date(earned.find(e=>e.achievement_id===selected.id).earned_at).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})}
-                    </p>}
-                </div>
-              </>);
-            })()}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </>);
+  );
 }

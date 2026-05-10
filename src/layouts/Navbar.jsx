@@ -6,6 +6,7 @@ import {
   Bell, Wallet, ChevronDown, User, LogOut,
   HelpCircle, MessageSquare, Menu
 } from "lucide-react";
+import ThemeToggle from "../components/ui/ThemeToggle";
 
 export default function Navbar({ profile, onMenuOpen }) {
   const navigate = useNavigate();
@@ -110,7 +111,7 @@ export default function Navbar({ profile, onMenuOpen }) {
           <div className="relative group w-[400px]">
             <input
               type="text"
-              placeholder="SYSTEM_SEARCH_PROTOCOL..."
+              placeholder="Search..."
               className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-[10px] font-mono tracking-widest text-white placeholder:text-slate-600 focus:outline-none focus:border-mint/30 focus:bg-white/[0.05] transition-all duration-500 uppercase"
             />
             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
@@ -122,6 +123,8 @@ export default function Navbar({ profile, onMenuOpen }) {
 
           {/* Actions */}
           <div className="flex items-center gap-6">
+            <ThemeToggle variant="icon" buttonSize={32} />
+
             <Link
               to="/wallet"
               className="flex items-center gap-4 px-5 py-2.5 bg-white/[0.03] border border-white/5 rounded-2xl hover:border-cyber-gold/40 transition-all duration-500 group"
@@ -183,8 +186,8 @@ export default function Navbar({ profile, onMenuOpen }) {
                     </div>
                     <div className="space-y-1">
                       {[
-                        { icon: User, label: "View Profile", path: "/profile" },
-                        { icon: HelpCircle, label: "Tactical Aid", path: "/support" },
+                        { icon: User, label: "Your Profile", path: "/profile" },
+                        { icon: HelpCircle, label: "Support & Help", path: "/support" },
                       ].map((item, i) => (
                         <Link
                           key={i}

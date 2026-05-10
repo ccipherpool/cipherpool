@@ -68,9 +68,14 @@ const VideoBackground = ({ videoUrl }) => {
 
     useEffect(() => {
         if (videoRef.current) {
-            videoRef.current.play().catch(error => {
-                console.error("Video autoplay failed:", error);
-            });
+            const playVideo = async () => {
+                try {
+                    await videoRef.current.play();
+                } catch (error) {
+                    console.log("Video playback handled:", error.name);
+                }
+            };
+            playVideo();
         }
     }, []);
 
@@ -145,7 +150,7 @@ export default function Login() {
                             NEXUS<span className="text-mint">GATE</span>
                         </h2>
                         <p className="text-white/40 font-mono text-[10px] uppercase tracking-[0.4em] flex flex-col items-center space-y-1">
-                            <span className="animate-pulse">Initialize Secure Uplink</span>
+                            <span className="animate-pulse tracking-widest">Secure Login Protocol</span>
                         </p>
                     </div>
 
@@ -153,7 +158,7 @@ export default function Login() {
                         <FormInput
                             icon={<Mail size={18} />}
                             type="email"
-                            placeholder="EMAIL_HASH"
+                            placeholder="Email address"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -163,7 +168,7 @@ export default function Login() {
                             <FormInput
                                 icon={<Lock size={18} />}
                                 type={showPassword ? "text" : "password"}
-                                placeholder="ACCESS_SEQUENCE"
+                                placeholder="Account Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
@@ -188,7 +193,7 @@ export default function Login() {
                                     htmlFor="remember-me"
                                     className="text-[10px] font-black uppercase tracking-widest text-white/60 cursor-pointer hover:text-white transition-colors"
                                 >
-                                    Persistent
+                                    Remember me
                                 </label>
                             </div>
                             <a href="#" className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors">
@@ -215,7 +220,7 @@ export default function Login() {
                             disabled={loading}
                             className="w-full py-5 rounded-2xl bg-mint text-obsidian font-heading font-black text-sm uppercase tracking-[0.2em] transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'SYNCHRONIZING...' : 'ESTABLISH LINK'}
+                            {loading ? 'SYNCHRONIZING...' : 'Enter NexusGate'}
                         </button>
                     </form>
 
@@ -223,7 +228,7 @@ export default function Login() {
                         <div className="relative flex items-center justify-center">
                             <div className="border-t border-white/5 absolute w-full"></div>
                             <div className="bg-transparent px-4 relative text-white/20 text-[8px] font-black uppercase tracking-[0.4em]">
-                                Alternative Protocol
+                                quick access via
                             </div>
                         </div>
 
@@ -235,9 +240,9 @@ export default function Login() {
                     </div>
 
                     <p className="mt-10 text-center text-[10px] font-black uppercase tracking-widest text-white/40">
-                        Unregistered Unit?{' '}
-                        <Link to="/register" className="text-mint hover:text-white transition-colors">
-                            Initialize Profile
+                        Don't have an account?{' '}
+                        <Link to="/register" className="text-mint hover:text-white transition-colors font-bold">
+                            Create Account
                         </Link>
                     </p>
                 </div>
