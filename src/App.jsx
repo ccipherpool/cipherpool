@@ -44,6 +44,7 @@ import Adminnews      from "./pages/Adminnews";
 // Super Admin Pages
 import SuperAdmin from "./pages/SuperAdmin";
 import AdminGrant from "./pages/AdminGrant";
+import SeasonsManager from "./pages/superadmin/SeasonsManager";
 
 // Store / Designer
 import Store          from "./pages/Store";

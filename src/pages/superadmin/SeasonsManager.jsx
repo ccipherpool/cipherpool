@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { motion } from "framer-motion";
 import { Crown, Calendar, Trophy, AlertTriangle, CheckCircle2, ArrowLeft } from "lucide-react";
 
