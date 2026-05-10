@@ -356,27 +356,27 @@ export default function SuperAdmin() {
         <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(139,92,246,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.06) 1px,transparent 1px)", backgroundSize: "50px 50px" }} />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto p-8">
+      <div className="relative z-10 max-w-7xl mx-auto p-4 md:p-8">
 
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex justify-between items-center mb-8">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 md:mb-8">
           <div>
-            <h1 className="text-5xl font-black mb-2 relative">
+            <h1 className="text-3xl md:text-5xl font-black mb-1 md:mb-2 relative">
               <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">SUPER ADMIN</span>
-              <span className="absolute -top-3 -right-3 px-2 py-1 bg-gradient-to-r from-purple-600 to-cyan-600 text-xs rounded-full shadow-lg shadow-purple-500/50">v2.0</span>
+              <span className="ml-2 md:absolute md:ml-0 md:-top-3 md:-right-3 inline-flex px-2 py-0.5 bg-gradient-to-r from-purple-600 to-cyan-600 text-[10px] rounded-full shadow-lg shadow-purple-500/50">v2.0</span>
             </h1>
-            <p className="text-white/40 flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              Bienvenue, {profile?.username || profile?.full_name || profile?.email?.split("@")[0]} - Contrôle total de la plateforme
+            <p className="text-white/40 flex items-center gap-2 text-sm">
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shrink-0" />
+              <span className="truncate">Bienvenue, {profile?.username || profile?.full_name || profile?.email?.split("@")[0]}</span>
             </p>
           </div>
-          <div className="flex gap-3">
-            <Link to="/admin" className="group relative px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-xl font-bold text-white overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50">
-              <span className="relative z-10">PANEL ADMIN</span>
+          <div className="flex gap-2 shrink-0">
+            <Link to="/admin" className="group relative px-4 py-2.5 md:px-6 md:py-3 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-xl font-bold text-white text-sm overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50">
+              <span className="relative z-10">ADMIN</span>
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition" />
             </Link>
-            <button onClick={() => navigate(0)} className="px-6 py-3 bg-[#11152b] border border-purple-500/30 rounded-xl text-white/60 hover:text-white hover:border-purple-500 transition-all duration-300 hover:scale-105">
-              ⟲ RAFRAÎCHIR
+            <button onClick={() => navigate(0)} className="px-4 py-2.5 md:px-6 md:py-3 bg-[#11152b] border border-purple-500/30 rounded-xl text-white/60 hover:text-white hover:border-purple-500 transition-all duration-300 text-sm">
+              ⟲ Refresh
             </button>
           </div>
         </motion.div>
@@ -392,7 +392,7 @@ export default function SuperAdmin() {
         </AnimatePresence>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 md:gap-4 mb-6 md:mb-8">
           {STAT_CARDS.map((item, index) => (
             <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}
               onHoverStart={() => setHoveredCard(index)} onHoverEnd={() => setHoveredCard(null)}
@@ -408,7 +408,7 @@ export default function SuperAdmin() {
         </div>
 
         {/* Revenue */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
           {[
             { label: "REVENU AUJOURD'HUI", value: stats.todayRevenue,  color: "from-purple-600/20 to-cyan-600/20", border: "border-purple-500/30" },
             { label: "REVENU CE MOIS",     value: stats.monthlyRevenue, color: "from-cyan-600/20 to-purple-600/20", border: "border-cyan-500/30"   },
