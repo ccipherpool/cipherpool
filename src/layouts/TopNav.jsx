@@ -1,15 +1,15 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  Trophy, 
-  BarChart3, 
-  MessageSquare, 
-  Users2, 
-  ShoppingBag, 
-  Wallet, 
-  Star, 
-  Newspaper, 
+import {
+  LayoutDashboard,
+  Trophy,
+  BarChart3,
+  MessageSquare,
+  Users2,
+  ShoppingBag,
+  Wallet,
+  Star,
+  Newspaper,
   Ticket,
   TrendingUp,
   ShieldAlert,
@@ -19,7 +19,8 @@ import {
   LogOut,
   Sparkles,
   Search,
-  Bell
+  Bell,
+  User
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import ThemeToggle from "../components/ui/ThemeToggle";
