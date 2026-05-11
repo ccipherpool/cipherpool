@@ -140,54 +140,54 @@ export default function MainLayout() {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="fixed left-0 top-0 bottom-0 w-72 z-[210] md:hidden flex flex-col bg-[#080d18] border-r border-white/[0.08]"
+                className="fixed left-0 top-0 bottom-0 w-56 z-[210] md:hidden flex flex-col bg-[#080d18] border-r border-white/[0.08]"
               >
-                <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #4f46e5, #10b981)' }}>
-                      <Sparkles className="text-white" size={14} fill="currentColor" />
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #4f46e5, #10b981)' }}>
+                      <Sparkles className="text-white" size={11} fill="currentColor" />
                     </div>
-                    <span className="text-sm font-heading font-black tracking-tighter text-white">CIPHERPOOL</span>
+                    <span className="text-[12px] font-heading font-black tracking-tighter text-white">CIPHER<span className="text-mint">POOL</span></span>
                   </div>
-                  <button onClick={() => setMobileMenuOpen(false)} className="p-1.5 text-slate-500 hover:text-white transition-colors">
-                    <X size={20} />
+                  <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-slate-500 hover:text-white transition-colors">
+                    <X size={16} />
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto scrollbar-hide px-3 py-3 space-y-0.5">
+                <div className="flex-1 overflow-y-auto scrollbar-hide px-2 py-2 space-y-0.5">
                   {DRAWER_NAV.map(item => (
                     <NavLink
                       key={item.path}
                       to={item.path}
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-4 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wide transition-all ${
+                        `flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all ${
                           isActive ? "bg-mint/10 text-mint" : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
                         }`
                       }
                     >
-                      <item.icon size={16} />
+                      <item.icon size={13} />
                       {item.label}
                     </NavLink>
                   ))}
 
                   {isAdmin && (
-                    <div className="mt-4 pt-3 border-t border-white/[0.08] space-y-0.5">
-                      <p className="text-[8px] font-black uppercase tracking-[0.35em] text-slate-600 px-4 mb-2">Admin</p>
-                      <NavLink to="/admin" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wide text-slate-400 hover:text-orange-400 hover:bg-orange-400/[0.05] transition-all">
-                        <ShieldAlert size={16} /> Admin Panel
+                    <div className="mt-3 pt-2 border-t border-white/[0.08] space-y-0.5">
+                      <p className="text-[7px] font-black uppercase tracking-[0.35em] text-slate-600 px-3 mb-1">Admin</p>
+                      <NavLink to="/admin" className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide text-slate-400 hover:text-orange-400 hover:bg-orange-400/[0.05] transition-all">
+                        <ShieldAlert size={13} /> Admin Panel
                       </NavLink>
                       {profile?.role === "super_admin" && (
-                        <NavLink to="/super-admin" className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-wide text-slate-400 hover:text-red-400 hover:bg-red-400/[0.05] transition-all">
-                          <Zap size={16} /> Super Admin
+                        <NavLink to="/super-admin" className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide text-slate-400 hover:text-red-400 hover:bg-red-400/[0.05] transition-all">
+                          <Zap size={13} /> Super Admin
                         </NavLink>
                       )}
                     </div>
                   )}
                 </div>
 
-                <div className="p-4 border-t border-white/[0.08]">
-                  <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2.5 px-5 py-2.5 rounded-xl bg-red-500/10 text-red-500 font-bold uppercase tracking-wide text-[12px]">
-                    <LogOut size={15} /> Déconnexion
+                <div className="p-3 border-t border-white/[0.08]">
+                  <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-500 font-bold uppercase tracking-wide text-[10px]">
+                    <LogOut size={12} /> Déconnexion
                   </button>
                 </div>
               </motion.aside>
