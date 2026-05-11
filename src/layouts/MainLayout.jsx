@@ -43,6 +43,7 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [profile, setProfile]       = useState(null);
+  const [balance, setBalance]       = useState(0);
   const [loading, setLoading]       = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -52,6 +53,9 @@ export default function MainLayout() {
     const { data: prof } = await supabase
       .from("profiles").select("*").eq("id", user.id).maybeSingle();
     if (prof) setProfile(prof);
+    const { data: wallet } = await supabase
+      .from("wallets").select("balance").eq("user_id", user.id).maybeSingle();
+    setBalance(wallet?.balance || 0);
     return user;
   }, [navigate]);
 
@@ -116,7 +120,7 @@ export default function MainLayout() {
           </span>
           <Link to="/wallet" className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.05] border border-white/[0.08] rounded-xl">
             <Wallet size={13} className="text-cyber-gold" />
-            <span className="text-[10px] font-black text-white">{(profile?.coins || 0).toLocaleString()}</span>
+            <span className="text-[10px] font-black text-white">{balance.toLocaleString()}</span>
           </Link>
         </nav>
 
