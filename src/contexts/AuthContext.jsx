@@ -18,21 +18,32 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
+    let cancelled = false;
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (cancelled) return;
       const u = session?.user ?? null;
       setUser(u);
       if (u) setRole(await fetchRole(u.id));
       setLoading(false);
+    }).catch((err) => {
+      if (err?.name === 'AbortError') return;
+      console.error('getSession error:', err);
+      setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (cancelled) return;
       const u = session?.user ?? null;
       setUser(u);
       setRole(u ? await fetchRole(u.id) : null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
