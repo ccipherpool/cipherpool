@@ -11,6 +11,7 @@ export default {
           DEFAULT: '#0A0B0F',
           'light': '#12141C',
           'lighter': '#1A1D29',
+          'deep': '#020617',
           'glow': 'rgba(10, 11, 15, 0.8)',
         },
         'mint': {

@@ -1,198 +1,148 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  Trophy, 
-  BarChart3, 
-  User, 
-  Ticket, 
-  ShieldAlert, 
-  Crown, 
-  PlusCircle, 
-  Gamepad2, 
-  LogOut,
-  ChevronRight,
-  Sparkles,
-  Settings,
-  Sword,
-  Target,
-  MessageSquare,
-  Users2,
-  ShoppingBag,
-  Wallet,
-  Star,
-  Newspaper,
-  Zap,
-  Layout
+import {
+  LayoutDashboard, Trophy, BarChart3, Ticket,
+  ShieldAlert, Crown, LogOut, Sparkles,
+  MessageSquare, Users2, ShoppingBag, Wallet, Star,
+  Newspaper, Zap, Layout, TrendingUp, Gift,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
-const MenuItem = ({ item, isActive }) => {
-  return (
-    <NavLink
-      to={item.path}
-      className="relative group flex items-center gap-4 px-6 py-4 rounded-[1.25rem] transition-all duration-500 overflow-hidden"
-    >
-      {isActive && (
-        <motion.div
-          layoutId="sidebar-active-v3"
-          className="absolute inset-0 bg-mint/10 border border-mint/20 rounded-[1.25rem]"
-          initial={false}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        />
-      )}
-      
-      <div className={`relative z-10 p-2 rounded-xl transition-all duration-500 ${
-        isActive ? "text-mint bg-mint/10 neon-glow-mint" : "text-slate-500 group-hover:text-mint group-hover:bg-mint/5"
-      }`}>
-        <item.icon size={22} strokeWidth={2.5} />
-      </div>
-      
-      <span className={`relative z-10 font-heading font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-500 ${
-        isActive ? "text-white" : "text-slate-500 group-hover:text-white"
-      }`}>
-        {item.label}
-      </span>
+const SidebarLink = ({ to, icon: Icon, label, isActive }) => (
+  <NavLink
+    to={to}
+    className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wide transition-all duration-150 ${
+      isActive
+        ? 'bg-mint/[0.12] text-mint'
+        : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+    }`}
+  >
+    <Icon
+      size={15}
+      strokeWidth={isActive ? 2.5 : 2}
+      className={isActive ? 'text-mint flex-shrink-0' : 'text-slate-500 group-hover:text-slate-300 flex-shrink-0 transition-colors'}
+    />
+    <span className="flex-1 truncate">{label}</span>
+    {isActive && <div className="w-1.5 h-1.5 rounded-full bg-mint flex-shrink-0" />}
+  </NavLink>
+);
 
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-mint/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-    </NavLink>
-  );
-};
+const Section = ({ label, children }) => (
+  <div className="space-y-0.5">
+    <p className="px-3 text-[8px] font-black uppercase tracking-[0.35em] text-slate-600 mb-1">{label}</p>
+    {children}
+  </div>
+);
 
 export default function Sidebar({ profile }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const p = location.pathname;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
   };
 
-  const menuItems = [
-    { section: "Tactical Units", items: [
-      { path: "/dashboard", icon: LayoutDashboard, label: "Command" },
-      { path: "/tournaments", icon: Trophy, label: "Tournaments" },
-      { path: "/chat", icon: MessageSquare, label: "Global Chat" },
-      { path: "/clans", icon: Users2, label: "Clans" },
-    ]},
-    { section: "Logistics", items: [
-      { path: "/store", icon: ShoppingBag, label: "Store" },
-      { path: "/wallet", icon: Wallet, label: "Wallet" },
-      { path: "/leaderboard", icon: BarChart3, label: "Rankings" },
-    ]},
-    { section: "Intelligence", items: [
-      { path: "/stats", icon: BarChart3, label: "Military Specs" },
-      { path: "/achievements", icon: Star, label: "Achievements" },
-      { path: "/news", icon: Newspaper, label: "Flash News" },
-      { path: "/support", icon: Ticket, label: "Support" },
-    ]}
-  ];
-
   const isFounder = ["founder", "fondateur", "super_admin"].includes(profile?.role);
   const isDesigner = ["designer", "admin", "super_admin"].includes(profile?.role);
-  const isAdmin = ["admin", "super_admin", "founder", "fondateur"].includes(profile?.role);
+  const isAdmin   = ["admin", "super_admin", "founder", "fondateur"].includes(profile?.role);
 
   return (
-    <aside className="fixed left-0 top-0 w-72 h-screen p-6 flex flex-col z-[100] pointer-events-none">
-      <div className="flex-1 ultra-glass border-white/10 flex flex-col pointer-events-auto relative overflow-hidden">
-        {/* Logo */}
-        <div className="p-8 mb-4">
-          <div className="flex items-center gap-4">
-            <div className="relative w-12 h-12 bg-mint rounded-2xl flex items-center justify-center shadow-neon-mint rotate-45 group hover:rotate-90 transition-all duration-700">
-              <Sparkles className="text-obsidian -rotate-45" size={24} fill="currentColor" />
+    <aside className="hidden md:flex w-60 flex-shrink-0 flex-col h-full bg-[#080d18] border-r border-white/[0.05] overflow-hidden">
+      {/* Logo */}
+      <div className="px-4 py-4 border-b border-white/[0.05] flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{
+              background: 'linear-gradient(135deg, #4f46e5, #10b981)',
+              boxShadow: '0 0 16px rgba(16,185,129,0.2)',
+            }}
+          >
+            <Sparkles size={15} className="text-white" fill="currentColor" />
+          </div>
+          <div>
+            <div className="text-[13px] font-black tracking-tight text-white leading-none">
+              CIPHER<span className="text-mint">POOL</span>
             </div>
-            <div>
-              <h1 className="text-lg font-heading font-black tracking-tighter text-white">
-                CIPHER<span className="text-mint">POOL</span>
-              </h1>
-              <span className="text-[8px] uppercase tracking-[0.4em] font-black text-mint/50 animate-pulse">Tactical v4.2.0</span>
-            </div>
+            <div className="text-[7px] font-bold uppercase tracking-[0.4em] text-mint/40 mt-0.5">Esports Maroc</div>
           </div>
         </div>
+      </div>
 
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-4 space-y-8 custom-scrollbar pb-12">
-          {menuItems.map((group) => (
-            <div key={group.section} className="space-y-2">
-              <p className="px-6 text-[8px] uppercase tracking-[0.4em] font-black text-slate-600 mb-4">
-                {group.section}
-              </p>
-              {group.items.map((item) => (
-                <MenuItem 
-                  key={item.path} 
-                  item={item} 
-                  isActive={location.pathname === item.path} 
-                />
-              ))}
-            </div>
-          ))}
+      {/* Nav */}
+      <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4 scrollbar-hide">
 
-          {isFounder && (
-            <div className="pt-6 space-y-2">
-              <p className="px-6 text-[8px] uppercase tracking-[0.4em] font-black text-purple-500/50 mb-4">
-                Operational Command
-              </p>
-              <MenuItem 
-                item={{ path: "/founder", icon: Crown, label: "Founder Hub" }} 
-                isActive={location.pathname === "/founder"} 
-              />
-            </div>
-          )}
+        <Section label="Navigation">
+          <SidebarLink to="/dashboard"   icon={LayoutDashboard} label="Dashboard"   isActive={p === '/dashboard'} />
+          <SidebarLink to="/tournaments" icon={Trophy}           label="Tournois"    isActive={p.startsWith('/tournaments')} />
+          <SidebarLink to="/leaderboard" icon={BarChart3}        label="Classement"  isActive={p === '/leaderboard'} />
+          <SidebarLink to="/chat"        icon={MessageSquare}    label="Chat Global" isActive={p === '/chat'} />
+          <SidebarLink to="/clans"       icon={Users2}           label="Clans"       isActive={p.startsWith('/clans')} />
+        </Section>
 
-          {isDesigner && (
-            <div className="pt-6 space-y-2">
-              <p className="px-6 text-[8px] uppercase tracking-[0.4em] font-black text-emerald-500/50 mb-4">
-                Design Hub
-              </p>
-              <MenuItem 
-                item={{ path: "/designer", icon: Layout, label: "Designer Panel" }} 
-                isActive={location.pathname === "/designer"} 
-              />
-            </div>
-          )}
+        <Section label="Économie">
+          <SidebarLink to="/store"  icon={ShoppingBag} label="Boutique" isActive={p === '/store'} />
+          <SidebarLink to="/wallet" icon={Wallet}      label="Wallet"   isActive={p === '/wallet'} />
+        </Section>
 
-          {isAdmin && (
-            <div className="pt-6 space-y-2">
-              <p className="px-6 text-[8px] uppercase tracking-[0.4em] font-black text-orange-500/50 mb-4">
-                System Override
-              </p>
-              <MenuItem 
-                item={{ path: "/admin", icon: ShieldAlert, label: "Control" }} 
-                isActive={location.pathname === "/admin"} 
-              />
-              {profile?.role === 'super_admin' && (
-                <MenuItem 
-                  item={{ path: "/super-admin", icon: Zap, label: "Super Admin" }} 
-                  isActive={location.pathname === "/super-admin"} 
-                />
-              )}
-            </div>
-          )}
-        </div>
+        <Section label="Progression">
+          <SidebarLink to="/stats"         icon={TrendingUp} label="Statistiques"    isActive={p === '/stats'} />
+          <SidebarLink to="/achievements"  icon={Star}       label="Succès"          isActive={p === '/achievements'} />
+          <SidebarLink to="/daily-rewards" icon={Gift}       label="Récompenses"     isActive={p === '/daily-rewards'} />
+          <SidebarLink to="/hall-of-fame"  icon={Crown}      label="Hall of Fame"    isActive={p === '/hall-of-fame'} />
+        </Section>
 
-        {/* Footer Info */}
-        <div className="p-6 mt-auto">
-          <div className="bg-white/5 border border-white/5 rounded-3xl p-4 flex items-center gap-4 mb-4 group hover:border-mint/30 transition-colors duration-500">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-mint to-mint-dark flex items-center justify-center text-obsidian font-black text-xs shadow-neon-mint">
-              {profile?.username?.[0]?.toUpperCase() || 'P'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-black text-white truncate uppercase tracking-widest">{profile?.username || "Agent"}</p>
-              <p className="text-[8px] font-bold text-mint/60 uppercase tracking-widest">Level {profile?.level || 1}</p>
-            </div>
+        <Section label="Plus">
+          <SidebarLink to="/news"    icon={Newspaper} label="Actualités" isActive={p === '/news'} />
+          <SidebarLink to="/support" icon={Ticket}    label="Support"    isActive={p === '/support'} />
+        </Section>
+
+        {(isFounder || isDesigner || isAdmin) && (
+          <div className="pt-2 border-t border-white/[0.05] space-y-4">
+            {isFounder && (
+              <Section label="Founder">
+                <SidebarLink to="/founder" icon={Crown} label="Founder Hub" isActive={p.startsWith('/founder')} />
+              </Section>
+            )}
+            {isDesigner && (
+              <Section label="Design">
+                <SidebarLink to="/designer" icon={Layout} label="Designer" isActive={p === '/designer'} />
+              </Section>
+            )}
+            {isAdmin && (
+              <Section label="Admin">
+                <SidebarLink to="/admin" icon={ShieldAlert} label="Control Panel" isActive={p.startsWith('/admin')} />
+                {profile?.role === 'super_admin' && (
+                  <SidebarLink to="/super-admin" icon={Zap} label="Super Admin" isActive={p.startsWith('/super-admin')} />
+                )}
+              </Section>
+            )}
           </div>
+        )}
+      </div>
 
+      {/* User footer */}
+      <div className="p-3 border-t border-white/[0.05] flex-shrink-0">
+        <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-white/[0.03] border border-white/[0.05] group">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-black text-[10px] flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #10b981, #4f46e5)' }}
+          >
+            {profile?.username?.[0]?.toUpperCase() || 'U'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-black text-white uppercase tracking-wider truncate leading-none">{profile?.username || 'Player'}</p>
+            <p className="text-[8px] text-mint/60 font-semibold mt-0.5">Niveau {profile?.level || 1}</p>
+          </div>
           <button
             onClick={handleLogout}
-            className="w-full group flex items-center gap-4 px-6 py-4 rounded-2xl text-slate-500 hover:text-red-400 transition-all duration-500"
+            className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-400/10 transition-all opacity-0 group-hover:opacity-100"
+            title="Se déconnecter"
           >
-            <LogOut size={20} />
-            <span className="font-heading font-black text-[9px] uppercase tracking-widest">Terminate</span>
+            <LogOut size={13} />
           </button>
         </div>
-
-        {/* Interior Decor */}
-        <div className="absolute top-0 right-0 w-20 h-full bg-gradient-to-l from-white/[0.02] to-transparent pointer-events-none" />
       </div>
     </aside>
   );

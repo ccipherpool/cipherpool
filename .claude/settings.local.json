@@ -25,7 +25,11 @@
       "Bash(git push *)",
       "Bash(node -e \"const l = require\\('lucide-react'\\); console.log\\('Users2:', !!l.Users2, 'ShoppingBag:', !!l.ShoppingBag, 'Crown:', !!l.Crown\\)\")",
       "PowerShell(npm run *)",
-      "Bash(dir \"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\\\\src\\\\components\\\\ui\\\\\" | findstr ThemeToggle *)"
+      "Bash(dir \"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\\\\src\\\\components\\\\ui\\\\\" | findstr ThemeToggle *)",
+      "PowerShell(head *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\\\\src\" -Recurse | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\\\\\", \"\"\\) })",
+      "Bash(npm ls *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

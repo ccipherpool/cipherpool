@@ -2,12 +2,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { Eye, EyeOff, Mail, Lock, User, Hash, AlertCircle, ChevronLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Hash, AlertCircle, ChevronLeft, Gamepad2 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 
 const FormInput = ({ icon, type, placeholder, value, onChange, required }) => (
     <div className="relative">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
             {icon}
         </div>
         <input
@@ -16,7 +16,7 @@ const FormInput = ({ icon, type, placeholder, value, onChange, required }) => (
             value={value}
             onChange={onChange}
             required={required}
-            className="w-full pl-10 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/60 focus:outline-none focus:border-mint/50 transition-colors"
+            className="w-full pl-10 pr-3 py-3 bg-white/[0.06] border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-mint/50 focus:bg-white/[0.08] transition-all duration-200 text-sm"
         />
     </div>
 );
@@ -30,7 +30,7 @@ const VideoBackground = ({ videoUrl }) => {
     }, []);
     return (
         <div className="absolute inset-0 w-full h-full overflow-hidden">
-            <div className="absolute inset-0 bg-black/30 z-10" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 z-10" />
             <video ref={videoRef} className="absolute inset-0 min-w-full min-h-full object-cover w-auto h-auto" autoPlay loop muted playsInline>
                 <source src={videoUrl} type="video/mp4" />
             </video>
@@ -74,48 +74,57 @@ export default function Register() {
     };
 
     return (
-        <div className="relative min-h-screen bg-obsidian flex items-center justify-center p-6 overflow-hidden">
+        <div className="relative min-h-screen flex items-center justify-center p-6 overflow-hidden bg-[#020617]">
             <VideoBackground videoUrl="https://assets.mixkit.co/videos/preview/mixkit-abstract-blue-and-purple-smoke-background-30043-large.mp4" />
+
+            {/* Accent glows */}
+            <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-mint/[0.08] rounded-full blur-[100px] z-10 pointer-events-none" />
+            <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-indigo-500/[0.08] rounded-full blur-[80px] z-10 pointer-events-none" />
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
                 className="relative z-20 w-full max-w-md"
             >
-                <div className="mb-6 flex justify-center">
-                    <Link to="/" className="inline-flex items-center gap-2 text-white/40 hover:text-white transition-colors group">
-                        <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                {/* Back link */}
+                <div className="mb-5 flex justify-center">
+                    <Link to="/" className="inline-flex items-center gap-1.5 text-white/30 hover:text-white/70 transition-colors group">
+                        <ChevronLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
                         <span className="text-[10px] font-black uppercase tracking-[0.3em]">Retour à l'accueil</span>
                     </Link>
                 </div>
 
-                <div className="p-8 rounded-2xl backdrop-blur-sm bg-black/50 border border-white/10">
-                    <div className="mb-8 text-center">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-4 rotate-3 mx-auto"
-                            style={{ background: "linear-gradient(135deg, #4f46e5, #10b981)", boxShadow: "0 0 24px rgba(16,185,129,0.25)" }}>
-                            <span className="text-white font-black text-base -rotate-3">CP</span>
+                <div className="p-8 rounded-2xl backdrop-blur-2xl bg-black/50 border border-white/10 shadow-2xl">
+                    {/* Header */}
+                    <div className="mb-6 text-center">
+                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 rotate-3 mx-auto"
+                            style={{ background: "linear-gradient(135deg, #4f46e5, #10b981)", boxShadow: "0 0 30px rgba(16,185,129,0.25)" }}>
+                            <Gamepad2 className="text-white -rotate-3" size={26} />
                         </div>
-                        <h2 className="text-3xl font-bold mb-2 relative group">
-                            <span className="absolute -inset-1 bg-gradient-to-r from-indigo-600/30 via-mint/30 to-indigo-500/30 blur-xl opacity-75 group-hover:opacity-100 transition-all duration-500 animate-pulse" />
-                            <span className="relative inline-block text-3xl font-bold text-white">
+
+                        <h2 className="text-3xl font-black mb-1 relative inline-block group">
+                            <span className="absolute -inset-2 bg-gradient-to-r from-indigo-600/25 via-mint/25 to-indigo-500/25 blur-2xl opacity-70 group-hover:opacity-100 transition-all duration-500 animate-pulse rounded-full" />
+                            <span className="relative text-white">
                                 CIPHER<span className="text-mint">POOL</span>
                             </span>
                         </h2>
-                        <p className="text-white/80 flex flex-col items-center space-y-1">
-                            <span className="relative inline-block animate-pulse text-sm">Créer un compte</span>
-                            <span className="text-xs text-white/50 animate-pulse">[Rejoins l'arène]</span>
-                            <div className="flex space-x-2 text-xs text-white/40">
+
+                        <div className="mt-2 flex flex-col items-center gap-0.5">
+                            <span className="text-sm text-white/60 animate-pulse">Créer un compte</span>
+                            <span className="text-[11px] text-white/30">[Rejoins l'arène et domine]</span>
+                            <div className="flex gap-2 mt-1.5 text-sm opacity-60">
                                 <span className="animate-pulse">⚔️</span>
                                 <span className="animate-bounce">🎮</span>
                                 <span className="animate-pulse">🏆</span>
                             </div>
-                        </p>
+                        </div>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="space-y-3">
                         <FormInput
-                            icon={<User size={18} />}
+                            icon={<User size={17} />}
                             type="text"
                             placeholder="Nom d'utilisateur"
                             value={formData.username}
@@ -123,7 +132,7 @@ export default function Register() {
                             required
                         />
                         <FormInput
-                            icon={<Mail size={18} />}
+                            icon={<Mail size={17} />}
                             type="email"
                             placeholder="Adresse email"
                             value={formData.email}
@@ -131,15 +140,15 @@ export default function Register() {
                             required
                         />
                         <FormInput
-                            icon={<Hash size={18} />}
+                            icon={<Hash size={17} />}
                             type="text"
-                            placeholder="Free Fire ID"
+                            placeholder="Free Fire ID (optionnel)"
                             value={formData.ffid}
                             onChange={(e) => setFormData({ ...formData, ffid: e.target.value })}
                         />
                         <div className="relative">
                             <FormInput
-                                icon={<Lock size={18} />}
+                                icon={<Lock size={17} />}
                                 type={showPassword ? "text" : "password"}
                                 placeholder="Mot de passe"
                                 value={formData.password}
@@ -148,10 +157,10 @@ export default function Register() {
                             />
                             <button
                                 type="button"
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors focus:outline-none"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors focus:outline-none"
                                 onClick={() => setShowPassword(!showPassword)}
                             >
-                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                             </button>
                         </div>
 
@@ -161,28 +170,34 @@ export default function Register() {
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 p-3 rounded-lg text-red-400 text-xs"
+                                    className="flex items-center gap-2.5 bg-red-500/10 border border-red-500/20 p-3 rounded-xl text-red-400 text-xs"
                                 >
-                                    <AlertCircle size={16} />
+                                    <AlertCircle size={15} className="shrink-0" />
                                     <span>{error}</span>
                                 </motion.div>
                             )}
                         </AnimatePresence>
 
-                        <div className="pt-2">
+                        <div className="pt-1">
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-3 rounded-lg bg-mint hover:bg-mint/80 text-obsidian font-bold transition-all duration-200 transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-mint/50 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none shadow-lg shadow-mint/20 hover:shadow-mint/40"
+                                className="w-full py-3 rounded-xl font-black text-sm uppercase tracking-widest text-white transition-all duration-200 transform hover:-translate-y-0.5 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                style={{
+                                    background: loading
+                                        ? 'rgba(16,185,129,0.4)'
+                                        : 'linear-gradient(135deg, #4f46e5, #10b981)',
+                                    boxShadow: loading ? 'none' : '0 0 20px rgba(16,185,129,0.2), 0 4px 15px rgba(79,70,229,0.2)',
+                                }}
                             >
                                 {loading ? 'Création...' : 'Créer mon compte'}
                             </button>
                         </div>
                     </form>
 
-                    <p className="mt-8 text-center text-sm text-white/60">
+                    <p className="mt-7 text-center text-sm text-white/40">
                         Déjà un compte?{' '}
-                        <Link to="/login" className="font-medium text-white hover:text-mint transition-colors">
+                        <Link to="/login" className="font-bold text-mint hover:text-mint/70 transition-colors">
                             Se connecter
                         </Link>
                     </p>

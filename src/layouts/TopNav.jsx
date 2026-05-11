@@ -1,26 +1,8 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
-  LayoutDashboard,
-  Trophy,
-  BarChart3,
-  MessageSquare,
-  Users2,
-  ShoppingBag,
-  Wallet,
-  Star,
-  Newspaper,
-  Ticket,
-  TrendingUp,
-  ShieldAlert,
-  Zap,
-  Crown,
-  Layout,
-  LogOut,
-  Sparkles,
-  Search,
-  Bell,
-  User
+  LayoutDashboard, Trophy, BarChart3, MessageSquare, Users2,
+  ShoppingBag, Wallet, Newspaper, Ticket, TrendingUp,
+  ShieldAlert, Zap, LogOut, Bell, User
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import ThemeToggle from "../components/ui/ThemeToggle";
@@ -28,21 +10,14 @@ import ThemeToggle from "../components/ui/ThemeToggle";
 const NavItem = ({ item, isActive }) => (
   <NavLink
     to={item.path}
-    className={`relative px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 group ${
-      isActive ? 'text-mint' : 'text-slate-400 hover:text-white'
+    className={`px-3 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-2 group text-[11px] font-black uppercase tracking-widest ${
+      isActive
+        ? 'text-mint bg-mint/[0.10]'
+        : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
     }`}
   >
-    <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} className={isActive ? 'neon-glow-mint' : ''} />
-    <span className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
-      {item.label}
-    </span>
-    {isActive && (
-      <motion.div
-        layoutId="top-nav-active"
-        className="absolute -bottom-[21px] left-0 right-0 h-1 bg-mint shadow-neon-mint rounded-t-full"
-        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-      />
-    )}
+    <item.icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+    <span>{item.label}</span>
   </NavLink>
 );
 
@@ -74,19 +49,9 @@ export default function TopNav({ profile }) {
   const isAdmin = ["admin", "super_admin", "founder", "fondateur"].includes(profile?.role);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[100] h-20 bg-obsidian-deep/60 backdrop-blur-2xl border-b border-white/5 px-8 hidden md:flex items-center justify-between">
-      {/* Brand */}
-      <div className="flex items-center gap-4 min-w-[200px]">
-        <div className="w-10 h-10 bg-mint rounded-xl flex items-center justify-center shadow-neon-mint rotate-45">
-          <Sparkles className="text-obsidian -rotate-45" size={20} fill="currentColor" />
-        </div>
-        <div className="hidden lg:block">
-          <h1 className="text-lg font-heading font-black tracking-tighter text-white">
-            CIPHER<span className="text-mint">POOL</span>
-          </h1>
-          <span className="text-[8px] uppercase tracking-[0.4em] font-black text-mint/50">Tactical v4.2.0</span>
-        </div>
-      </div>
+    <nav className="h-14 bg-[#080d18]/90 backdrop-blur-xl border-b border-white/[0.06] px-6 hidden md:flex items-center justify-between flex-shrink-0">
+      {/* Empty left spacer (brand is in sidebar) */}
+      <div className="w-4" />
 
       {/* Main Nav */}
       <div className="flex items-center gap-2">
@@ -134,7 +99,7 @@ export default function TopNav({ profile }) {
 
            {/* Hover Menu */}
            <div className="absolute right-0 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-[110]">
-              <div className="w-56 ultra-glass border-white/10 p-2 shadow-2xl">
+              <div className="w-56 bg-[#080d18] border border-white/[0.08] rounded-2xl p-2 shadow-2xl backdrop-blur-xl">
                  <div className="px-4 py-3 border-b border-white/5 mb-1">
                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Authorization</p>
                     <p className="text-[10px] font-bold text-white truncate">{profile?.email}</p>
