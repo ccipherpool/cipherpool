@@ -41,7 +41,7 @@ export default function News(){
   const fetchNews=async()=>{
     setLoading(true);
     try{
-      const{data}=await supabase.from("news").select("*,author:profiles(username,avatar_url)").eq("published",true).order("published_at",{ascending:false});
+      const{data}=await supabase.from("news").select("*,author:profiles(full_name,avatar_url)").eq("published",true).order("published_at",{ascending:false});
       setArticles(data?.length?data:DUMMY);
     }catch{setArticles(DUMMY);}
     finally{setLoading(false);}

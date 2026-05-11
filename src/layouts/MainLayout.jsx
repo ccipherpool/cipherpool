@@ -92,7 +92,7 @@ export default function MainLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-[#eef2f7]">
 
       {/* ── Desktop Sidebar (in flow) ── */}
       <Sidebar profile={profile} />
@@ -192,7 +192,7 @@ export default function MainLayout() {
         </AnimatePresence>
 
         {/* ── Main Content ── */}
-        <main className="flex-1 overflow-y-auto pt-14 md:pt-0 pb-16 md:pb-0 bg-slate-50">
+        <main className="flex-1 overflow-y-auto pt-14 md:pt-0 pb-16 md:pb-0 bg-[#eef2f7]">
           <div className="max-w-7xl mx-auto px-4 md:px-8 py-5 md:py-7">
             <AnimatePresence mode="wait">
               <motion.div
