@@ -1,75 +1,8 @@
 import { Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function ProtectedRoute({ children, allowedRoles = [] }) {
-  const [loading, setLoading] = useState(true);
-  const [authorized, setAuthorized] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const timeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Auth timeout")), 8000)
-      );
-      const authCheck = supabase.auth.getSession();
-      const { data: { session }, error: userError } = await Promise.race([authCheck, timeout]);
-      const user = session?.user ?? null;
-      
-      if (userError || !user) {
-        console.log("No user found, redirecting to login");
-        setAuthorized(false);
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Error fetching profile:", error);
-        setError(error.message);
-        setAuthorized(false);
-        setLoading(false);
-        return;
-      }
-
-      if (!data) {
-        console.log("No profile found for user");
-        setAuthorized(false);
-        setLoading(false);
-        return;
-      }
-
-      console.log("✅ ProtectedRoute - User role:", data?.role);
-      
-      if (allowedRoles.length === 0) {
-        setAuthorized(true);
-      } else if (data && allowedRoles.includes(data.role)) {
-        setAuthorized(true);
-      } else {
-        setAuthorized(false);
-      }
-      
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      if (err.message === "Auth timeout") {
-        setAuthorized(false);
-      } else {
-        setError(err.message);
-        setAuthorized(false);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { user, role, loading } = useAuth();
 
   if (loading) {
     return (
@@ -79,21 +12,11 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#030014] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-400 mb-4">Erreur: {error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition"
-          >
-            Réessayer
-          </button>
-        </div>
-      </div>
-    );
+  if (!user) return <Navigate to="/login" replace />;
+
+  if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
-  return authorized ? children : <Navigate to="/login" />;
+  return children;
 }
