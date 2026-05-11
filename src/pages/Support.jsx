@@ -86,7 +86,7 @@ export default function Support() {
     if (!msgs?.length) { setMessages([]); return; }
     const ids = [...new Set(msgs.map(m => m.sender_id).filter(Boolean))];
     const { data: profs } = ids.length
-      ? await supabase.from("profiles").select("id, username, full_name, role, avatar_url").in("id", ids)
+      ? await supabase.from("profiles").select("id, username, full_name, role").in("id", ids)
       : { data: [] };
     const pm = Object.fromEntries((profs || []).map(p => [p.id, p]));
     setMessages(msgs.map(m => ({ ...m, sender: pm[m.sender_id] || null })));

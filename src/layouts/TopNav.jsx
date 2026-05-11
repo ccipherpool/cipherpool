@@ -2,10 +2,11 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Trophy, BarChart3, MessageSquare, Users2,
   ShoppingBag, Wallet, Newspaper, Ticket, TrendingUp,
-  ShieldAlert, Zap, LogOut, Bell, User
+  ShieldAlert, Zap, LogOut, User
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import ThemeToggle from "../components/ui/ThemeToggle";
+import NotificationBell from "../components/NotificationBell";
 
 const NavItem = ({ item, isActive }) => (
   <NavLink
@@ -79,12 +80,7 @@ export default function TopNav({ profile }) {
       <div className="flex items-center gap-6 min-w-[240px] justify-end">
         <ThemeToggle variant="icon" buttonSize={32} />
         
-        <div className="flex items-center gap-3">
-          <button className="relative p-2.5 bg-white/[0.03] border border-white/5 rounded-xl text-slate-400 hover:text-mint transition-all">
-            <Bell size={18} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-mint rounded-full border-2 border-obsidian animate-pulse" />
-          </button>
-        </div>
+        <NotificationBell userId={profile?.id} />
 
         <div className="relative group">
            <button className="flex items-center gap-3 pl-2 pr-1 py-1.5 bg-white/[0.03] border border-white/5 rounded-2xl hover:border-white/20 transition-all">

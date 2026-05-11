@@ -56,15 +56,15 @@ export default function Leaderboard() {
 
         if (statsData) {
           const ids = statsData.map(s => s.user_id);
-          const { data: profiles } = await supabase.from("profiles").select("id, username, avatar_url, level").in("id", ids);
+          const { data: profiles } = await supabase.from("profiles").select("id, username").in("id", ids);
           const pMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
-          
+
           setPlayers(statsData.map((s, i) => ({
             ...s,
             rank: i + 1,
             username: pMap[s.user_id]?.username || "Player",
-            avatar: pMap[s.user_id]?.avatar_url,
-            level: pMap[s.user_id]?.level || 1
+            avatar: null,
+            level: 1
           })));
         }
       } catch (e) {

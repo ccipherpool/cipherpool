@@ -106,20 +106,19 @@ export default function HallOfFame() {
 
         const { data: completed } = await supabase
           .from("tournaments")
-          .select("id,name,prize_coins,completed_at,winner_id")
+          .select("id,name,prize_coins,completed_at")
           .eq("status", "completed")
-          .not("winner_id", "is", null)
           .order("completed_at", { ascending: false })
           .limit(10);
 
         if (stats?.length) {
           const ids = stats.map(s => s.user_id);
-          const { data: profs } = await supabase.from("profiles").select("id,full_name,avatar_url,free_fire_id").in("id", ids);
+          const { data: profs } = await supabase.from("profiles").select("id,username,free_fire_id").in("id", ids);
           const pMap = Object.fromEntries((profs || []).map(p => [p.id, p]));
           setChampions(stats.slice(0, 3).map(s => ({
             user_id: s.user_id,
-            name: pMap[s.user_id]?.full_name || "Joueur",
-            avatar_url: pMap[s.user_id]?.avatar_url,
+            name: pMap[s.user_id]?.username || "Joueur",
+            avatar_url: null,
             ff_id: pMap[s.user_id]?.free_fire_id,
             wins: s.wins,
             points: s.total_points,
@@ -127,14 +126,7 @@ export default function HallOfFame() {
         }
 
         if (completed?.length) {
-          const wIds = completed.map(c => c.winner_id).filter(Boolean);
-          const { data: wProfs } = wIds.length ? await supabase.from("profiles").select("id,full_name,avatar_url").in("id", wIds) : { data: [] };
-          const wMap = Object.fromEntries((wProfs || []).map(p => [p.id, p]));
-          setRecentWins(completed.map(c => ({
-            ...c,
-            winner_name: wMap[c.winner_id]?.full_name || "Joueur",
-            winner_avatar: wMap[c.winner_id]?.avatar_url,
-          })));
+          setRecentWins(completed.map(c => ({ ...c, winner_name: "Champion", winner_avatar: null })));
         }
       } catch (_) {}
       setLoading(false);
