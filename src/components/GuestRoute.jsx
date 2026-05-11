@@ -11,9 +11,14 @@ export default function GuestRoute({ children }) {
   }, []);
 
   const checkAuth = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setAuthenticated(!!user);
-    setLoading(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      setAuthenticated(!!session?.user);
+    } catch {
+      setAuthenticated(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {

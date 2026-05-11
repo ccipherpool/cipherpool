@@ -13,7 +13,12 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
 
   const checkAuth = async () => {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Auth timeout")), 8000)
+      );
+      const authCheck = supabase.auth.getSession();
+      const { data: { session }, error: userError } = await Promise.race([authCheck, timeout]);
+      const user = session?.user ?? null;
       
       if (userError || !user) {
         console.log("No user found, redirecting to login");
@@ -55,8 +60,12 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
       
     } catch (err) {
       console.error("Unexpected error:", err);
-      setError(err.message);
-      setAuthorized(false);
+      if (err.message === "Auth timeout") {
+        setAuthorized(false);
+      } else {
+        setError(err.message);
+        setAuthorized(false);
+      }
     } finally {
       setLoading(false);
     }
