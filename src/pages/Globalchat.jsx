@@ -96,7 +96,7 @@ export default function GlobalChat() {
         if (!msg?.id) return;
         const { data: sp } = await supabase
           .from("profiles")
-          .select("id, username, role")
+          .select("id, username, avatar_url, role")
           .eq("id", msg.sender_id)
           .maybeSingle();
         setMessages(prev => [...prev, { ...msg, sender: sp || null }]);
@@ -120,7 +120,7 @@ export default function GlobalChat() {
     if (!msgs?.length) { setMessages([]); setLoading(false); return; }
     const ids = [...new Set(msgs.map(m => m.sender_id).filter(Boolean))];
     const { data: profs } = ids.length
-      ? await supabase.from("profiles").select("id, username, role").in("id", ids)
+      ? await supabase.from("profiles").select("id, username, avatar_url, role").in("id", ids)
       : { data: [] };
     const pm = Object.fromEntries((profs || []).map(p => [p.id, p]));
     setMessages(msgs.map(m => ({ ...m, sender: pm[m.sender_id] || null })));
