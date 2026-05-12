@@ -31,7 +31,11 @@
       "Bash(npm ls *)",
       "Bash(npx tsc *)",
       "Bash(node *)",
-      "PowerShell(Rename-Item *)"
+      "PowerShell(Rename-Item *)",
+      "Bash(nslookup cipherpool.space)",
+      "Bash(nslookup www.cipherpool.space)",
+      "Bash(nslookup cipherpool-cipherpool.vercel.app)",
+      "Bash(findstr \"Address\")"
     ]
   }
 }
