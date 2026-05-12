@@ -16,16 +16,21 @@ export default defineConfig({
 
   build: {
     target: "esnext",
+    sourcemap: false,
+    cssCodeSplit: true,
+    assetsInlineLimit: 4096,
     chunkSizeWarningLimit: 700,
     rollupOptions: {
       output: {
-        // Static object — Rollup resolves inter-chunk deps automatically
         manualChunks: {
-          "vendor-react":     ["react", "react-dom", "react-router-dom"],
-          "vendor-motion":    ["framer-motion"],
-          "vendor-supabase":  ["@supabase/supabase-js"],
-          "vendor-gsap-three": ["gsap", "@gsap/react", "three"],
-          "vendor-charts":    ["recharts"],
+          "vendor-react":    ["react", "react-dom", "react-router-dom"],
+          "vendor-motion":   ["framer-motion"],
+          "vendor-supabase": ["@supabase/supabase-js"],
+          "vendor-gsap":     ["gsap", "@gsap/react"],
+          "vendor-three":    ["three"],
+          "vendor-charts":   ["recharts"],
+          "vendor-icons":    ["lucide-react"],
+          "vendor-query":    ["@tanstack/react-query"],
         },
       },
     },

@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy, Shield, Zap, ArrowRight, Sparkles,
   Swords, Flame, Globe, Crown, Menu, X, Star,
@@ -11,19 +11,36 @@ import { ContainerScroll } from "../components/ui/ContainerScroll";
 const FlowArt     = lazy(() => import("../components/ui/FlowArt"));
 const FlowSection = lazy(() => import("../components/ui/FlowArt").then(m => ({ default: m.FlowSection })));
 
+// Pre-computed stable configs — avoids Math.random() on every render
+const MATRIX_CFG = [...Array(8)].map((_, i) => ({
+  left:     `${(i * 13.7 + 5) % 100}%`,
+  height:   `${60 + (i * 19) % 80}px`,
+  duration: 2.4 + i * 0.35,
+  delay:    (i * 0.45) % 2.2,
+}));
+const COLORS = ['#22d3ee', '#a855f7', '#3b82f6'];
+const PARTICLE_CFG = [...Array(18)].map((_, i) => ({
+  size:     `${2 + (i * 0.19) % 4}px`,
+  color:    COLORS[i % 3],
+  left:     `${(i * 5.7 + 2) % 100}%`,
+  top:      `${(i * 6.1 + 8) % 100}%`,
+  duration: 2.3 + (i * 0.18) % 3,
+  delay:    (i * 0.31) % 5,
+  xOffset:  (i % 2 === 0 ? 1 : -1) * ((i * 1.7) % 10),
+}));
+
 // ═══════════════════════════════════════════════
 // 🎨 TOILE DE FOND - "DIGITAL RAIN MATRIX"
-// Inspirée du cyberpunk 2077
 // ═══════════════════════════════════════════════
 const MatrixRain = () => (
   <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
-    {[...Array(10)].map((_, i) => (
+    {MATRIX_CFG.map((cfg, i) => (
       <motion.div
         key={i}
         className="absolute top-0 w-[1px] bg-gradient-to-b from-cyan-400/0 via-cyan-400/50 to-cyan-400/0"
-        style={{ left: `${Math.random() * 100}%`, height: `${50 + Math.random() * 100}px` }}
+        style={{ left: cfg.left, height: cfg.height, willChange: 'transform' }}
         animate={{ y: ['0vh', '100vh'], opacity: [0, 1, 0] }}
-        transition={{ duration: 2 + Math.random() * 3, repeat: Infinity, delay: Math.random() * 2, ease: "linear" }}
+        transition={{ duration: cfg.duration, repeat: Infinity, delay: cfg.delay, ease: "linear" }}
       />
     ))}
   </div>
@@ -34,29 +51,18 @@ const MatrixRain = () => (
 // ═══════════════════════════════════════════════
 const FloatingParticles = () => (
   <div className="absolute inset-0 pointer-events-none">
-    {[...Array(30)].map((_, i) => (
+    {PARTICLE_CFG.map((p, i) => (
       <motion.div
         key={i}
         className="absolute rounded-full"
         style={{
-          width: `${2 + Math.random() * 4}px`,
-          height: `${2 + Math.random() * 4}px`,
-          background: i % 3 === 0 ? '#22d3ee' : i % 3 === 1 ? '#a855f7' : '#3b82f6',
-          left: `${Math.random() * 100}%`,
-          top: `${Math.random() * 100}%`,
+          width: p.size, height: p.size,
+          background: p.color,
+          left: p.left, top: p.top,
+          willChange: 'transform, opacity',
         }}
-        animate={{
-          y: [0, -20, 0],
-          x: [0, Math.random() * 10 - 5, 0],
-          opacity: [0, 0.8, 0],
-          scale: [0, 1.5, 0],
-        }}
-        transition={{
-          duration: 2 + Math.random() * 3,
-          repeat: Infinity,
-          delay: Math.random() * 5,
-          ease: "easeInOut",
-        }}
+        animate={{ y: [0, -20, 0], x: [0, p.xOffset, 0], opacity: [0, 0.8, 0], scale: [0, 1.5, 0] }}
+        transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: "easeInOut" }}
       />
     ))}
   </div>
@@ -265,8 +271,14 @@ export default function Home() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => { setScrolled(window.scrollY > 50); ticking = false; });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -330,6 +342,17 @@ export default function Home() {
       <div className="fixed inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-500/5 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-purple-500/5 via-transparent to-transparent" />
+
+        {/* Logo watermark — subtle brand presence */}
+        <img
+          src="/logo.png"
+          aria-hidden="true"
+          fetchpriority="low"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[65vw] max-w-[780px] min-w-[320px] pointer-events-none select-none"
+          style={{ opacity: 0.045, mixBlendMode: 'screen', filter: 'grayscale(0.3) blur(0.5px)' }}
+          alt=""
+        />
+
         <MatrixRain />
         <FloatingParticles />
       </div>
@@ -557,8 +580,10 @@ export default function Home() {
         >
           <div className="relative h-full w-full bg-obsidian-deep rounded-2xl overflow-hidden border border-white/10">
             <img 
-              src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070" 
+              src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070"
               className="w-full h-full object-cover opacity-60"
+              loading="lazy"
+              decoding="async"
               alt="Dashboard Preview"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-obsidian-deep via-transparent to-transparent" />

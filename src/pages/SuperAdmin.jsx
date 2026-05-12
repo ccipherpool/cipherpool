@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "../lib/utils";
 
 // Tabs
 import DashboardTab    from "./superadmin/tabs/DashboardTab";
@@ -20,6 +21,7 @@ import BanModal           from "./superadmin/modals/BanModal";
 import WalletModal        from "./superadmin/modals/WalletModal";
 import TournamentModal    from "./superadmin/modals/TournamentModal";
 import DeleteConfirmModal from "./superadmin/modals/DeleteConfirmModal";
+import ProfileModal     from "./superadmin/modals/ProfileModal";
 
 if (typeof document !== "undefined" && !document.getElementById("sa-fonts")) {
   const s = document.createElement("style");
@@ -71,6 +73,7 @@ export default function SuperAdmin() {
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [tournamentsEnabled, setTournamentsEnabled] = useState(true);
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     checkSuperAdmin();
@@ -358,10 +361,33 @@ export default function SuperAdmin() {
                 SUPER <span className="text-purple-500 underline decoration-wavy">ADMIN</span>
                 <span className="ml-4 inline-flex px-4 py-1 bg-amber-400 text-zinc-900 border-2 border-zinc-900 text-xl rounded-full shadow-[4px_4px_0px_0px] shadow-zinc-900 rotate-12">v2.0 🚀</span>
               </h1>
-              <p className="font-handwritten text-2xl text-zinc-500 flex items-center gap-3">
-                <span className="w-3 h-3 bg-green-500 border-2 border-zinc-900 rounded-full animate-pulse" />
-                Bienvenue, {profile?.username || profile?.full_name || profile?.email?.split("@")[0]} ✨
-              </p>
+              <div className="flex items-center gap-4 flex-wrap">
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="flex items-center gap-3 group"
+                  title="Modifier mon profil"
+                >
+                  <div className="relative w-10 h-10 rounded-full border-2 border-zinc-900 dark:border-white overflow-hidden bg-purple-100 dark:bg-purple-900 shrink-0">
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="w-full h-full flex items-center justify-center font-handwritten font-bold text-purple-600 dark:text-purple-300 text-lg">
+                        {(profile?.username || profile?.email || "?")[0]?.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-handwritten text-2xl text-zinc-500 flex items-center gap-2">
+                    <span className="w-3 h-3 bg-green-500 border-2 border-zinc-900 rounded-full animate-pulse shrink-0" />
+                    Bienvenue, <span className="text-zinc-900 dark:text-white group-hover:text-purple-500 transition-colors">{profile?.username || profile?.full_name || profile?.email?.split("@")[0]}</span> ✨
+                  </p>
+                </button>
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="text-xs font-handwritten text-zinc-400 hover:text-purple-500 transition-colors border border-zinc-200 dark:border-zinc-700 hover:border-purple-400 px-3 py-1 rounded-full"
+                >
+                  ✏️ Modifier profil
+                </button>
+              </div>
             </div>
           </div>
           <div className="flex gap-4 shrink-0 lg:rotate-[1deg]">
@@ -505,6 +531,13 @@ export default function SuperAdmin() {
               setTournamentStatus={setTournamentStatus}
               updateTournamentStatus={updateTournamentStatus}
               onClose={() => setShowTournamentModal(false)}
+            />
+          )}
+          {showProfileModal && (
+            <ProfileModal
+              profile={profile}
+              onClose={() => setShowProfileModal(false)}
+              onSaved={(updated) => setProfile(prev => ({ ...prev, ...updated }))}
             />
           )}
           {showDeleteConfirm && tournamentToDelete && (
