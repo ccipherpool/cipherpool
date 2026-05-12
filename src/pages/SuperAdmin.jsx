@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,58 +6,50 @@ import {
   LayoutDashboard, Users, ShieldCheck, Trophy, AlertTriangle,
   TrendingUp, Lock, FileText, Settings, RefreshCw, ChevronRight,
   ShieldOff, Clock, Gamepad2, Ticket, Flag, Wifi, UserCircle2,
-  ArrowUpRight, Activity, Search, Filter, X, CheckCircle,
-  Ban, Zap, Coins, Crown, Sparkles, Server, Database, BarChart3
+  ArrowUpRight, Activity,
 } from "lucide-react";
 
-// Tabs (Lazy Loading Ready)
-const DashboardTab = lazy(() => import("./superadmin/tabs/DashboardTab"));
-const UsersTab = lazy(() => import("./superadmin/tabs/UsersTab"));
-const StaffTab = lazy(() => import("./superadmin/tabs/StaffTab"));
-const TournamentsTab = lazy(() => import("./superadmin/tabs/TournamentsTab"));
-const ReportsTab = lazy(() => import("./superadmin/tabs/ReportsTab"));
-const EconomyTab = lazy(() => import("./superadmin/tabs/EconomyTab"));
-const SecurityTab = lazy(() => import("./superadmin/tabs/SecurityTab"));
-const LogsTab = lazy(() => import("./superadmin/tabs/LogsTab"));
-const SystemTab = lazy(() => import("./superadmin/tabs/SystemTab"));
+// Tabs
+import DashboardTab    from "./superadmin/tabs/DashboardTab";
+import UsersTab        from "./superadmin/tabs/UsersTab";
+import StaffTab        from "./superadmin/tabs/StaffTab";
+import TournamentsTab  from "./superadmin/tabs/TournamentsTab";
+import ReportsTab      from "./superadmin/tabs/ReportsTab";
+import EconomyTab      from "./superadmin/tabs/EconomyTab";
+import SecurityTab     from "./superadmin/tabs/SecurityTab";
+import LogsTab         from "./superadmin/tabs/LogsTab";
+import SystemTab       from "./superadmin/tabs/SystemTab";
 
 // Modals
-import RoleModal from "./superadmin/modals/RoleModal";
-import BanModal from "./superadmin/modals/BanModal";
-import WalletModal from "./superadmin/modals/WalletModal";
-import TournamentModal from "./superadmin/modals/TournamentModal";
+import RoleModal          from "./superadmin/modals/RoleModal";
+import BanModal           from "./superadmin/modals/BanModal";
+import WalletModal        from "./superadmin/modals/WalletModal";
+import TournamentModal    from "./superadmin/modals/TournamentModal";
 import DeleteConfirmModal from "./superadmin/modals/DeleteConfirmModal";
-import ProfileModal from "./superadmin/modals/ProfileModal";
+import ProfileModal       from "./superadmin/modals/ProfileModal";
 
-// --- DESIGN SYSTEM PRO MAX ---
+// ─── Design tokens ─────────────────────────────────────────
 const T = {
-  bg: "#0A0A0F",
-  surface: "#111116",
-  surface2: "#16161D",
-  border: "rgba(255,255,255,0.06)",
-  border2: "rgba(255,255,255,0.03)",
-  accent: "#8B5CF6",
-  accentLight: "#A78BFA",
-  green: "#10B981",
-  red: "#EF4444",
-  amber: "#F59E0B",
-  blue: "#3B82F6",
-  pink: "#EC4899",
-  text: "#FFFFFF",
-  text2: "#A1A1AA",
-  text3: "#52525B",
-  glow: "0 0 20px rgba(139,92,246,0.3)",
-  font: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  bg:       "#09090b",
+  surface:  "#111113",
+  surface2: "#18181b",
+  border:   "rgba(255,255,255,0.07)",
+  border2:  "rgba(255,255,255,0.04)",
+  accent:   "#6366f1",
+  green:    "#10b981",
+  red:      "#ef4444",
+  amber:    "#f59e0b",
+  text:     "#fafafa",
+  text2:    "#a1a1aa",
+  text3:    "#52525b",
+  font:     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
 };
 
-const glassCard = {
-  background: `linear-gradient(135deg, ${T.surface} 0%, ${T.surface2} 100%)`,
-  border: `1px solid ${T.border}`,
-  borderRadius: "16px",
-  backdropFilter: "blur(10px)",
+const S = {
+  card: { background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12 },
+  label: { fontSize: 11, fontWeight: 700, color: T.text3, letterSpacing: 1, textTransform: "uppercase" },
 };
 
-// --- Main Component ---
 export default function SuperAdmin() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
@@ -73,8 +65,6 @@ export default function SuperAdmin() {
     totalMatches: 0, totalCoins: 0, totalReports: 0, bannedUsers: 0,
     pendingVerifications: 0, openTickets: 0, todayRevenue: 0, monthlyRevenue: 0,
   });
-  
-  // UI State
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -97,156 +87,92 @@ export default function SuperAdmin() {
   const [tournamentsEnabled, setTournamentsEnabled] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  // --- Notifications ---
-  const showMsg = useCallback((type, text, delay = 3000) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage({ type: "", text: "" }), delay);
+  useEffect(() => {
+    checkSuperAdmin();
+    const interval = setInterval(() => {
+      if (profile?.role === "super_admin") fetchStats();
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  // --- Auth & Data Fetching ---
-  const checkSuperAdmin = useCallback(async () => {
+  const showMsg = (type, text, delay = 3000) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage({ type: "", text: "" }), delay);
+  };
+
+  const checkSuperAdmin = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/login"); return; }
-      
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (error) throw error;
       if (!data || data.role !== "super_admin") { navigate("/dashboard"); return; }
-      
       setProfile(data);
       await fetchAllData();
     } catch (err) {
-      console.error("checkSuperAdmin:", err);
+      if (import.meta.env.DEV) console.error("checkSuperAdmin:", err);
       setLoading(false);
     }
-  }, [navigate]);
+  };
 
-  const fetchAllData = useCallback(async () => {
+  const fetchAllData = async () => {
     setLoading(true);
     try {
-      await Promise.all([
-        fetchUsers(),
-        fetchTournaments(),
-        fetchReports(),
-        fetchLogs(),
-        fetchAdmins(),
-        fetchStats(),
-        fetchSystemConfig()
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      await Promise.all([fetchUsers(), fetchTournaments(), fetchReports(), fetchLogs(), fetchAdmins(), fetchStats(), fetchSystemConfig()]);
+    } finally { setLoading(false); }
+  };
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = async () => {
     try {
-      const { data: profilesData, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
+      const { data: profilesData, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
       if (error) throw error;
-      
-      const { data: walletsData } = await supabase
-        .from("wallets")
-        .select("user_id, balance");
-      
+      const { data: walletsData } = await supabase.from("wallets").select("user_id, balance");
       const walletMap = {};
       (walletsData || []).forEach(w => { walletMap[w.user_id] = w.balance; });
-      
       setUsers((profilesData || []).map(u => ({
-        ...u,
-        coins: walletMap[u.id] || 0,
-        stats: { tournaments_played: 0, wins: 0 },
+        ...u, coins: walletMap[u.id] || 0, stats: { tournaments_played: 0, wins: 0 },
         display_name: u.username || u.full_name || u.name || u.email?.split("@")[0] || "Inconnu",
       })));
-    } catch (err) {
-      console.error("fetchUsers:", err);
-    }
-  }, []);
+    } catch (err) { if (import.meta.env.DEV) console.error("fetchUsers:", err); }
+  };
 
-  const fetchAdmins = useCallback(async () => {
+  const fetchAdmins = async () => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("role", ["admin", "super_admin", "founder", "fondateur", "designer"])
-        .order("created_at", { ascending: false });
-      
+      const { data, error } = await supabase.from("profiles").select("*").in("role", ["admin", "super_admin", "founder", "fondateur", "designer"]).order("created_at", { ascending: false });
       if (error) throw error;
       setAdmins(data || []);
-    } catch (err) {
-      console.error("fetchAdmins:", err);
-    }
-  }, []);
+    } catch (err) { if (import.meta.env.DEV) console.error("fetchAdmins:", err); }
+  };
 
-  const fetchTournaments = useCallback(async () => {
+  const fetchTournaments = async () => {
     try {
-      const { data, error } = await supabase
-        .from("tournaments")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50);
-      
+      const { data, error } = await supabase.from("tournaments").select("*").order("created_at", { ascending: false }).limit(50);
       if (error) throw error;
       setTournaments(data || []);
-    } catch (err) {
-      setTournaments([]);
-    }
-  }, []);
+    } catch (_err) { setTournaments([]); }
+  };
 
-  const fetchReports = useCallback(async () => {
+  const fetchReports = async () => {
     try {
-      const { data, error } = await supabase
-        .from("reports")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
+      const { data, error } = await supabase.from("reports").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       setReports(data || []);
-    } catch (err) {
-      setReports([]);
-    }
-  }, []);
+    } catch (_err) { setReports([]); }
+  };
 
-  const fetchLogs = useCallback(async () => {
+  const fetchLogs = async () => {
     try {
-      const { data, error } = await supabase
-        .from("admin_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(100);
-      
+      const { data, error } = await supabase.from("admin_logs").select("*").order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
       setLogs(data || []);
-    } catch (err) {
-      setLogs([]);
-    }
-  }, []);
+    } catch (_err) { setLogs([]); }
+  };
 
-  const fetchStats = useCallback(async () => {
-    const safeCount = async (query) => {
-      try {
-        const result = await query;
-        return result.count || 0;
-      } catch {
-        return 0;
-      }
-    };
-    
+  const fetchStats = async () => {
+    const safeCount = async (q) => { try { const r = await q; return r.count || 0; } catch { return 0; } };
     try {
-      const [
-        totalUsers, bannedUsers, pendingVerif,
-        totalTournaments, activeTournaments, totalMatches,
-        totalReports, openTickets
-      ] = await Promise.all([
+      const [totalUsers, bannedUsers, pendingVerif, totalTournaments, activeTournaments, totalMatches, totalReports, openTickets] = await Promise.all([
         safeCount(supabase.from("profiles").select("*", { count: "exact", head: true })),
         safeCount(supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "banned")),
         safeCount(supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "pending")),
@@ -256,598 +182,258 @@ export default function SuperAdmin() {
         safeCount(supabase.from("reports").select("*", { count: "exact", head: true }).eq("status", "pending")),
         safeCount(supabase.from("support_tickets").select("*", { count: "exact", head: true }).eq("status", "open")),
       ]);
-      
       let totalCoins = 0;
-      try {
-        const { data: wallets } = await supabase.from("wallets").select("balance");
-        totalCoins = (wallets || []).reduce((sum, w) => sum + (w.balance || 0), 0);
-      } catch {}
-      
-      setStats({
-        totalUsers, onlineUsers: 0, totalTournaments, activeTournaments,
-        totalMatches, totalCoins, totalReports, bannedUsers,
-        pendingVerifications: pendingVerif, openTickets,
-        todayRevenue: 0, monthlyRevenue: 0
-      });
-    } catch (err) {
-      console.error("fetchStats:", err);
-    }
-  }, []);
+      try { const { data: w } = await supabase.from("wallets").select("balance"); totalCoins = (w || []).reduce((s, x) => s + (x.balance || 0), 0); } catch {}
+      setStats({ totalUsers, onlineUsers: 0, totalTournaments, activeTournaments, totalMatches, totalCoins, totalReports, bannedUsers, pendingVerifications: pendingVerif, openTickets, todayRevenue: 0, monthlyRevenue: 0 });
+    } catch (err) { if (import.meta.env.DEV) console.error("fetchStats:", err); }
+  };
 
-  const fetchSystemConfig = useCallback(async () => {
+  const fetchSystemConfig = async () => {
     try {
-      const { data, error } = await supabase
-        .from("system_config")
-        .select("*")
-        .single();
-      
+      const { data, error } = await supabase.from("system_config").select("*").single();
       if (error && error.code !== "PGRST116") throw error;
-      
       setMaintenanceMode(data?.maintenance_mode || false);
       setRegistrationEnabled(data?.registration_enabled !== false);
       setTournamentsEnabled(data?.tournaments_enabled !== false);
     } catch {}
-  }, []);
+  };
 
-  // --- Actions ---
-  const updateUserRole = useCallback(async (userId, role) => {
+  const updateUserRole = async (userId, role) => {
     try {
-      const { error: rpcError } = await supabase.rpc("set_user_role", {
-        target_user: userId,
-        new_role: role
-      });
-      
-      if (rpcError) {
-        const { error: directError } = await supabase
-          .from("profiles")
-          .update({ role })
-          .eq("id", userId);
-        
-        if (directError) throw directError;
-      }
-      
-      await supabase.from("admin_logs").insert([{
-        user_id: profile.id,
-        action: "change_role",
-        details: { target_user: userId, new_role: role }
-      }]);
-      
-      showMsg("success", "Rôle modifié avec succès ✨");
-      await Promise.all([fetchUsers(), fetchAdmins()]);
+      const { data: rpcData, error: rpcErr } = await supabase.rpc("set_user_role", { target_user: userId, new_role: role });
+      if (rpcErr) {
+        const { error: directErr } = await supabase.from("profiles").update({ role }).eq("id", userId);
+        if (directErr) throw directErr;
+      } else if (rpcData && !rpcData.success) throw new Error(rpcData.error || "Erreur changement de rôle");
+      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "change_role", details: { target_user: userId, new_role: role } }]);
+      showMsg("success", "Rôle modifié avec succès");
+      await fetchUsers(); await fetchAdmins();
       setShowRoleModal(false);
-    } catch (err) {
-      showMsg("error", err.message || "Erreur lors du changement de rôle");
-    }
-  }, [profile, fetchUsers, fetchAdmins, showMsg]);
+    } catch (err) { showMsg("error", err.message || "Erreur lors du changement de rôle"); }
+  };
 
-  const banUser = useCallback(async (userId, duration) => {
+  const banUser = async (userId, duration) => {
     const banUntil = new Date();
     if (duration === "24h") banUntil.setHours(banUntil.getHours() + 24);
     else if (duration === "7d") banUntil.setDate(banUntil.getDate() + 7);
     else if (duration === "30d") banUntil.setDate(banUntil.getDate() + 30);
     else banUntil.setFullYear(banUntil.getFullYear() + 10);
-    
     try {
-      const { error } = await supabase.rpc("ban_user", {
-        target_user: userId,
-        banned_until: banUntil.toISOString(),
-        banned_by: profile.id
-      });
-      
+      const { error } = await supabase.rpc("ban_user", { target_user: userId, banned_until: banUntil.toISOString(), banned_by: profile.id });
       if (error) throw error;
-      
-      await supabase.from("admin_logs").insert([{
-        user_id: profile.id,
-        action: "ban_user",
-        details: { target_user: userId, duration }
-      }]);
-      
-      showMsg("success", "Utilisateur banni avec succès 🔨");
-      await fetchUsers();
-      setShowBanModal(false);
-    } catch (err) {
-      showMsg("error", err.message || "Erreur lors du bannissement");
-    }
-  }, [profile, fetchUsers, showMsg]);
+      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "ban_user", details: { target_user: userId, duration } }]);
+      showMsg("success", "Utilisateur banni avec succès");
+      await fetchUsers(); setShowBanModal(false);
+    } catch (err) { showMsg("error", err.message || "Erreur lors du bannissement"); }
+  };
 
-  const unbanUser = useCallback(async (userId) => {
+  const unbanUser = async (userId) => {
     try {
       const { error } = await supabase.rpc("unban_user", { target_user: userId });
       if (error) throw error;
-      
-      await supabase.from("admin_logs").insert([{
-        user_id: profile.id,
-        action: "unban_user",
-        details: { target_user: userId }
-      }]);
-      
-      showMsg("success", "Utilisateur débanni avec succès 🎉");
+      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "unban_user", details: { target_user: userId } }]);
+      showMsg("success", "Utilisateur débanni avec succès");
       await fetchUsers();
-    } catch (err) {
-      showMsg("error", err.message || "Erreur lors du débannissement");
-    }
-  }, [profile, fetchUsers, showMsg]);
+    } catch (err) { showMsg("error", err.message || "Erreur lors du débannissement"); }
+  };
 
-  const deleteUser = useCallback(async (userId) => {
-    if (!window.confirm("⚠️ Supprimer définitivement cet utilisateur ? Action irréversible.")) return;
-    
+  const deleteUser = async (userId) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ?")) return;
     try {
       const { error } = await supabase.rpc("delete_user_complete", { target_user: userId });
       if (error) throw error;
-      
-      await supabase.from("admin_logs").insert([{
-        user_id: profile.id,
-        action: "delete_user",
-        details: { target_user: userId }
-      }]);
-      
-      showMsg("success", "Utilisateur supprimé définitivement 🗑️");
+      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "delete_user", details: { target_user: userId } }]);
+      showMsg("success", "Utilisateur supprimé définitivement");
       await fetchUsers();
-    } catch (err) {
-      showMsg("error", err.message || "Erreur lors de la suppression");
-    }
-  }, [profile, fetchUsers, showMsg]);
+    } catch (err) { showMsg("error", err.message || "Erreur lors de la suppression"); }
+  };
 
-  const grantCoins = useCallback(async () => {
+  const grantCoins = async () => {
     if (!selectedUser) return;
-    
     const amount = parseInt(grantAmount);
-    if (isNaN(amount) || amount === 0) {
-      showMsg("error", "Montant invalide");
-      return;
-    }
-    
-    if (!grantReason.trim()) {
-      showMsg("error", "La raison est obligatoire");
-      return;
-    }
-    
+    if (isNaN(amount) || amount === 0) { showMsg("error", "Montant invalide"); return; }
+    if (!grantReason.trim()) { showMsg("error", "La raison est obligatoire"); return; }
     try {
-      const { data, error } = await supabase.rpc("admin_adjust_coins", {
-        p_target_user_id: selectedUser.id,
-        p_amount: amount,
-        p_reason: grantReason
-      });
-      
+      const { data, error } = await supabase.rpc("admin_adjust_coins", { p_target_user_id: selectedUser.id, p_amount: amount, p_reason: grantReason });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || "Erreur");
-      
-      showMsg("success", `${amount > 0 ? "➕" : "➖"} ${Math.abs(amount)} CP → ${selectedUser.display_name} (${data.new_balance} total)`, 4000);
-      
-      setGrantAmount("");
-      setGrantReason("");
-      setShowWalletModal(false);
+      showMsg("success", `${amount > 0 ? "+" : ""}${amount} CP → ${selectedUser.display_name || selectedUser.username} (${data.new_balance} total)`, 4000);
+      setGrantAmount(""); setGrantReason(""); setShowWalletModal(false);
       await fetchUsers();
-    } catch (err) {
-      showMsg("error", err.message || "Erreur lors de l'ajustement des coins");
-    }
-  }, [selectedUser, grantAmount, grantReason, fetchUsers, showMsg]);
+    } catch (err) { showMsg("error", err.message || "Erreur lors de l'ajustement des coins"); }
+  };
 
-  const deleteTournament = useCallback(async (tournamentId) => {
+  const deleteTournament = async (tournamentId) => {
     try {
-      const { error } = await supabase.rpc("delete_tournament_complete", {
-        tournament_id: tournamentId
-      });
-      
+      const { error } = await supabase.rpc("delete_tournament_complete", { tournament_id: tournamentId });
       if (error) throw error;
-      
-      await supabase.from("admin_logs").insert([{
-        user_id: profile.id,
-        action: "delete_tournament",
-        details: { tournament_id: tournamentId }
-      }]);
-      
-      showMsg("success", "Tournoi supprimé avec succès 🏆");
+      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "delete_tournament", details: { tournament_id: tournamentId } }]);
+      showMsg("success", "Tournoi supprimé avec succès");
       await fetchTournaments();
-    } catch (err) {
-      showMsg("error", err.message || "Erreur lors de la suppression");
-    }
-  }, [profile, fetchTournaments, showMsg]);
+    } catch (err) { showMsg("error", err.message || "Erreur lors de la suppression"); }
+  };
 
-  const updateTournamentStatus = useCallback(async (tournamentId, status) => {
+  const updateTournamentStatus = async (tournamentId, status) => {
     try {
-      const { error } = await supabase
-        .from("tournaments")
-        .update({ status })
-        .eq("id", tournamentId);
-      
+      const { error } = await supabase.from("tournaments").update({ status }).eq("id", tournamentId);
       if (error) throw error;
-      
-      await supabase.from("admin_logs").insert([{
-        user_id: profile.id,
-        action: "update_tournament_status",
-        details: { tournament_id: tournamentId, status }
-      }]);
-      
-      showMsg("success", "Statut du tournoi mis à jour 📋");
-      setShowTournamentModal(false);
-      await fetchTournaments();
-    } catch (err) {
-      showMsg("error", err.message || "Erreur lors de la mise à jour");
-    }
-  }, [profile, fetchTournaments, showMsg]);
+      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "update_tournament_status", details: { tournament_id: tournamentId, status } }]);
+      showMsg("success", "Statut du tournoi mis à jour");
+      setShowTournamentModal(false); await fetchTournaments();
+    } catch (err) { showMsg("error", err.message || "Erreur lors de la mise à jour"); }
+  };
 
-  const resolveReport = useCallback(async (reportId, action) => {
+  const resolveReport = async (reportId, action) => {
     try {
-      const { error } = await supabase
-        .from("reports")
-        .update({
-          status: "resolved",
-          resolved_by: profile.id,
-          resolved_action: action,
-          resolved_at: new Date().toISOString()
-        })
-        .eq("id", reportId);
-      
+      const { error } = await supabase.from("reports").update({ status: "resolved", resolved_by: profile.id, resolved_action: action, resolved_at: new Date().toISOString() }).eq("id", reportId);
       if (error) throw error;
-      
-      await supabase.from("admin_logs").insert([{
-        user_id: profile.id,
-        action: "resolve_report",
-        details: { report_id: reportId, action }
-      }]);
-      
-      showMsg("success", "Rapport résolu ✅");
+      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "resolve_report", details: { report_id: reportId, action } }]);
+      showMsg("success", "Rapport résolu");
       await fetchReports();
-    } catch (err) {
-      showMsg("error", err.message || "Erreur lors de la résolution");
-    }
-  }, [profile, fetchReports, showMsg]);
+    } catch (err) { showMsg("error", err.message || "Erreur lors de la résolution"); }
+  };
 
-  const updateSystemConfig = useCallback(async () => {
+  const updateSystemConfig = async () => {
     try {
-      const { error } = await supabase
-        .from("system_config")
-        .upsert({
-          maintenance_mode: maintenanceMode,
-          registration_enabled: registrationEnabled,
-          tournaments_enabled: tournamentsEnabled,
-          updated_by: profile.id,
-          updated_at: new Date().toISOString()
-        });
-      
+      const { error } = await supabase.from("system_config").upsert({ maintenance_mode: maintenanceMode, registration_enabled: registrationEnabled, tournaments_enabled: tournamentsEnabled, updated_by: profile.id, updated_at: new Date().toISOString() });
       if (error) throw error;
-      
-      await supabase.from("admin_logs").insert([{
-        user_id: profile.id,
-        action: "update_system_config",
-        details: { maintenanceMode, registrationEnabled, tournamentsEnabled }
-      }]);
-      
-      showMsg("success", "Configuration système mise à jour ⚙️");
-    } catch (err) {
-      showMsg("error", err.message || "Erreur");
-    }
-  }, [maintenanceMode, registrationEnabled, tournamentsEnabled, profile, showMsg]);
+      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "update_system_config", details: { maintenanceMode, registrationEnabled, tournamentsEnabled } }]);
+      showMsg("success", "Configuration système mise à jour");
+    } catch (err) { showMsg("error", err.message || "Erreur"); }
+  };
 
-  // --- Filters & Helpers ---
   const filteredUsers = users.filter(u => {
-    const query = search.toLowerCase();
-    const matchSearch = u.display_name?.toLowerCase().includes(query) ||
-                       u.email?.toLowerCase().includes(query) ||
-                       u.free_fire_id?.includes(search);
-    
-    if (filter === "all") return matchSearch;
-    if (filter === "admins") return matchSearch && u.role === "admin";
+    const q = search.toLowerCase();
+    const matchSearch = u.display_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.free_fire_id?.includes(search);
+    if (filter === "all")      return matchSearch;
+    if (filter === "admins")   return matchSearch && u.role === "admin";
     if (filter === "founders") return matchSearch && u.role === "founder";
-    if (filter === "banned") return matchSearch && u.role === "banned";
-    if (filter === "pending") return matchSearch && u.verification_status === "pending";
+    if (filter === "banned")   return matchSearch && u.role === "banned";
+    if (filter === "pending")  return matchSearch && u.verification_status === "pending";
     return matchSearch;
   });
 
-  // --- Side Effects ---
-  useEffect(() => {
-    checkSuperAdmin();
-    
-    const interval = setInterval(() => {
-      if (profile?.role === "super_admin") fetchStats();
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, [checkSuperAdmin, fetchStats, profile]);
-
-  // --- Loading UI ---
+  // ─── Loading ───────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={{
-        minHeight: "100vh",
-        background: T.bg,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: T.font
-      }}>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          style={{ textAlign: "center" }}
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          >
-            <Sparkles size={48} color={T.accent} />
-          </motion.div>
-          <p style={{ color: T.text2, marginTop: 16, fontSize: 13, letterSpacing: 2 }}>
-            CHARGEMENT SUPER ADMIN
-          </p>
-        </motion.div>
+      <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font }}>
+        <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <Activity size={28} color={T.accent} style={{ animation: "sa-pulse 1.4s ease-in-out infinite" }} />
+          <p style={{ color: T.text3, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" }}>Loading...</p>
+        </div>
+        <style>{`@keyframes sa-pulse { 0%,100%{opacity:0.4;transform:scale(0.95)} 50%{opacity:1;transform:scale(1)} }`}</style>
       </div>
     );
   }
 
-  // --- Tabs Configuration ---
   const TABS = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, glow: true },
-    { id: "users", label: "Utilisateurs", icon: Users, badge: users.length },
-    { id: "staff", label: "Staff", icon: ShieldCheck, badge: admins.length },
-    { id: "tournaments", label: "Tournois", icon: Trophy, badge: tournaments.length },
-    { id: "reports", label: "Signalements", icon: AlertTriangle, badge: reports.length },
-    { id: "economy", label: "Économie", icon: TrendingUp },
-    { id: "security", label: "Sécurité", icon: Lock },
-    { id: "logs", label: "Logs", icon: FileText },
-    { id: "system", label: "Système", icon: Settings },
+    { id: "dashboard",   label: "Dashboard",   icon: LayoutDashboard, count: null               },
+    { id: "users",       label: "Users",        icon: Users,           count: users.length       },
+    { id: "staff",       label: "Staff",        icon: ShieldCheck,     count: admins.length      },
+    { id: "tournaments", label: "Tournaments",  icon: Trophy,          count: tournaments.length },
+    { id: "reports",     label: "Reports",      icon: AlertTriangle,   count: reports.length     },
+    { id: "economy",     label: "Economy",      icon: TrendingUp,      count: null               },
+    { id: "security",    label: "Security",     icon: Lock,            count: null               },
+    { id: "logs",        label: "Logs",         icon: FileText,        count: null               },
+    { id: "system",      label: "System",       icon: Settings,        count: null               },
   ];
 
-  // --- Stat Cards Config ---
   const STAT_CARDS = [
-    { label: "UTILISATEURS", value: stats.totalUsers, icon: Users, color: T.accent, bg: `${T.accent}15` },
-    { label: "EN LIGNE", value: stats.onlineUsers, icon: Wifi, color: T.green, bg: `${T.green}15` },
-    { label: "BANNIS", value: stats.bannedUsers, icon: ShieldOff, color: T.red, bg: `${T.red}15` },
-    { label: "EN ATTENTE", value: stats.pendingVerifications, icon: Clock, color: T.amber, bg: `${T.amber}15` },
-    { label: "TOURNOIS", value: stats.totalTournaments, icon: Trophy, color: "#A78BFA", bg: "#A78BFA15" },
-    { label: "MATCHES", value: stats.totalMatches, icon: Gamepad2, color: T.blue, bg: `${T.blue}15` },
-    { label: "TICKETS", value: stats.openTickets, icon: Ticket, color: T.pink, bg: `${T.pink}15` },
-    { label: "REPORTS", value: stats.totalReports, icon: Flag, color: T.amber, bg: `${T.amber}15` },
+    { label: "Total Users",    value: stats.totalUsers,           icon: Users,         color: "#6366f1" },
+    { label: "Online",         value: stats.onlineUsers,          icon: Wifi,          color: "#10b981" },
+    { label: "Banned",         value: stats.bannedUsers,          icon: ShieldOff,     color: "#ef4444" },
+    { label: "Pending",        value: stats.pendingVerifications, icon: Clock,         color: "#f59e0b" },
+    { label: "Tournaments",    value: stats.totalTournaments,     icon: Trophy,        color: "#8b5cf6" },
+    { label: "Matches",        value: stats.totalMatches,         icon: Gamepad2,      color: "#06b6d4" },
+    { label: "Open Tickets",   value: stats.openTickets,          icon: Ticket,        color: "#f97316" },
+    { label: "Reports",        value: stats.totalReports,         icon: Flag,          color: "#ec4899" },
   ];
 
-  const initials = (profile?.username || profile?.email || "SA")[0]?.toUpperCase();
+  const initials = (profile?.username || profile?.email || "?")[0]?.toUpperCase();
 
-  // --- Main Render ---
+  // ─── Render ────────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.font }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        
-        * {
-          scrollbar-width: thin;
-          scrollbar-color: ${T.accent} ${T.surface2};
-        }
-        
-        ::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-        
-        ::-webkit-scrollbar-track {
-          background: ${T.surface2};
-          border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-          background: ${T.accent};
-          border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-          background: ${T.accentLight};
-        }
+        .sa-nav-btn { transition: background 0.12s, color 0.12s; }
+        .sa-nav-btn:hover { background: rgba(255,255,255,0.06) !important; color: ${T.text} !important; }
+        .sa-tab { transition: background 0.12s, color 0.12s, border-color 0.12s; }
+        .sa-tab:hover { background: rgba(255,255,255,0.05) !important; color: ${T.text2} !important; }
+        .sa-stat { transition: border-color 0.15s, background 0.15s; cursor: default; }
+        .sa-stat:hover { border-color: rgba(99,102,241,0.3) !important; background: rgba(99,102,241,0.04) !important; }
       `}</style>
 
-      {/* === HEADER SUPER PRO === */}
-      <header style={{
-        borderBottom: `1px solid ${T.border}`,
-        background: `linear-gradient(180deg, ${T.surface} 0%, ${T.surface2} 100%)`,
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-        backdropFilter: "blur(20px)",
-      }}>
-        <div style={{
-          maxWidth: 1600,
-          margin: "0 auto",
-          padding: "0 28px",
-          height: 64,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 20,
-        }}>
-          {/* Brand */}
-          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              style={{ display: "flex", alignItems: "center", gap: 12 }}
-            >
-              <div style={{
-                width: 34,
-                height: 34,
-                borderRadius: 10,
-                background: `linear-gradient(135deg, ${T.accent}, ${T.accentLight})`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: T.glow
-              }}>
-                <Crown size={18} color="#fff" />
-              </div>
-              <div>
-                <span style={{ fontSize: 16, fontWeight: 800, color: T.text, letterSpacing: -0.5 }}>
-                  CipherPool
-                </span>
-                <span style={{ fontSize: 11, color: T.accent, marginLeft: 6, fontWeight: 600 }}>
-                  SUPER ADMIN
-                </span>
-              </div>
-            </motion.div>
+      {/* ═══ TOPBAR ═══ */}
+      <header style={{ borderBottom: `1px solid ${T.border}`, background: T.surface, position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 1440, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
 
-            {/* Status Indicator */}
-            <motion.div
-              animate={{ opacity: [0.7, 1, 0.7] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "4px 12px",
-                borderRadius: 40,
-                background: `${T.green}10`,
-                border: `1px solid ${T.green}30`,
-              }}
-            >
-              <div style={{ width: 7, height: 7, borderRadius: "50%", background: T.green, boxShadow: `0 0 8px ${T.green}` }} />
-              <span style={{ fontSize: 11, color: T.green, fontWeight: 600 }}>SYSTEM OPERATIONAL</span>
-            </motion.div>
+          {/* Brand */}
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: T.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <ShieldCheck size={15} color="#fff" />
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 700, color: T.text, letterSpacing: 0.3 }}>CipherPool</span>
+              <span style={{ fontSize: 11, color: T.text3 }}>/</span>
+              <span style={{ fontSize: 13, color: T.text2, fontWeight: 500 }}>Super Admin</span>
+            </div>
+
+            {/* Status pill */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 20, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.green }} />
+              <span style={{ fontSize: 11, color: T.green, fontWeight: 600 }}>Operational</span>
+            </div>
           </div>
 
-          {/* Right Actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => {
-                fetchAllData();
-                showMsg("success", "Données actualisées 🔄");
-              }}
-              style={{
-                padding: "8px 14px",
-                borderRadius: 10,
-                background: T.surface2,
-                border: `1px solid ${T.border}`,
-                color: T.text2,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 13,
-                fontWeight: 500,
-              }}
-            >
-              <RefreshCw size={14} />
-              Rafraîchir
-            </motion.button>
-
-            <Link to="/admin">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: 10,
-                  background: T.surface2,
-                  border: `1px solid ${T.border}`,
-                  color: T.text2,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 13,
-                  fontWeight: 500,
-                }}
-              >
-                <ShieldCheck size={14} />
-                Admin Panel
-              </motion.div>
+          {/* Right actions */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Link to="/admin" className="sa-nav-btn" style={{ padding: "6px 14px", borderRadius: 8, background: "transparent", border: `1px solid ${T.border}`, color: T.text2, fontSize: 12, fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
+              <ShieldCheck size={13} /> Admin Panel
             </Link>
+            <button onClick={() => navigate(0)} className="sa-nav-btn" style={{ padding: "6px 10px", borderRadius: 8, background: "transparent", border: `1px solid ${T.border}`, color: T.text2, cursor: "pointer", display: "flex", alignItems: "center" }}>
+              <RefreshCw size={13} />
+            </button>
 
-            {/* Profile Dropdown */}
+            {/* Profile dropdown */}
             <div style={{ position: "relative" }}>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                onClick={() => setProfileMenuOpen(prev => !prev)}
-                style={{
-                  padding: "4px 12px 4px 6px",
-                  borderRadius: 40,
-                  background: T.surface2,
-                  border: `1px solid ${T.border}`,
-                  color: T.text2,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
+              <button
+                onClick={() => setProfileMenuOpen(p => !p)}
+                className="sa-nav-btn"
+                style={{ padding: "4px 10px 4px 4px", borderRadius: 8, background: "transparent", border: `1px solid ${T.border}`, color: T.text2, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
               >
-                <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: `linear-gradient(135deg, ${T.accent}, ${T.accentLight})`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{initials}</span>
+                <div style={{ width: 26, height: 26, borderRadius: "50%", border: `2px solid ${T.border}`, overflow: "hidden", background: T.surface2, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      onError={e => { e.currentTarget.style.display = "none"; }} />
+                  ) : null}
+                  <span style={{ fontSize: 10, fontWeight: 800, color: T.accent, display: profile?.avatar_url ? "none" : "block" }}>{initials}</span>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
-                  {profile?.username || profile?.email?.split("@")[0]}
-                </span>
-                <ChevronRight size={14} style={{ opacity: 0.6, transform: profileMenuOpen ? "rotate(90deg)" : "none", transition: "transform 0.2s" }} />
-              </motion.button>
+                <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{profile?.username || profile?.email?.split("@")[0]}</span>
+                <ChevronRight size={12} style={{ opacity: 0.5, transform: profileMenuOpen ? "rotate(90deg)" : "none", transition: "transform 0.15s" }} />
+              </button>
 
               <AnimatePresence>
                 {profileMenuOpen && (
-                  <>
-                    <motion.div
-                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      style={{
-                        position: "absolute",
-                        top: "calc(100% + 8px)",
-                        right: 0,
-                        width: 220,
-                        ...glassCard,
-                        padding: "8px",
-                        zIndex: 1000,
-                      }}
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, width: 200, ...S.card, padding: "6px", zIndex: 100, boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
+                  >
+                    <button
+                      onClick={() => { setShowProfileModal(true); setProfileMenuOpen(false); }}
+                      style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "transparent", border: "none", color: T.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, textAlign: "left" }}
+                      className="sa-nav-btn"
                     >
-                      <button
-                        onClick={() => { setShowProfileModal(true); setProfileMenuOpen(false); }}
-                        style={{
-                          width: "100%",
-                          padding: "10px 12px",
-                          borderRadius: 8,
-                          background: "transparent",
-                          border: "none",
-                          color: T.text2,
-                          fontSize: 13,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          textAlign: "left",
-                          transition: "background 0.2s",
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = T.border}
-                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                      >
-                        <UserCircle2 size={16} /> Modifier profil
-                      </button>
-                      <div style={{ height: 1, background: T.border, margin: "6px 0" }} />
-                      <button
-                        onClick={() => navigate("/dashboard")}
-                        style={{
-                          width: "100%",
-                          padding: "10px 12px",
-                          borderRadius: 8,
-                          background: "transparent",
-                          border: "none",
-                          color: T.text2,
-                          fontSize: 13,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          textAlign: "left",
-                          transition: "background 0.2s",
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = T.border}
-                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                      >
-                        <ArrowUpRight size={16} /> Retour site
-                      </button>
-                    </motion.div>
-                    <div style={{ position: "fixed", inset: 0, zIndex: 999 }} onClick={() => setProfileMenuOpen(false)} />
-                  </>
+                      <UserCircle2 size={15} color={T.text3} /> Modifier le profil
+                    </button>
+                    <div style={{ height: 1, background: T.border, margin: "4px 0" }} />
+                    <button
+                      onClick={() => navigate("/dashboard")}
+                      style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "transparent", border: "none", color: T.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, textAlign: "left" }}
+                      className="sa-nav-btn"
+                    >
+                      <ArrowUpRight size={15} color={T.text3} /> Retour au site
+                    </button>
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>
@@ -855,351 +441,127 @@ export default function SuperAdmin() {
         </div>
       </header>
 
-      {/* === MAIN CONTENT === */}
-      <main style={{ maxWidth: 1600, margin: "0 auto", padding: "32px 28px" }}>
-        
-        {/* Toast Notification */}
+      {/* ═══ MAIN ═══ */}
+      <main style={{ maxWidth: 1440, margin: "0 auto", padding: "28px 24px" }}>
+
+        {/* Toast */}
         <AnimatePresence>
           {message.text && (
             <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              style={{
-                position: "fixed",
-                top: 80,
-                right: 28,
-                zIndex: 1000,
-                padding: "12px 20px",
-                borderRadius: 12,
-                background: message.type === "success"
-                  ? `linear-gradient(135deg, ${T.green}20, ${T.green}10)`
-                  : `linear-gradient(135deg, ${T.red}20, ${T.red}10)`,
-                border: `1px solid ${message.type === "success" ? T.green + "40" : T.red + "40"}`,
-                backdropFilter: "blur(10px)",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
-              }}
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              style={{ marginBottom: 20, padding: "11px 16px", borderRadius: 10, display: "flex", alignItems: "center", gap: 10, background: message.type === "success" ? "rgba(16,185,129,0.07)" : "rgba(239,68,68,0.07)", border: `1px solid ${message.type === "success" ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}`, color: message.type === "success" ? "#34d399" : "#f87171", fontSize: 13, fontWeight: 600 }}
             >
-              {message.type === "success" ? <CheckCircle size={18} color={T.green} /> : <AlertTriangle size={18} color={T.red} />}
-              <span style={{ fontSize: 13, fontWeight: 500, color: message.type === "success" ? T.green : T.red }}>
-                {message.text}
-              </span>
+              {message.type === "success" ? <Activity size={15} /> : <AlertTriangle size={15} />}
+              {message.text}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Header Title */}
-        <div style={{ marginBottom: 32 }}>
-          <motion.h1
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            style={{ fontSize: 28, fontWeight: 800, margin: 0, marginBottom: 8, background: `linear-gradient(135deg, ${T.text}, ${T.accent})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
-          >
-            Panneau de Contrôle Suprême
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.05 }}
-            style={{ fontSize: 14, color: T.text3, margin: 0 }}
-          >
-            Gestion avancée des utilisateurs, tournois et configuration système
-          </motion.p>
+        {/* Page title */}
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: T.text, margin: 0, marginBottom: 4 }}>Control Panel</h1>
+          <p style={{ fontSize: 13, color: T.text3, margin: 0 }}>Manage users, tournaments, and system settings</p>
         </div>
 
-        {/* Stats Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: 16,
-            marginBottom: 32,
-          }}
-        >
-          {STAT_CARDS.map((card, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.03 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              style={{
-                ...glassCard,
-                padding: "18px",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
+        {/* ─── Stats Grid ─── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+          {STAT_CARDS.map((s, i) => (
+            <motion.div key={i} className="sa-stat" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+              style={{ ...S.card, padding: "16px" }}
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                <div style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  background: card.bg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}>
-                  <card.icon size={20} color={card.color} />
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: `${s.color}14`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <s.icon size={15} color={s.color} />
                 </div>
               </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: T.text, marginBottom: 4 }}>
-                {card.value.toLocaleString()}
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, letterSpacing: 1 }}>
-                {card.label}
-              </div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: T.text, lineHeight: 1, marginBottom: 4 }}>{s.value.toLocaleString()}</div>
+              <div style={{ ...S.label }}>{s.label}</div>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
 
-        {/* Revenue Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: 16,
-            marginBottom: 32,
-          }}
-        >
+        {/* ─── Revenue row ─── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12, marginBottom: 24 }}>
           {[
-            { label: "REVENU AUJOURD'HUI", value: stats.todayRevenue, icon: TrendingUp, color: T.accent },
-            { label: "REVENU CE MOIS", value: stats.monthlyRevenue, icon: BarChart3, color: T.blue },
-            { label: "COINS EN CIRCULATION", value: stats.totalCoins, icon: Coins, color: T.amber },
-          ].map((card, idx) => (
-            <div key={idx} style={{ ...glassCard, padding: "20px", display: "flex", alignItems: "center", gap: 18 }}>
-              <div style={{
-                width: 48,
-                height: 48,
-                borderRadius: 14,
-                background: `${card.color}15`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}>
-                <card.icon size={24} color={card.color} />
+            { label: "Revenue Today",    value: stats.todayRevenue,   color: "#8b5cf6", bg: "rgba(139,92,246,0.08)" },
+            { label: "Revenue This Month", value: stats.monthlyRevenue, color: "#06b6d4", bg: "rgba(6,182,212,0.08)" },
+          ].map(c => (
+            <div key={c.label} style={{ ...S.card, padding: "18px 20px", display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <TrendingUp size={18} color={c.color} />
               </div>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, letterSpacing: 1, marginBottom: 6 }}>
-                  {card.label}
-                </div>
-                <div style={{ fontSize: 26, fontWeight: 800, color: T.text }}>
-                  {card.value.toLocaleString()} <span style={{ fontSize: 13, color: T.text3 }}>CP</span>
+                <div style={{ ...S.label, marginBottom: 4 }}>{c.label}</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: T.text, lineHeight: 1 }}>
+                  {c.value.toLocaleString()} <span style={{ fontSize: 12, color: T.text3, fontWeight: 500 }}>CP</span>
                 </div>
               </div>
             </div>
           ))}
-        </motion.div>
+        </div>
 
-        {/* Tab Navigation */}
-        <div style={{
-          borderBottom: `1px solid ${T.border}`,
-          display: "flex",
-          gap: 4,
-          marginBottom: 24,
-          overflowX: "auto",
-          paddingBottom: 2,
-        }}>
+        {/* ─── Tab Navigation ─── */}
+        <div style={{ borderBottom: `1px solid ${T.border}`, display: "flex", gap: 2, marginBottom: 20, overflowX: "auto" }}>
           {TABS.map(tab => {
-            const isActive = activeTab === tab.id;
+            const active = activeTab === tab.id;
             return (
-              <motion.button
-                key={tab.id}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
+              <button
+                key={tab.id} className="sa-tab"
                 onClick={() => setActiveTab(tab.id)}
                 style={{
-                  padding: "10px 20px",
-                  border: "none",
-                  borderBottom: isActive ? `2px solid ${T.accent}` : "2px solid transparent",
-                  background: isActive ? `${T.accent}10` : "transparent",
-                  color: isActive ? T.text : T.text3,
-                  cursor: "pointer",
-                  fontSize: 13,
-                  fontWeight: isActive ? 700 : 500,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  whiteSpace: "nowrap",
-                  transition: "all 0.2s",
-                  borderRadius: "8px 8px 0 0",
+                  padding: "10px 16px", border: "none", borderBottom: active ? `2px solid ${T.accent}` : "2px solid transparent",
+                  background: active ? `${T.accent}0c` : "transparent",
+                  color: active ? T.text : T.text3, cursor: "pointer",
+                  fontSize: 13, fontWeight: active ? 600 : 500,
+                  display: "flex", alignItems: "center", gap: 7, whiteSpace: "nowrap",
+                  marginBottom: -1,
                 }}
               >
-                <tab.icon size={16} style={isActive ? { color: T.accent } : {}} />
+                <tab.icon size={14} />
                 {tab.label}
-                {tab.badge !== undefined && (
-                  <span style={{
-                    fontSize: 10,
-                    padding: "2px 8px",
-                    borderRadius: 20,
-                    background: isActive ? `${T.accent}20` : T.surface2,
-                    color: isActive ? T.accent : T.text3,
-                    fontWeight: 700,
-                  }}>
-                    {tab.badge}
+                {tab.count !== null && (
+                  <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: active ? `${T.accent}20` : T.surface2, color: active ? T.accent : T.text3, fontWeight: 700 }}>
+                    {tab.count}
                   </span>
                 )}
-              </motion.button>
+              </button>
             );
           })}
         </div>
 
-        {/* Tab Content */}
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          style={{ ...glassCard, padding: "24px", minHeight: 500 }}
-        >
-          <React.Suspense fallback={
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 400 }}>
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }}>
-                <Zap size={32} color={T.accent} />
-              </motion.div>
-            </div>
-          }>
-            {activeTab === "dashboard" && (
-              <DashboardTab
-                stats={stats}
-                users={users}
-                logs={logs}
-                setActiveTab={setActiveTab}
-                setFilter={setFilter}
-                setSelectedUser={setSelectedUser}
-                setGrantAmount={setGrantAmount}
-                setGrantReason={setGrantReason}
-                setWalletSearch={setWalletSearch}
-                setShowWalletModal={setShowWalletModal}
-              />
-            )}
-            {activeTab === "users" && (
-              <UsersTab
-                filteredUsers={filteredUsers}
-                search={search}
-                setSearch={setSearch}
-                filter={filter}
-                setFilter={setFilter}
-                setSelectedUser={setSelectedUser}
-                setShowRoleModal={setShowRoleModal}
-                setShowBanModal={setShowBanModal}
-                setShowWalletModal={setShowWalletModal}
-                unbanUser={unbanUser}
-                deleteUser={deleteUser}
-              />
-            )}
-            {activeTab === "staff" && (
-              <StaffTab
-                users={users}
-                updateUserRole={updateUserRole}
-                currentUserRole={profile?.role}
-              />
-            )}
-            {activeTab === "tournaments" && (
-              <TournamentsTab
-                tournaments={tournaments}
-                setSelectedTournament={setSelectedTournament}
-                setShowTournamentModal={setShowTournamentModal}
-                setTournamentToDelete={setTournamentToDelete}
-                setShowDeleteConfirm={setShowDeleteConfirm}
-              />
-            )}
-            {activeTab === "reports" && (
-              <ReportsTab
-                reports={reports}
-                resolveReport={resolveReport}
-              />
-            )}
-            {activeTab === "economy" && (
-              <EconomyTab
-                stats={stats}
-                setMessage={setMessage}
-              />
-            )}
-            {activeTab === "security" && <SecurityTab />}
-            {activeTab === "logs" && (
-              <LogsTab
-                logs={logs}
-                users={users}
-              />
-            )}
-            {activeTab === "system" && (
-              <SystemTab
-                maintenanceMode={maintenanceMode}
-                setMaintenanceMode={setMaintenanceMode}
-                registrationEnabled={registrationEnabled}
-                setRegistrationEnabled={setRegistrationEnabled}
-                tournamentsEnabled={tournamentsEnabled}
-                setTournamentsEnabled={setTournamentsEnabled}
-                updateSystemConfig={updateSystemConfig}
-              />
-            )}
-          </React.Suspense>
-        </motion.div>
+        {/* ─── Tab Content ─── */}
+        <div style={{ ...S.card, padding: "16px", minHeight: 440 }}>
+          <AnimatePresence mode="wait">
+            {activeTab === "dashboard"   && <DashboardTab   key="dashboard"   stats={stats} users={users} logs={logs} setActiveTab={setActiveTab} setFilter={setFilter} setSelectedUser={setSelectedUser} setGrantAmount={setGrantAmount} setGrantReason={setGrantReason} setWalletSearch={setWalletSearch} setShowWalletModal={setShowWalletModal} />}
+            {activeTab === "users"       && <UsersTab        key="users"       filteredUsers={filteredUsers} search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} setSelectedUser={setSelectedUser} setShowRoleModal={setShowRoleModal} setShowBanModal={setShowBanModal} setShowWalletModal={setShowWalletModal} unbanUser={unbanUser} deleteUser={deleteUser} />}
+            {activeTab === "staff"       && <StaffTab        key="staff"       users={users} updateUserRole={updateUserRole} currentUserRole={profile?.role} />}
+            {activeTab === "tournaments" && <TournamentsTab  key="tournaments" tournaments={tournaments} setSelectedTournament={setSelectedTournament} setShowTournamentModal={setShowTournamentModal} setTournamentToDelete={setTournamentToDelete} setShowDeleteConfirm={setShowDeleteConfirm} />}
+            {activeTab === "reports"     && <ReportsTab      key="reports"     reports={reports} resolveReport={resolveReport} />}
+            {activeTab === "economy"     && <EconomyTab      key="economy"     stats={stats} setMessage={setMessage} />}
+            {activeTab === "security"    && <SecurityTab     key="security" />}
+            {activeTab === "logs"        && <LogsTab         key="logs"        logs={logs} users={users} />}
+            {activeTab === "system"      && <SystemTab       key="system"      maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode} registrationEnabled={registrationEnabled} setRegistrationEnabled={setRegistrationEnabled} tournamentsEnabled={tournamentsEnabled} setTournamentsEnabled={setTournamentsEnabled} updateSystemConfig={updateSystemConfig} />}
+          </AnimatePresence>
+        </div>
+
       </main>
 
-      {/* === MODALS === */}
+      {/* ═══ MODALS ═══ */}
       <AnimatePresence>
         {showProfileModal && (
-          <ProfileModal
-            profile={profile}
-            onClose={() => setShowProfileModal(false)}
-            onSaved={updated => setProfile(prev => ({ ...prev, ...updated }))}
-          />
+          <ProfileModal profile={profile} onClose={() => setShowProfileModal(false)} onSaved={updated => setProfile(prev => ({ ...prev, ...updated }))} />
         )}
         {showRoleModal && selectedUser && (
-          <RoleModal
-            selectedUser={selectedUser}
-            updateUserRole={updateUserRole}
-            onClose={() => setShowRoleModal(false)}
-          />
+          <RoleModal selectedUser={selectedUser} updateUserRole={updateUserRole} onClose={() => setShowRoleModal(false)} />
         )}
         {showBanModal && selectedUser && (
-          <BanModal
-            selectedUser={selectedUser}
-            banDuration={banDuration}
-            setBanDuration={setBanDuration}
-            banUser={banUser}
-            onClose={() => setShowBanModal(false)}
-          />
+          <BanModal selectedUser={selectedUser} banDuration={banDuration} setBanDuration={setBanDuration} banUser={banUser} onClose={() => setShowBanModal(false)} />
         )}
         {showWalletModal && (
-          <WalletModal
-            users={users}
-            selectedUser={selectedUser}
-            setSelectedUser={setSelectedUser}
-            walletSearch={walletSearch}
-            setWalletSearch={setWalletSearch}
-            grantAmount={grantAmount}
-            setGrantAmount={setGrantAmount}
-            grantReason={grantReason}
-            setGrantReason={setGrantReason}
-            grantCoins={grantCoins}
-            onClose={() => {
-              setShowWalletModal(false);
-              setGrantAmount("");
-              setGrantReason("");
-              setWalletSearch("");
-              setSelectedUser(null);
-            }}
-          />
+          <WalletModal users={users} selectedUser={selectedUser} setSelectedUser={setSelectedUser} walletSearch={walletSearch} setWalletSearch={setWalletSearch} grantAmount={grantAmount} setGrantAmount={setGrantAmount} grantReason={grantReason} setGrantReason={setGrantReason} grantCoins={grantCoins} onClose={() => { setShowWalletModal(false); setGrantAmount(""); setGrantReason(""); setWalletSearch(""); setSelectedUser(null); }} />
         )}
         {showTournamentModal && selectedTournament && (
-          <TournamentModal
-            selectedTournament={selectedTournament}
-            tournamentStatus={tournamentStatus}
-            setTournamentStatus={setTournamentStatus}
-            updateTournamentStatus={updateTournamentStatus}
-            onClose={() => setShowTournamentModal(false)}
-          />
+          <TournamentModal selectedTournament={selectedTournament} tournamentStatus={tournamentStatus} setTournamentStatus={setTournamentStatus} updateTournamentStatus={updateTournamentStatus} onClose={() => setShowTournamentModal(false)} />
         )}
         {showDeleteConfirm && tournamentToDelete && (
           <DeleteConfirmModal
@@ -1212,16 +574,13 @@ export default function SuperAdmin() {
               setShowDeleteConfirm(false);
               setTournamentToDelete(null);
             }}
-            onClose={() => {
-              setShowDeleteConfirm(false);
-              setTournamentToDelete(null);
-            }}
+            onClose={() => { setShowDeleteConfirm(false); setTournamentToDelete(null); }}
           />
         )}
       </AnimatePresence>
+
+      {/* Close profile menu on outside click */}
+      {profileMenuOpen && <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setProfileMenuOpen(false)} />}
     </div>
   );
 }
-
-// Lazy loading wrapper
-import React, { lazy, Suspense } from "react";
