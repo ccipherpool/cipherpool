@@ -2,6 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  LayoutDashboard, Users, ShieldCheck, Trophy, AlertTriangle,
+  TrendingUp, Lock, FileText, Settings, RefreshCw, ChevronRight,
+  ShieldOff, Clock, Gamepad2, Ticket, Flag, Wifi, UserCircle2,
+  ArrowUpRight, Activity,
+} from "lucide-react";
 
 // Tabs
 import DashboardTab    from "./superadmin/tabs/DashboardTab";
@@ -22,17 +28,26 @@ import TournamentModal    from "./superadmin/modals/TournamentModal";
 import DeleteConfirmModal from "./superadmin/modals/DeleteConfirmModal";
 import ProfileModal       from "./superadmin/modals/ProfileModal";
 
-if (typeof document !== "undefined" && !document.getElementById("sa-fonts")) {
-  const s = document.createElement("style");
-  s.id = "sa-fonts";
-  s.textContent = `@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&display=swap');`;
-  document.head.appendChild(s);
-}
+// ─── Design tokens ─────────────────────────────────────────
+const T = {
+  bg:       "#09090b",
+  surface:  "#111113",
+  surface2: "#18181b",
+  border:   "rgba(255,255,255,0.07)",
+  border2:  "rgba(255,255,255,0.04)",
+  accent:   "#6366f1",
+  green:    "#10b981",
+  red:      "#ef4444",
+  amber:    "#f59e0b",
+  text:     "#fafafa",
+  text2:    "#a1a1aa",
+  text3:    "#52525b",
+  font:     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+};
 
-const TAB_COLORS = {
-  purple: "#a855f7", blue: "#60a5fa", cyan: "#22d3ee",
-  green: "#4ade80",  red: "#f87171",  yellow: "#facc15",
-  orange: "#fb923c", gray: "#9ca3af",
+const S = {
+  card: { background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12 },
+  label: { fontSize: 11, fontWeight: 700, color: T.text3, letterSpacing: 1, textTransform: "uppercase" },
 };
 
 export default function SuperAdmin() {
@@ -50,7 +65,6 @@ export default function SuperAdmin() {
     totalMatches: 0, totalCoins: 0, totalReports: 0, bannedUsers: 0,
     pendingVerifications: 0, openTickets: 0, todayRevenue: 0, monthlyRevenue: 0,
   });
-
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -72,6 +86,7 @@ export default function SuperAdmin() {
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [tournamentsEnabled, setTournamentsEnabled] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   useEffect(() => {
     checkSuperAdmin();
@@ -105,9 +120,7 @@ export default function SuperAdmin() {
     setLoading(true);
     try {
       await Promise.all([fetchUsers(), fetchTournaments(), fetchReports(), fetchLogs(), fetchAdmins(), fetchStats(), fetchSystemConfig()]);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const fetchUsers = async () => {
@@ -118,14 +131,10 @@ export default function SuperAdmin() {
       const walletMap = {};
       (walletsData || []).forEach(w => { walletMap[w.user_id] = w.balance; });
       setUsers((profilesData || []).map(u => ({
-        ...u,
-        coins: walletMap[u.id] || 0,
-        stats: { tournaments_played: 0, wins: 0 },
+        ...u, coins: walletMap[u.id] || 0, stats: { tournaments_played: 0, wins: 0 },
         display_name: u.username || u.full_name || u.name || u.email?.split("@")[0] || "Inconnu",
       })));
-    } catch (err) {
-      if (import.meta.env.DEV) console.error("fetchUsers:", err);
-    }
+    } catch (err) { if (import.meta.env.DEV) console.error("fetchUsers:", err); }
   };
 
   const fetchAdmins = async () => {
@@ -133,9 +142,7 @@ export default function SuperAdmin() {
       const { data, error } = await supabase.from("profiles").select("*").in("role", ["admin", "super_admin", "founder", "fondateur", "designer"]).order("created_at", { ascending: false });
       if (error) throw error;
       setAdmins(data || []);
-    } catch (err) {
-      if (import.meta.env.DEV) console.error("fetchAdmins:", err);
-    }
+    } catch (err) { if (import.meta.env.DEV) console.error("fetchAdmins:", err); }
   };
 
   const fetchTournaments = async () => {
@@ -163,9 +170,7 @@ export default function SuperAdmin() {
   };
 
   const fetchStats = async () => {
-    const safeCount = async (query) => {
-      try { const r = await query; return r.count || 0; } catch (_e) { return 0; }
-    };
+    const safeCount = async (q) => { try { const r = await q; return r.count || 0; } catch { return 0; } };
     try {
       const [totalUsers, bannedUsers, pendingVerif, totalTournaments, activeTournaments, totalMatches, totalReports, openTickets] = await Promise.all([
         safeCount(supabase.from("profiles").select("*", { count: "exact", head: true })),
@@ -178,11 +183,9 @@ export default function SuperAdmin() {
         safeCount(supabase.from("support_tickets").select("*", { count: "exact", head: true }).eq("status", "open")),
       ]);
       let totalCoins = 0;
-      try { const { data: w } = await supabase.from("wallets").select("balance"); totalCoins = (w || []).reduce((s, x) => s + (x.balance || 0), 0); } catch (_e) {}
+      try { const { data: w } = await supabase.from("wallets").select("balance"); totalCoins = (w || []).reduce((s, x) => s + (x.balance || 0), 0); } catch {}
       setStats({ totalUsers, onlineUsers: 0, totalTournaments, activeTournaments, totalMatches, totalCoins, totalReports, bannedUsers, pendingVerifications: pendingVerif, openTickets, todayRevenue: 0, monthlyRevenue: 0 });
-    } catch (err) {
-      if (import.meta.env.DEV) console.error("fetchStats:", err);
-    }
+    } catch (err) { if (import.meta.env.DEV) console.error("fetchStats:", err); }
   };
 
   const fetchSystemConfig = async () => {
@@ -192,7 +195,7 @@ export default function SuperAdmin() {
       setMaintenanceMode(data?.maintenance_mode || false);
       setRegistrationEnabled(data?.registration_enabled !== false);
       setTournamentsEnabled(data?.tournaments_enabled !== false);
-    } catch (_err) {}
+    } catch {}
   };
 
   const updateUserRole = async (userId, role) => {
@@ -254,8 +257,7 @@ export default function SuperAdmin() {
       const { data, error } = await supabase.rpc("admin_adjust_coins", { p_target_user_id: selectedUser.id, p_amount: amount, p_reason: grantReason });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || "Erreur");
-      const sign = amount > 0 ? "+" : "";
-      showMsg("success", `${sign}${amount} coins → ${selectedUser.display_name || selectedUser.username} (solde: ${data.new_balance})`, 4000);
+      showMsg("success", `${amount > 0 ? "+" : ""}${amount} CP → ${selectedUser.display_name || selectedUser.username} (${data.new_balance} total)`, 4000);
       setGrantAmount(""); setGrantReason(""); setShowWalletModal(false);
       await fetchUsers();
     } catch (err) { showMsg("error", err.message || "Erreur lors de l'ajustement des coins"); }
@@ -311,183 +313,224 @@ export default function SuperAdmin() {
     return matchSearch;
   });
 
-  // ─── LOADING ───
+  // ─── Loading ───────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#07070f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <style>{`@keyframes sa-spin { to { transform: rotate(360deg); } }`}</style>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 40, height: 40, border: '2px solid rgba(139,92,246,0.2)', borderTopColor: '#8b5cf6', borderRadius: '50%', animation: 'sa-spin 0.8s linear infinite', margin: '0 auto 16px' }} />
-          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, fontFamily: 'Orbitron,sans-serif', letterSpacing: 4 }}>INITIALIZING...</p>
+      <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font }}>
+        <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <Activity size={28} color={T.accent} style={{ animation: "sa-pulse 1.4s ease-in-out infinite" }} />
+          <p style={{ color: T.text3, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" }}>Loading...</p>
         </div>
+        <style>{`@keyframes sa-pulse { 0%,100%{opacity:0.4;transform:scale(0.95)} 50%{opacity:1;transform:scale(1)} }`}</style>
       </div>
     );
   }
 
   const TABS = [
-    { id: "dashboard",   label: "DASHBOARD",  count: null,               color: "purple" },
-    { id: "users",       label: "USERS",       count: users.length,       color: "blue"   },
-    { id: "staff",       label: "STAFF",       count: admins.length,      color: "cyan"   },
-    { id: "tournaments", label: "TOURNOIS",    count: tournaments.length, color: "green"  },
-    { id: "reports",     label: "RAPPORTS",    count: reports.length,     color: "red"    },
-    { id: "economy",     label: "ÉCONOMIE",    count: null,               color: "yellow" },
-    { id: "security",    label: "SÉCURITÉ",    count: null,               color: "orange" },
-    { id: "logs",        label: "LOGS",        count: null,               color: "gray"   },
-    { id: "system",      label: "SYSTÈME",     count: null,               color: "purple" },
+    { id: "dashboard",   label: "Dashboard",   icon: LayoutDashboard, count: null               },
+    { id: "users",       label: "Users",        icon: Users,           count: users.length       },
+    { id: "staff",       label: "Staff",        icon: ShieldCheck,     count: admins.length      },
+    { id: "tournaments", label: "Tournaments",  icon: Trophy,          count: tournaments.length },
+    { id: "reports",     label: "Reports",      icon: AlertTriangle,   count: reports.length     },
+    { id: "economy",     label: "Economy",      icon: TrendingUp,      count: null               },
+    { id: "security",    label: "Security",     icon: Lock,            count: null               },
+    { id: "logs",        label: "Logs",         icon: FileText,        count: null               },
+    { id: "system",      label: "System",       icon: Settings,        count: null               },
   ];
 
   const STAT_CARDS = [
-    { label: "UTILISATEURS", value: stats.totalUsers,           accent: "#60a5fa", glow: "rgba(96,165,250,0.15)",   icon: "👥" },
-    { label: "EN LIGNE",     value: stats.onlineUsers,          accent: "#4ade80", glow: "rgba(74,222,128,0.15)",   icon: "◉"  },
-    { label: "BANNIS",       value: stats.bannedUsers,          accent: "#f87171", glow: "rgba(248,113,113,0.15)",  icon: "⊘"  },
-    { label: "EN ATTENTE",   value: stats.pendingVerifications, accent: "#fbbf24", glow: "rgba(251,191,36,0.15)",   icon: "◷"  },
-    { label: "TOURNOIS",     value: stats.totalTournaments,     accent: "#a78bfa", glow: "rgba(167,139,250,0.15)",  icon: "◆"  },
-    { label: "MATCHES",      value: stats.totalMatches,         accent: "#22d3ee", glow: "rgba(34,211,238,0.15)",   icon: "⚔"  },
-    { label: "TICKETS",      value: stats.openTickets,          accent: "#fb923c", glow: "rgba(251,146,60,0.15)",   icon: "◈"  },
-    { label: "RAPPORTS",     value: stats.totalReports,         accent: "#f472b6", glow: "rgba(244,114,182,0.15)",  icon: "⚑"  },
+    { label: "Total Users",    value: stats.totalUsers,           icon: Users,         color: "#6366f1" },
+    { label: "Online",         value: stats.onlineUsers,          icon: Wifi,          color: "#10b981" },
+    { label: "Banned",         value: stats.bannedUsers,          icon: ShieldOff,     color: "#ef4444" },
+    { label: "Pending",        value: stats.pendingVerifications, icon: Clock,         color: "#f59e0b" },
+    { label: "Tournaments",    value: stats.totalTournaments,     icon: Trophy,        color: "#8b5cf6" },
+    { label: "Matches",        value: stats.totalMatches,         icon: Gamepad2,      color: "#06b6d4" },
+    { label: "Open Tickets",   value: stats.openTickets,          icon: Ticket,        color: "#f97316" },
+    { label: "Reports",        value: stats.totalReports,         icon: Flag,          color: "#ec4899" },
   ];
 
-  const initials = (profile?.username || profile?.email || '?')[0]?.toUpperCase();
+  const initials = (profile?.username || profile?.email || "?")[0]?.toUpperCase();
 
-  // ─── RENDER ───
+  // ─── Render ────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #07070f 0%, #0c0c1c 100%)', color: '#fff', fontFamily: 'Rajdhani, sans-serif', position: 'relative' }}>
+    <div style={{ minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.font }}>
       <style>{`
-        @keyframes sa-spin { to { transform: rotate(360deg); } }
-        .sa-stat  { transition: border-color 0.18s, background 0.18s, transform 0.18s; }
-        .sa-stat:hover  { border-color: rgba(139,92,246,0.28) !important; background: rgba(139,92,246,0.06) !important; transform: translateY(-2px); }
-        .sa-tab   { transition: all 0.15s; }
-        .sa-tab:hover   { color: rgba(255,255,255,0.75) !important; }
-        .sa-ibtn  { transition: all 0.15s; }
-        .sa-ibtn:hover  { border-color: rgba(255,255,255,0.14) !important; background: rgba(255,255,255,0.06) !important; }
-        .sa-pfbtn { transition: all 0.15s; }
-        .sa-pfbtn:hover { border-color: rgba(139,92,246,0.35) !important; background: rgba(139,92,246,0.06) !important; }
+        .sa-nav-btn { transition: background 0.12s, color 0.12s; }
+        .sa-nav-btn:hover { background: rgba(255,255,255,0.06) !important; color: ${T.text} !important; }
+        .sa-tab { transition: background 0.12s, color 0.12s, border-color 0.12s; }
+        .sa-tab:hover { background: rgba(255,255,255,0.05) !important; color: ${T.text2} !important; }
+        .sa-stat { transition: border-color 0.15s, background 0.15s; cursor: default; }
+        .sa-stat:hover { border-color: rgba(99,102,241,0.3) !important; background: rgba(99,102,241,0.04) !important; }
       `}</style>
 
-      {/* Ambient glows */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <div style={{ position: 'absolute', top: -350, left: -250, width: 850, height: 850, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.055) 0%, transparent 68%)' }} />
-        <div style={{ position: 'absolute', bottom: -300, right: -200, width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.045) 0%, transparent 68%)' }} />
-      </div>
+      {/* ═══ TOPBAR ═══ */}
+      <header style={{ borderBottom: `1px solid ${T.border}`, background: T.surface, position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 1440, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
 
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1440, margin: '0 auto', padding: '22px 18px' }}>
-
-        {/* ══════ HEADER ══════ */}
-        <motion.div
-          initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 22, padding: '15px 20px', background: 'rgba(255,255,255,0.022)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, backdropFilter: 'blur(20px)' }}
-        >
           {/* Brand */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 11, background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, boxShadow: '0 0 18px rgba(139,92,246,0.4)', flexShrink: 0 }}>⚡</div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <h1 style={{ fontSize: 16, fontWeight: 900, margin: 0, fontFamily: 'Orbitron,sans-serif', letterSpacing: 2.5, color: '#fff' }}>SUPER ADMIN</h1>
-                <span style={{ fontSize: 8, padding: '2px 8px', borderRadius: 20, background: 'rgba(139,92,246,0.14)', border: '1px solid rgba(139,92,246,0.28)', color: '#a78bfa', fontWeight: 700, letterSpacing: 2, fontFamily: 'Orbitron,sans-serif' }}>v2.0</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: T.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <ShieldCheck size={15} color="#fff" />
               </div>
-              <p style={{ margin: 0, fontSize: 9, color: 'rgba(255,255,255,0.28)', letterSpacing: 3.5, textTransform: 'uppercase', fontFamily: 'Orbitron,sans-serif' }}>Command &amp; Control Center</p>
+              <span style={{ fontSize: 14, fontWeight: 700, color: T.text, letterSpacing: 0.3 }}>CipherPool</span>
+              <span style={{ fontSize: 11, color: T.text3 }}>/</span>
+              <span style={{ fontSize: 13, color: T.text2, fontWeight: 500 }}>Super Admin</span>
+            </div>
+
+            {/* Status pill */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 20, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.green }} />
+              <span style={{ fontSize: 11, color: T.green, fontWeight: 600 }}>Operational</span>
             </div>
           </div>
 
-          {/* Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <Link to="/admin" className="sa-ibtn" style={{ padding: '8px 15px', borderRadius: 10, background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.14)', color: '#60a5fa', fontSize: 10, fontWeight: 700, letterSpacing: 1.8, textDecoration: 'none', fontFamily: 'Orbitron,sans-serif' }}>
-              ◈ ADMIN
+          {/* Right actions */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Link to="/admin" className="sa-nav-btn" style={{ padding: "6px 14px", borderRadius: 8, background: "transparent", border: `1px solid ${T.border}`, color: T.text2, fontSize: 12, fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
+              <ShieldCheck size={13} /> Admin Panel
             </Link>
-            <button onClick={() => navigate(0)} className="sa-ibtn" style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)', fontSize: 15, cursor: 'pointer' }}>⟲</button>
-
-            {/* Profile */}
-            <button onClick={() => setShowProfileModal(true)} className="sa-pfbtn" style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '6px 13px 6px 6px', borderRadius: 12, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.065)', cursor: 'pointer' }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid rgba(139,92,246,0.5)', overflow: 'hidden', background: 'rgba(139,92,246,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative' }}>
-                {profile?.avatar_url ? (
-                  <img
-                    src={profile.avatar_url} alt="" draggable={false}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', position: 'absolute', inset: 0 }}
-                    onError={e => { e.currentTarget.style.display = 'none'; }}
-                  />
-                ) : null}
-                <span style={{ fontSize: 11, fontWeight: 900, color: '#a78bfa', fontFamily: 'Orbitron,sans-serif', display: profile?.avatar_url ? 'none' : 'block' }}>
-                  {initials}
-                </span>
-              </div>
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{profile?.username || profile?.email?.split('@')[0]}</div>
-                <div style={{ fontSize: 8, color: '#8b5cf6', letterSpacing: 1.8, fontFamily: 'Orbitron,sans-serif' }}>SUPER ADMIN</div>
-              </div>
+            <button onClick={() => navigate(0)} className="sa-nav-btn" style={{ padding: "6px 10px", borderRadius: 8, background: "transparent", border: `1px solid ${T.border}`, color: T.text2, cursor: "pointer", display: "flex", alignItems: "center" }}>
+              <RefreshCw size={13} />
             </button>
-          </div>
-        </motion.div>
 
-        {/* ══════ TOAST ══════ */}
+            {/* Profile dropdown */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setProfileMenuOpen(p => !p)}
+                className="sa-nav-btn"
+                style={{ padding: "4px 10px 4px 4px", borderRadius: 8, background: "transparent", border: `1px solid ${T.border}`, color: T.text2, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+              >
+                <div style={{ width: 26, height: 26, borderRadius: "50%", border: `2px solid ${T.border}`, overflow: "hidden", background: T.surface2, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      onError={e => { e.currentTarget.style.display = "none"; }} />
+                  ) : null}
+                  <span style={{ fontSize: 10, fontWeight: 800, color: T.accent, display: profile?.avatar_url ? "none" : "block" }}>{initials}</span>
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{profile?.username || profile?.email?.split("@")[0]}</span>
+                <ChevronRight size={12} style={{ opacity: 0.5, transform: profileMenuOpen ? "rotate(90deg)" : "none", transition: "transform 0.15s" }} />
+              </button>
+
+              <AnimatePresence>
+                {profileMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, width: 200, ...S.card, padding: "6px", zIndex: 100, boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
+                  >
+                    <button
+                      onClick={() => { setShowProfileModal(true); setProfileMenuOpen(false); }}
+                      style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "transparent", border: "none", color: T.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, textAlign: "left" }}
+                      className="sa-nav-btn"
+                    >
+                      <UserCircle2 size={15} color={T.text3} /> Modifier le profil
+                    </button>
+                    <div style={{ height: 1, background: T.border, margin: "4px 0" }} />
+                    <button
+                      onClick={() => navigate("/dashboard")}
+                      style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "transparent", border: "none", color: T.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, textAlign: "left" }}
+                      className="sa-nav-btn"
+                    >
+                      <ArrowUpRight size={15} color={T.text3} /> Retour au site
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ═══ MAIN ═══ */}
+      <main style={{ maxWidth: 1440, margin: "0 auto", padding: "28px 24px" }}>
+
+        {/* Toast */}
         <AnimatePresence>
           {message.text && (
             <motion.div
-              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-              style={{ marginBottom: 16, padding: '11px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10, background: message.type === 'success' ? 'rgba(34,197,94,0.07)' : 'rgba(239,68,68,0.07)', border: `1px solid ${message.type === 'success' ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)'}`, color: message.type === 'success' ? '#4ade80' : '#f87171', fontSize: 14, fontWeight: 600 }}
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              style={{ marginBottom: 20, padding: "11px 16px", borderRadius: 10, display: "flex", alignItems: "center", gap: 10, background: message.type === "success" ? "rgba(16,185,129,0.07)" : "rgba(239,68,68,0.07)", border: `1px solid ${message.type === "success" ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}`, color: message.type === "success" ? "#34d399" : "#f87171", fontSize: 13, fontWeight: 600 }}
             >
-              <span style={{ fontSize: 16 }}>{message.type === 'success' ? '✓' : '⚠'}</span>
+              {message.type === "success" ? <Activity size={15} /> : <AlertTriangle size={15} />}
               {message.text}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ══════ STATS GRID ══════ */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(138px, 1fr))', gap: 10, marginBottom: 12 }}>
-          {STAT_CARDS.map((item, i) => (
-            <motion.div
-              key={i} className="sa-stat"
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-              style={{ padding: '15px 13px', borderRadius: 13, background: 'rgba(255,255,255,0.022)', border: '1px solid rgba(255,255,255,0.055)', display: 'flex', flexDirection: 'column', gap: 5, cursor: 'default' }}
+        {/* Page title */}
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: T.text, margin: 0, marginBottom: 4 }}>Control Panel</h1>
+          <p style={{ fontSize: 13, color: T.text3, margin: 0 }}>Manage users, tournaments, and system settings</p>
+        </div>
+
+        {/* ─── Stats Grid ─── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+          {STAT_CARDS.map((s, i) => (
+            <motion.div key={i} className="sa-stat" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+              style={{ ...S.card, padding: "16px" }}
             >
-              <div style={{ fontSize: 15, color: item.accent }}>{item.icon}</div>
-              <div style={{ fontSize: 22, fontWeight: 900, fontFamily: 'Orbitron,sans-serif', color: '#fff', lineHeight: 1 }}>{item.value.toLocaleString()}</div>
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)', letterSpacing: 2.2, textTransform: 'uppercase', fontWeight: 700 }}>{item.label}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: `${s.color}14`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <s.icon size={15} color={s.color} />
+                </div>
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: T.text, lineHeight: 1, marginBottom: 4 }}>{s.value.toLocaleString()}</div>
+              <div style={{ ...S.label }}>{s.label}</div>
             </motion.div>
           ))}
         </div>
 
-        {/* ══════ REVENUE ══════ */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10, marginBottom: 18 }}>
+        {/* ─── Revenue row ─── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12, marginBottom: 24 }}>
           {[
-            { label: "Revenu Aujourd'hui", value: stats.todayRevenue,   accent: '#a78bfa', bar: 'rgba(139,92,246,0.35)' },
-            { label: 'Revenu Ce Mois',     value: stats.monthlyRevenue, accent: '#22d3ee', bar: 'rgba(6,182,212,0.35)'  },
+            { label: "Revenue Today",    value: stats.todayRevenue,   color: "#8b5cf6", bg: "rgba(139,92,246,0.08)" },
+            { label: "Revenue This Month", value: stats.monthlyRevenue, color: "#06b6d4", bg: "rgba(6,182,212,0.08)" },
           ].map(c => (
-            <div key={c.label} style={{ padding: '15px 18px', borderRadius: 13, background: 'rgba(255,255,255,0.022)', border: '1px solid rgba(255,255,255,0.055)' }}>
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)', letterSpacing: 2.5, textTransform: 'uppercase', fontFamily: 'Orbitron,sans-serif', marginBottom: 5 }}>{c.label}</div>
-              <div style={{ fontSize: 26, fontWeight: 900, fontFamily: 'Orbitron,sans-serif', color: c.accent, marginBottom: 10 }}>
-                {c.value.toLocaleString()} <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)' }}>CP</span>
+            <div key={c.label} style={{ ...S.card, padding: "18px 20px", display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <TrendingUp size={18} color={c.color} />
               </div>
-              <div style={{ height: 2, borderRadius: 2, background: 'rgba(255,255,255,0.06)' }}>
-                <div style={{ height: '100%', width: '65%', borderRadius: 2, background: c.bar }} />
+              <div>
+                <div style={{ ...S.label, marginBottom: 4 }}>{c.label}</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: T.text, lineHeight: 1 }}>
+                  {c.value.toLocaleString()} <span style={{ fontSize: 12, color: T.text3, fontWeight: 500 }}>CP</span>
+                </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* ══════ TABS NAV ══════ */}
-        <div style={{ display: 'flex', gap: 3, marginBottom: 14, background: 'rgba(255,255,255,0.016)', border: '1px solid rgba(255,255,255,0.048)', borderRadius: 13, padding: 4, overflowX: 'auto' }}>
+        {/* ─── Tab Navigation ─── */}
+        <div style={{ borderBottom: `1px solid ${T.border}`, display: "flex", gap: 2, marginBottom: 20, overflowX: "auto" }}>
           {TABS.map(tab => {
             const active = activeTab === tab.id;
-            const color  = TAB_COLORS[tab.color] || '#8b5cf6';
             return (
-              <motion.button
-                key={tab.id} whileTap={{ scale: 0.96 }} className="sa-tab"
+              <button
+                key={tab.id} className="sa-tab"
                 onClick={() => setActiveTab(tab.id)}
-                style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', background: active ? `${color}16` : 'transparent', color: active ? color : 'rgba(255,255,255,0.28)', fontSize: 10, fontWeight: 700, letterSpacing: 1.8, fontFamily: 'Orbitron,sans-serif', whiteSpace: 'nowrap', borderBottom: active ? `2px solid ${color}` : '2px solid transparent', boxShadow: active ? `0 0 12px ${color}1a` : 'none', display: 'flex', alignItems: 'center', gap: 6 }}
+                style={{
+                  padding: "10px 16px", border: "none", borderBottom: active ? `2px solid ${T.accent}` : "2px solid transparent",
+                  background: active ? `${T.accent}0c` : "transparent",
+                  color: active ? T.text : T.text3, cursor: "pointer",
+                  fontSize: 13, fontWeight: active ? 600 : 500,
+                  display: "flex", alignItems: "center", gap: 7, whiteSpace: "nowrap",
+                  marginBottom: -1,
+                }}
               >
+                <tab.icon size={14} />
                 {tab.label}
                 {tab.count !== null && (
-                  <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 7, background: active ? `${color}22` : 'rgba(255,255,255,0.06)', color: active ? color : 'rgba(255,255,255,0.28)' }}>
+                  <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: active ? `${T.accent}20` : T.surface2, color: active ? T.accent : T.text3, fontWeight: 700 }}>
                     {tab.count}
                   </span>
                 )}
-              </motion.button>
+              </button>
             );
           })}
         </div>
 
-        {/* ══════ TAB CONTENT ══════ */}
-        <div style={{ background: 'rgba(255,255,255,0.012)', border: '1px solid rgba(255,255,255,0.045)', borderRadius: 16, padding: '16px', minHeight: 420 }}>
+        {/* ─── Tab Content ─── */}
+        <div style={{ ...S.card, padding: "16px", minHeight: 440 }}>
           <AnimatePresence mode="wait">
             {activeTab === "dashboard"   && <DashboardTab   key="dashboard"   stats={stats} users={users} logs={logs} setActiveTab={setActiveTab} setFilter={setFilter} setSelectedUser={setSelectedUser} setGrantAmount={setGrantAmount} setGrantReason={setGrantReason} setWalletSearch={setWalletSearch} setShowWalletModal={setShowWalletModal} />}
             {activeTab === "users"       && <UsersTab        key="users"       filteredUsers={filteredUsers} search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} setSelectedUser={setSelectedUser} setShowRoleModal={setShowRoleModal} setShowBanModal={setShowBanModal} setShowWalletModal={setShowWalletModal} unbanUser={unbanUser} deleteUser={deleteUser} />}
@@ -501,9 +544,9 @@ export default function SuperAdmin() {
           </AnimatePresence>
         </div>
 
-      </div>
+      </main>
 
-      {/* ══════ MODALS ══════ */}
+      {/* ═══ MODALS ═══ */}
       <AnimatePresence>
         {showProfileModal && (
           <ProfileModal profile={profile} onClose={() => setShowProfileModal(false)} onSaved={updated => setProfile(prev => ({ ...prev, ...updated }))} />
@@ -535,6 +578,9 @@ export default function SuperAdmin() {
           />
         )}
       </AnimatePresence>
+
+      {/* Close profile menu on outside click */}
+      {profileMenuOpen && <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setProfileMenuOpen(false)} />}
     </div>
   );
 }

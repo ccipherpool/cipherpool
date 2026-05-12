@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useOutletContext, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProfileData } from "../hooks/useProfileData";
@@ -64,10 +64,23 @@ export default function Profile() {
   const [editForm, setEditForm] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarMode, setAvatarMode] = useState("photo"); // "photo" | "store"
+  const [storeAvatars, setStoreAvatars] = useState([]);
+  const [selectedStoreAvatar, setSelectedStoreAvatar] = useState(null);
   const avatarInputRef = useRef(null);
   const { profile: dp, stats, achievements, recentMatches, loading } = useProfileData(ap?.id);
 
   const profile = dp || ap;
+
+  const fetchStoreAvatars = useCallback(async (userId) => {
+    if (!userId) return;
+    const { data } = await supabase
+      .from("user_items")
+      .select("*, item:store_items(*)")
+      .eq("user_id", userId);
+    const avatars = (data || []).filter(row => row.item?.type === "avatar" && row.item?.image_url);
+    setStoreAvatars(avatars);
+  }, []);
 
   const openEdit = () => {
     setEditForm({
@@ -79,6 +92,9 @@ export default function Profile() {
     });
     setAvatarPreview(null);
     setAvatarFile(null);
+    setSelectedStoreAvatar(null);
+    setAvatarMode("photo");
+    fetchStoreAvatars(profile?.id);
     setShowEdit(true);
   };
 
@@ -86,6 +102,7 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
     setAvatarFile(file);
+    setSelectedStoreAvatar(null);
     setAvatarPreview(URL.createObjectURL(file));
   };
 
@@ -94,7 +111,9 @@ export default function Profile() {
     setSaving(true);
     let avatarUrl = profile?.avatar_url;
 
-    if (avatarFile) {
+    if (selectedStoreAvatar) {
+      avatarUrl = selectedStoreAvatar.item.image_url;
+    } else if (avatarFile) {
       const ext = avatarFile.name.split(".").pop();
       const path = `${profile.id}/avatar.${ext}`;
       const { error: upErr } = await supabase.storage
@@ -311,35 +330,87 @@ export default function Profile() {
                   <button onClick={() => setShowEdit(false)} className="p-2 text-slate-500 hover:text-white transition-colors">✕</button>
                 </div>
 
-                {/* Avatar Upload */}
-                <div className="flex flex-col items-center gap-3">
-                  <div
-                    className="relative w-24 h-24 rounded-[20px] border-2 border-dashed border-white/20 overflow-hidden cursor-pointer hover:border-mint/50 transition-colors group"
-                    onClick={() => avatarInputRef.current?.click()}
-                  >
-                    {(avatarPreview || profile?.avatar_url) ? (
-                      <img
-                        src={avatarPreview || profile.avatar_url}
-                        className="w-full h-full object-cover"
-                        alt="Avatar"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-3xl font-heading font-black text-mint">
-                        {profile?.username?.[0]?.toUpperCase() || 'P'}
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-white text-[10px] font-black uppercase tracking-widest">Changer</span>
+                {/* Avatar Picker */}
+                <div className="space-y-3">
+                  {/* Current avatar preview */}
+                  <div className="flex justify-center">
+                    <div className="w-20 h-20 rounded-2xl border-2 border-white/10 overflow-hidden bg-white/5 flex items-center justify-center">
+                      {(avatarPreview || selectedStoreAvatar?.item?.image_url || profile?.avatar_url) ? (
+                        <img src={avatarPreview || selectedStoreAvatar?.item?.image_url || profile.avatar_url} className="w-full h-full object-cover" alt="Avatar" />
+                      ) : (
+                        <span className="text-3xl font-heading font-black text-mint">{profile?.username?.[0]?.toUpperCase() || 'P'}</span>
+                      )}
                     </div>
                   </div>
-                  <input
-                    ref={avatarInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarChange}
-                  />
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Cliquer pour changer la photo</p>
+
+                  {/* Mode tabs */}
+                  <div className="flex rounded-xl border border-white/10 p-1 gap-1">
+                    {[
+                      { id: "photo", label: "📷 Photo" },
+                      { id: "store", label: `🎭 Avatars${storeAvatars.length > 0 ? ` (${storeAvatars.length})` : ""}` },
+                    ].map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => setAvatarMode(m.id)}
+                        className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                          avatarMode === m.id
+                            ? "bg-mint text-obsidian"
+                            : "text-slate-500 hover:text-white"
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Photo upload */}
+                  {avatarMode === "photo" && (
+                    <div
+                      className="relative rounded-xl border-2 border-dashed border-white/15 hover:border-mint/40 transition-colors cursor-pointer group p-4 flex flex-col items-center gap-2"
+                      onClick={() => avatarInputRef.current?.click()}
+                    >
+                      <span className="text-2xl">📁</span>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-mint transition-colors">
+                        Choisir une image depuis l'appareil
+                      </p>
+                      {avatarFile && (
+                        <p className="text-[9px] text-mint font-black">{avatarFile.name}</p>
+                      )}
+                    </div>
+                  )}
+                  <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+
+                  {/* Store avatars */}
+                  {avatarMode === "store" && (
+                    storeAvatars.length === 0 ? (
+                      <div className="rounded-xl border border-white/10 p-6 text-center">
+                        <p className="text-2xl mb-2">🎭</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Aucun avatar acheté</p>
+                        <p className="text-[9px] text-slate-600 mt-1">Visite la boutique pour en acheter</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+                        {storeAvatars.map(row => (
+                          <button
+                            key={row.id}
+                            onClick={() => { setSelectedStoreAvatar(row); setAvatarFile(null); setAvatarPreview(null); }}
+                            className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${
+                              selectedStoreAvatar?.id === row.id
+                                ? "border-mint shadow-[0_0_12px_rgba(16,185,129,0.4)]"
+                                : "border-white/10 hover:border-white/30"
+                            }`}
+                          >
+                            <img src={row.item.image_url} alt={row.item.name} className="w-full h-full object-cover" />
+                            {selectedStoreAvatar?.id === row.id && (
+                              <div className="absolute inset-0 bg-mint/20 flex items-center justify-center">
+                                <span className="text-white text-lg font-black">✓</span>
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )
+                  )}
                 </div>
 
                 {[

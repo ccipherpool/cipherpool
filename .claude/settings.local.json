@@ -35,7 +35,11 @@
       "Bash(nslookup cipherpool.space)",
       "Bash(nslookup www.cipherpool.space)",
       "Bash(nslookup cipherpool-cipherpool.vercel.app)",
-      "Bash(findstr \"Address\")"
+      "Bash(findstr \"Address\")",
+      "PowerShell(Get-ChildItem \"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\" | ForEach-Object { if \\($_.PSIsContainer\\) { \"DIR  $\\($_.Name\\)\" } else { \"FILE $\\($_.Name\\)\" } })",
+      "PowerShell(New-Item *)",
+      "PowerShell(Get-ChildItem \"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\" | Where-Object { -not $_.PSIsContainer } | ForEach-Object { $_.Name })",
+      "PowerShell(Get-ChildItem \"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\\\\sql\" | ForEach-Object { $_.Name })"
     ]
   }
 }
