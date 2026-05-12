@@ -17,12 +17,23 @@ export default {
         'mint': {
           DEFAULT: '#10B981',
           'dark': '#059669',
-          'glow': 'rgba(16, 185, 129, 0.3)',
+          'glow': 'rgba(16, 185, 129, 0.4)',
         },
         'cyber-gold': {
           DEFAULT: '#F5C518',
           'dark': '#D4A017',
           'glow': 'rgba(245, 197, 24, 0.3)',
+        },
+        'bg': {
+          'primary': 'var(--color-bg-primary)',
+          'secondary': 'var(--color-bg-secondary)',
+          'card': 'var(--color-bg-card)',
+          'tertiary': 'var(--color-bg-tertiary)',
+        },
+        'text': {
+          'primary': 'var(--color-text-primary)',
+          'secondary': 'var(--color-text-secondary)',
+          'muted': 'var(--color-text-muted)',
         },
         'brand': {
           'primary': '#10B981',    // Moroccan Mint Green

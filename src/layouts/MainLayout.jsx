@@ -96,7 +96,7 @@ export default function MainLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#eef2f7]">
+    <div className="flex h-screen overflow-hidden bg-[#020617]">
 
       {/* ── Desktop Sidebar (in flow) ── */}
       <Sidebar profile={profile} />
@@ -108,7 +108,7 @@ export default function MainLayout() {
         <TopNav profile={profile} />
 
         {/* Mobile Header (fixed overlay) */}
-        <nav className="md:hidden fixed top-0 left-0 right-0 z-[90] h-14 flex items-center px-4 border-b border-white/[0.08] bg-[#080d18]/95 backdrop-blur-xl">
+        <nav className="md:hidden fixed top-0 left-0 right-0 z-[90] h-14 flex items-center px-4 border-b border-white/[0.08] bg-[#020617]/95 backdrop-blur-xl">
           <button
             onClick={() => setMobileMenuOpen(true)}
             className="p-2 rounded-xl text-slate-400 hover:text-white transition-colors mr-2"
@@ -140,7 +140,7 @@ export default function MainLayout() {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="fixed left-0 top-0 bottom-0 w-56 z-[210] md:hidden flex flex-col bg-[#080d18] border-r border-white/[0.08]"
+                className="fixed left-0 top-0 bottom-0 w-56 z-[210] md:hidden flex flex-col bg-[#020617] border-r border-white/[0.08]"
               >
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
                   <div className="flex items-center gap-2">
@@ -196,7 +196,7 @@ export default function MainLayout() {
         </AnimatePresence>
 
         {/* ── Main Content ── */}
-        <main className="flex-1 overflow-y-auto pt-14 md:pt-0 pb-16 md:pb-0 bg-[#eef2f7]">
+        <main className="flex-1 overflow-y-auto pt-14 md:pt-0 pb-16 md:pb-0 bg-[#020617]">
           <div className="max-w-7xl mx-auto px-4 md:px-8 py-5 md:py-7">
             <AnimatePresence mode="wait">
               <motion.div
@@ -213,7 +213,7 @@ export default function MainLayout() {
         </main>
 
         {/* Mobile Bottom Nav */}
-        <nav className="fixed bottom-0 left-0 right-0 md:hidden z-[150] h-14 bg-[#080d18]/95 backdrop-blur-2xl border-t border-white/[0.08] flex items-center justify-around px-2">
+        <nav className="fixed bottom-0 left-0 right-0 md:hidden z-[150] h-14 bg-[#020617]/95 backdrop-blur-2xl border-t border-white/[0.08] flex items-center justify-around px-2">
           {MOBILE_BOTTOM_NAV.map(item => {
             const isActive = location.pathname === item.path;
             return (

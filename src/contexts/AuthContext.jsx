@@ -18,30 +18,19 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    let cancelled = false;
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (cancelled) return;
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) setRole(await fetchRole(u.id));
-      setLoading(false);
-    }).catch((err) => {
-      if (err?.name === 'AbortError') return;
-      console.error('getSession error:', err);
-      setLoading(false);
-    });
+    let mounted = true;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (cancelled) return;
       const u = session?.user ?? null;
+      const r = u ? await fetchRole(u.id) : null;
+      if (!mounted) return;
       setUser(u);
-      setRole(u ? await fetchRole(u.id) : null);
+      setRole(r);
       setLoading(false);
     });
 
     return () => {
-      cancelled = true;
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
