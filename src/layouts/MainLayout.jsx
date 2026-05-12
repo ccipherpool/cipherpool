@@ -64,24 +64,11 @@ export default function MainLayout() {
     init();
   }, [fetchProfile]);
 
-  // Auto-logout: react when Supabase session expires or is cleared from another tab/device
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        navigate('/login', { replace: true });
-      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-        // Session refreshed — re-fetch profile in case data changed
-        fetchProfile();
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [navigate, fetchProfile]);
-
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/login");
+    // AuthContext.onAuthStateChange handles the redirect via ProtectedRoute
   };
 
   const isAdmin = ["admin", "super_admin", "founder", "fondateur"].includes(profile?.role);
