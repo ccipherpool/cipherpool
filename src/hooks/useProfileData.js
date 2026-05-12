@@ -21,8 +21,11 @@ export function useProfileData(userId) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!userId) return;
-    
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
     loadProfileData();
     
     const channel = supabase

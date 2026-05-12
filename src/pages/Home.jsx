@@ -7,6 +7,8 @@ import {
   Award, Users, TrendingUp, Gamepad2, Wallet,
   ChevronDown, ArrowUpRight, Coffee, GitBranch
 } from "lucide-react";
+import { ContainerScroll } from "../components/ui/ContainerScroll";
+import FlowArt, { FlowSection } from "../components/ui/FlowArt";
 
 // ═══════════════════════════════════════════════
 // 🎨 TOILE DE FOND - "DIGITAL RAIN MATRIX"
@@ -442,6 +444,47 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ═══════════ CINEMATIC JOURNEY ═══════════ */}
+      <section className="relative z-10">
+        <FlowArt>
+          <FlowSection className="bg-obsidian">
+            <div className="flex flex-col justify-center h-full max-w-4xl mx-auto px-8">
+              <span className="text-mint font-black text-xs uppercase tracking-[0.4em] mb-4">Phase 01</span>
+              <h2 className="text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none mb-8">
+                CHOISISSEZ VOTRE <br /><span className="text-gradient-cyan">CHAMP DE BATAILLE</span>
+              </h2>
+              <p className="text-xl text-slate-400 font-medium max-w-2xl leading-relaxed">
+                Des centaines de tournois quotidiens sur Free Fire, League of Legends et plus. Trouvez la compétition qui vous correspond.
+              </p>
+            </div>
+          </FlowSection>
+
+          <FlowSection className="bg-[#050b1a]">
+            <div className="flex flex-col justify-center h-full max-w-4xl mx-auto px-8 text-right items-end">
+              <span className="text-cyber-gold font-black text-xs uppercase tracking-[0.4em] mb-4">Phase 02</span>
+              <h2 className="text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none mb-8">
+                ENGAGEZ LE <br /><span className="text-gradient-purple">COMBAT</span>
+              </h2>
+              <p className="text-xl text-slate-400 font-medium max-w-2xl leading-relaxed">
+                Affrontez les meilleurs joueurs du Maroc dans une arène sécurisée. Notre système anti-triche veille sur l'intégrité de chaque duel.
+              </p>
+            </div>
+          </FlowSection>
+
+          <FlowSection className="bg-obsidian-deep">
+            <div className="flex flex-col justify-center h-full max-w-4xl mx-auto px-8">
+              <span className="text-indigo-500 font-black text-xs uppercase tracking-[0.4em] mb-4">Phase 03</span>
+              <h2 className="text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none mb-8">
+                SÉCURISEZ VOTRE <br /><span className="text-gradient-cyan">GLOIRE</span>
+              </h2>
+              <p className="text-xl text-slate-400 font-medium max-w-2xl leading-relaxed">
+                Recevez vos gains instantanément sur votre wallet. Montez dans le Hall of Fame et devenez une légende de l'esport.
+              </p>
+            </div>
+          </FlowSection>
+        </FlowArt>
+      </section>
+
       {/* ═══════════ TESTIMONIALS ═══════════ */}
       <section className="relative py-32 px-4 md:px-8">
         <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/[0.02] to-purple-500/[0.02]" />
@@ -492,6 +535,48 @@ export default function Home() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ═══════════ TACTICAL SHOWCASE ═══════════ */}
+      <section className="relative py-20 overflow-hidden">
+        <ContainerScroll
+          titleComponent={
+            <div className="flex flex-col items-center">
+              <h1 className="text-4xl md:text-7xl font-black text-white leading-tight uppercase tracking-tighter">
+                L'EXPÉRIENCE <br />
+                <span className="text-gradient-cyan">ULTIME DU GAMING</span>
+              </h1>
+              <p className="mt-4 text-slate-500 text-sm md:text-lg font-bold uppercase tracking-[0.3em]">
+                Interface Tactique • Analyse Live • Domination
+              </p>
+            </div>
+          }
+        >
+          <div className="relative h-full w-full bg-obsidian-deep rounded-2xl overflow-hidden border border-white/10">
+            <img 
+              src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2070" 
+              className="w-full h-full object-cover opacity-60"
+              alt="Dashboard Preview"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-obsidian-deep via-transparent to-transparent" />
+            <div className="absolute bottom-8 left-8 right-8 flex justify-between items-end">
+               <div>
+                  <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.4em] mb-2">Operational Grid</p>
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tighter">DASHBOARD V4.0</h3>
+               </div>
+               <div className="flex gap-4">
+                  <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 backdrop-blur-md">
+                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Status</p>
+                     <p className="text-xs font-bold text-mint uppercase leading-none">Optimal</p>
+                  </div>
+                  <div className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 backdrop-blur-md">
+                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Latency</p>
+                     <p className="text-xs font-bold text-white uppercase leading-none">24ms</p>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </ContainerScroll>
       </section>
 
       {/* ═══════════ CTA FINAL ═══════════ */}
