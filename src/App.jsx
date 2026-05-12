@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Link, Outlet } from "react-router-dom";
 import { Button } from "./components/ui/Button";
 
 // Layouts (not lazy — needed immediately)
@@ -152,8 +152,8 @@ export default function App() {
             <Route path="/designer" element={<DesignerPanel />} />
           </Route>
 
-          {/* ── SUPER ADMIN ── */}
-          <Route element={<ProtectedRoute allowedRoles={["super_admin"]}><MainLayout /></ProtectedRoute>}>
+          {/* ── SUPER ADMIN — standalone, no MainLayout ── */}
+          <Route element={<ProtectedRoute allowedRoles={["super_admin"]}><Outlet /></ProtectedRoute>}>
             <Route path="/super-admin"       element={<SuperAdmin />} />
             <Route path="/super-admin/grant" element={<AdminGrant />} />
           </Route>
