@@ -8,7 +8,7 @@ import AnnouncementModal from "../components/AnnouncementModal";
 import TermsModal from "../components/TermsModal";
 import {
   LayoutDashboard, Trophy, BarChart3, User, Ticket,
-  ShieldAlert, LogOut, Sparkles, X, Menu,
+  ShieldAlert, LogOut, X, Menu,
   Wallet, MessageSquare, Star, ShoppingBag, Crown, Users2,
   Newspaper, Gift, TrendingUp, Users, Zap
 } from "lucide-react";
@@ -115,9 +115,7 @@ export default function MainLayout() {
           >
             <Menu size={22} />
           </button>
-          <span className="text-sm font-heading font-black tracking-tighter text-white flex-1">
-            CIPHER<span className="text-mint">POOL</span>
-          </span>
+          <img src="/logo.png" alt="CipherPool" className="h-8 w-auto object-contain flex-1" />
           <Link to="/wallet" className="flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.05] border border-white/[0.08] rounded-xl">
             <Wallet size={13} className="text-cyber-gold" />
             <span className="text-[10px] font-black text-white">{balance.toLocaleString()}</span>
@@ -144,10 +142,7 @@ export default function MainLayout() {
               >
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #4f46e5, #10b981)' }}>
-                      <Sparkles className="text-white" size={11} fill="currentColor" />
-                    </div>
-                    <span className="text-[12px] font-heading font-black tracking-tighter text-white">CIPHER<span className="text-mint">POOL</span></span>
+                    <img src="/logo.png" alt="CipherPool" className="h-7 w-auto object-contain" />
                   </div>
                   <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-slate-500 hover:text-white transition-colors">
                     <X size={16} />

@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
-import { Eye, EyeOff, Mail, Lock, Globe, Twitter, Gamepad2, User } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Globe, X, Gamepad2, User } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 // FormInput Component
@@ -229,7 +229,7 @@ export const LoginForm = ({
 
                 <div className="mt-6 grid grid-cols-3 gap-3">
                     <SocialButton icon={<Globe size={18} />} name="Google" />
-                    <SocialButton icon={<Twitter size={18} />} name="X" />
+                    <SocialButton icon={<X size={18} />} name="X" />
                     <SocialButton icon={<Gamepad2 size={18} />} name="Steam" />
                 </div>
             </div>

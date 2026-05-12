@@ -1,7 +1,7 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Trophy, BarChart3, Ticket,
-  ShieldAlert, Crown, LogOut, Sparkles,
+  ShieldAlert, Crown, LogOut,
   MessageSquare, Users2, ShoppingBag, Wallet, Star,
   Newspaper, Zap, Layout, TrendingUp, Gift,
 } from "lucide-react";
@@ -50,24 +50,8 @@ export default function Sidebar({ profile }) {
   return (
     <aside className="hidden md:flex w-60 flex-shrink-0 flex-col h-full bg-[#080d18] border-r border-white/[0.05] overflow-hidden">
       {/* Logo */}
-      <div className="px-4 py-4 border-b border-white/[0.05] flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, #4f46e5, #10b981)',
-              boxShadow: '0 0 16px rgba(16,185,129,0.2)',
-            }}
-          >
-            <Sparkles size={15} className="text-white" fill="currentColor" />
-          </div>
-          <div>
-            <div className="text-[13px] font-black tracking-tight text-white leading-none">
-              CIPHER<span className="text-mint">POOL</span>
-            </div>
-            <div className="text-[7px] font-bold uppercase tracking-[0.4em] text-mint/40 mt-0.5">Esports Maroc</div>
-          </div>
-        </div>
+      <div className="px-4 py-3 border-b border-white/[0.05] flex-shrink-0">
+        <img src="/logo.png" alt="CipherPool" className="h-10 w-auto object-contain" />
       </div>
 
       {/* Nav */}
