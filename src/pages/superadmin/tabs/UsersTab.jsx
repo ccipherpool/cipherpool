@@ -14,60 +14,64 @@ import {
   Layout,
   Activity
 } from "lucide-react";
+import { cn } from "../../../lib/utils";
 
 const ROLE_STYLE = {
-  super_admin: { badge: "bg-red-500/10 text-red-500 border-red-500/20",  label: "SUPER", icon: Zap     },
-  admin:       { badge: "bg-orange-500/10 text-orange-400 border-orange-500/20", label: "ADMIN", icon: ShieldAlert },
-  designer:    { badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", label: "DESIGN", icon: Layout },
-  founder:     { badge: "bg-purple-500/10 text-purple-400 border-purple-500/20", label: "FOUNDER", icon: Crown },
-  fondateur:   { badge: "bg-purple-500/10 text-purple-400 border-purple-500/20", label: "FOUNDER", icon: Crown },
-  banned:      { badge: "bg-slate-800 text-slate-500 border-white/5", label: "BANNED", icon: Ban },
+  super_admin: { badge: "bg-red-400 text-zinc-900 border-zinc-900 dark:border-white",  label: "SUPER", icon: Zap, rotation: "rotate-2" },
+  admin:       { badge: "bg-orange-400 text-zinc-900 border-zinc-900 dark:border-white", label: "ADMIN", icon: ShieldAlert, rotation: "rotate-[-2deg]" },
+  designer:    { badge: "bg-blue-400 text-zinc-900 border-zinc-900 dark:border-white", label: "DESIGN", icon: Layout, rotation: "rotate-1" },
+  founder:     { badge: "bg-purple-400 text-zinc-900 border-zinc-900 dark:border-white", label: "FOUNDER", icon: Crown, rotation: "rotate-[-1deg]" },
+  fondateur:   { badge: "bg-purple-400 text-zinc-900 border-zinc-900 dark:border-white", label: "FOUNDER", icon: Crown, rotation: "rotate-[-1deg]" },
+  banned:      { badge: "bg-zinc-800 text-zinc-400 border-zinc-900 dark:border-white", label: "BANNED", icon: Ban, rotation: "rotate-3" },
 };
 
 function RoleBadge({ role }) {
-  const s = ROLE_STYLE[role] || { badge: "bg-white/5 text-slate-400 border-white/5", label: "USER", icon: User };
+  const s = ROLE_STYLE[role] || { badge: "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border-zinc-900 dark:border-white", label: "USER", icon: User, rotation: "rotate-0" };
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-[8px] font-black rounded-full border ${s.badge} uppercase tracking-widest`}>
-      <s.icon size={10} /> {s.label}
+    <span className={cn(
+      "inline-flex items-center gap-2 px-4 py-1 font-handwritten text-xl font-bold rounded-full border-2 shadow-[2px_2px_0px_0px] shadow-zinc-900 dark:shadow-white transition-transform hover:scale-110",
+      s.badge, s.rotation
+    )}>
+      <s.icon size={16} /> {s.label}
     </span>
   );
 }
 
 function ActionButtons({ user, setSelectedUser, setShowRoleModal, setShowBanModal, setShowWalletModal, unbanUser, deleteUser }) {
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-3">
       <button
         onClick={() => { setSelectedUser(user); setShowRoleModal(true); }}
-        className="p-2 bg-white/5 border border-white/5 rounded-xl text-slate-500 hover:text-orange-400 hover:border-orange-400/30 transition-all"
+        className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-full text-zinc-500 hover:text-orange-500 hover:bg-orange-50 transition-all shadow-[2px_2px_0px_0px] shadow-zinc-900"
         title="Override Role"
-      ><Crown size={14} /></button>
+      ><Crown size={18} /></button>
       
       <button
         onClick={() => { setSelectedUser(user); setShowWalletModal(true); }}
-        className="p-2 bg-white/5 border border-white/5 rounded-xl text-slate-500 hover:text-emerald-400 hover:border-emerald-400/30 transition-all"
+        className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-full text-zinc-500 hover:text-emerald-500 hover:bg-emerald-50 transition-all shadow-[2px_2px_0px_0px] shadow-zinc-900"
         title="Sync Assets"
-      ><Wallet size={14} /></button>
+      ><Wallet size={18} /></button>
 
       {user.role !== "banned" ? (
         <button
           onClick={() => { setSelectedUser(user); setShowBanModal(true); }}
-          className="p-2 bg-white/5 border border-white/5 rounded-xl text-slate-500 hover:text-red-500 hover:border-red-500/30 transition-all"
+          className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-full text-zinc-500 hover:text-red-500 hover:bg-red-50 transition-all shadow-[2px_2px_0px_0px] shadow-zinc-900"
           title="Terminate Access"
-        ><Ban size={14} /></button>
+        ><Ban size={18} /></button>
       ) : (
         <button
           onClick={() => unbanUser(user.id)}
-          className="p-2 bg-white/5 border border-white/5 rounded-xl text-slate-500 hover:text-mint hover:border-mint/30 transition-all"
+          className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-full text-zinc-500 hover:text-green-500 hover:bg-green-50 transition-all shadow-[2px_2px_0px_0px] shadow-zinc-900"
           title="Restore Access"
-        ><CheckCircle2 size={14} /></button>
+        ><CheckCircle2 size={18} /></button>
       )}
 
       {user.role !== "super_admin" && (
         <button
           onClick={() => deleteUser(user.id)}
-          className="p-2 bg-white/5 border border-white/5 rounded-xl text-slate-500 hover:text-red-600 hover:border-red-600/30 transition-all"
+          className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-full text-zinc-500 hover:text-red-600 hover:bg-red-100 transition-all shadow-[2px_2px_0px_0px] shadow-zinc-900"
           title="Purge Data"
-        ><Trash2 size={14} /></button>
+        ><Trash2 size={18} /></button>
       )}
     </div>
   );
@@ -86,26 +90,26 @@ export default function UsersTab({
       key="users"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-10"
     >
       {/* Header & Search */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/[0.02] border border-white/5 p-6 rounded-[2rem]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 card-creative p-8 bg-white dark:bg-zinc-900 rotate-[-0.5deg]">
          <div className="relative flex-1 max-w-xl group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-mint transition-colors" size={16} />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-blue-500 transition-colors" size={24} />
             <input
               type="text"
               placeholder="Scan unit registry (ID, Email, Handle)..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-12 pr-6 py-4 bg-white/5 border border-white/5 rounded-2xl text-white text-sm focus:border-mint/30 transition-all outline-none font-mono uppercase"
+              className="w-full pl-16 pr-8 py-5 bg-zinc-50 dark:bg-zinc-800 border-2 border-zinc-900 dark:border-white rounded-2xl text-zinc-900 dark:text-white font-handwritten text-2xl focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
             />
          </div>
-         <div className="flex items-center gap-3">
-            <Filter size={16} className="text-slate-600" />
+         <div className="flex items-center gap-4 rotate-[1deg]">
+            <Filter size={24} className="text-zinc-400" />
             <select
               value={filter}
               onChange={e => setFilter(e.target.value)}
-              className="bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-mint/30"
+              className="bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-2xl px-8 py-5 font-handwritten text-2xl text-zinc-900 dark:text-white outline-none shadow-[4px_4px_0px_0px] shadow-zinc-900"
             >
               <option value="all">Total Enlistment</option>
               <option value="admins">Command Staff</option>
@@ -117,30 +121,30 @@ export default function UsersTab({
       </div>
 
       {/* Grid / Table Container */}
-      <div className="ultra-glass overflow-hidden border-white/5">
+      <div className="card-creative overflow-hidden bg-white dark:bg-zinc-900 p-0 rotate-[0.5deg]">
         
         {/* Desktop View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-white/[0.03] border-b border-white/5">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Identified Unit</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Protocol</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Logistics</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Actions</th>
+              <tr className="bg-zinc-50 dark:bg-zinc-800 border-b-2 border-zinc-900 dark:border-white">
+                <th className="px-8 py-5 font-handwritten text-2xl text-zinc-900 dark:text-white">Identified Unit 👤</th>
+                <th className="px-8 py-5 font-handwritten text-2xl text-zinc-900 dark:text-white">Protocol 🛡️</th>
+                <th className="px-8 py-5 font-handwritten text-2xl text-zinc-900 dark:text-white">Logistics 💰</th>
+                <th className="px-8 py-5 font-handwritten text-2xl text-zinc-900 dark:text-white text-right">Actions ⚙️</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y-2 divide-zinc-900 dark:divide-white">
               {displayed.map(user => (
-                <tr key={user.id} className="hover:bg-white/[0.01] transition-colors group">
+                <tr key={user.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors group">
                   <td className="px-8 py-6">
-                    <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-impact text-xl text-slate-600 group-hover:text-mint group-hover:border-mint/30 transition-all">
+                    <div className="flex items-center gap-6">
+                       <div className="w-14 h-14 rounded-full border-2 border-zinc-900 dark:border-white flex items-center justify-center bg-blue-100 text-blue-600 font-handwritten text-3xl shadow-[2px_2px_0px_0px] shadow-zinc-900 transition-all group-hover:scale-110">
                           {user.username?.[0]?.toUpperCase() || 'U'}
                        </div>
                        <div>
-                          <p className="font-bold text-white uppercase tracking-tight truncate max-w-[200px]">{user.username || user.full_name || "Unknown"}</p>
-                          <p className="text-[10px] text-slate-600 font-medium truncate max-w-[200px]">{user.email}</p>
+                          <p className="font-handwritten text-3xl font-bold text-zinc-900 dark:text-white truncate max-w-[250px]">{user.username || user.full_name || "Unknown"}</p>
+                          <p className="font-handwritten text-lg text-zinc-500 truncate max-w-[250px]">{user.email}</p>
                        </div>
                     </div>
                   </td>
@@ -150,17 +154,19 @@ export default function UsersTab({
                   <td className="px-8 py-6">
                     <div className="flex flex-col gap-1">
                        <div className="flex items-center gap-2">
-                          <Wallet size={12} className="text-cyber-gold" />
-                          <span className="text-[10px] font-black text-white">{(user.coins || 0).toLocaleString()} <span className="text-cyber-gold">CP</span></span>
+                          <Wallet size={18} className="text-amber-500" />
+                          <span className="font-handwritten text-2xl font-bold text-zinc-900 dark:text-white">{(user.coins || 0).toLocaleString()} <span className="text-amber-500">CP</span></span>
                        </div>
-                       <div className="flex items-center gap-2 opacity-40">
-                          <Activity size={12} />
-                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">LVL {user.level || 1}</span>
+                       <div className="flex items-center gap-2 opacity-60">
+                          <Activity size={16} />
+                          <span className="font-handwritten text-lg text-zinc-500">LVL {user.level || 1} 🆙</span>
                        </div>
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <ActionButtons user={user} {...actionProps} />
+                    <div className="flex justify-end">
+                      <ActionButtons user={user} {...actionProps} />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -169,25 +175,25 @@ export default function UsersTab({
         </div>
 
         {/* Mobile View */}
-        <div className="md:hidden divide-y divide-white/5">
+        <div className="md:hidden divide-y-2 divide-zinc-900 dark:divide-white">
            {displayed.map(user => (
-              <div key={user.id} className="p-6 space-y-6">
+              <div key={user.id} className="p-8 space-y-6">
                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                       <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center font-impact text-white">
+                       <div className="w-14 h-14 rounded-full border-2 border-zinc-900 dark:border-white bg-blue-100 text-blue-600 flex items-center justify-center font-handwritten text-2xl shadow-[2px_2px_0px_0px] shadow-zinc-900">
                           {user.username?.[0]?.toUpperCase() || 'U'}
                        </div>
                        <div>
-                          <p className="text-sm font-bold text-white uppercase">{user.username || "Unknown"}</p>
-                          <p className="text-[10px] text-slate-600">{user.email}</p>
+                          <p className="font-handwritten text-2xl font-bold text-zinc-900 dark:text-white">{user.username || "Unknown"}</p>
+                          <p className="font-handwritten text-lg text-zinc-500">{user.email}</p>
                        </div>
                     </div>
                     <RoleBadge role={user.role} />
                  </div>
-                 <div className="flex justify-between items-center bg-black/20 p-4 rounded-xl">
+                 <div className="flex justify-between items-center bg-zinc-50 dark:bg-zinc-800 p-6 rounded-2xl border-2 border-zinc-900 dark:border-white shadow-[4px_4px_0px_0px] shadow-zinc-900">
                     <div>
-                       <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Assets</p>
-                       <p className="text-xs font-bold text-cyber-gold">{(user.coins || 0).toLocaleString()} CP</p>
+                       <p className="font-handwritten text-lg text-zinc-500 uppercase">Assets</p>
+                       <p className="font-handwritten text-2xl font-bold text-amber-500">{(user.coins || 0).toLocaleString()} CP</p>
                     </div>
                     <ActionButtons user={user} {...actionProps} />
                  </div>
@@ -196,18 +202,19 @@ export default function UsersTab({
         </div>
 
         {displayed.length === 0 && (
-          <div className="py-20 text-center opacity-20">
-             <User size={64} className="mx-auto mb-4" />
-             <p className="text-[10px] font-black uppercase tracking-[0.4em]">Registry Empty</p>
+          <div className="py-24 text-center">
+             <User size={80} className="mx-auto mb-6 text-zinc-200 dark:text-zinc-700" />
+             <p className="font-handwritten text-4xl text-zinc-300 dark:text-zinc-700">Registry Empty 🌌</p>
           </div>
         )}
       </div>
 
       {filteredUsers.length > 20 && (
-        <div className="text-center pt-4">
-           <p className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em]">Showing top 20 active units</p>
+        <div className="text-center pt-8">
+           <p className="font-handwritten text-2xl text-zinc-400 italic">Showing top 20 active units 📡</p>
         </div>
       )}
     </motion.div>
   );
 }
+

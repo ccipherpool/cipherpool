@@ -1,5 +1,5 @@
 /* ── Fonts ── */
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Patrick+Hand&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -43,6 +43,10 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.font-handwritten {
+  font-family: 'Patrick Hand', cursive;
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar {
   width: 6px;
@@ -67,12 +71,16 @@ html, body {
   @apply bg-black/50 border border-white/10 rounded-lg p-6;
 }
 
-.card-interactive {
-  @apply card hover:border-white/20 hover:bg-white/5 cursor-pointer transition-all duration-200;
+.card-creative {
+  @apply relative bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-lg shadow-[4px_4px_0px_0px] shadow-zinc-900 dark:shadow-white transition-all duration-300 hover:shadow-[8px_8px_0px_0px] hover:-translate-x-1 hover:-translate-y-1;
 }
 
 .btn-primary {
   @apply px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-500 transition-colors duration-200;
+}
+
+.btn-creative {
+  @apply px-4 py-2 font-handwritten text-lg relative border-2 border-zinc-900 dark:border-white transition-all duration-300 shadow-[4px_4px_0px_0px] shadow-zinc-900 dark:shadow-white hover:shadow-[6px_6px_0px_0px] hover:-translate-x-[2px] hover:-translate-y-[2px] active:shadow-none active:translate-x-0 active:translate-y-0;
 }
 
 .btn-secondary {
@@ -138,3 +146,4 @@ html, body {
     @apply bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent;
   }
 }
+

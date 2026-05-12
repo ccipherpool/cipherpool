@@ -334,49 +334,42 @@ export default function SuperAdmin() {
   ];
 
   const STAT_CARDS = [
-    { label: "UTILISATEURS", value: stats.totalUsers,           color: "from-blue-600 to-cyan-600",     icon: "👥" },
-    { label: "EN LIGNE",     value: stats.onlineUsers,          color: "from-green-600 to-emerald-600", icon: "🟢" },
-    { label: "BANNIS",       value: stats.bannedUsers,          color: "from-red-600 to-pink-600",      icon: "🚫" },
-    { label: "EN ATTENTE",   value: stats.pendingVerifications, color: "from-yellow-600 to-orange-600", icon: "⏳" },
-    { label: "TOURNOIS",     value: stats.totalTournaments,     color: "from-purple-600 to-indigo-600", icon: "🏆" },
-    { label: "MATCHES",      value: stats.totalMatches,         color: "from-cyan-600 to-blue-600",     icon: "🎮" },
-    { label: "TICKETS",      value: stats.openTickets,          color: "from-orange-600 to-red-600",    icon: "🎟️" },
-    { label: "RAPPORTS",     value: stats.totalReports,         color: "from-pink-600 to-purple-600",   icon: "🚨" },
+    { label: "UTILISATEURS", value: stats.totalUsers,           color: "text-blue-500",   icon: "👥", rotation: "rotate-[-1deg]" },
+    { label: "EN LIGNE",     value: stats.onlineUsers,          color: "text-green-500",  icon: "🟢", rotation: "rotate-[1deg]" },
+    { label: "BANNIS",       value: stats.bannedUsers,          color: "text-red-500",    icon: "🚫", rotation: "rotate-[-2deg]" },
+    { label: "EN ATTENTE",   value: stats.pendingVerifications, color: "text-amber-500",  icon: "⏳", rotation: "rotate-[2deg]" },
+    { label: "TOURNOIS",     value: stats.totalTournaments,     color: "text-purple-500", icon: "🏆", rotation: "rotate-[-1.5deg]" },
+    { label: "MATCHES",      value: stats.totalMatches,         color: "text-cyan-500",   icon: "🎮", rotation: "rotate-[1.5deg]" },
+    { label: "TICKETS",      value: stats.openTickets,          color: "text-orange-500", icon: "🎟️", rotation: "rotate-[-1deg]" },
+    { label: "RAPPORTS",     value: stats.totalReports,         color: "text-pink-500",   icon: "🚨", rotation: "rotate-[1deg]" },
   ];
 
   return (
-    <div className="text-white space-y-6 relative overflow-hidden">
+    <div className="text-zinc-900 dark:text-white space-y-10 relative overflow-hidden min-h-screen bg-zinc-50 dark:bg-zinc-950 p-4 md:p-8">
 
-      {/* Background — desktop only (blurs are too heavy for mobile GPU) */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden hidden md:block">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/25 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-600/25 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: "1.2s" }} />
-        <div className="absolute top-[20%] right-[15%] w-64 h-64 bg-violet-500/15 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: "2s" }} />
-        <div className="absolute bottom-[25%] left-[10%] w-48 h-48 bg-blue-600/12 rounded-full blur-[60px] animate-pulse" style={{ animationDelay: "0.5s" }} />
-        <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(139,92,246,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.06) 1px,transparent 1px)", backgroundSize: "50px 50px" }} />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto p-4 md:p-8">
+      <div className="relative z-10 max-w-7xl mx-auto space-y-12">
 
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 md:mb-8">
-          <div>
-            <h1 className="text-3xl md:text-5xl font-black mb-1 md:mb-2 relative">
-              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">SUPER ADMIN</span>
-              <span className="ml-2 md:absolute md:ml-0 md:-top-3 md:-right-3 inline-flex px-2 py-0.5 bg-gradient-to-r from-purple-600 to-cyan-600 text-[10px] rounded-full shadow-lg shadow-purple-500/50">v2.0</span>
-            </h1>
-            <p className="text-white/40 flex items-center gap-2 text-sm">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shrink-0" />
-              <span className="truncate">Bienvenue, {profile?.username || profile?.full_name || profile?.email?.split("@")[0]}</span>
-            </p>
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-8 mb-12">
+          <div className="relative group rotate-[-0.5deg]">
+            <div className="absolute inset-0 bg-purple-500/20 rounded-[2rem] blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
+            <div className="relative bg-white dark:bg-zinc-900 border-4 border-zinc-900 dark:border-white p-8 rounded-[2.5rem] shadow-[8px_8px_0px_0px] shadow-zinc-900 dark:shadow-white">
+              <h1 className="text-4xl md:text-7xl font-handwritten font-bold mb-2">
+                SUPER <span className="text-purple-500 underline decoration-wavy">ADMIN</span>
+                <span className="ml-4 inline-flex px-4 py-1 bg-amber-400 text-zinc-900 border-2 border-zinc-900 text-xl rounded-full shadow-[4px_4px_0px_0px] shadow-zinc-900 rotate-12">v2.0 🚀</span>
+              </h1>
+              <p className="font-handwritten text-2xl text-zinc-500 flex items-center gap-3">
+                <span className="w-3 h-3 bg-green-500 border-2 border-zinc-900 rounded-full animate-pulse" />
+                Bienvenue, {profile?.username || profile?.full_name || profile?.email?.split("@")[0]} ✨
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2 shrink-0">
-            <Link to="/admin" className="group relative px-4 py-2.5 md:px-6 md:py-3 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-xl font-bold text-white text-sm overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50">
-              <span className="relative z-10">ADMIN</span>
-              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition" />
+          <div className="flex gap-4 shrink-0 lg:rotate-[1deg]">
+            <Link to="/admin" className="btn-creative bg-blue-500 text-white hover:bg-blue-400 text-2xl px-8 py-4">
+              ADMIN PANNEL 🛡️
             </Link>
-            <button onClick={() => navigate(0)} className="px-4 py-2.5 md:px-6 md:py-3 bg-[#11152b] border border-purple-500/30 rounded-xl text-white/60 hover:text-white hover:border-purple-500 transition-all duration-300 text-sm">
-              ⟲ Refresh
+            <button onClick={() => navigate(0)} className="btn-creative bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-2xl px-8 py-4">
+              ⟲ Refresh 📡
             </button>
           </div>
         </motion.div>
@@ -384,54 +377,68 @@ export default function SuperAdmin() {
         {/* Message */}
         <AnimatePresence>
           {message.text && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className={`mb-6 p-4 rounded-xl border ${message.type === "success" ? "bg-green-500/10 border-green-500/30 text-green-400" : "bg-red-500/10 border-red-500/30 text-red-400"}`}>
+            <motion.div initial={{ opacity: 0, scale: 0.9, rotate: -1 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} exit={{ opacity: 0, scale: 0.9, rotate: 1 }}
+              className={cn(
+                "p-6 rounded-2xl border-4 font-handwritten text-2xl shadow-[6px_6px_0px_0px]",
+                message.type === "success" 
+                  ? "bg-green-100 border-green-500 text-green-700 shadow-green-500" 
+                  : "bg-red-100 border-red-500 text-red-700 shadow-red-500"
+              )}>
               {message.text}
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 md:gap-4 mb-6 md:mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6 mb-12">
           {STAT_CARDS.map((item, index) => (
             <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}
               onHoverStart={() => setHoveredCard(index)} onHoverEnd={() => setHoveredCard(null)}
-              className="group relative bg-[#0a0a1a] rounded-xl p-4 overflow-hidden cursor-pointer"
-              style={{ boxShadow: hoveredCard === index ? `0 20px 40px -10px ${item.color.split(" ")[0].replace("from-", "")}80` : "0 10px 20px -5px rgba(0,0,0,0.5)" }}>
-              <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-20 transition-opacity duration-500`} />
-              <div className="absolute -right-4 -top-4 text-6xl opacity-5 group-hover:opacity-10 transition-opacity">{item.icon}</div>
-              <p className="text-xs text-white/40 mb-2 relative z-10">{item.label}</p>
-              <p className="text-2xl font-bold text-white relative z-10 group-hover:scale-110 transition-transform origin-left">{item.value.toLocaleString()}</p>
-              <div className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r ${item.color} w-0 group-hover:w-full transition-all duration-500`} />
+              className={cn(
+                "card-creative p-6 flex flex-col items-center justify-center text-center bg-white dark:bg-zinc-900 group",
+                item.rotation
+              )}>
+              <div className="text-4xl mb-4 group-hover:scale-125 transition-transform duration-300 drop-shadow-sm">{item.icon}</div>
+              <p className="font-handwritten text-lg text-zinc-500 mb-1 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">{item.label}</p>
+              <p className={cn("text-3xl font-bold font-handwritten", item.color)}>{item.value.toLocaleString()}</p>
             </motion.div>
           ))}
         </div>
 
         {/* Revenue */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-12">
           {[
-            { label: "REVENU AUJOURD'HUI", value: stats.todayRevenue,  color: "from-purple-600/20 to-cyan-600/20", border: "border-purple-500/30" },
-            { label: "REVENU CE MOIS",     value: stats.monthlyRevenue, color: "from-cyan-600/20 to-purple-600/20", border: "border-cyan-500/30"   },
+            { label: "REVENU AUJOURD'HUI 💰", value: stats.todayRevenue,  color: "text-purple-500", bg: "bg-purple-50", border: "border-purple-500", rotation: "rotate-[-1deg]" },
+            { label: "REVENU CE MOIS 📈",     value: stats.monthlyRevenue, color: "text-blue-500",   bg: "bg-blue-50",   border: "border-blue-500",   rotation: "rotate-[1deg]"   },
           ].map(card => (
             <motion.div key={card.label} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className={`relative bg-gradient-to-r ${card.color} border ${card.border} rounded-xl p-6 overflow-hidden group`}
+              className={cn(
+                "card-creative p-8 bg-white dark:bg-zinc-900 group",
+                card.rotation
+              )}
               whileHover={{ scale: 1.02 }}>
-              <p className="text-sm text-white/40 mb-2">{card.label}</p>
-              <p className="text-3xl font-bold text-white">{card.value} <span className="text-sm text-white/40">coins</span></p>
-              <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-purple-500 to-cyan-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+              <p className="font-handwritten text-2xl text-zinc-500 mb-2">{card.label}</p>
+              <p className={cn("text-5xl font-bold font-handwritten", card.color)}>{card.value} <span className="text-2xl text-zinc-400">coins</span></p>
+              <div className={cn("mt-4 h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border-2 border-zinc-900 dark:border-white shadow-[2px_2px_0px_0px] shadow-zinc-900 dark:shadow-white")}>
+                <div className={cn("h-full bg-gradient-to-r from-transparent to-current", card.color)} style={{ width: '65%' }} />
+              </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid rgba(124,58,237,0.2)", overflowX: "auto" }}>
-          {TABS.map(tab => {
-            const color = TAB_COLORS[tab.color];
+        {/* Tabs Navigation */}
+        <div className="flex gap-4 mb-12 pb-4 overflow-x-auto scrollbar-hide border-b-4 border-zinc-900 dark:border-white">
+          {TABS.map((tab, idx) => {
             const active = activeTab === tab.id;
             return (
-              <motion.button key={tab.id} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+              <motion.button key={tab.id} whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
                 onClick={() => setActiveTab(tab.id)}
-                style={{ padding: "10px 16px", fontSize: 12, fontWeight: 600, fontFamily: "JetBrains Mono,monospace", letterSpacing: 0.5, whiteSpace: "nowrap", background: "none", border: "none", cursor: "pointer", color: active ? color : "rgba(255,255,255,0.4)", transition: "color .2s", borderBottom: `2px solid ${active ? color : "transparent"}` }}>
+                className={cn(
+                  "px-8 py-3 font-handwritten text-2xl border-2 transition-all relative whitespace-nowrap",
+                  active 
+                    ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white rounded-t-2xl translate-y-1 shadow-[4px_-4px_0px_0px] shadow-zinc-400" 
+                    : "bg-white dark:bg-zinc-900 text-zinc-400 border-transparent hover:text-zinc-900 dark:hover:text-white"
+                )}>
                 {tab.label}
               </motion.button>
             );
@@ -439,17 +446,24 @@ export default function SuperAdmin() {
         </div>
 
         {/* Tab content */}
-        <AnimatePresence mode="wait">
-          {activeTab === "dashboard"   && <DashboardTab   key="dashboard"   stats={stats} users={users} logs={logs} setActiveTab={setActiveTab} setFilter={setFilter} setSelectedUser={setSelectedUser} setGrantAmount={setGrantAmount} setGrantReason={setGrantReason} setWalletSearch={setWalletSearch} setShowWalletModal={setShowWalletModal} />}
-          {activeTab === "users"       && <UsersTab        key="users"       filteredUsers={filteredUsers} search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} setSelectedUser={setSelectedUser} setShowRoleModal={setShowRoleModal} setShowBanModal={setShowBanModal} setShowWalletModal={setShowWalletModal} unbanUser={unbanUser} deleteUser={deleteUser} />}
-          {activeTab === "staff"       && <StaffTab        key="staff"       users={users} updateUserRole={updateUserRole} currentUserRole={profile?.role} />}
-          {activeTab === "tournaments" && <TournamentsTab  key="tournaments" tournaments={tournaments} setSelectedTournament={setSelectedTournament} setShowTournamentModal={setShowTournamentModal} setTournamentToDelete={setTournamentToDelete} setShowDeleteConfirm={setShowDeleteConfirm} />}
-          {activeTab === "reports"     && <ReportsTab      key="reports"     reports={reports} resolveReport={resolveReport} />}
-          {activeTab === "economy"     && <EconomyTab      key="economy"     stats={stats} setMessage={setMessage} />}
-          {activeTab === "security"    && <SecurityTab     key="security" />}
-          {activeTab === "logs"        && <LogsTab         key="logs"        logs={logs} users={users} />}
-          {activeTab === "system"      && <SystemTab       key="system"      maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode} registrationEnabled={registrationEnabled} setRegistrationEnabled={setRegistrationEnabled} tournamentsEnabled={tournamentsEnabled} setTournamentsEnabled={setTournamentsEnabled} updateSystemConfig={updateSystemConfig} />}
-        </AnimatePresence>
+        <div className="relative">
+          <div className="absolute -z-10 inset-0 overflow-hidden pointer-events-none opacity-10 dark:opacity-5">
+            <div className="absolute top-0 left-0 text-[20rem] rotate-12 font-handwritten">✎</div>
+            <div className="absolute bottom-0 right-0 text-[20rem] -rotate-12 font-handwritten">✏️</div>
+          </div>
+          
+          <AnimatePresence mode="wait">
+            {activeTab === "dashboard"   && <DashboardTab   key="dashboard"   stats={stats} users={users} logs={logs} setActiveTab={setActiveTab} setFilter={setFilter} setSelectedUser={setSelectedUser} setGrantAmount={setGrantAmount} setGrantReason={setGrantReason} setWalletSearch={setWalletSearch} setShowWalletModal={setShowWalletModal} />}
+            {activeTab === "users"       && <UsersTab        key="users"       filteredUsers={filteredUsers} search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} setSelectedUser={setSelectedUser} setShowRoleModal={setShowRoleModal} setShowBanModal={setShowBanModal} setShowWalletModal={setShowWalletModal} unbanUser={unbanUser} deleteUser={deleteUser} />}
+            {activeTab === "staff"       && <StaffTab        key="staff"       users={users} updateUserRole={updateUserRole} currentUserRole={profile?.role} />}
+            {activeTab === "tournaments" && <TournamentsTab  key="tournaments" tournaments={tournaments} setSelectedTournament={setSelectedTournament} setShowTournamentModal={setShowTournamentModal} setTournamentToDelete={setTournamentToDelete} setShowDeleteConfirm={setShowDeleteConfirm} />}
+            {activeTab === "reports"     && <ReportsTab      key="reports"     reports={reports} resolveReport={resolveReport} />}
+            {activeTab === "economy"     && <EconomyTab      key="economy"     stats={stats} setMessage={setMessage} />}
+            {activeTab === "security"    && <SecurityTab     key="security" />}
+            {activeTab === "logs"        && <LogsTab         key="logs"        logs={logs} users={users} />}
+            {activeTab === "system"      && <SystemTab       key="system"      maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode} registrationEnabled={registrationEnabled} setRegistrationEnabled={setRegistrationEnabled} tournamentsEnabled={tournamentsEnabled} setTournamentsEnabled={setTournamentsEnabled} updateSystemConfig={updateSystemConfig} />}
+          </AnimatePresence>
+        </div>
 
         {/* Modals */}
         <AnimatePresence>

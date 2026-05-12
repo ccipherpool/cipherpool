@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { motion } from "framer-motion";
-import { Crown, Calendar, Trophy, AlertTriangle, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Crown, Calendar, Trophy, AlertTriangle, CheckCircle2, ArrowLeft, Zap, Sparkles } from "lucide-react";
+import { cn } from "../../lib/utils";
 
 /* ─────────────────────────────────────────────────────────────
    SuperAdmin → SeasonsManager
@@ -12,13 +13,13 @@ import { Crown, Calendar, Trophy, AlertTriangle, CheckCircle2, ArrowLeft } from 
    ───────────────────────────────────────────────────────────── */
 
 const RESET_OPTIONS = [
-  { key: "reset_coins",       label: "Pièces (CP)",          desc: "Tous les wallets reviennent à 0", danger: true },
-  { key: "reset_xp",          label: "XP & Niveaux",         desc: "Tous les joueurs reviennent au level 1", danger: true },
-  { key: "reset_wins",        label: "Victoires & Points",   desc: "Wins, K/D, points de classement", danger: true },
-  { key: "reset_tournaments", label: "Tournois en cours",    desc: "Archive les tournois actifs", danger: true },
-  { key: "reset_chat",        label: "Chat Global",          desc: "Efface tous les messages du chat", danger: false },
-  { key: "reset_avatars",     label: "Avatars équipés",      desc: "Retire les avatars achetés", danger: false },
-  { key: "reset_clans",       label: "Stats des Clans",      desc: "Points/wins des clans à 0", danger: false },
+  { key: "reset_coins",       label: "Pièces (CP)",          desc: "Tous les wallets reviennent à 0", danger: true, icon: "💰" },
+  { key: "reset_xp",          label: "XP & Niveaux",         desc: "Tous les joueurs reviennent au level 1", danger: true, icon: "🆙" },
+  { key: "reset_wins",        label: "Victoires & Points",   desc: "Wins, K/D, points de classement", danger: true, icon: "🏆" },
+  { key: "reset_tournaments", label: "Tournois en cours",    desc: "Archive les tournois actifs", danger: true, icon: "🎮" },
+  { key: "reset_chat",        label: "Chat Global",          desc: "Efface tous les messages du chat", danger: false, icon: "💬" },
+  { key: "reset_avatars",     label: "Avatars équipés",      desc: "Retire les avatars achetés", danger: false, icon: "👤" },
+  { key: "reset_clans",       label: "Stats des Clans",      desc: "Points/wins des clans à 0", danger: false, icon: "🛡️" },
 ];
 
 export default function SeasonsManager() {
@@ -84,63 +85,73 @@ export default function SeasonsManager() {
   };
 
   return (
-    <div className="space-y-6" data-testid="seasons-manager">
+    <div className="space-y-10 p-4 md:p-8" data-testid="seasons-manager">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-6 rotate-[-0.5deg]">
         <button
           onClick={() => navigate("/super-admin")}
-          className="w-9 h-9 rounded-xl bg-white/5 text-slate-400 flex items-center justify-center hover:text-white"
+          className="w-12 h-12 rounded-full border-2 border-zinc-900 dark:border-white bg-white dark:bg-zinc-900 flex items-center justify-center hover:scale-110 transition-transform shadow-[4px_4px_0px_0px] shadow-zinc-900 dark:shadow-white"
           aria-label="Retour"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={24} className="text-zinc-900 dark:text-white" />
         </button>
         <div>
-          <h1 className="text-2xl md:text-3xl font-heading font-black text-white uppercase tracking-tight">
-            <Crown className="inline -mt-1 mr-2 text-orange-400" size={26} />
-            Gestion des Saisons
+          <h1 className="text-3xl md:text-5xl font-handwritten font-bold text-zinc-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
+            <Crown className="text-amber-500" size={40} />
+            Gestion des Saisons 👑
           </h1>
-          <p className="text-xs md:text-sm text-slate-500 mt-1">
-            Lance une nouvelle saison et choisis ce qui doit être réinitialisé
+          <p className="font-handwritten text-2xl text-zinc-500 mt-1">
+            Lance une nouvelle saison et choisis ce qui doit être réinitialisé ✨
           </p>
         </div>
       </div>
 
       {result?.ok === false && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm flex items-center gap-2">
-          <AlertTriangle size={18} /> {result.msg}
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="p-6 rounded-2xl bg-red-100 border-2 border-red-500 text-red-700 font-handwritten text-2xl flex items-center gap-4 rotate-[-1deg] shadow-[4px_4px_0px_0px] shadow-red-500"
+        >
+          <AlertTriangle size={32} /> {result.msg}
+        </motion.div>
       )}
       {result?.ok && (
-        <div className="p-4 rounded-xl bg-mint/10 border border-mint/30 text-mint text-sm flex items-center gap-2">
-          <CheckCircle2 size={18} /> {result.msg}
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="p-6 rounded-2xl bg-green-100 border-2 border-green-500 text-green-700 font-handwritten text-2xl flex items-center gap-4 rotate-[1deg] shadow-[4px_4px_0px_0px] shadow-green-500"
+        >
+          <CheckCircle2 size={32} /> {result.msg}
+        </motion.div>
       )}
 
       {/* Active season card */}
-      <div className="rounded-2xl border border-mint/20 p-6 bg-gradient-to-br from-mint/5 to-transparent" data-testid="active-season-card">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest text-mint mb-2">SAISON ACTIVE</p>
+      <div className="card-creative p-8 bg-white dark:bg-zinc-900 rotate-[0.5deg]" data-testid="active-season-card">
+        <div className="flex items-start justify-between gap-8 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full border-2 border-zinc-900 dark:border-white bg-green-400 text-zinc-900 font-handwritten text-xl rotate-[-2deg] mb-4">
+              <Zap size={20} /> SAISON ACTIVE
+            </div>
             {active ? (
               <>
-                <h2 className="text-3xl font-heading font-black text-white">
-                  Saison {active.number} · {active.name}
+                <h2 className="text-4xl md:text-6xl font-handwritten font-bold text-zinc-900 dark:text-white leading-tight">
+                  Saison {active.number} · <span className="text-blue-500 underline decoration-wavy">{active.name}</span>
                 </h2>
                 {active.description && (
-                  <p className="text-sm text-slate-400 mt-2 max-w-2xl">{active.description}</p>
+                  <p className="font-handwritten text-2xl text-zinc-600 dark:text-zinc-400 mt-4 max-w-2xl">{active.description}</p>
                 )}
-                <div className="flex items-center gap-4 mt-3 text-xs text-slate-500">
-                  <span className="flex items-center gap-1"><Calendar size={12} /> Lancée le {new Date(active.starts_at).toLocaleDateString("fr-FR")}</span>
+                <div className="flex items-center gap-6 mt-6 text-xl font-handwritten text-zinc-500">
+                  <span className="flex items-center gap-2"><Calendar size={20} /> Lancée le {new Date(active.starts_at).toLocaleDateString("fr-FR")}</span>
                 </div>
               </>
             ) : (
-              <p className="text-slate-500">Aucune saison active. Crée-en une !</p>
+              <p className="font-handwritten text-3xl text-zinc-400">Aucune saison active. Crée-en une ! 🛸</p>
             )}
           </div>
           <button
             data-testid="start-season-btn"
             onClick={() => setShowModal(true)}
-            className="px-5 py-3 rounded-2xl bg-orange-500 text-white font-black text-xs uppercase tracking-widest shadow-[0_0_30px_-8px_rgba(249,115,22,.6)] active:scale-95 transition-transform shrink-0"
+            className="btn-creative bg-amber-400 text-zinc-900 hover:bg-amber-300 text-2xl px-8 py-4 rotate-2"
           >
             🚀 Lancer une nouvelle saison
           </button>
@@ -148,23 +159,33 @@ export default function SeasonsManager() {
       </div>
 
       {/* History */}
-      <div>
-        <h3 className="text-sm font-black text-white uppercase tracking-widest mb-3">Historique</h3>
+      <div className="space-y-6">
+        <h3 className="text-3xl font-handwritten font-bold text-zinc-900 dark:text-white flex items-center gap-3">
+          <Trophy size={32} className="text-amber-500" /> Historique 📜
+        </h3>
         {loading ? (
-          <p className="text-slate-500 text-sm">Chargement…</p>
+          <p className="font-handwritten text-2xl text-zinc-400 italic">Chargement… 📡</p>
         ) : seasons.filter(s => s.status === "ended").length === 0 ? (
-          <p className="text-slate-500 text-sm italic">Aucune saison passée</p>
+          <p className="font-handwritten text-2xl text-zinc-400 italic">Aucune saison passée 🌌</p>
         ) : (
-          <div className="space-y-2">
-            {seasons.filter(s => s.status === "ended").map(s => (
-              <div key={s.id} className="p-4 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-between gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {seasons.filter(s => s.status === "ended").map((s, i) => (
+              <div key={s.id} className={cn(
+                "card-creative p-6 flex flex-col justify-between group bg-white dark:bg-zinc-900",
+                i % 2 === 0 ? "rotate-[-1deg]" : "rotate-[1deg]"
+              )}>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-12 h-12 rounded-full border-2 border-zinc-900 dark:border-white bg-zinc-50 dark:bg-zinc-800 text-amber-500 flex items-center justify-center font-handwritten text-2xl shadow-[2px_2px_0px_0px] shadow-zinc-900">
+                    {s.number}
+                  </div>
+                  <Sparkles size={24} className="text-blue-500 opacity-20 group-hover:opacity-100 transition-opacity" />
+                </div>
                 <div>
-                  <p className="font-bold text-white">Saison {s.number} · {s.name}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
+                  <p className="font-handwritten text-2xl font-bold text-zinc-900 dark:text-white">{s.name}</p>
+                  <p className="font-handwritten text-lg text-zinc-500 mt-2">
                     {new Date(s.starts_at).toLocaleDateString("fr-FR")} → {s.ended_at ? new Date(s.ended_at).toLocaleDateString("fr-FR") : "—"}
                   </p>
                 </div>
-                <Trophy size={18} className="text-cyber-gold" />
               </div>
             ))}
           </div>
@@ -174,82 +195,89 @@ export default function SeasonsManager() {
       {/* ── MODAL : Start new season ── */}
       {showModal && (
         <div
-          className="fixed inset-0 z-[200] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-md"
           onClick={() => setShowModal(false)}
           data-testid="start-season-modal"
         >
           <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            transition={{ type: "spring", damping: 30 }}
+            initial={{ scale: 0.9, y: 20, rotate: -2 }}
+            animate={{ scale: 1, y: 0, rotate: 0 }}
+            exit={{ scale: 0.9, y: 20, rotate: 2 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full md:max-w-2xl bg-[#0a0a1f] border border-white/10 rounded-t-3xl md:rounded-3xl p-6 max-h-[92vh] overflow-y-auto"
+            className="w-full max-w-3xl bg-white dark:bg-zinc-900 border-4 border-zinc-900 dark:border-white rounded-[2rem] p-8 max-h-[92vh] overflow-y-auto shadow-[12px_12px_0px_0px] shadow-zinc-900 dark:shadow-white relative"
           >
-            <h2 className="text-xl font-bold text-white mb-1">🚀 Nouvelle Saison</h2>
-            <p className="text-xs text-slate-500 mb-5">
-              ⚠️ Cette action <strong>termine la saison actuelle</strong> et démarre une nouvelle.
-              Les stats actuelles seront sauvegardées dans les snapshots.
+            <div className="absolute -top-6 -right-6 text-6xl rotate-12 drop-shadow-lg">✨</div>
+            <div className="absolute -bottom-6 -left-6 text-6xl -rotate-12 drop-shadow-lg">✏️</div>
+
+            <h2 className="text-4xl font-handwritten font-bold text-zinc-900 dark:text-white mb-2 flex items-center gap-3">
+              🚀 Nouvelle Saison 
+            </h2>
+            <p className="font-handwritten text-xl text-zinc-600 dark:text-zinc-400 mb-8">
+              ⚠️ Cette action <span className="text-red-500 font-bold underline decoration-wavy">termine la saison actuelle</span> et démarre une nouvelle.
+              Les stats actuelles seront sauvegardées dans les archives. 📦
             </p>
 
-            <div className="space-y-4">
+            <div className="space-y-8">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Nom de la saison *</label>
+                <label className="block font-handwritten text-2xl text-zinc-900 dark:text-white mb-3">Nom de la saison *</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Ex: Saison 2 — Cyber Wars"
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-mint/40"
+                  className="w-full bg-zinc-50 dark:bg-zinc-800 border-2 border-zinc-900 dark:border-white rounded-xl px-6 py-4 font-handwritten text-2xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-4 focus:ring-blue-500/20"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Description (optionnel)</label>
+                <label className="block font-handwritten text-2xl text-zinc-900 dark:text-white mb-3">Description (optionnel) 📝</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   rows={2}
                   placeholder="Le thème, les objectifs, les nouveautés…"
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-mint/40 resize-none"
+                  className="w-full bg-zinc-50 dark:bg-zinc-800 border-2 border-zinc-900 dark:border-white rounded-xl px-6 py-4 font-handwritten text-2xl text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-4 focus:ring-blue-500/20 resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Ce qui sera réinitialisé</label>
-                <div className="space-y-2">
-                  {RESET_OPTIONS.map(opt => (
+                <label className="block font-handwritten text-2xl text-zinc-900 dark:text-white mb-4">Ce qui sera réinitialisé 🧹</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {RESET_OPTIONS.map((opt, idx) => (
                     <label
                       key={opt.key}
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      className={cn(
+                        "flex items-start gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all",
                         form[opt.key]
-                          ? "bg-orange-500/5 border-orange-500/30"
-                          : "bg-white/[0.02] border-white/5"
-                      }`}
+                          ? "bg-amber-100 border-amber-500 dark:bg-amber-900/30"
+                          : "bg-zinc-50 dark:bg-zinc-800 border-transparent hover:border-zinc-900 dark:hover:border-white",
+                        idx % 2 === 0 ? "rotate-[-1deg]" : "rotate-[1deg]"
+                      )}
                     >
                       <input
                         type="checkbox"
                         checked={form[opt.key]}
                         onChange={(e) => setForm({ ...form, [opt.key]: e.target.checked })}
-                        className="mt-0.5 w-4 h-4 accent-orange-500"
+                        className="mt-1 w-6 h-6 accent-amber-500"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white flex items-center gap-2">
-                          {opt.label}
+                        <p className="font-handwritten text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                          {opt.icon} {opt.label}
                           {opt.danger && form[opt.key] && (
-                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-red-500/15 text-red-400">
-                              DESTRUCTIF
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500 text-white animate-pulse">
+                              DANGER
                             </span>
                           )}
                         </p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">{opt.desc}</p>
+                        <p className="font-handwritten text-lg text-zinc-500 mt-1">{opt.desc}</p>
                       </div>
                     </label>
                   ))}
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20">
-                <p className="text-xs font-bold text-red-300 mb-2">
+              <div className="p-6 rounded-2xl bg-red-50 border-2 border-red-500 rotate-[-1deg]">
+                <p className="font-handwritten text-2xl font-bold text-red-600 mb-4">
                   ⚠️ Pour confirmer, écris "CONFIRMER" :
                 </p>
                 <input
@@ -257,27 +285,28 @@ export default function SeasonsManager() {
                   value={confirmText}
                   onChange={(e) => setConfirmText(e.target.value)}
                   placeholder="Tape CONFIRMER"
-                  className="w-full bg-white/[0.03] border border-red-500/30 rounded-xl px-4 py-2 text-sm text-white"
+                  className="w-full bg-white dark:bg-zinc-900 border-2 border-red-500 rounded-xl px-6 py-4 font-handwritten text-2xl text-zinc-900 dark:text-white"
                 />
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col md:flex-row gap-6 pt-4">
                 <button
                   onClick={() => { setShowModal(false); setConfirmText(""); }}
-                  className="flex-1 py-3 rounded-xl bg-white/5 text-slate-400 font-bold text-xs uppercase tracking-widest"
+                  className="flex-1 btn-creative bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rotate-[-2deg] text-2xl py-4"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={startNewSeason}
                   disabled={!form.name.trim() || confirmText !== "CONFIRMER" || submitting}
-                  className={`flex-[2] py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
+                  className={cn(
+                    "flex-[2] btn-creative text-2xl py-4 rotate-2",
                     form.name.trim() && confirmText === "CONFIRMER" && !submitting
-                      ? "bg-orange-500 text-white shadow-[0_0_24px_-8px_rgba(249,115,22,.6)] active:scale-95"
-                      : "bg-white/5 text-slate-600 cursor-not-allowed"
-                  }`}
+                      ? "bg-orange-500 text-white"
+                      : "bg-zinc-200 dark:bg-zinc-700 text-zinc-400 cursor-not-allowed shadow-none"
+                  )}
                 >
-                  {submitting ? "Lancement…" : "🚀 Démarrer la saison"}
+                  {submitting ? "Lancement…" : "🚀 Démarrer la saison !"}
                 </button>
               </div>
             </div>
@@ -287,3 +316,4 @@ export default function SeasonsManager() {
     </div>
   );
 }
+
