@@ -29,7 +29,8 @@
       "PowerShell(head *)",
       "PowerShell(Get-ChildItem -Path \"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\\\\src\" -Recurse | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\CIPHERPOOL\\\\cipherpool-frontend\\\\\", \"\"\\) })",
       "Bash(npm ls *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(node *)"
     ]
   }
 }

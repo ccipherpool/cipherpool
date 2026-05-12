@@ -6,7 +6,7 @@ import {
   Trophy, Target, TrendingUp, Crown, Sword, Clock,
   ChevronRight, ArrowUpRight, Flame, Star, Medal,
   Wallet, Activity, ShieldCheck, Cpu, Zap, Radio,
-  LayoutGrid, BarChart, Binary
+  LayoutGrid, BarChart, Binary, Users2
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
