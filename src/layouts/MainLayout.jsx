@@ -48,15 +48,16 @@ export default function MainLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const fetchProfile = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { navigate("/login"); return; }
+    // getSession() reads local storage — no network lock, no race with AuthContext
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) { navigate("/login"); return; }
+    const userId = session.user.id;
     const { data: prof } = await supabase
-      .from("profiles").select("*").eq("id", user.id).maybeSingle();
+      .from("profiles").select("*").eq("id", userId).maybeSingle();
     if (prof) setProfile(prof);
     const { data: wallet } = await supabase
-      .from("wallets").select("balance").eq("user_id", user.id).maybeSingle();
+      .from("wallets").select("balance").eq("user_id", userId).maybeSingle();
     setBalance(wallet?.balance || 0);
-    return user;
   }, [navigate]);
 
   useEffect(() => {
