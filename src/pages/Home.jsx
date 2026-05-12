@@ -1,14 +1,15 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { 
-  Trophy, Shield, Zap, ArrowRight, Sparkles, 
+import {
+  Trophy, Shield, Zap, ArrowRight, Sparkles,
   Swords, Flame, Globe, Crown, Menu, X, Star,
   Award, Users, TrendingUp, Gamepad2, Wallet,
   ChevronDown, ArrowUpRight, Coffee, GitBranch
 } from "lucide-react";
 import { ContainerScroll } from "../components/ui/ContainerScroll";
-import FlowArt, { FlowSection } from "../components/ui/FlowArt";
+const FlowArt     = lazy(() => import("../components/ui/FlowArt"));
+const FlowSection = lazy(() => import("../components/ui/FlowArt").then(m => ({ default: m.FlowSection })));
 
 // ═══════════════════════════════════════════════
 // 🎨 TOILE DE FOND - "DIGITAL RAIN MATRIX"
@@ -446,6 +447,7 @@ export default function Home() {
 
       {/* ═══════════ CINEMATIC JOURNEY ═══════════ */}
       <section className="relative z-10">
+        <Suspense fallback={<div className="h-[60vh]" />}>
         <FlowArt>
           <FlowSection className="bg-obsidian">
             <div className="flex flex-col justify-center h-full max-w-4xl mx-auto px-8">
@@ -483,6 +485,7 @@ export default function Home() {
             </div>
           </FlowSection>
         </FlowArt>
+        </Suspense>
       </section>
 
       {/* ═══════════ TESTIMONIALS ═══════════ */}
