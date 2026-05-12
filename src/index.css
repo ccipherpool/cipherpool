@@ -33,14 +33,17 @@
   box-sizing: border-box;
 }
 
-html, body {
+html, body, #root {
   background: var(--obsidian);
   color: var(--text-primary);
   font-family: 'Satoshi', 'Inter', sans-serif;
   scroll-behavior: smooth;
   overflow-x: hidden;
+  max-width: 100vw;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  /* Prevent iOS Safari bounce / overscroll bleeding */
+  -webkit-overflow-scrolling: touch;
 }
 
 h1, h2, h3, h4, h5, h6 {

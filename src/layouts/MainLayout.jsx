@@ -64,6 +64,19 @@ export default function MainLayout() {
     init();
   }, [fetchProfile]);
 
+  // Auto-logout: react when Supabase session expires or is cleared from another tab/device
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        navigate('/login', { replace: true });
+      } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+        // Session refreshed — re-fetch profile in case data changed
+        fetchProfile();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [navigate, fetchProfile]);
+
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
   const handleLogout = async () => {
@@ -102,7 +115,7 @@ export default function MainLayout() {
       <Sidebar profile={profile} />
 
       {/* ── Right column ── */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
 
         {/* Desktop TopNav (in flow, not fixed) */}
         <TopNav profile={profile} />
@@ -191,8 +204,8 @@ export default function MainLayout() {
         </AnimatePresence>
 
         {/* ── Main Content ── */}
-        <main className="flex-1 overflow-y-auto pt-14 md:pt-0 pb-16 md:pb-0 bg-[#020617]">
-          <div className="max-w-7xl mx-auto px-4 md:px-8 py-5 md:py-7">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pt-14 md:pt-0 pb-16 md:pb-0 bg-[#020617]">
+          <div className="max-w-7xl w-full mx-auto px-4 md:px-8 py-5 md:py-7 min-w-0">
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}
