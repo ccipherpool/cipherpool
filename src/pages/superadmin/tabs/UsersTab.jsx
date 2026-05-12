@@ -1,220 +1,247 @@
 import { motion } from "framer-motion";
-import { 
-  ShieldAlert, 
-  Wallet, 
-  Ban, 
-  Trash2, 
-  CheckCircle2, 
-  MoreVertical, 
-  Search,
-  Filter,
-  User,
-  Crown,
-  Zap,
-  Layout,
-  Activity
+import {
+  ShieldAlert, Wallet, Ban, Trash2, CheckCircle2,
+  Search, Filter, User, Crown, Zap, Layout, Activity,
 } from "lucide-react";
-import { cn } from "../../../lib/utils";
+
+const C = {
+  surface:  "rgba(18,18,30,0.95)",
+  surface2: "rgba(25,25,40,0.95)",
+  surface3: "rgba(32,32,48,0.90)",
+  border:   "rgba(255,255,255,0.07)",
+  purple:   "#8B5CF6",
+  green:    "#10B981",
+  red:      "#EF4444",
+  amber:    "#F59E0B",
+  blue:     "#3B82F6",
+  orange:   "#F97316",
+  pink:     "#EC4899",
+  text:     "#FFFFFF",
+  text2:    "#A1A1AA",
+  text3:    "#52525B",
+  font:     "Inter, system-ui, sans-serif",
+};
 
 const ROLE_STYLE = {
-  super_admin: { badge: "bg-red-400 text-zinc-900 border-zinc-900 dark:border-white",  label: "SUPER", icon: Zap, rotation: "rotate-2" },
-  admin:       { badge: "bg-orange-400 text-zinc-900 border-zinc-900 dark:border-white", label: "ADMIN", icon: ShieldAlert, rotation: "rotate-[-2deg]" },
-  designer:    { badge: "bg-blue-400 text-zinc-900 border-zinc-900 dark:border-white", label: "DESIGN", icon: Layout, rotation: "rotate-1" },
-  founder:     { badge: "bg-purple-400 text-zinc-900 border-zinc-900 dark:border-white", label: "FOUNDER", icon: Crown, rotation: "rotate-[-1deg]" },
-  fondateur:   { badge: "bg-purple-400 text-zinc-900 border-zinc-900 dark:border-white", label: "FOUNDER", icon: Crown, rotation: "rotate-[-1deg]" },
-  banned:      { badge: "bg-zinc-800 text-zinc-400 border-zinc-900 dark:border-white", label: "BANNED", icon: Ban, rotation: "rotate-3" },
+  super_admin: { color: C.red,    bg: `${C.red}18`,    label: "Super Admin" },
+  admin:       { color: C.orange, bg: `${C.orange}18`, label: "Admin" },
+  designer:    { color: C.blue,   bg: `${C.blue}18`,   label: "Designer" },
+  founder:     { color: C.purple, bg: `${C.purple}18`, label: "Founder" },
+  fondateur:   { color: C.purple, bg: `${C.purple}18`, label: "Founder" },
+  banned:      { color: C.text3,  bg: "rgba(82,82,91,0.2)", label: "Banni" },
 };
 
 function RoleBadge({ role }) {
-  const s = ROLE_STYLE[role] || { badge: "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border-zinc-900 dark:border-white", label: "USER", icon: User, rotation: "rotate-0" };
+  const s = ROLE_STYLE[role] || { color: C.text3, bg: "rgba(82,82,91,0.15)", label: "Utilisateur" };
   return (
-    <span className={cn(
-      "inline-flex items-center gap-2 px-4 py-1 font-handwritten text-xl font-bold rounded-full border-2 shadow-[2px_2px_0px_0px] shadow-zinc-900 dark:shadow-white transition-transform hover:scale-110",
-      s.badge, s.rotation
-    )}>
-      <s.icon size={16} /> {s.label}
+    <span style={{
+      display: "inline-flex", alignItems: "center",
+      padding: "3px 10px", borderRadius: 20,
+      background: s.bg, color: s.color,
+      fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+      border: `1px solid ${s.color}30`,
+    }}>
+      {s.label}
     </span>
   );
 }
 
+const btnStyle = (color) => ({
+  width: 34, height: 34,
+  borderRadius: 10, border: `1px solid ${C.border}`,
+  background: C.surface3, color: C.text2, cursor: "pointer",
+  display: "flex", alignItems: "center", justifyContent: "center",
+  transition: "all 0.15s",
+  flexShrink: 0,
+});
+
 function ActionButtons({ user, setSelectedUser, setShowRoleModal, setShowBanModal, setShowWalletModal, unbanUser, deleteUser }) {
   return (
-    <div className="flex gap-3">
-      <button
-        onClick={() => { setSelectedUser(user); setShowRoleModal(true); }}
-        className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-full text-zinc-500 hover:text-orange-500 hover:bg-orange-50 transition-all shadow-[2px_2px_0px_0px] shadow-zinc-900"
-        title="Override Role"
-      ><Crown size={18} /></button>
-      
-      <button
-        onClick={() => { setSelectedUser(user); setShowWalletModal(true); }}
-        className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-full text-zinc-500 hover:text-emerald-500 hover:bg-emerald-50 transition-all shadow-[2px_2px_0px_0px] shadow-zinc-900"
-        title="Sync Assets"
-      ><Wallet size={18} /></button>
-
+    <div style={{ display: "flex", gap: 6 }}>
+      <button style={btnStyle(C.orange)} title="Modifier rôle"
+        onMouseEnter={e => { e.currentTarget.style.background = `${C.orange}18`; e.currentTarget.style.color = C.orange; e.currentTarget.style.borderColor = `${C.orange}40`; }}
+        onMouseLeave={e => { e.currentTarget.style.background = C.surface3; e.currentTarget.style.color = C.text2; e.currentTarget.style.borderColor = C.border; }}
+        onClick={() => { setSelectedUser(user); setShowRoleModal(true); }}>
+        <Crown size={15} />
+      </button>
+      <button style={btnStyle(C.green)} title="Gérer wallet"
+        onMouseEnter={e => { e.currentTarget.style.background = `${C.green}18`; e.currentTarget.style.color = C.green; e.currentTarget.style.borderColor = `${C.green}40`; }}
+        onMouseLeave={e => { e.currentTarget.style.background = C.surface3; e.currentTarget.style.color = C.text2; e.currentTarget.style.borderColor = C.border; }}
+        onClick={() => { setSelectedUser(user); setShowWalletModal(true); }}>
+        <Wallet size={15} />
+      </button>
       {user.role !== "banned" ? (
-        <button
-          onClick={() => { setSelectedUser(user); setShowBanModal(true); }}
-          className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-full text-zinc-500 hover:text-red-500 hover:bg-red-50 transition-all shadow-[2px_2px_0px_0px] shadow-zinc-900"
-          title="Terminate Access"
-        ><Ban size={18} /></button>
+        <button style={btnStyle(C.red)} title="Bannir"
+          onMouseEnter={e => { e.currentTarget.style.background = `${C.red}18`; e.currentTarget.style.color = C.red; e.currentTarget.style.borderColor = `${C.red}40`; }}
+          onMouseLeave={e => { e.currentTarget.style.background = C.surface3; e.currentTarget.style.color = C.text2; e.currentTarget.style.borderColor = C.border; }}
+          onClick={() => { setSelectedUser(user); setShowBanModal(true); }}>
+          <Ban size={15} />
+        </button>
       ) : (
-        <button
-          onClick={() => unbanUser(user.id)}
-          className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-full text-zinc-500 hover:text-green-500 hover:bg-green-50 transition-all shadow-[2px_2px_0px_0px] shadow-zinc-900"
-          title="Restore Access"
-        ><CheckCircle2 size={18} /></button>
+        <button style={btnStyle(C.green)} title="Débannir"
+          onMouseEnter={e => { e.currentTarget.style.background = `${C.green}18`; e.currentTarget.style.color = C.green; e.currentTarget.style.borderColor = `${C.green}40`; }}
+          onMouseLeave={e => { e.currentTarget.style.background = C.surface3; e.currentTarget.style.color = C.text2; e.currentTarget.style.borderColor = C.border; }}
+          onClick={() => unbanUser(user.id)}>
+          <CheckCircle2 size={15} />
+        </button>
       )}
-
       {user.role !== "super_admin" && (
-        <button
-          onClick={() => deleteUser(user.id)}
-          className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-full text-zinc-500 hover:text-red-600 hover:bg-red-100 transition-all shadow-[2px_2px_0px_0px] shadow-zinc-900"
-          title="Purge Data"
-        ><Trash2 size={18} /></button>
+        <button style={btnStyle(C.red)} title="Supprimer"
+          onMouseEnter={e => { e.currentTarget.style.background = `${C.red}18`; e.currentTarget.style.color = C.red; e.currentTarget.style.borderColor = `${C.red}40`; }}
+          onMouseLeave={e => { e.currentTarget.style.background = C.surface3; e.currentTarget.style.color = C.text2; e.currentTarget.style.borderColor = C.border; }}
+          onClick={() => deleteUser(user.id)}>
+          <Trash2 size={15} />
+        </button>
       )}
     </div>
   );
 }
 
-export default function UsersTab({
-  filteredUsers, search, setSearch, filter, setFilter,
-  setSelectedUser, setShowRoleModal, setShowBanModal,
-  setShowWalletModal, unbanUser, deleteUser,
-}) {
+export default function UsersTab({ filteredUsers, search, setSearch, filter, setFilter, setSelectedUser, setShowRoleModal, setShowBanModal, setShowWalletModal, unbanUser, deleteUser }) {
   const actionProps = { setSelectedUser, setShowRoleModal, setShowBanModal, setShowWalletModal, unbanUser, deleteUser };
-  const displayed = filteredUsers.slice(0, 20);
+  const displayed = filteredUsers.slice(0, 50);
+
+  const FILTERS = [
+    { value: "all",      label: "Tous" },
+    { value: "admins",   label: "Admins" },
+    { value: "founders", label: "Founders" },
+    { value: "banned",   label: "Bannis" },
+    { value: "pending",  label: "En attente" },
+  ];
 
   return (
     <motion.div
-      key="users"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-10"
+      style={{ display: "flex", flexDirection: "column", gap: 16, fontFamily: C.font }}
     >
-      {/* Header & Search */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 card-creative p-8 bg-white dark:bg-zinc-900 rotate-[-0.5deg]">
-         <div className="relative flex-1 max-w-xl group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-blue-500 transition-colors" size={24} />
-            <input
-              type="text"
-              placeholder="Scan unit registry (ID, Email, Handle)..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-16 pr-8 py-5 bg-zinc-50 dark:bg-zinc-800 border-2 border-zinc-900 dark:border-white rounded-2xl text-zinc-900 dark:text-white font-handwritten text-2xl focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
-            />
-         </div>
-         <div className="flex items-center gap-4 rotate-[1deg]">
-            <Filter size={24} className="text-zinc-400" />
-            <select
-              value={filter}
-              onChange={e => setFilter(e.target.value)}
-              className="bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-white rounded-2xl px-8 py-5 font-handwritten text-2xl text-zinc-900 dark:text-white outline-none shadow-[4px_4px_0px_0px] shadow-zinc-900"
-            >
-              <option value="all">Total Enlistment</option>
-              <option value="admins">Command Staff</option>
-              <option value="founders">Founders Only</option>
-              <option value="banned">Blacklisted</option>
-              <option value="pending">Awaiting Sync</option>
-            </select>
-         </div>
+      {/* Search + filter bar */}
+      <div style={{
+        display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
+        background: `linear-gradient(135deg, ${C.surface}, ${C.surface2})`,
+        border: `1px solid ${C.border}`,
+        borderRadius: 16, padding: "14px 18px",
+      }}>
+        <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
+          <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: C.text3 }} />
+          <input
+            type="text"
+            placeholder="Rechercher par nom, email ou ID Free Fire..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: "100%", padding: "9px 12px 9px 36px",
+              background: C.surface3, border: `1px solid ${C.border}`,
+              borderRadius: 10, color: C.text, fontSize: 13,
+              outline: "none", fontFamily: C.font, boxSizing: "border-box",
+            }}
+            onFocus={e => e.target.style.borderColor = `${C.purple}60`}
+            onBlur={e => e.target.style.borderColor = C.border}
+          />
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {FILTERS.map(f => (
+            <button key={f.value} onClick={() => setFilter(f.value)}
+              style={{
+                padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                border: `1px solid ${filter === f.value ? C.purple + "60" : C.border}`,
+                background: filter === f.value ? `${C.purple}18` : "transparent",
+                color: filter === f.value ? C.purple : C.text2,
+                transition: "all 0.15s",
+              }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Grid / Table Container */}
-      <div className="card-creative overflow-hidden bg-white dark:bg-zinc-900 p-0 rotate-[0.5deg]">
-        
-        {/* Desktop View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-zinc-50 dark:bg-zinc-800 border-b-2 border-zinc-900 dark:border-white">
-                <th className="px-8 py-5 font-handwritten text-2xl text-zinc-900 dark:text-white">Identified Unit 👤</th>
-                <th className="px-8 py-5 font-handwritten text-2xl text-zinc-900 dark:text-white">Protocol 🛡️</th>
-                <th className="px-8 py-5 font-handwritten text-2xl text-zinc-900 dark:text-white">Logistics 💰</th>
-                <th className="px-8 py-5 font-handwritten text-2xl text-zinc-900 dark:text-white text-right">Actions ⚙️</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y-2 divide-zinc-900 dark:divide-white">
-              {displayed.map(user => (
-                <tr key={user.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors group">
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-6">
-                       <div className="w-14 h-14 rounded-full border-2 border-zinc-900 dark:border-white flex items-center justify-center bg-blue-100 text-blue-600 font-handwritten text-3xl shadow-[2px_2px_0px_0px] shadow-zinc-900 transition-all group-hover:scale-110">
-                          {user.username?.[0]?.toUpperCase() || 'U'}
-                       </div>
-                       <div>
-                          <p className="font-handwritten text-3xl font-bold text-zinc-900 dark:text-white truncate max-w-[250px]">{user.username || user.full_name || "Unknown"}</p>
-                          <p className="font-handwritten text-lg text-zinc-500 truncate max-w-[250px]">{user.email}</p>
-                       </div>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <RoleBadge role={user.role} />
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex flex-col gap-1">
-                       <div className="flex items-center gap-2">
-                          <Wallet size={18} className="text-amber-500" />
-                          <span className="font-handwritten text-2xl font-bold text-zinc-900 dark:text-white">{(user.coins || 0).toLocaleString()} <span className="text-amber-500">CP</span></span>
-                       </div>
-                       <div className="flex items-center gap-2 opacity-60">
-                          <Activity size={16} />
-                          <span className="font-handwritten text-lg text-zinc-500">LVL {user.level || 1} 🆙</span>
-                       </div>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex justify-end">
-                      <ActionButtons user={user} {...actionProps} />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Table */}
+      <div style={{
+        background: `linear-gradient(135deg, ${C.surface}, ${C.surface2})`,
+        border: `1px solid ${C.border}`,
+        borderRadius: 16, overflow: "hidden",
+      }}>
+        {/* Header */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "2fr 120px 140px 160px",
+          padding: "12px 20px",
+          borderBottom: `1px solid ${C.border}`,
+          background: C.surface3,
+        }}>
+          {["Utilisateur", "Rôle", "Wallet", "Actions"].map((h, i) => (
+            <div key={h} style={{ fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: 1, textAlign: i === 3 ? "right" : "left" }}>
+              {h}
+            </div>
+          ))}
         </div>
 
-        {/* Mobile View */}
-        <div className="md:hidden divide-y-2 divide-zinc-900 dark:divide-white">
-           {displayed.map(user => (
-              <div key={user.id} className="p-8 space-y-6">
-                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                       <div className="w-14 h-14 rounded-full border-2 border-zinc-900 dark:border-white bg-blue-100 text-blue-600 flex items-center justify-center font-handwritten text-2xl shadow-[2px_2px_0px_0px] shadow-zinc-900">
-                          {user.username?.[0]?.toUpperCase() || 'U'}
-                       </div>
-                       <div>
-                          <p className="font-handwritten text-2xl font-bold text-zinc-900 dark:text-white">{user.username || "Unknown"}</p>
-                          <p className="font-handwritten text-lg text-zinc-500">{user.email}</p>
-                       </div>
-                    </div>
-                    <RoleBadge role={user.role} />
-                 </div>
-                 <div className="flex justify-between items-center bg-zinc-50 dark:bg-zinc-800 p-6 rounded-2xl border-2 border-zinc-900 dark:border-white shadow-[4px_4px_0px_0px] shadow-zinc-900">
-                    <div>
-                       <p className="font-handwritten text-lg text-zinc-500 uppercase">Assets</p>
-                       <p className="font-handwritten text-2xl font-bold text-amber-500">{(user.coins || 0).toLocaleString()} CP</p>
-                    </div>
-                    <ActionButtons user={user} {...actionProps} />
-                 </div>
-              </div>
-           ))}
-        </div>
-
-        {displayed.length === 0 && (
-          <div className="py-24 text-center">
-             <User size={80} className="mx-auto mb-6 text-zinc-200 dark:text-zinc-700" />
-             <p className="font-handwritten text-4xl text-zinc-300 dark:text-zinc-700">Registry Empty 🌌</p>
+        {/* Rows */}
+        {displayed.length === 0 ? (
+          <div style={{ padding: "48px", textAlign: "center" }}>
+            <User size={40} style={{ color: C.text3, marginBottom: 12 }} />
+            <p style={{ fontSize: 13, color: C.text3 }}>Aucun utilisateur trouvé</p>
           </div>
+        ) : (
+          displayed.map((user, i) => (
+            <motion.div
+              key={user.id}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.02 }}
+              style={{
+                display: "grid", gridTemplateColumns: "2fr 120px 140px 160px",
+                padding: "12px 20px", alignItems: "center",
+                borderBottom: i < displayed.length - 1 ? `1px solid ${C.border}` : "none",
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = C.surface3}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              {/* User */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                  background: user.avatar_url ? "transparent" : `${C.purple}25`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  overflow: "hidden",
+                }}>
+                  {user.avatar_url
+                    ? <img src={user.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : <span style={{ fontSize: 14, fontWeight: 800, color: C.purple }}>{(user.display_name || "?")[0].toUpperCase()}</span>
+                  }
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {user.display_name}
+                  </p>
+                  <p style={{ fontSize: 11, color: C.text3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {user.email}
+                  </p>
+                </div>
+              </div>
+              {/* Role */}
+              <div><RoleBadge role={user.role} /></div>
+              {/* Coins */}
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.amber }}>
+                  {(user.coins || 0).toLocaleString()}
+                </span>
+                <span style={{ fontSize: 11, color: C.text3 }}> CP</span>
+              </div>
+              {/* Actions */}
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <ActionButtons user={user} {...actionProps} />
+              </div>
+            </motion.div>
+          ))
         )}
       </div>
 
-      {filteredUsers.length > 20 && (
-        <div className="text-center pt-8">
-           <p className="font-handwritten text-2xl text-zinc-400 italic">Showing top 20 active units 📡</p>
-        </div>
+      {filteredUsers.length > 50 && (
+        <p style={{ fontSize: 12, color: C.text3, textAlign: "center" }}>
+          Affichage des 50 premiers résultats sur {filteredUsers.length}
+        </p>
       )}
     </motion.div>
   );
 }
-
