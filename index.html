@@ -5,55 +5,97 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- ── Fonts ── -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@200..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
     <link href="https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,300,400&display=swap" rel="stylesheet">
 
-    <title>CipherPool - Esports Free Fire Maroc</title>
-    <meta
-      name="description"
-      content="CipherPool منصة esports في المغرب للعبة Free Fire. بطولات، فرق، ترتيب اللاعبين، و community gaming بشكل سهل وواضح."
-    />
-    <meta
-      name="keywords"
-      content="CipherPool, Free Fire, Esports Maroc, tournoi Free Fire, équipe Free Fire, gaming maroc"
-    />
+    <!-- ── Primary SEO ── -->
+    <title>CipherPool — Tournois Free Fire Maroc | Esports & Gaming</title>
+    <meta name="description" content="CipherPool est la première plateforme esports marocaine dédiée à Free Fire. Rejoignez des tournois en ligne, créez votre clan, montez au classement et gagnez des récompenses. Inscription gratuite." />
+    <meta name="keywords" content="CipherPool, Free Fire Maroc, tournoi Free Fire, esports Maroc, gaming Maroc, tournoi en ligne Maroc, clan Free Fire, classement Free Fire, compétition Free Fire" />
     <meta name="author" content="CipherPool" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <link rel="canonical" href="https://cipherpool.space/" />
 
-    <meta property="og:title" content="CipherPool - Esports Free Fire Maroc" />
-    <meta
-      property="og:description"
-      content="منصة CipherPool مخصصة للاعبي Free Fire في المغرب: بطولات، فرق، ترتيب اللاعبين وأكثر."
-    />
+    <!-- ── Open Graph (Facebook / WhatsApp) ── -->
+    <meta property="og:title" content="CipherPool — Tournois Free Fire Maroc" />
+    <meta property="og:description" content="La première plateforme esports marocaine pour Free Fire. Tournois, clans, classements et récompenses. Rejoins la communauté !" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://cipherpool.space/" />
     <meta property="og:site_name" content="CipherPool" />
     <meta property="og:image" content="https://cipherpool.space/logo.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="fr_MA" />
 
+    <!-- ── Twitter / X Card ── -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="CipherPool - Esports Free Fire Maroc" />
-    <meta
-      name="twitter:description"
-      content="منصة CipherPool مخصصة للاعبي Free Fire في المغرب."
-    />
+    <meta name="twitter:title" content="CipherPool — Tournois Free Fire Maroc" />
+    <meta name="twitter:description" content="La première plateforme esports marocaine pour Free Fire. Tournois, clans, classements et récompenses." />
     <meta name="twitter:image" content="https://cipherpool.space/logo.png" />
 
-    <link rel="canonical" href="https://cipherpool.space/" />
-
+    <!-- ── Structured Data (Schema.org) ── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "CipherPool",
+      "url": "https://cipherpool.space",
+      "description": "Plateforme esports marocaine dédiée à Free Fire — tournois, clans, classements.",
+      "inLanguage": "fr-MA",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://cipherpool.space/register",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "CipherPool",
       "url": "https://cipherpool.space",
-      "logo": "https://cipherpool.space/logo.png"
+      "logo": "https://cipherpool.space/logo.png",
+      "description": "CipherPool est la première plateforme esports du Maroc dédiée à Free Fire.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "MA"
+      },
+      "sameAs": []
     }
     </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SportsOrganization",
+      "name": "CipherPool",
+      "sport": "Esports",
+      "url": "https://cipherpool.space",
+      "description": "Tournois Free Fire en ligne au Maroc — rejoignez la communauté CipherPool.",
+      "knowsAbout": ["Free Fire", "Esports", "Gaming", "Tournois en ligne", "Maroc"]
+    }
+    </script>
+
+    <!-- ── Fallback for crawlers without JS ── -->
+    <noscript>
+      <style>body { font-family: sans-serif; background: #050505; color: #fff; padding: 2rem; }</style>
+    </noscript>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static content visible to crawlers before JS loads -->
+      <noscript>
+        <div style="text-align:center;padding:4rem 2rem;max-width:600px;margin:0 auto">
+          <h1 style="color:#10B981;font-size:2rem;margin-bottom:1rem">CipherPool</h1>
+          <p style="color:#94a3b8;margin-bottom:2rem">La première plateforme esports marocaine dédiée à Free Fire. Tournois en ligne, clans, classements et récompenses.</p>
+          <a href="/register" style="background:#10B981;color:#000;padding:0.75rem 2rem;border-radius:8px;text-decoration:none;font-weight:bold">Rejoindre CipherPool</a>
+        </div>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

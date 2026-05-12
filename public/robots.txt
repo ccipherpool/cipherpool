@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /team
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /super-admin
+Disallow: /founder
+Disallow: /designer
+
+Sitemap: https://cipherpool.space/sitemap.xml
