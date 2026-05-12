@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "../lib/utils";
 
 // Tabs
 import DashboardTab    from "./superadmin/tabs/DashboardTab";
@@ -21,7 +20,7 @@ import BanModal           from "./superadmin/modals/BanModal";
 import WalletModal        from "./superadmin/modals/WalletModal";
 import TournamentModal    from "./superadmin/modals/TournamentModal";
 import DeleteConfirmModal from "./superadmin/modals/DeleteConfirmModal";
-import ProfileModal     from "./superadmin/modals/ProfileModal";
+import ProfileModal       from "./superadmin/modals/ProfileModal";
 
 if (typeof document !== "undefined" && !document.getElementById("sa-fonts")) {
   const s = document.createElement("style");
@@ -72,7 +71,6 @@ export default function SuperAdmin() {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [registrationEnabled, setRegistrationEnabled] = useState(true);
   const [tournamentsEnabled, setTournamentsEnabled] = useState(true);
-  const [hoveredCard, setHoveredCard] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
@@ -305,179 +303,191 @@ export default function SuperAdmin() {
   const filteredUsers = users.filter(u => {
     const q = search.toLowerCase();
     const matchSearch = u.display_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.free_fire_id?.includes(search);
-    if (filter === "all")     return matchSearch;
-    if (filter === "admins")  return matchSearch && u.role === "admin";
+    if (filter === "all")      return matchSearch;
+    if (filter === "admins")   return matchSearch && u.role === "admin";
     if (filter === "founders") return matchSearch && u.role === "founder";
-    if (filter === "banned")  return matchSearch && u.role === "banned";
-    if (filter === "pending") return matchSearch && u.verification_status === "pending";
+    if (filter === "banned")   return matchSearch && u.role === "banned";
+    if (filter === "pending")  return matchSearch && u.verification_status === "pending";
     return matchSearch;
   });
 
+  // ─── LOADING ───
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <div className="w-10 h-10 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white/40 text-sm font-mono tracking-widest">CHARGEMENT...</p>
+      <div style={{ minHeight: '100vh', background: '#07070f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <style>{`@keyframes sa-spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 40, height: 40, border: '2px solid rgba(139,92,246,0.2)', borderTopColor: '#8b5cf6', borderRadius: '50%', animation: 'sa-spin 0.8s linear infinite', margin: '0 auto 16px' }} />
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, fontFamily: 'Orbitron,sans-serif', letterSpacing: 4 }}>INITIALIZING...</p>
         </div>
       </div>
     );
   }
 
   const TABS = [
-    { id: "dashboard",   label: `📊 DASHBOARD`,                          color: "purple" },
-    { id: "users",       label: `👥 USERS (${users.length})`,             color: "blue"   },
-    { id: "staff",       label: `🛡️ STAFF (${admins.length})`,            color: "cyan"   },
-    { id: "tournaments", label: `🏆 TOURNOIS (${tournaments.length})`,    color: "green"  },
-    { id: "reports",     label: `🚨 RAPPORTS (${reports.length})`,        color: "red"    },
-    { id: "economy",     label: `💰 ÉCONOMIE`,                            color: "yellow" },
-    { id: "security",    label: `🛡️ SÉCURITÉ`,                            color: "orange" },
-    { id: "logs",        label: `📋 LOGS`,                                color: "gray"   },
-    { id: "system",      label: `⚙️ SYSTÈME`,                             color: "purple" },
+    { id: "dashboard",   label: "DASHBOARD",  count: null,               color: "purple" },
+    { id: "users",       label: "USERS",       count: users.length,       color: "blue"   },
+    { id: "staff",       label: "STAFF",       count: admins.length,      color: "cyan"   },
+    { id: "tournaments", label: "TOURNOIS",    count: tournaments.length, color: "green"  },
+    { id: "reports",     label: "RAPPORTS",    count: reports.length,     color: "red"    },
+    { id: "economy",     label: "ÉCONOMIE",    count: null,               color: "yellow" },
+    { id: "security",    label: "SÉCURITÉ",    count: null,               color: "orange" },
+    { id: "logs",        label: "LOGS",        count: null,               color: "gray"   },
+    { id: "system",      label: "SYSTÈME",     count: null,               color: "purple" },
   ];
 
   const STAT_CARDS = [
-    { label: "UTILISATEURS", value: stats.totalUsers,           color: "text-blue-500",   icon: "👥", rotation: "rotate-[-1deg]" },
-    { label: "EN LIGNE",     value: stats.onlineUsers,          color: "text-green-500",  icon: "🟢", rotation: "rotate-[1deg]" },
-    { label: "BANNIS",       value: stats.bannedUsers,          color: "text-red-500",    icon: "🚫", rotation: "rotate-[-2deg]" },
-    { label: "EN ATTENTE",   value: stats.pendingVerifications, color: "text-amber-500",  icon: "⏳", rotation: "rotate-[2deg]" },
-    { label: "TOURNOIS",     value: stats.totalTournaments,     color: "text-purple-500", icon: "🏆", rotation: "rotate-[-1.5deg]" },
-    { label: "MATCHES",      value: stats.totalMatches,         color: "text-cyan-500",   icon: "🎮", rotation: "rotate-[1.5deg]" },
-    { label: "TICKETS",      value: stats.openTickets,          color: "text-orange-500", icon: "🎟️", rotation: "rotate-[-1deg]" },
-    { label: "RAPPORTS",     value: stats.totalReports,         color: "text-pink-500",   icon: "🚨", rotation: "rotate-[1deg]" },
+    { label: "UTILISATEURS", value: stats.totalUsers,           accent: "#60a5fa", glow: "rgba(96,165,250,0.15)",   icon: "👥" },
+    { label: "EN LIGNE",     value: stats.onlineUsers,          accent: "#4ade80", glow: "rgba(74,222,128,0.15)",   icon: "◉"  },
+    { label: "BANNIS",       value: stats.bannedUsers,          accent: "#f87171", glow: "rgba(248,113,113,0.15)",  icon: "⊘"  },
+    { label: "EN ATTENTE",   value: stats.pendingVerifications, accent: "#fbbf24", glow: "rgba(251,191,36,0.15)",   icon: "◷"  },
+    { label: "TOURNOIS",     value: stats.totalTournaments,     accent: "#a78bfa", glow: "rgba(167,139,250,0.15)",  icon: "◆"  },
+    { label: "MATCHES",      value: stats.totalMatches,         accent: "#22d3ee", glow: "rgba(34,211,238,0.15)",   icon: "⚔"  },
+    { label: "TICKETS",      value: stats.openTickets,          accent: "#fb923c", glow: "rgba(251,146,60,0.15)",   icon: "◈"  },
+    { label: "RAPPORTS",     value: stats.totalReports,         accent: "#f472b6", glow: "rgba(244,114,182,0.15)",  icon: "⚑"  },
   ];
 
+  const initials = (profile?.username || profile?.email || '?')[0]?.toUpperCase();
+
+  // ─── RENDER ───
   return (
-    <div className="text-zinc-900 dark:text-white space-y-10 relative overflow-hidden min-h-screen bg-zinc-50 dark:bg-zinc-950 p-4 md:p-8">
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #07070f 0%, #0c0c1c 100%)', color: '#fff', fontFamily: 'Rajdhani, sans-serif', position: 'relative' }}>
+      <style>{`
+        @keyframes sa-spin { to { transform: rotate(360deg); } }
+        .sa-stat  { transition: border-color 0.18s, background 0.18s, transform 0.18s; }
+        .sa-stat:hover  { border-color: rgba(139,92,246,0.28) !important; background: rgba(139,92,246,0.06) !important; transform: translateY(-2px); }
+        .sa-tab   { transition: all 0.15s; }
+        .sa-tab:hover   { color: rgba(255,255,255,0.75) !important; }
+        .sa-ibtn  { transition: all 0.15s; }
+        .sa-ibtn:hover  { border-color: rgba(255,255,255,0.14) !important; background: rgba(255,255,255,0.06) !important; }
+        .sa-pfbtn { transition: all 0.15s; }
+        .sa-pfbtn:hover { border-color: rgba(139,92,246,0.35) !important; background: rgba(139,92,246,0.06) !important; }
+      `}</style>
 
-      <div className="relative z-10 max-w-7xl mx-auto space-y-12">
+      {/* Ambient glows */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        <div style={{ position: 'absolute', top: -350, left: -250, width: 850, height: 850, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.055) 0%, transparent 68%)' }} />
+        <div style={{ position: 'absolute', bottom: -300, right: -200, width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(6,182,212,0.045) 0%, transparent 68%)' }} />
+      </div>
 
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-8 mb-12">
-          <div className="relative group rotate-[-0.5deg]">
-            <div className="absolute inset-0 bg-purple-500/20 rounded-[2rem] blur-xl opacity-50 group-hover:opacity-100 transition-opacity" />
-            <div className="relative bg-white dark:bg-zinc-900 border-4 border-zinc-900 dark:border-white p-8 rounded-[2.5rem] shadow-[8px_8px_0px_0px] shadow-zinc-900 dark:shadow-white">
-              <h1 className="text-4xl md:text-7xl font-handwritten font-bold mb-2">
-                SUPER <span className="text-purple-500 underline decoration-wavy">ADMIN</span>
-                <span className="ml-4 inline-flex px-4 py-1 bg-amber-400 text-zinc-900 border-2 border-zinc-900 text-xl rounded-full shadow-[4px_4px_0px_0px] shadow-zinc-900 rotate-12">v2.0 🚀</span>
-              </h1>
-              <div className="flex items-center gap-4 flex-wrap">
-                <button
-                  onClick={() => setShowProfileModal(true)}
-                  className="flex items-center gap-3 group"
-                  title="Modifier mon profil"
-                >
-                  <div className="relative w-10 h-10 rounded-full border-2 border-zinc-900 dark:border-white overflow-hidden bg-purple-100 dark:bg-purple-900 shrink-0">
-                    {profile?.avatar_url ? (
-                      <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="w-full h-full flex items-center justify-center font-handwritten font-bold text-purple-600 dark:text-purple-300 text-lg">
-                        {(profile?.username || profile?.email || "?")[0]?.toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <p className="font-handwritten text-2xl text-zinc-500 flex items-center gap-2">
-                    <span className="w-3 h-3 bg-green-500 border-2 border-zinc-900 rounded-full animate-pulse shrink-0" />
-                    Bienvenue, <span className="text-zinc-900 dark:text-white group-hover:text-purple-500 transition-colors">{profile?.username || profile?.full_name || profile?.email?.split("@")[0]}</span> ✨
-                  </p>
-                </button>
-                <button
-                  onClick={() => setShowProfileModal(true)}
-                  className="text-xs font-handwritten text-zinc-400 hover:text-purple-500 transition-colors border border-zinc-200 dark:border-zinc-700 hover:border-purple-400 px-3 py-1 rounded-full"
-                >
-                  ✏️ Modifier profil
-                </button>
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 1440, margin: '0 auto', padding: '22px 18px' }}>
+
+        {/* ══════ HEADER ══════ */}
+        <motion.div
+          initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 22, padding: '15px 20px', background: 'rgba(255,255,255,0.022)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, backdropFilter: 'blur(20px)' }}
+        >
+          {/* Brand */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 11, background: 'linear-gradient(135deg,#8b5cf6,#06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, boxShadow: '0 0 18px rgba(139,92,246,0.4)', flexShrink: 0 }}>⚡</div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <h1 style={{ fontSize: 16, fontWeight: 900, margin: 0, fontFamily: 'Orbitron,sans-serif', letterSpacing: 2.5, color: '#fff' }}>SUPER ADMIN</h1>
+                <span style={{ fontSize: 8, padding: '2px 8px', borderRadius: 20, background: 'rgba(139,92,246,0.14)', border: '1px solid rgba(139,92,246,0.28)', color: '#a78bfa', fontWeight: 700, letterSpacing: 2, fontFamily: 'Orbitron,sans-serif' }}>v2.0</span>
               </div>
+              <p style={{ margin: 0, fontSize: 9, color: 'rgba(255,255,255,0.28)', letterSpacing: 3.5, textTransform: 'uppercase', fontFamily: 'Orbitron,sans-serif' }}>Command &amp; Control Center</p>
             </div>
           </div>
-          <div className="flex gap-4 shrink-0 lg:rotate-[1deg]">
-            <Link to="/admin" className="btn-creative bg-blue-500 text-white hover:bg-blue-400 text-2xl px-8 py-4">
-              ADMIN PANNEL 🛡️
+
+          {/* Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <Link to="/admin" className="sa-ibtn" style={{ padding: '8px 15px', borderRadius: 10, background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.14)', color: '#60a5fa', fontSize: 10, fontWeight: 700, letterSpacing: 1.8, textDecoration: 'none', fontFamily: 'Orbitron,sans-serif' }}>
+              ◈ ADMIN
             </Link>
-            <button onClick={() => navigate(0)} className="btn-creative bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-2xl px-8 py-4">
-              ⟲ Refresh 📡
+            <button onClick={() => navigate(0)} className="sa-ibtn" style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.4)', fontSize: 15, cursor: 'pointer' }}>⟲</button>
+
+            {/* Profile */}
+            <button onClick={() => setShowProfileModal(true)} className="sa-pfbtn" style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '6px 13px 6px 6px', borderRadius: 12, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.065)', cursor: 'pointer' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid rgba(139,92,246,0.5)', overflow: 'hidden', background: 'rgba(139,92,246,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative' }}>
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url} alt="" draggable={false}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', position: 'absolute', inset: 0 }}
+                    onError={e => { e.currentTarget.style.display = 'none'; }}
+                  />
+                ) : null}
+                <span style={{ fontSize: 11, fontWeight: 900, color: '#a78bfa', fontFamily: 'Orbitron,sans-serif', display: profile?.avatar_url ? 'none' : 'block' }}>
+                  {initials}
+                </span>
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{profile?.username || profile?.email?.split('@')[0]}</div>
+                <div style={{ fontSize: 8, color: '#8b5cf6', letterSpacing: 1.8, fontFamily: 'Orbitron,sans-serif' }}>SUPER ADMIN</div>
+              </div>
             </button>
           </div>
         </motion.div>
 
-        {/* Message */}
+        {/* ══════ TOAST ══════ */}
         <AnimatePresence>
           {message.text && (
-            <motion.div initial={{ opacity: 0, scale: 0.9, rotate: -1 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} exit={{ opacity: 0, scale: 0.9, rotate: 1 }}
-              className={cn(
-                "p-6 rounded-2xl border-4 font-handwritten text-2xl shadow-[6px_6px_0px_0px]",
-                message.type === "success" 
-                  ? "bg-green-100 border-green-500 text-green-700 shadow-green-500" 
-                  : "bg-red-100 border-red-500 text-red-700 shadow-red-500"
-              )}>
+            <motion.div
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+              style={{ marginBottom: 16, padding: '11px 16px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10, background: message.type === 'success' ? 'rgba(34,197,94,0.07)' : 'rgba(239,68,68,0.07)', border: `1px solid ${message.type === 'success' ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)'}`, color: message.type === 'success' ? '#4ade80' : '#f87171', fontSize: 14, fontWeight: 600 }}
+            >
+              <span style={{ fontSize: 16 }}>{message.type === 'success' ? '✓' : '⚠'}</span>
               {message.text}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-6 mb-12">
-          {STAT_CARDS.map((item, index) => (
-            <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}
-              onHoverStart={() => setHoveredCard(index)} onHoverEnd={() => setHoveredCard(null)}
-              className={cn(
-                "card-creative p-6 flex flex-col items-center justify-center text-center bg-white dark:bg-zinc-900 group",
-                item.rotation
-              )}>
-              <div className="text-4xl mb-4 group-hover:scale-125 transition-transform duration-300 drop-shadow-sm">{item.icon}</div>
-              <p className="font-handwritten text-lg text-zinc-500 mb-1 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">{item.label}</p>
-              <p className={cn("text-3xl font-bold font-handwritten", item.color)}>{item.value.toLocaleString()}</p>
+        {/* ══════ STATS GRID ══════ */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(138px, 1fr))', gap: 10, marginBottom: 12 }}>
+          {STAT_CARDS.map((item, i) => (
+            <motion.div
+              key={i} className="sa-stat"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+              style={{ padding: '15px 13px', borderRadius: 13, background: 'rgba(255,255,255,0.022)', border: '1px solid rgba(255,255,255,0.055)', display: 'flex', flexDirection: 'column', gap: 5, cursor: 'default' }}
+            >
+              <div style={{ fontSize: 15, color: item.accent }}>{item.icon}</div>
+              <div style={{ fontSize: 22, fontWeight: 900, fontFamily: 'Orbitron,sans-serif', color: '#fff', lineHeight: 1 }}>{item.value.toLocaleString()}</div>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)', letterSpacing: 2.2, textTransform: 'uppercase', fontWeight: 700 }}>{item.label}</div>
             </motion.div>
           ))}
         </div>
 
-        {/* Revenue */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-12">
+        {/* ══════ REVENUE ══════ */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10, marginBottom: 18 }}>
           {[
-            { label: "REVENU AUJOURD'HUI 💰", value: stats.todayRevenue,  color: "text-purple-500", bg: "bg-purple-50", border: "border-purple-500", rotation: "rotate-[-1deg]" },
-            { label: "REVENU CE MOIS 📈",     value: stats.monthlyRevenue, color: "text-blue-500",   bg: "bg-blue-50",   border: "border-blue-500",   rotation: "rotate-[1deg]"   },
-          ].map(card => (
-            <motion.div key={card.label} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className={cn(
-                "card-creative p-8 bg-white dark:bg-zinc-900 group",
-                card.rotation
-              )}
-              whileHover={{ scale: 1.02 }}>
-              <p className="font-handwritten text-2xl text-zinc-500 mb-2">{card.label}</p>
-              <p className={cn("text-5xl font-bold font-handwritten", card.color)}>{card.value} <span className="text-2xl text-zinc-400">coins</span></p>
-              <div className={cn("mt-4 h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border-2 border-zinc-900 dark:border-white shadow-[2px_2px_0px_0px] shadow-zinc-900 dark:shadow-white")}>
-                <div className={cn("h-full bg-gradient-to-r from-transparent to-current", card.color)} style={{ width: '65%' }} />
+            { label: "Revenu Aujourd'hui", value: stats.todayRevenue,   accent: '#a78bfa', bar: 'rgba(139,92,246,0.35)' },
+            { label: 'Revenu Ce Mois',     value: stats.monthlyRevenue, accent: '#22d3ee', bar: 'rgba(6,182,212,0.35)'  },
+          ].map(c => (
+            <div key={c.label} style={{ padding: '15px 18px', borderRadius: 13, background: 'rgba(255,255,255,0.022)', border: '1px solid rgba(255,255,255,0.055)' }}>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)', letterSpacing: 2.5, textTransform: 'uppercase', fontFamily: 'Orbitron,sans-serif', marginBottom: 5 }}>{c.label}</div>
+              <div style={{ fontSize: 26, fontWeight: 900, fontFamily: 'Orbitron,sans-serif', color: c.accent, marginBottom: 10 }}>
+                {c.value.toLocaleString()} <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)' }}>CP</span>
               </div>
-            </motion.div>
+              <div style={{ height: 2, borderRadius: 2, background: 'rgba(255,255,255,0.06)' }}>
+                <div style={{ height: '100%', width: '65%', borderRadius: 2, background: c.bar }} />
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Tabs Navigation */}
-        <div className="flex gap-4 mb-12 pb-4 overflow-x-auto scrollbar-hide border-b-4 border-zinc-900 dark:border-white">
-          {TABS.map((tab, idx) => {
+        {/* ══════ TABS NAV ══════ */}
+        <div style={{ display: 'flex', gap: 3, marginBottom: 14, background: 'rgba(255,255,255,0.016)', border: '1px solid rgba(255,255,255,0.048)', borderRadius: 13, padding: 4, overflowX: 'auto' }}>
+          {TABS.map(tab => {
             const active = activeTab === tab.id;
+            const color  = TAB_COLORS[tab.color] || '#8b5cf6';
             return (
-              <motion.button key={tab.id} whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
+              <motion.button
+                key={tab.id} whileTap={{ scale: 0.96 }} className="sa-tab"
                 onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "px-8 py-3 font-handwritten text-2xl border-2 transition-all relative whitespace-nowrap",
-                  active 
-                    ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white rounded-t-2xl translate-y-1 shadow-[4px_-4px_0px_0px] shadow-zinc-400" 
-                    : "bg-white dark:bg-zinc-900 text-zinc-400 border-transparent hover:text-zinc-900 dark:hover:text-white"
-                )}>
+                style={{ padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', background: active ? `${color}16` : 'transparent', color: active ? color : 'rgba(255,255,255,0.28)', fontSize: 10, fontWeight: 700, letterSpacing: 1.8, fontFamily: 'Orbitron,sans-serif', whiteSpace: 'nowrap', borderBottom: active ? `2px solid ${color}` : '2px solid transparent', boxShadow: active ? `0 0 12px ${color}1a` : 'none', display: 'flex', alignItems: 'center', gap: 6 }}
+              >
                 {tab.label}
+                {tab.count !== null && (
+                  <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 7, background: active ? `${color}22` : 'rgba(255,255,255,0.06)', color: active ? color : 'rgba(255,255,255,0.28)' }}>
+                    {tab.count}
+                  </span>
+                )}
               </motion.button>
             );
           })}
         </div>
 
-        {/* Tab content */}
-        <div className="relative">
-          <div className="absolute -z-10 inset-0 overflow-hidden pointer-events-none opacity-10 dark:opacity-5">
-            <div className="absolute top-0 left-0 text-[20rem] rotate-12 font-handwritten">✎</div>
-            <div className="absolute bottom-0 right-0 text-[20rem] -rotate-12 font-handwritten">✏️</div>
-          </div>
-          
+        {/* ══════ TAB CONTENT ══════ */}
+        <div style={{ background: 'rgba(255,255,255,0.012)', border: '1px solid rgba(255,255,255,0.045)', borderRadius: 16, padding: '16px', minHeight: 420 }}>
           <AnimatePresence mode="wait">
             {activeTab === "dashboard"   && <DashboardTab   key="dashboard"   stats={stats} users={users} logs={logs} setActiveTab={setActiveTab} setFilter={setFilter} setSelectedUser={setSelectedUser} setGrantAmount={setGrantAmount} setGrantReason={setGrantReason} setWalletSearch={setWalletSearch} setShowWalletModal={setShowWalletModal} />}
             {activeTab === "users"       && <UsersTab        key="users"       filteredUsers={filteredUsers} search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} setSelectedUser={setSelectedUser} setShowRoleModal={setShowRoleModal} setShowBanModal={setShowBanModal} setShowWalletModal={setShowWalletModal} unbanUser={unbanUser} deleteUser={deleteUser} />}
@@ -491,72 +501,40 @@ export default function SuperAdmin() {
           </AnimatePresence>
         </div>
 
-        {/* Modals */}
-        <AnimatePresence>
-          {showRoleModal && selectedUser && (
-            <RoleModal
-              selectedUser={selectedUser}
-              updateUserRole={updateUserRole}
-              onClose={() => setShowRoleModal(false)}
-            />
-          )}
-          {showBanModal && selectedUser && (
-            <BanModal
-              selectedUser={selectedUser}
-              banDuration={banDuration}
-              setBanDuration={setBanDuration}
-              banUser={banUser}
-              onClose={() => setShowBanModal(false)}
-            />
-          )}
-          {showWalletModal && (
-            <WalletModal
-              users={users}
-              selectedUser={selectedUser}
-              setSelectedUser={setSelectedUser}
-              walletSearch={walletSearch}
-              setWalletSearch={setWalletSearch}
-              grantAmount={grantAmount}
-              setGrantAmount={setGrantAmount}
-              grantReason={grantReason}
-              setGrantReason={setGrantReason}
-              grantCoins={grantCoins}
-              onClose={() => { setShowWalletModal(false); setGrantAmount(""); setGrantReason(""); setWalletSearch(""); setSelectedUser(null); }}
-            />
-          )}
-          {showTournamentModal && selectedTournament && (
-            <TournamentModal
-              selectedTournament={selectedTournament}
-              tournamentStatus={tournamentStatus}
-              setTournamentStatus={setTournamentStatus}
-              updateTournamentStatus={updateTournamentStatus}
-              onClose={() => setShowTournamentModal(false)}
-            />
-          )}
-          {showProfileModal && (
-            <ProfileModal
-              profile={profile}
-              onClose={() => setShowProfileModal(false)}
-              onSaved={(updated) => setProfile(prev => ({ ...prev, ...updated }))}
-            />
-          )}
-          {showDeleteConfirm && tournamentToDelete && (
-            <DeleteConfirmModal
-              tournamentToDelete={tournamentToDelete}
-              deleteLoading={deleteLoading}
-              deleteTournament={async (id) => {
-                setDeleteLoading(true);
-                await deleteTournament(id);
-                setDeleteLoading(false);
-                setShowDeleteConfirm(false);
-                setTournamentToDelete(null);
-              }}
-              onClose={() => { setShowDeleteConfirm(false); setTournamentToDelete(null); }}
-            />
-          )}
-        </AnimatePresence>
-
       </div>
+
+      {/* ══════ MODALS ══════ */}
+      <AnimatePresence>
+        {showProfileModal && (
+          <ProfileModal profile={profile} onClose={() => setShowProfileModal(false)} onSaved={updated => setProfile(prev => ({ ...prev, ...updated }))} />
+        )}
+        {showRoleModal && selectedUser && (
+          <RoleModal selectedUser={selectedUser} updateUserRole={updateUserRole} onClose={() => setShowRoleModal(false)} />
+        )}
+        {showBanModal && selectedUser && (
+          <BanModal selectedUser={selectedUser} banDuration={banDuration} setBanDuration={setBanDuration} banUser={banUser} onClose={() => setShowBanModal(false)} />
+        )}
+        {showWalletModal && (
+          <WalletModal users={users} selectedUser={selectedUser} setSelectedUser={setSelectedUser} walletSearch={walletSearch} setWalletSearch={setWalletSearch} grantAmount={grantAmount} setGrantAmount={setGrantAmount} grantReason={grantReason} setGrantReason={setGrantReason} grantCoins={grantCoins} onClose={() => { setShowWalletModal(false); setGrantAmount(""); setGrantReason(""); setWalletSearch(""); setSelectedUser(null); }} />
+        )}
+        {showTournamentModal && selectedTournament && (
+          <TournamentModal selectedTournament={selectedTournament} tournamentStatus={tournamentStatus} setTournamentStatus={setTournamentStatus} updateTournamentStatus={updateTournamentStatus} onClose={() => setShowTournamentModal(false)} />
+        )}
+        {showDeleteConfirm && tournamentToDelete && (
+          <DeleteConfirmModal
+            tournamentToDelete={tournamentToDelete}
+            deleteLoading={deleteLoading}
+            deleteTournament={async id => {
+              setDeleteLoading(true);
+              await deleteTournament(id);
+              setDeleteLoading(false);
+              setShowDeleteConfirm(false);
+              setTournamentToDelete(null);
+            }}
+            onClose={() => { setShowDeleteConfirm(false); setTournamentToDelete(null); }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
