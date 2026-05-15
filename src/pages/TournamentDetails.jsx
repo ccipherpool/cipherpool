@@ -306,7 +306,7 @@ export default function TournamentDetails() {
                 { label: "Copier",   color: CYAN,      icon: "🔗" },
               ].map(btn => (
                 <button key={btn.label}
-                  onClick={() => btn.label === "Copier" && navigator.clipboard.writeText(window.location.href)}
+                  onClick={() => btn.label === "Copier" && navigator.clipboard.writeText(`${window.location.origin}/t/${tournament?.id}`)}
                   style={{ flex: 1, padding: "10px", borderRadius: 10, border: `1px solid ${btn.color}25`, background: `${btn.color}08`, color: btn.color, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
                   onMouseEnter={e => { e.currentTarget.style.background = `${btn.color}15`; e.currentTarget.style.borderColor = `${btn.color}45`; }}
                   onMouseLeave={e => { e.currentTarget.style.background = `${btn.color}08`; e.currentTarget.style.borderColor = `${btn.color}25`; }}

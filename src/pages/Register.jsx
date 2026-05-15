@@ -13,22 +13,36 @@ export default function Register() {
         setLoading(true);
         setError(null);
         try {
+            const redirectUrl = `${window.location.origin}/email-confirmed`;
+
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
+                options: {
+                    emailRedirectTo: redirectUrl,
+                    data: { username },
+                },
             });
             if (authError) throw authError;
-            
+
             if (authData.user) {
-                const { error: profileError } = await supabase.from('profiles').insert([{
+                // Upsert handles both: trigger already created profile, or no trigger
+                await supabase.from('profiles').upsert({
                     id: authData.user.id,
-                    username: username,
-                    email: email,
-                    role: 'user'
-                }]);
-                if (profileError) throw profileError;
+                    username,
+                    email,
+                    role: 'user',
+                }, { onConflict: 'id' });
+
+                // Create wallet if not exists
+                await supabase.from('wallets').upsert({
+                    user_id: authData.user.id,
+                    balance: 50,
+                }, { onConflict: 'user_id' });
             }
-            navigate("/dashboard");
+
+            // Always redirect to verify-email — even if email confirmation is off
+            navigate("/verify-email", { state: { email } });
         } catch (err) {
             setError(err.message);
         } finally {

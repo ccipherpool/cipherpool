@@ -9,20 +9,31 @@ export default function Login() {
   const [error, setError] = useState("");
 
   const handleLogin = async (email, password, remember) => {
+    setError("");
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      
-      // Handle remember me logic if needed via local storage or similar
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) throw signInError;
+
       if (remember) {
         localStorage.setItem("remember_me", email);
       } else {
         localStorage.removeItem("remember_me");
       }
-      
+
+      // If email not confirmed, redirect to verify page
+      if (data.user && !data.user.email_confirmed_at) {
+        navigate("/verify-email", { state: { email } });
+        return;
+      }
+
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message);
+      // Friendly message for unconfirmed email
+      if (err.message?.includes("Email not confirmed")) {
+        setError("Please verify your email before logging in.");
+      } else {
+        setError(err.message);
+      }
     }
   };
 

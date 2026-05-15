@@ -4,12 +4,12 @@ import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Users, ShieldCheck, Trophy, AlertTriangle,
-  TrendingUp, Lock, FileText, Settings, RefreshCw, ChevronRight,
+  TrendingUp, Lock, FileText, Settings, RefreshCw,
   ShieldOff, Clock, Gamepad2, Ticket, Flag, Wifi, UserCircle2,
-  ArrowUpRight, Activity,
+  ArrowUpRight, Activity, Calendar, ChevronDown, LogOut,
+  Zap, BarChart3, Globe, Megaphone, Lightbulb,
 } from "lucide-react";
 
-// Tabs
 import DashboardTab    from "./superadmin/tabs/DashboardTab";
 import UsersTab        from "./superadmin/tabs/UsersTab";
 import StaffTab        from "./superadmin/tabs/StaffTab";
@@ -19,8 +19,11 @@ import EconomyTab      from "./superadmin/tabs/EconomyTab";
 import SecurityTab     from "./superadmin/tabs/SecurityTab";
 import LogsTab         from "./superadmin/tabs/LogsTab";
 import SystemTab       from "./superadmin/tabs/SystemTab";
+import SeasonsTab       from "./superadmin/tabs/SeasonsTab";
+import AnnouncementsTab from "./superadmin/tabs/AnnouncementsTab";
+import AnalyticsTab     from "./superadmin/tabs/AnalyticsTab";
+import CommunityTab     from "./superadmin/tabs/CommunityTab";
 
-// Modals
 import RoleModal          from "./superadmin/modals/RoleModal";
 import BanModal           from "./superadmin/modals/BanModal";
 import WalletModal        from "./superadmin/modals/WalletModal";
@@ -28,27 +31,60 @@ import TournamentModal    from "./superadmin/modals/TournamentModal";
 import DeleteConfirmModal from "./superadmin/modals/DeleteConfirmModal";
 import ProfileModal       from "./superadmin/modals/ProfileModal";
 
-// ─── Design tokens ─────────────────────────────────────────
 const T = {
-  bg:       "#09090b",
-  surface:  "#111113",
-  surface2: "#18181b",
-  border:   "rgba(255,255,255,0.07)",
-  border2:  "rgba(255,255,255,0.04)",
-  accent:   "#6366f1",
-  green:    "#10b981",
-  red:      "#ef4444",
-  amber:    "#f59e0b",
-  text:     "#fafafa",
-  text2:    "#a1a1aa",
-  text3:    "#52525b",
-  font:     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  bg:        "#08080d",
+  sidebar:   "#0c0c15",
+  surface:   "#111119",
+  surface2:  "#171720",
+  surface3:  "#1e1e2a",
+  border:    "rgba(255,255,255,0.06)",
+  border2:   "rgba(255,255,255,0.1)",
+  accent:    "#6366f1",
+  accentDim: "rgba(99,102,241,0.12)",
+  green:     "#10b981",
+  red:       "#ef4444",
+  amber:     "#f59e0b",
+  purple:    "#8b5cf6",
+  cyan:      "#06b6d4",
+  pink:      "#ec4899",
+  orange:    "#f97316",
+  text:      "#f4f4f5",
+  text2:     "#a1a1aa",
+  text3:     "#52525b",
+  text4:     "#3f3f46",
+  font:      "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
 };
 
-const S = {
-  card: { background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12 },
-  label: { fontSize: 11, fontWeight: 700, color: T.text3, letterSpacing: 1, textTransform: "uppercase" },
-};
+const NAV_GROUPS = [
+  {
+    label: "Overview",
+    items: [
+      { id: "dashboard",   label: "Dashboard",    icon: LayoutDashboard, badgeKey: null },
+    ],
+  },
+  {
+    label: "Management",
+    items: [
+      { id: "users",       label: "Users",         icon: Users,          badgeKey: "users",        urgent: false },
+      { id: "staff",       label: "Staff",          icon: ShieldCheck,    badgeKey: "admins",       urgent: false },
+      { id: "tournaments", label: "Tournaments",    icon: Trophy,         badgeKey: "tournaments",  urgent: false },
+      { id: "reports",     label: "Reports",        icon: AlertTriangle,  badgeKey: "reports",      urgent: true  },
+    ],
+  },
+  {
+    label: "Platform",
+    items: [
+      { id: "analytics",     label: "Analytics",      icon: BarChart3,  badgeKey: null },
+      { id: "community",     label: "Community",      icon: Lightbulb,  badgeKey: null },
+      { id: "economy",       label: "Economy",        icon: TrendingUp, badgeKey: null },
+      { id: "security",      label: "Security",       icon: Lock,       badgeKey: null },
+      { id: "seasons",       label: "Seasons",        icon: Calendar,   badgeKey: null },
+      { id: "announcements", label: "Announcements",  icon: Megaphone,  badgeKey: null },
+      { id: "logs",          label: "Audit Logs",     icon: FileText,   badgeKey: null },
+      { id: "system",        label: "System",         icon: Settings,   badgeKey: null },
+    ],
+  },
+];
 
 export default function SuperAdmin() {
   const navigate = useNavigate();
@@ -96,7 +132,7 @@ export default function SuperAdmin() {
     return () => clearInterval(interval);
   }, []);
 
-  const showMsg = (type, text, delay = 3000) => {
+  const showMsg = (type, text, delay = 3500) => {
     setMessage({ type, text });
     setTimeout(() => setMessage({ type: "", text: "" }), delay);
   };
@@ -132,7 +168,7 @@ export default function SuperAdmin() {
       (walletsData || []).forEach(w => { walletMap[w.user_id] = w.balance; });
       setUsers((profilesData || []).map(u => ({
         ...u, coins: walletMap[u.id] || 0, stats: { tournaments_played: 0, wins: 0 },
-        display_name: u.username || u.full_name || u.name || u.email?.split("@")[0] || "Inconnu",
+        display_name: u.username || u.full_name || u.name || u.email?.split("@")[0] || "Unknown",
       })));
     } catch (err) { if (import.meta.env.DEV) console.error("fetchUsers:", err); }
   };
@@ -150,7 +186,7 @@ export default function SuperAdmin() {
       const { data, error } = await supabase.from("tournaments").select("*").order("created_at", { ascending: false }).limit(50);
       if (error) throw error;
       setTournaments(data || []);
-    } catch (_err) { setTournaments([]); }
+    } catch { setTournaments([]); }
   };
 
   const fetchReports = async () => {
@@ -158,7 +194,7 @@ export default function SuperAdmin() {
       const { data, error } = await supabase.from("reports").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       setReports(data || []);
-    } catch (_err) { setReports([]); }
+    } catch { setReports([]); }
   };
 
   const fetchLogs = async () => {
@@ -166,7 +202,7 @@ export default function SuperAdmin() {
       const { data, error } = await supabase.from("admin_logs").select("*").order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
       setLogs(data || []);
-    } catch (_err) { setLogs([]); }
+    } catch { setLogs([]); }
   };
 
   const fetchStats = async () => {
@@ -204,12 +240,12 @@ export default function SuperAdmin() {
       if (rpcErr) {
         const { error: directErr } = await supabase.from("profiles").update({ role }).eq("id", userId);
         if (directErr) throw directErr;
-      } else if (rpcData && !rpcData.success) throw new Error(rpcData.error || "Erreur changement de rôle");
+      } else if (rpcData && !rpcData.success) throw new Error(rpcData.error || "Role change error");
       await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "change_role", details: { target_user: userId, new_role: role } }]);
-      showMsg("success", "Rôle modifié avec succès");
+      showMsg("success", "Role updated successfully");
       await fetchUsers(); await fetchAdmins();
       setShowRoleModal(false);
-    } catch (err) { showMsg("error", err.message || "Erreur lors du changement de rôle"); }
+    } catch (err) { showMsg("error", err.message || "Role change failed"); }
   };
 
   const banUser = async (userId, duration) => {
@@ -222,9 +258,9 @@ export default function SuperAdmin() {
       const { error } = await supabase.rpc("ban_user", { target_user: userId, banned_until: banUntil.toISOString(), banned_by: profile.id });
       if (error) throw error;
       await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "ban_user", details: { target_user: userId, duration } }]);
-      showMsg("success", "Utilisateur banni avec succès");
+      showMsg("success", "User banned successfully");
       await fetchUsers(); setShowBanModal(false);
-    } catch (err) { showMsg("error", err.message || "Erreur lors du bannissement"); }
+    } catch (err) { showMsg("error", err.message || "Ban failed"); }
   };
 
   const unbanUser = async (userId) => {
@@ -232,35 +268,35 @@ export default function SuperAdmin() {
       const { error } = await supabase.rpc("unban_user", { target_user: userId });
       if (error) throw error;
       await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "unban_user", details: { target_user: userId } }]);
-      showMsg("success", "Utilisateur débanni avec succès");
+      showMsg("success", "User unbanned");
       await fetchUsers();
-    } catch (err) { showMsg("error", err.message || "Erreur lors du débannissement"); }
+    } catch (err) { showMsg("error", err.message || "Unban failed"); }
   };
 
   const deleteUser = async (userId) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ?")) return;
+    if (!window.confirm("Permanently delete this user?")) return;
     try {
       const { error } = await supabase.rpc("delete_user_complete", { target_user: userId });
       if (error) throw error;
       await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "delete_user", details: { target_user: userId } }]);
-      showMsg("success", "Utilisateur supprimé définitivement");
+      showMsg("success", "User permanently deleted");
       await fetchUsers();
-    } catch (err) { showMsg("error", err.message || "Erreur lors de la suppression"); }
+    } catch (err) { showMsg("error", err.message || "Delete failed"); }
   };
 
   const grantCoins = async () => {
     if (!selectedUser) return;
     const amount = parseInt(grantAmount);
-    if (isNaN(amount) || amount === 0) { showMsg("error", "Montant invalide"); return; }
-    if (!grantReason.trim()) { showMsg("error", "La raison est obligatoire"); return; }
+    if (isNaN(amount) || amount === 0) { showMsg("error", "Invalid amount"); return; }
+    if (!grantReason.trim()) { showMsg("error", "Reason is required"); return; }
     try {
       const { data, error } = await supabase.rpc("admin_adjust_coins", { p_target_user_id: selectedUser.id, p_amount: amount, p_reason: grantReason });
       if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || "Erreur");
+      if (!data?.success) throw new Error(data?.error || "Error");
       showMsg("success", `${amount > 0 ? "+" : ""}${amount} CP → ${selectedUser.display_name || selectedUser.username} (${data.new_balance} total)`, 4000);
       setGrantAmount(""); setGrantReason(""); setShowWalletModal(false);
       await fetchUsers();
-    } catch (err) { showMsg("error", err.message || "Erreur lors de l'ajustement des coins"); }
+    } catch (err) { showMsg("error", err.message || "Coin adjustment failed"); }
   };
 
   const deleteTournament = async (tournamentId) => {
@@ -268,9 +304,9 @@ export default function SuperAdmin() {
       const { error } = await supabase.rpc("delete_tournament_complete", { tournament_id: tournamentId });
       if (error) throw error;
       await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "delete_tournament", details: { tournament_id: tournamentId } }]);
-      showMsg("success", "Tournoi supprimé avec succès");
+      showMsg("success", "Tournament deleted");
       await fetchTournaments();
-    } catch (err) { showMsg("error", err.message || "Erreur lors de la suppression"); }
+    } catch (err) { showMsg("error", err.message || "Delete failed"); }
   };
 
   const updateTournamentStatus = async (tournamentId, status) => {
@@ -278,9 +314,9 @@ export default function SuperAdmin() {
       const { error } = await supabase.from("tournaments").update({ status }).eq("id", tournamentId);
       if (error) throw error;
       await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "update_tournament_status", details: { tournament_id: tournamentId, status } }]);
-      showMsg("success", "Statut du tournoi mis à jour");
+      showMsg("success", "Tournament status updated");
       setShowTournamentModal(false); await fetchTournaments();
-    } catch (err) { showMsg("error", err.message || "Erreur lors de la mise à jour"); }
+    } catch (err) { showMsg("error", err.message || "Update failed"); }
   };
 
   const resolveReport = async (reportId, action) => {
@@ -288,9 +324,9 @@ export default function SuperAdmin() {
       const { error } = await supabase.from("reports").update({ status: "resolved", resolved_by: profile.id, resolved_action: action, resolved_at: new Date().toISOString() }).eq("id", reportId);
       if (error) throw error;
       await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "resolve_report", details: { report_id: reportId, action } }]);
-      showMsg("success", "Rapport résolu");
+      showMsg("success", "Report resolved");
       await fetchReports();
-    } catch (err) { showMsg("error", err.message || "Erreur lors de la résolution"); }
+    } catch (err) { showMsg("error", err.message || "Failed to resolve"); }
   };
 
   const updateSystemConfig = async () => {
@@ -298,8 +334,8 @@ export default function SuperAdmin() {
       const { error } = await supabase.from("system_config").upsert({ maintenance_mode: maintenanceMode, registration_enabled: registrationEnabled, tournaments_enabled: tournamentsEnabled, updated_by: profile.id, updated_at: new Date().toISOString() });
       if (error) throw error;
       await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "update_system_config", details: { maintenanceMode, registrationEnabled, tournamentsEnabled } }]);
-      showMsg("success", "Configuration système mise à jour");
-    } catch (err) { showMsg("error", err.message || "Erreur"); }
+      showMsg("success", "System config updated");
+    } catch (err) { showMsg("error", err.message || "Error"); }
   };
 
   const filteredUsers = users.filter(u => {
@@ -313,238 +349,361 @@ export default function SuperAdmin() {
     return matchSearch;
   });
 
-  // ─── Loading ───────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font }}>
-        <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-          <Activity size={28} color={T.accent} style={{ animation: "sa-pulse 1.4s ease-in-out infinite" }} />
-          <p style={{ color: T.text3, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" }}>Loading...</p>
-        </div>
-        <style>{`@keyframes sa-pulse { 0%,100%{opacity:0.4;transform:scale(0.95)} 50%{opacity:1;transform:scale(1)} }`}</style>
-      </div>
-    );
-  }
+  const pendingReportsCount = reports.filter(r => r.status === "pending").length;
 
-  const TABS = [
-    { id: "dashboard",   label: "Dashboard",   icon: LayoutDashboard, count: null               },
-    { id: "users",       label: "Users",        icon: Users,           count: users.length       },
-    { id: "staff",       label: "Staff",        icon: ShieldCheck,     count: admins.length      },
-    { id: "tournaments", label: "Tournaments",  icon: Trophy,          count: tournaments.length },
-    { id: "reports",     label: "Reports",      icon: AlertTriangle,   count: reports.length     },
-    { id: "economy",     label: "Economy",      icon: TrendingUp,      count: null               },
-    { id: "security",    label: "Security",     icon: Lock,            count: null               },
-    { id: "logs",        label: "Logs",         icon: FileText,        count: null               },
-    { id: "system",      label: "System",       icon: Settings,        count: null               },
-  ];
+  const getBadge = (key) => {
+    if (key === "users")       return users.length;
+    if (key === "admins")      return admins.length;
+    if (key === "tournaments") return tournaments.length;
+    if (key === "reports")     return pendingReportsCount;
+    return null;
+  };
 
   const STAT_CARDS = [
-    { label: "Total Users",    value: stats.totalUsers,           icon: Users,         color: "#6366f1" },
-    { label: "Online",         value: stats.onlineUsers,          icon: Wifi,          color: "#10b981" },
-    { label: "Banned",         value: stats.bannedUsers,          icon: ShieldOff,     color: "#ef4444" },
-    { label: "Pending",        value: stats.pendingVerifications, icon: Clock,         color: "#f59e0b" },
-    { label: "Tournaments",    value: stats.totalTournaments,     icon: Trophy,        color: "#8b5cf6" },
-    { label: "Matches",        value: stats.totalMatches,         icon: Gamepad2,      color: "#06b6d4" },
-    { label: "Open Tickets",   value: stats.openTickets,          icon: Ticket,        color: "#f97316" },
-    { label: "Reports",        value: stats.totalReports,         icon: Flag,          color: "#ec4899" },
+    { label: "Users",        value: stats.totalUsers,           icon: Users,       color: T.accent  },
+    { label: "Banned",       value: stats.bannedUsers,          icon: ShieldOff,   color: T.red     },
+    { label: "Pending",      value: stats.pendingVerifications, icon: Clock,       color: T.amber   },
+    { label: "Tournaments",  value: stats.totalTournaments,     icon: Trophy,      color: T.purple  },
+    { label: "Matches",      value: stats.totalMatches,         icon: Gamepad2,    color: T.cyan    },
+    { label: "Tickets",      value: stats.openTickets,          icon: Ticket,      color: T.orange  },
+    { label: "Reports",      value: stats.totalReports,         icon: Flag,        color: T.pink    },
+    { label: "Total CP",     value: stats.totalCoins,           icon: BarChart3,   color: T.green   },
   ];
 
   const initials = (profile?.username || profile?.email || "?")[0]?.toUpperCase();
 
+  // ─── Loading ───────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 16,
+            background: `linear-gradient(135deg, ${T.accent}, #818cf8)`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            margin: "0 auto 20px",
+            boxShadow: `0 0 32px ${T.accent}50`,
+            animation: "sa-pulse 1.5s ease-in-out infinite",
+          }}>
+            <ShieldCheck size={26} color="#fff" />
+          </div>
+          <p style={{ color: T.text3, fontSize: 11, letterSpacing: 3, textTransform: "uppercase" }}>Initializing CipherPool Control</p>
+        </div>
+        <style>{`@keyframes sa-pulse { 0%,100%{opacity:0.7;transform:scale(0.96)} 50%{opacity:1;transform:scale(1)} }`}</style>
+      </div>
+    );
+  }
+
   // ─── Render ────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.font }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.font }}>
       <style>{`
-        .sa-nav-btn { transition: background 0.12s, color 0.12s; }
-        .sa-nav-btn:hover { background: rgba(255,255,255,0.06) !important; color: ${T.text} !important; }
-        .sa-tab { transition: background 0.12s, color 0.12s, border-color 0.12s; }
-        .sa-tab:hover { background: rgba(255,255,255,0.05) !important; color: ${T.text2} !important; }
-        .sa-stat { transition: border-color 0.15s, background 0.15s; cursor: default; }
-        .sa-stat:hover { border-color: rgba(99,102,241,0.3) !important; background: rgba(99,102,241,0.04) !important; }
+        .sa-nav-item { transition: background 0.12s, color 0.12s, border-color 0.12s; }
+        .sa-nav-item:hover { background: rgba(255,255,255,0.04) !important; color: ${T.text} !important; }
+        .sa-icon-btn { transition: background 0.12s, color 0.12s, border-color 0.12s; }
+        .sa-icon-btn:hover { background: rgba(255,255,255,0.07) !important; color: ${T.text} !important; }
+        .sa-stat-card { transition: border-color 0.15s, transform 0.15s; }
+        .sa-stat-card:hover { border-color: rgba(255,255,255,0.12) !important; transform: translateY(-1px); }
+        .sa-profile-btn { transition: background 0.12s; }
+        .sa-profile-btn:hover { background: rgba(255,255,255,0.06) !important; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
       `}</style>
 
-      {/* ═══ TOPBAR ═══ */}
-      <header style={{ borderBottom: `1px solid ${T.border}`, background: T.surface, position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: 1440, margin: "0 auto", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+      {/* ═══ SIDEBAR ═══ */}
+      <aside style={{
+        width: 240,
+        flexShrink: 0,
+        background: T.sidebar,
+        borderRight: `1px solid ${T.border}`,
+        display: "flex",
+        flexDirection: "column",
+        position: "sticky",
+        top: 0,
+        height: "100vh",
+        overflow: "hidden",
+        zIndex: 20,
+      }}>
 
-          {/* Brand */}
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: T.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <ShieldCheck size={15} color="#fff" />
-              </div>
-              <span style={{ fontSize: 14, fontWeight: 700, color: T.text, letterSpacing: 0.3 }}>CipherPool</span>
-              <span style={{ fontSize: 11, color: T.text3 }}>/</span>
-              <span style={{ fontSize: 13, color: T.text2, fontWeight: 500 }}>Super Admin</span>
+        {/* Logo */}
+        <div style={{ padding: "18px 16px 16px", borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+              background: `linear-gradient(135deg, ${T.accent} 0%, #818cf8 100%)`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: `0 0 20px ${T.accent}35`,
+            }}>
+              <ShieldCheck size={17} color="#fff" />
             </div>
-
-            {/* Status pill */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 20, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.green }} />
-              <span style={{ fontSize: 11, color: T.green, fontWeight: 600 }}>Operational</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: T.text, letterSpacing: -0.2, lineHeight: 1.2 }}>CipherPool</div>
+              <div style={{ fontSize: 10, color: T.accent, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", lineHeight: 1.4 }}>Control Panel</div>
             </div>
           </div>
 
-          {/* Right actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Link to="/admin" className="sa-nav-btn" style={{ padding: "6px 14px", borderRadius: 8, background: "transparent", border: `1px solid ${T.border}`, color: T.text2, fontSize: 12, fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
-              <ShieldCheck size={13} /> Admin Panel
-            </Link>
-            <button onClick={() => navigate(0)} className="sa-nav-btn" style={{ padding: "6px 10px", borderRadius: 8, background: "transparent", border: `1px solid ${T.border}`, color: T.text2, cursor: "pointer", display: "flex", alignItems: "center" }}>
-              <RefreshCw size={13} />
+          {/* Status indicator */}
+          <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 7, padding: "5px 10px", borderRadius: 8, background: maintenanceMode ? "rgba(239,68,68,0.08)" : "rgba(16,185,129,0.08)", border: `1px solid ${maintenanceMode ? "rgba(239,68,68,0.2)" : "rgba(16,185,129,0.2)"}` }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: maintenanceMode ? T.red : T.green, boxShadow: `0 0 6px ${maintenanceMode ? T.red : T.green}` }} />
+            <span style={{ fontSize: 11, color: maintenanceMode ? T.red : T.green, fontWeight: 600 }}>
+              {maintenanceMode ? "Maintenance" : "Operational"}
+            </span>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav style={{ flex: 1, padding: "12px 8px", overflowY: "auto" }}>
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={group.label} style={{ marginBottom: gi < NAV_GROUPS.length - 1 ? 24 : 0 }}>
+              <div style={{
+                fontSize: 9.5, fontWeight: 700, color: T.text4, letterSpacing: 1.5,
+                textTransform: "uppercase", padding: "0 8px", marginBottom: 4,
+              }}>
+                {group.label}
+              </div>
+              {group.items.map(item => {
+                const active = activeTab === item.id;
+                const badge = item.badgeKey ? getBadge(item.badgeKey) : null;
+                return (
+                  <button
+                    key={item.id}
+                    className="sa-nav-item"
+                    onClick={() => setActiveTab(item.id)}
+                    style={{
+                      width: "100%", padding: "7px 8px", border: "none", borderRadius: 8,
+                      borderLeft: `2px solid ${active ? T.accent : "transparent"}`,
+                      background: active ? T.accentDim : "transparent",
+                      color: active ? T.text : T.text3,
+                      cursor: "pointer", display: "flex", alignItems: "center", gap: 9,
+                      fontSize: 13, fontWeight: active ? 600 : 400,
+                      textAlign: "left", marginBottom: 1, outline: "none",
+                    }}
+                  >
+                    <item.icon size={14.5} color={active ? T.accent : "currentColor"} style={{ flexShrink: 0, opacity: active ? 1 : 0.7 }} />
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    {badge !== null && badge > 0 && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 10,
+                        background: item.urgent ? `${T.red}18` : `${T.accent}18`,
+                        color: item.urgent ? T.red : T.accent,
+                        minWidth: 18, textAlign: "center",
+                      }}>
+                        {badge > 99 ? "99+" : badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {/* Profile section at bottom */}
+        <div style={{ padding: "12px 8px 16px", borderTop: `1px solid ${T.border}` }}>
+          <div style={{ position: "relative" }}>
+            <button
+              className="sa-profile-btn"
+              onClick={() => setProfileMenuOpen(p => !p)}
+              style={{
+                width: "100%", padding: "8px 10px", borderRadius: 10, border: `1px solid ${T.border}`,
+                background: "transparent", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 10, outline: "none",
+              }}
+            >
+              <div style={{
+                width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+                background: `linear-gradient(135deg, ${T.accent}40, ${T.purple}40)`,
+                border: `2px solid ${T.accent}40`,
+                display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+              }}>
+                {profile?.avatar_url
+                  ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.currentTarget.style.display = "none"; }} />
+                  : <span style={{ fontSize: 12, fontWeight: 800, color: T.accent }}>{initials}</span>
+                }
+              </div>
+              <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: T.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {profile?.username || profile?.email?.split("@")[0]}
+                </div>
+                <div style={{ fontSize: 10, color: T.accent, fontWeight: 600, letterSpacing: 0.5 }}>Super Admin</div>
+              </div>
+              <ChevronDown size={12} color={T.text3} style={{ transform: profileMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
             </button>
 
-            {/* Profile dropdown */}
-            <div style={{ position: "relative" }}>
-              <button
-                onClick={() => setProfileMenuOpen(p => !p)}
-                className="sa-nav-btn"
-                style={{ padding: "4px 10px 4px 4px", borderRadius: 8, background: "transparent", border: `1px solid ${T.border}`, color: T.text2, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
-              >
-                <div style={{ width: 26, height: 26, borderRadius: "50%", border: `2px solid ${T.border}`, overflow: "hidden", background: T.surface2, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                      onError={e => { e.currentTarget.style.display = "none"; }} />
-                  ) : null}
-                  <span style={{ fontSize: 10, fontWeight: 800, color: T.accent, display: profile?.avatar_url ? "none" : "block" }}>{initials}</span>
-                </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{profile?.username || profile?.email?.split("@")[0]}</span>
-                <ChevronRight size={12} style={{ opacity: 0.5, transform: profileMenuOpen ? "rotate(90deg)" : "none", transition: "transform 0.15s" }} />
-              </button>
-
-              <AnimatePresence>
-                {profileMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                    style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, width: 200, ...S.card, padding: "6px", zIndex: 100, boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
-                  >
-                    <button
-                      onClick={() => { setShowProfileModal(true); setProfileMenuOpen(false); }}
-                      style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "transparent", border: "none", color: T.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, textAlign: "left" }}
-                      className="sa-nav-btn"
-                    >
-                      <UserCircle2 size={15} color={T.text3} /> Modifier le profil
+            <AnimatePresence>
+              {profileMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.97 }}
+                  transition={{ duration: 0.13 }}
+                  style={{
+                    position: "absolute", bottom: "calc(100% + 6px)", left: 0, right: 0,
+                    background: T.surface2, border: `1px solid ${T.border2}`,
+                    borderRadius: 10, padding: 6,
+                    boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
+                    zIndex: 100,
+                  }}
+                >
+                  {[
+                    { icon: UserCircle2, label: "Edit Profile", action: () => { setShowProfileModal(true); setProfileMenuOpen(false); } },
+                    { icon: Globe, label: "Back to Site", action: () => navigate("/dashboard") },
+                    { icon: ArrowUpRight, label: "Admin Panel", action: () => navigate("/admin") },
+                  ].map((item, i) => (
+                    <button key={i} onClick={item.action} style={{
+                      width: "100%", padding: "8px 10px", borderRadius: 7, border: "none",
+                      background: "transparent", color: T.text2, fontSize: 12, cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 9, textAlign: "left", outline: "none",
+                    }} className="sa-nav-item">
+                      <item.icon size={13} color={T.text3} />
+                      {item.label}
                     </button>
-                    <div style={{ height: 1, background: T.border, margin: "4px 0" }} />
-                    <button
-                      onClick={() => navigate("/dashboard")}
-                      style={{ width: "100%", padding: "9px 12px", borderRadius: 8, background: "transparent", border: "none", color: T.text2, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, textAlign: "left" }}
-                      className="sa-nav-btn"
-                    >
-                      <ArrowUpRight size={15} color={T.text3} /> Retour au site
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                  ))}
+                  <div style={{ height: 1, background: T.border, margin: "4px 0" }} />
+                  <button onClick={() => { supabase.auth.signOut(); navigate("/login"); }} style={{
+                    width: "100%", padding: "8px 10px", borderRadius: 7, border: "none",
+                    background: "transparent", color: T.red, fontSize: 12, cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 9, textAlign: "left", outline: "none",
+                  }}>
+                    <LogOut size={13} />
+                    Sign Out
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-      </header>
+      </aside>
 
-      {/* ═══ MAIN ═══ */}
-      <main style={{ maxWidth: 1440, margin: "0 auto", padding: "28px 24px" }}>
+      {/* ═══ MAIN AREA ═══ */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
 
-        {/* Toast */}
-        <AnimatePresence>
-          {message.text && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              style={{ marginBottom: 20, padding: "11px 16px", borderRadius: 10, display: "flex", alignItems: "center", gap: 10, background: message.type === "success" ? "rgba(16,185,129,0.07)" : "rgba(239,68,68,0.07)", border: `1px solid ${message.type === "success" ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}`, color: message.type === "success" ? "#34d399" : "#f87171", fontSize: 13, fontWeight: 600 }}
+        {/* TOP BAR */}
+        <header style={{
+          height: 52, borderBottom: `1px solid ${T.border}`,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0 24px", background: T.bg, flexShrink: 0,
+          position: "sticky", top: 0, zIndex: 10,
+        }}>
+          <div>
+            <h1 style={{ fontSize: 15, fontWeight: 700, color: T.text, margin: 0 }}>
+              {NAV_GROUPS.flatMap(g => g.items).find(i => i.id === activeTab)?.label || "Control Panel"}
+            </h1>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Link to="/super-admin/grant" style={{ padding: "5px 12px", borderRadius: 7, background: T.accentDim, border: `1px solid ${T.accent}30`, color: T.accent, fontSize: 11, fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 5, letterSpacing: 0.3 }}>
+              <Zap size={12} /> Grant CP
+            </Link>
+            <button
+              onClick={fetchAllData}
+              className="sa-icon-btn"
+              style={{ width: 32, height: 32, borderRadius: 7, border: `1px solid ${T.border}`, background: "transparent", color: T.text3, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", outline: "none" }}
+              title="Refresh all data"
             >
-              {message.type === "success" ? <Activity size={15} /> : <AlertTriangle size={15} />}
-              {message.text}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <RefreshCw size={13} />
+            </button>
+          </div>
+        </header>
 
-        {/* Page title */}
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: T.text, margin: 0, marginBottom: 4 }}>Control Panel</h1>
-          <p style={{ fontSize: 13, color: T.text3, margin: 0 }}>Manage users, tournaments, and system settings</p>
-        </div>
+        {/* SCROLLABLE CONTENT */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
 
-        {/* ─── Stats Grid ─── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
-          {STAT_CARDS.map((s, i) => (
-            <motion.div key={i} className="sa-stat" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-              style={{ ...S.card, padding: "16px" }}
-            >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: `${s.color}14`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <s.icon size={15} color={s.color} />
-                </div>
-              </div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: T.text, lineHeight: 1, marginBottom: 4 }}>{s.value.toLocaleString()}</div>
-              <div style={{ ...S.label }}>{s.label}</div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* ─── Revenue row ─── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12, marginBottom: 24 }}>
-          {[
-            { label: "Revenue Today",    value: stats.todayRevenue,   color: "#8b5cf6", bg: "rgba(139,92,246,0.08)" },
-            { label: "Revenue This Month", value: stats.monthlyRevenue, color: "#06b6d4", bg: "rgba(6,182,212,0.08)" },
-          ].map(c => (
-            <div key={c.label} style={{ ...S.card, padding: "18px 20px", display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <TrendingUp size={18} color={c.color} />
-              </div>
-              <div>
-                <div style={{ ...S.label, marginBottom: 4 }}>{c.label}</div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: T.text, lineHeight: 1 }}>
-                  {c.value.toLocaleString()} <span style={{ fontSize: 12, color: T.text3, fontWeight: 500 }}>CP</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ─── Tab Navigation ─── */}
-        <div style={{ borderBottom: `1px solid ${T.border}`, display: "flex", gap: 2, marginBottom: 20, overflowX: "auto" }}>
-          {TABS.map(tab => {
-            const active = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id} className="sa-tab"
-                onClick={() => setActiveTab(tab.id)}
+          {/* Toast */}
+          <AnimatePresence>
+            {message.text && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.97 }}
                 style={{
-                  padding: "10px 16px", border: "none", borderBottom: active ? `2px solid ${T.accent}` : "2px solid transparent",
-                  background: active ? `${T.accent}0c` : "transparent",
-                  color: active ? T.text : T.text3, cursor: "pointer",
-                  fontSize: 13, fontWeight: active ? 600 : 500,
-                  display: "flex", alignItems: "center", gap: 7, whiteSpace: "nowrap",
-                  marginBottom: -1,
+                  marginBottom: 16, padding: "10px 16px", borderRadius: 10,
+                  display: "flex", alignItems: "center", gap: 10,
+                  background: message.type === "success" ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.08)",
+                  border: `1px solid ${message.type === "success" ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
+                  color: message.type === "success" ? "#34d399" : "#f87171",
+                  fontSize: 13, fontWeight: 600,
+                  boxShadow: `0 4px 16px ${message.type === "success" ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.08)"}`,
                 }}
               >
-                <tab.icon size={14} />
-                {tab.label}
-                {tab.count !== null && (
-                  <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: active ? `${T.accent}20` : T.surface2, color: active ? T.accent : T.text3, fontWeight: 700 }}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ─── Tab Content ─── */}
-        <div style={{ ...S.card, padding: "16px", minHeight: 440 }}>
-          <AnimatePresence mode="wait">
-            {activeTab === "dashboard"   && <DashboardTab   key="dashboard"   stats={stats} users={users} logs={logs} setActiveTab={setActiveTab} setFilter={setFilter} setSelectedUser={setSelectedUser} setGrantAmount={setGrantAmount} setGrantReason={setGrantReason} setWalletSearch={setWalletSearch} setShowWalletModal={setShowWalletModal} />}
-            {activeTab === "users"       && <UsersTab        key="users"       filteredUsers={filteredUsers} search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} setSelectedUser={setSelectedUser} setShowRoleModal={setShowRoleModal} setShowBanModal={setShowBanModal} setShowWalletModal={setShowWalletModal} unbanUser={unbanUser} deleteUser={deleteUser} />}
-            {activeTab === "staff"       && <StaffTab        key="staff"       users={users} updateUserRole={updateUserRole} currentUserRole={profile?.role} />}
-            {activeTab === "tournaments" && <TournamentsTab  key="tournaments" tournaments={tournaments} setSelectedTournament={setSelectedTournament} setShowTournamentModal={setShowTournamentModal} setTournamentToDelete={setTournamentToDelete} setShowDeleteConfirm={setShowDeleteConfirm} />}
-            {activeTab === "reports"     && <ReportsTab      key="reports"     reports={reports} resolveReport={resolveReport} />}
-            {activeTab === "economy"     && <EconomyTab      key="economy"     stats={stats} setMessage={setMessage} />}
-            {activeTab === "security"    && <SecurityTab     key="security" />}
-            {activeTab === "logs"        && <LogsTab         key="logs"        logs={logs} users={users} />}
-            {activeTab === "system"      && <SystemTab       key="system"      maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode} registrationEnabled={registrationEnabled} setRegistrationEnabled={setRegistrationEnabled} tournamentsEnabled={tournamentsEnabled} setTournamentsEnabled={setTournamentsEnabled} updateSystemConfig={updateSystemConfig} />}
+                {message.type === "success" ? <Activity size={14} /> : <AlertTriangle size={14} />}
+                {message.text}
+              </motion.div>
+            )}
           </AnimatePresence>
-        </div>
 
-      </main>
+          {/* ─── Stats Row ─── */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10, marginBottom: 20 }}>
+            {STAT_CARDS.map((s, i) => (
+              <motion.div
+                key={i}
+                className="sa-stat-card"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                style={{
+                  background: T.surface,
+                  border: `1px solid ${T.border}`,
+                  borderRadius: 10, padding: "14px",
+                  cursor: "default",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 7, background: `${s.color}14`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <s.icon size={13} color={s.color} />
+                  </div>
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: T.text, lineHeight: 1, marginBottom: 3 }}>
+                  {s.value.toLocaleString()}
+                </div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: T.text3, letterSpacing: 0.8, textTransform: "uppercase" }}>
+                  {s.label}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* ─── Revenue Strip ─── */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+            {[
+              { label: "Revenue Today", value: stats.todayRevenue, color: T.purple },
+              { label: "Revenue This Month", value: stats.monthlyRevenue, color: T.cyan },
+            ].map(c => (
+              <div key={c.label} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "14px 18px", display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 9, background: `${c.color}12`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <TrendingUp size={16} color={c.color} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: T.text3, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 2 }}>{c.label}</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: T.text, lineHeight: 1 }}>
+                    {c.value.toLocaleString()} <span style={{ fontSize: 11, color: T.text3, fontWeight: 500 }}>CP</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ─── Tab Content ─── */}
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: "20px", minHeight: 400 }}>
+            <AnimatePresence mode="wait">
+              {activeTab === "dashboard"   && <DashboardTab   key="dashboard"   stats={stats} users={users} logs={logs} setActiveTab={setActiveTab} setFilter={setFilter} setSelectedUser={setSelectedUser} setGrantAmount={setGrantAmount} setGrantReason={setGrantReason} setWalletSearch={setWalletSearch} setShowWalletModal={setShowWalletModal} />}
+              {activeTab === "users"       && <UsersTab        key="users"       filteredUsers={filteredUsers} search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} setSelectedUser={setSelectedUser} setShowRoleModal={setShowRoleModal} setShowBanModal={setShowBanModal} setShowWalletModal={setShowWalletModal} unbanUser={unbanUser} deleteUser={deleteUser} />}
+              {activeTab === "staff"       && <StaffTab        key="staff"       users={users} updateUserRole={updateUserRole} currentUserRole={profile?.role} />}
+              {activeTab === "tournaments" && <TournamentsTab  key="tournaments" tournaments={tournaments} setSelectedTournament={setSelectedTournament} setShowTournamentModal={setShowTournamentModal} setTournamentToDelete={setTournamentToDelete} setShowDeleteConfirm={setShowDeleteConfirm} />}
+              {activeTab === "reports"     && <ReportsTab      key="reports"     reports={reports} resolveReport={resolveReport} />}
+              {activeTab === "analytics"   && <AnalyticsTab    key="analytics" />}
+              {activeTab === "community"   && <CommunityTab    key="community" />}
+              {activeTab === "economy"     && <EconomyTab      key="economy"     stats={stats} setMessage={setMessage} />}
+              {activeTab === "security"    && <SecurityTab     key="security" />}
+              {activeTab === "seasons"       && <SeasonsTab       key="seasons" />}
+              {activeTab === "announcements" && <AnnouncementsTab key="announcements" />}
+              {activeTab === "logs"          && <LogsTab         key="logs"        logs={logs} users={users} />}
+              {activeTab === "system"      && <SystemTab       key="system"      maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode} registrationEnabled={registrationEnabled} setRegistrationEnabled={setRegistrationEnabled} tournamentsEnabled={tournamentsEnabled} setTournamentsEnabled={setTournamentsEnabled} updateSystemConfig={updateSystemConfig} />}
+            </AnimatePresence>
+          </div>
+
+        </div>
+      </div>
 
       {/* ═══ MODALS ═══ */}
       <AnimatePresence>
@@ -579,7 +738,6 @@ export default function SuperAdmin() {
         )}
       </AnimatePresence>
 
-      {/* Close profile menu on outside click */}
       {profileMenuOpen && <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setProfileMenuOpen(false)} />}
     </div>
   );

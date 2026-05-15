@@ -201,7 +201,7 @@ export const LoginForm = ({
                                 Remember me
                             </label>
                         </div>
-                        <a href="#" className="text-sm text-white/80 hover:text-white transition-colors">
+                        <a href="/forgot-password" className="text-sm text-white/80 hover:text-white transition-colors" onClick={e => { e.preventDefault(); window.location.href = '/forgot-password'; }}>
                             Forgot password?
                         </a>
                     </div>

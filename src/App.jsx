@@ -12,10 +12,14 @@ import GuestRoute     from "./components/GuestRoute";
 
 // ── Lazy Pages ─────────────────────────────────────────────────────
 // Public
-const Home     = lazy(() => import("./pages/Home"));
-const Login    = lazy(() => import("./pages/Login"));
-const Register = lazy(() => import("./pages/Register"));
-const StaffPage = lazy(() => import("./pages/Team"));
+const Home           = lazy(() => import("./pages/Home"));
+const Login          = lazy(() => import("./pages/Login"));
+const Register       = lazy(() => import("./pages/Register"));
+const StaffPage      = lazy(() => import("./pages/Team"));
+const VerifyEmail    = lazy(() => import("./pages/VerifyEmail"));
+const EmailConfirmed = lazy(() => import("./pages/EmailConfirmed"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword  = lazy(() => import("./pages/ResetPassword"));
 
 // User
 const Dashboard   = lazy(() => import("./pages/Dashboard"));
@@ -48,7 +52,10 @@ const ClanDetails = lazy(() => import("./pages/ClanDetails"));
 const CreateClan  = lazy(() => import("./pages/CreateClan"));
 
 // Community
-const HallOfFame = lazy(() => import("./pages/HallOfFame"));
+const HallOfFame    = lazy(() => import("./pages/HallOfFame"));
+const Ideas         = lazy(() => import("./pages/community/Ideas"));
+const BugBounty     = lazy(() => import("./pages/community/BugBounty"));
+const AdminCareer   = lazy(() => import("./pages/community/AdminCareer"));
 
 // Founder
 const FounderDashboard = lazy(() => import("./pages/FounderDashboard"));
@@ -65,6 +72,9 @@ const DesignerPanel   = lazy(() => import("./pages/Designerpanel"));
 // Super Admin
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const AdminGrant = lazy(() => import("./pages/AdminGrant"));
+
+// Public
+const PublicTournament = lazy(() => import("./pages/PublicTournament"));
 
 // ── Loading fallback ────────────────────────────────────────────────
 function PageLoader() {
@@ -87,6 +97,15 @@ export default function App() {
             <Route path="/login"    element={<GuestRoute><Login /></GuestRoute>} />
             <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
             <Route path="/team"     element={<StaffPage />} />
+
+            {/* Auth flow — accessible without login */}
+            <Route path="/verify-email"    element={<VerifyEmail />} />
+            <Route path="/email-confirmed" element={<EmailConfirmed />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password"  element={<ResetPassword />} />
+
+            {/* Public tournament page — shareable without login */}
+            <Route path="/t/:id" element={<PublicTournament />} />
 
             <Route path="/connexion"   element={<Navigate to="/login" replace />} />
             <Route path="/inscription" element={<Navigate to="/register" replace />} />
@@ -122,7 +141,10 @@ export default function App() {
             <Route path="/clans/create" element={<CreateClan />} />
             <Route path="/clans/:id"    element={<ClanDetails />} />
 
-            <Route path="/hall-of-fame" element={<HallOfFame />} />
+            <Route path="/hall-of-fame"    element={<HallOfFame />} />
+            <Route path="/community/ideas" element={<Ideas />} />
+            <Route path="/community/bugs"  element={<BugBounty />} />
+            <Route path="/community/admin-career" element={<AdminCareer />} />
 
             <Route path="/tournaments/:id"         element={<TournamentDetails />} />
             <Route path="/tournaments/:id/waiting" element={<TournamentWaiting />} />
