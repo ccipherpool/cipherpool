@@ -28,20 +28,13 @@ export function useProfileData(userId) {
 
     loadProfileData();
     
+    const reload = () => loadProfileData();
     const channel = supabase
-      .channel('wallet_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'wallets',
-          filter: `user_id=eq.${userId}`
-        },
-        () => {
-          loadProfileData();
-        }
-      )
+      .channel(`profile_data_changes_${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` }, reload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wallets', filter: `user_id=eq.${userId}` }, reload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wallet_transactions', filter: `user_id=eq.${userId}` }, reload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_items', filter: `user_id=eq.${userId}` }, reload)
       .subscribe();
 
     return () => supabase.removeChannel(channel);

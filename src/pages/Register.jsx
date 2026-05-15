@@ -3,9 +3,11 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion } from "framer-motion";
 import GamingLogin from "../components/ui/GamingLogin";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Register() {
     const navigate = useNavigate();
+    const { refreshCurrentUser } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -39,6 +41,8 @@ export default function Register() {
                     user_id: authData.user.id,
                     balance: 50,
                 }, { onConflict: 'user_id' });
+
+                await refreshCurrentUser?.(authData.user.id);
             }
 
             // Always redirect to verify-email — even if email confirmation is off

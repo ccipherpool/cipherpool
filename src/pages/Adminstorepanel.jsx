@@ -34,7 +34,7 @@ function CoinBadge({ amount }) {
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 export default function AdminStorePanel() {
-  const { profile } = useOutletContext() || {};
+  const { profile, refreshCurrentUser, refreshEconomyData } = useOutletContext() || {};
   const navigate    = useNavigate();
 
   const [tab, setTab]             = useState("grant");
@@ -121,6 +121,7 @@ export default function AdminStorePanel() {
     notify(`✅ ${selectedItem.name} accordé à ${selectedUser.username}`);
     addLog("GRANT ITEM", selectedUser.username, `${selectedItem.name} (${selectedItem.rarity})`);
     fetchUserInventory(selectedUser.id);
+    if (selectedUser.id === profile?.id) await refreshCurrentUser?.();
     setSelectedItem(null);
   };
 
@@ -141,6 +142,7 @@ export default function AdminStorePanel() {
     notify(`🗑️ ${inv.item?.name} retiré de ${selectedUser.username}`);
     addLog("REMOVE ITEM", selectedUser.username, inv.item?.name);
     fetchUserInventory(selectedUser.id);
+    if (selectedUser.id === profile?.id) await refreshCurrentUser?.();
   };
 
   // ── ADJUST COINS ───────────────────────────────────────────────
@@ -170,6 +172,7 @@ export default function AdminStorePanel() {
     // Refresh wallet display
     const newBal = await fetchWallet(selectedUser.id);
     setSelectedUser(prev => ({ ...prev, _balance: newBal }));
+    if (selectedUser.id === profile?.id) await Promise.all([refreshCurrentUser?.(), refreshEconomyData?.()]);
   };
 
   // ── FILTERED USERS ─────────────────────────────────────────────

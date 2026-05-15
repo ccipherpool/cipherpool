@@ -61,26 +61,35 @@ export default function SeasonsManager() {
     if (!form.name.trim() || submitting || confirmText !== "CONFIRMER") return;
     setSubmitting(true);
     setResult(null);
-    const { data, error } = await supabase.rpc("start_new_season", {
-      p_name: form.name.trim(),
-      p_description: form.description.trim() || null,
-      p_reset_coins:       form.reset_coins,
-      p_reset_xp:          form.reset_xp,
-      p_reset_wins:        form.reset_wins,
-      p_reset_avatars:     form.reset_avatars,
-      p_reset_chat:        form.reset_chat,
-      p_reset_tournaments: form.reset_tournaments,
-      p_reset_clans:       form.reset_clans,
-    });
-    setSubmitting(false);
-    if (error || data?.success === false) {
-      setResult({ ok: false, msg: error?.message || data?.error || "Erreur inconnue" });
-    } else {
+    try {
+      // Canonical call — matches the single start_new_season(text,integer,text,bool×8) function.
+      // All 11 params are named explicitly so PostgREST never hits an ambiguity.
+      const { data, error } = await supabase.rpc("start_new_season", {
+        p_name:              form.name.trim(),
+        p_number:            null,                        // auto-computed by the function
+        p_description:       form.description.trim() || null,
+        p_reset_coins:       form.reset_coins,
+        p_reset_xp:          form.reset_xp,
+        p_reset_stats:       form.reset_wins,             // merged with p_reset_wins inside SQL
+        p_reset_wins:        form.reset_wins,
+        p_reset_avatars:     form.reset_avatars,
+        p_reset_chat:        form.reset_chat,
+        p_reset_tournaments: form.reset_tournaments,
+        p_reset_clans:       form.reset_clans,
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.success === false) throw new Error(data?.error || "Erreur inconnue");
+
       setResult({ ok: true, msg: `✅ Saison ${data?.season_number} lancée avec succès` });
       setShowModal(false);
       setConfirmText("");
       setForm({ ...form, name: "", description: "" });
       fetchData();
+    } catch (err) {
+      setResult({ ok: false, msg: err.message || "Erreur lors de la création de la saison" });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -141,7 +150,7 @@ export default function SeasonsManager() {
                   <p className="font-handwritten text-2xl text-zinc-600 dark:text-zinc-400 mt-4 max-w-2xl">{active.description}</p>
                 )}
                 <div className="flex items-center gap-6 mt-6 text-xl font-handwritten text-zinc-500">
-                  <span className="flex items-center gap-2"><Calendar size={20} /> Lancée le {new Date(active.starts_at).toLocaleDateString("fr-FR")}</span>
+                  <span className="flex items-center gap-2"><Calendar size={20} /> Lancée le {new Date(active.start_date).toLocaleDateString("fr-FR")}</span>
                 </div>
               </>
             ) : (
@@ -165,11 +174,11 @@ export default function SeasonsManager() {
         </h3>
         {loading ? (
           <p className="font-handwritten text-2xl text-zinc-400 italic">Chargement… 📡</p>
-        ) : seasons.filter(s => s.status === "ended").length === 0 ? (
+        ) : seasons.filter(s => s.status === "completed").length === 0 ? (
           <p className="font-handwritten text-2xl text-zinc-400 italic">Aucune saison passée 🌌</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {seasons.filter(s => s.status === "ended").map((s, i) => (
+            {seasons.filter(s => s.status === "completed").map((s, i) => (
               <div key={s.id} className={cn(
                 "card-creative p-6 flex flex-col justify-between group bg-white dark:bg-zinc-900",
                 i % 2 === 0 ? "rotate-[-1deg]" : "rotate-[1deg]"
@@ -183,7 +192,7 @@ export default function SeasonsManager() {
                 <div>
                   <p className="font-handwritten text-2xl font-bold text-zinc-900 dark:text-white">{s.name}</p>
                   <p className="font-handwritten text-lg text-zinc-500 mt-2">
-                    {new Date(s.starts_at).toLocaleDateString("fr-FR")} → {s.ended_at ? new Date(s.ended_at).toLocaleDateString("fr-FR") : "—"}
+                    {new Date(s.start_date).toLocaleDateString("fr-FR")} → {s.end_date ? new Date(s.end_date).toLocaleDateString("fr-FR") : "—"}
                   </p>
                 </div>
               </div>

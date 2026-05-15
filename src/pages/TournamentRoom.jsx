@@ -23,6 +23,7 @@ export default function TournamentRoom() {
   const [showSubmit, setShowSubmit] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [prevStatus, setPrevStatus] = useState(null);
+  const [retryNonce, setRetryNonce] = useState(0);
   // tournamentState removed — useRoomEngine's tournament is single source of truth
   const [showStartModal, setShowStartModal] = useState(false);
 
@@ -105,7 +106,7 @@ export default function TournamentRoom() {
     };
     
     checkSession();
-  }, [id, navigate, redirectAttempted]);
+  }, [id, navigate, redirectAttempted, retryNonce]);
 
   // اشتراك في تغييرات auth
   useEffect(() => {
@@ -159,7 +160,11 @@ export default function TournamentRoom() {
         <div className="text-center">
           <p className="text-red-400 mb-4">Error: {error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              setAccessChecked(false);
+              setAuthLoading(true);
+              setRetryNonce(n => n + 1);
+            }}
             className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition"
           >
             Retry

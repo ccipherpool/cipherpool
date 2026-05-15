@@ -57,6 +57,14 @@ const Ideas         = lazy(() => import("./pages/community/Ideas"));
 const BugBounty     = lazy(() => import("./pages/community/BugBounty"));
 const AdminCareer   = lazy(() => import("./pages/community/AdminCareer"));
 
+// Reports & Recruitment
+const Reports               = lazy(() => import("./pages/Reports"));
+const AdminApplications     = lazy(() => import("./pages/AdminApplications"));
+const AdminApplicationDetail = lazy(() => import("./pages/AdminApplicationDetail"));
+const AdminVoting           = lazy(() => import("./pages/AdminVoting"));
+const AdminReports          = lazy(() => import("./pages/admin/AdminReports"));
+const GovernanceDashboard   = lazy(() => import("./pages/admin/GovernanceDashboard"));
+
 // Founder
 const FounderDashboard = lazy(() => import("./pages/FounderDashboard"));
 const FounderRequests  = lazy(() => import("./pages/FounderRequests"));
@@ -145,6 +153,7 @@ export default function App() {
             <Route path="/community/ideas" element={<Ideas />} />
             <Route path="/community/bugs"  element={<BugBounty />} />
             <Route path="/community/admin-career" element={<AdminCareer />} />
+            <Route path="/reports"               element={<Reports />} />
 
             <Route path="/tournaments/:id"         element={<TournamentDetails />} />
             <Route path="/tournaments/:id/waiting" element={<TournamentWaiting />} />
@@ -162,11 +171,16 @@ export default function App() {
 
           {/* ── ADMIN ── */}
           <Route element={<ProtectedRoute allowedRoles={["admin","fondateur","founder","super_admin"]}><MainLayout /></ProtectedRoute>}>
-            <Route path="/admin"         element={<AdminDashboard />} />
-            <Route path="/admin/support" element={<AdminSupport />} />
-            <Route path="/admin/results" element={<Adminresults />} />
-            <Route path="/admin/news"    element={<Adminnews />} />
-            <Route path="/admin-store"   element={<AdminStorePanel />} />
+            <Route path="/admin"              element={<AdminDashboard />} />
+            <Route path="/admin/support"      element={<AdminSupport />} />
+            <Route path="/admin/results"      element={<Adminresults />} />
+            <Route path="/admin/news"         element={<Adminnews />} />
+            <Route path="/admin-store"        element={<AdminStorePanel />} />
+            <Route path="/admin/reports"      element={<AdminReports />} />
+            <Route path="/admin/governance"   element={<GovernanceDashboard />} />
+            <Route path="/admin-applications" element={<AdminApplications />} />
+            <Route path="/admin-application/:id" element={<AdminApplicationDetail />} />
+            <Route path="/admin-voting"       element={<AdminVoting />} />
           </Route>
 
           {/* ── DESIGNER ── */}

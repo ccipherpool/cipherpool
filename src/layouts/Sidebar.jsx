@@ -110,10 +110,14 @@ export default function Sidebar({ profile }) {
       <div className="p-3 border-t border-white/[0.05] flex-shrink-0">
         <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-white/[0.03] border border-white/[0.05] group">
           <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-black text-[10px] flex-shrink-0"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-black text-[10px] flex-shrink-0 overflow-hidden"
             style={{ background: 'linear-gradient(135deg, #10b981, #4f46e5)' }}
           >
-            {profile?.username?.[0]?.toUpperCase() || 'U'}
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+            ) : (
+              profile?.username?.[0]?.toUpperCase() || 'U'
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-black text-white uppercase tracking-wider truncate leading-none">{profile?.username || 'Player'}</p>

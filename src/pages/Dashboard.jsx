@@ -13,6 +13,7 @@ import {
   Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { MovingBorder } from "../components/ui/MovingBorder";
+import StoriesRow from "../social/components/StoriesRow";
 
 const chartData = [
   { name: '01', points: 400 },
@@ -133,6 +134,11 @@ export default function Dashboard() {
            </div>
         </div>
       </header>
+
+      {/* Stories Row */}
+      <div className="relative z-10">
+        <StoriesRow profile={profile} />
+      </div>
 
       {/* Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 relative z-10">

@@ -57,7 +57,7 @@ const KPICard = ({ label, value, icon: Icon, colorClass, delay = 0 }) => (
 );
 
 export default function Profile() {
-  const { profile: ap, refreshProfile } = useOutletContext() || {};
+  const { profile: ap, refreshProfile, refreshCurrentUser } = useOutletContext() || {};
   const [activeTab, setActiveTab] = useState("overview");
   const [showEdit, setShowEdit] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -70,7 +70,7 @@ export default function Profile() {
   const avatarInputRef = useRef(null);
   const { profile: dp, stats, achievements, recentMatches, loading } = useProfileData(ap?.id);
 
-  const profile = dp || ap;
+  const profile = ap || dp;
 
   const fetchStoreAvatars = useCallback(async (userId) => {
     if (!userId) return;
@@ -134,7 +134,7 @@ export default function Profile() {
       ...(avatarUrl !== profile?.avatar_url ? { avatar_url: avatarUrl } : {}),
     }).eq("id", profile.id);
     if (!error) {
-      await refreshProfile?.();
+      await Promise.all([refreshProfile?.(), refreshCurrentUser?.()]);
       setShowEdit(false);
     }
     setSaving(false);
@@ -180,7 +180,7 @@ export default function Profile() {
             </div>
             
             <p className="text-slate-400 font-medium max-w-xl mb-6">
-              {profile?.bio || "No tactical bio provided. High-performance gaming unit operational since 2026."}
+              {profile?.bio || "No bio provided."}
             </p>
 
             <div className="flex flex-wrap justify-center md:justify-start gap-6">

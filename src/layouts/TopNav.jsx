@@ -84,8 +84,12 @@ export default function TopNav({ profile }) {
 
         <div className="relative group">
            <button className="flex items-center gap-3 pl-2 pr-1 py-1.5 bg-white/[0.03] border border-white/5 rounded-2xl hover:border-white/20 transition-all">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-mint to-mint-dark flex items-center justify-center text-obsidian font-black text-xs shadow-neon-mint">
-                {profile?.username?.[0]?.toUpperCase() || 'P'}
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-mint to-mint-dark flex items-center justify-center text-obsidian font-black text-xs shadow-neon-mint overflow-hidden">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  profile?.username?.[0]?.toUpperCase() || 'P'
+                )}
               </div>
               <div className="text-left hidden lg:block pr-4">
                  <p className="text-[9px] font-black text-white uppercase tracking-widest">{profile?.username || "Agent"}</p>

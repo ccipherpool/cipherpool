@@ -281,25 +281,41 @@ function InventoryView({ userItems, items, onEquip, onUnequip }) {
 
 // ─── MAIN STORE ───────────────────────────────────────────────────────────────
 export default function Store() {
-  const { profile, refreshProfile } = useOutletContext() || {};
+  const {
+    profile,
+    balance: globalBalance,
+    userItems: globalUserItems,
+    refreshCurrentUser,
+    refreshEconomyData,
+    refreshProfile,
+  } = useOutletContext() || {};
   const [tab, setTab]               = useState("all");
   const [items, setItems]           = useState([]);
   const [userItems, setUserItems]   = useState([]);
   const [dailyItems, setDailyItems] = useState([]);
   const [coins, setCoins]           = useState(0);
   const [loading, setLoading]       = useState(true);
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [sort, setSort]             = useState("rarity");
   const [notification, setNotification] = useState(null);
   const [confirmItem, setConfirmItem]   = useState(null);
 
-  useEffect(() => { fetchAll(); fetchCoins(); }, []);
+  useEffect(() => {
+    if (typeof globalBalance === "number") setCoins(globalBalance);
+  }, [globalBalance]);
 
-  const fetchCoins = async () => {
+  useEffect(() => {
+    if (globalUserItems) setUserItems(globalUserItems);
+  }, [globalUserItems]);
+
+  const fetchCoins = useCallback(async () => {
+    if (!profile?.id) return;
     const { data } = await supabase.from("wallets").select("balance").eq("user_id", profile.id).maybeSingle();
     setCoins(data?.balance || 0);
-  };
+  }, [profile?.id]);
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
+    if (!profile?.id) return;
     setLoading(true);
     const [{ data: storeData }, { data: owned }, { data: daily }] = await Promise.all([
       supabase.from("store_items").select("*").eq("active", true).eq("approved", true).order("sort_order", { ascending: true }),
@@ -310,7 +326,12 @@ export default function Store() {
     setUserItems(owned || []);
     setDailyItems(daily?.filter(d => d.item) || []);
     setLoading(false);
-  };
+  }, [profile?.id]);
+
+  useEffect(() => {
+    fetchAll();
+    fetchCoins();
+  }, [fetchAll, fetchCoins]);
 
   const notify = (msg, type = "success") => {
     setNotification({ msg, type });
@@ -320,20 +341,35 @@ export default function Store() {
   const handleBuy = async (item) => { setConfirmItem(item); };
 
   const confirmBuy = async () => {
-    if (!confirmItem) return;
+    if (!confirmItem || purchaseLoading) return;
+    const purchasedItem = confirmItem;
+    setPurchaseLoading(true);
     const { data, error } = await supabase.rpc("purchase_item", { p_item_id: confirmItem.id });
     setConfirmItem(null);
-    if (error || !data?.success) { notify(data?.error || error?.message || "Erreur", "error"); return; }
-    notify(`✅ ${confirmItem.name} acheté !`);
-    await fetchAll(); await fetchCoins();
-    if (refreshProfile) refreshProfile();
+    if (error || !data?.success) {
+      setPurchaseLoading(false);
+      notify(data?.error || error?.message || "Erreur", "error");
+      return;
+    }
+    notify(`✅ ${purchasedItem.name} acheté !`);
+    setCoins(prev => Math.max(0, prev - (purchasedItem.price || 0)));
+    setUserItems(prev => prev.some(row => row.item_id === purchasedItem.id)
+      ? prev
+      : [...prev, { item_id: purchasedItem.id, user_id: profile?.id, equipped: false, item: purchasedItem }]);
+    await Promise.all([fetchAll(), fetchCoins(), refreshEconomyData?.(), refreshCurrentUser?.()]);
+    setPurchaseLoading(false);
   };
 
   const handleEquip = async (item) => {
     const { data, error } = await supabase.rpc("equip_item", { p_item_id: item.id });
     if (error || !data?.success) { notify(data?.error || "Erreur d'équipement", "error"); return; }
     notify(`⚡ ${item.name} équipé !`);
-    await fetchAll(); if (refreshProfile) refreshProfile();
+    setUserItems(prev => prev.map(row => {
+      const rowType = row.item?.type || items.find(i => i.id === row.item_id)?.type;
+      if (rowType !== item.type) return row;
+      return { ...row, equipped: row.item_id === item.id };
+    }));
+    await Promise.all([fetchAll(), refreshCurrentUser?.(), refreshProfile?.()]);
   };
 
   const isOwned    = (id) => userItems.some(u => u.item_id === id);
@@ -427,9 +463,10 @@ export default function Store() {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.96 }}
                       onClick={confirmBuy}
+                      disabled={purchaseLoading}
                       style={{ flex: 1, padding: "12px", borderRadius: 10, background: `linear-gradient(135deg,${VIOLET},${CYAN})`, border: "none", color: "#fff", fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: 700, letterSpacing: 1, cursor: "pointer", boxShadow: `0 4px 20px rgba(139,92,246,0.4)` }}
                     >
-                      ACHETER
+                      {purchaseLoading ? "..." : "ACHETER"}
                     </motion.button>
                   </div>
                 </div>
@@ -531,8 +568,8 @@ export default function Store() {
               items={items}
               onEquip={handleEquip}
               onUnequip={async (item) => {
-                const { data: { user } } = await supabase.auth.getUser();
-                const { error } = await supabase.from("user_items").update({ equipped: false }).eq("user_id", user?.id).eq("item_id", item.id);
+                if (!profile?.id) return;
+                const { error } = await supabase.from("user_items").update({ equipped: false }).eq("user_id", profile.id).eq("item_id", item.id);
                 if (!error) { notify(`${item.name} déséquipé`); await fetchAll(); }
               }}
             />

@@ -47,7 +47,10 @@
       "Bash(Out-Null)",
       "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\cipherpool\\\\src\\\\features\\\\gifts\")",
       "Bash(Write-Host \"Dirs created\")",
-      "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\cipherpool\\\\src\\\\features\\\\community\")"
+      "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\cipherpool\\\\src\\\\features\\\\community\")",
+      "Bash(mkdir -p \"C:\\\\cipherpool\\\\supabase\\\\migrations\")",
+      "Bash(mkdir -p \"C:\\\\cipherpool\\\\src\\\\social\\\\hooks\")",
+      "Bash(mkdir -p \"C:\\\\cipherpool\\\\src\\\\social\\\\components\")"
     ]
   }
 }

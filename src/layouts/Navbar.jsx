@@ -63,9 +63,13 @@ export default function Navbar({ profile, onMenuOpen }) {
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setProfileOpen(!profileOpen)}
-              className="w-9 h-9 rounded-xl bg-gradient-to-br from-mint to-mint-dark flex items-center justify-center text-obsidian font-black text-sm shadow-neon-mint"
+              className="w-9 h-9 rounded-xl bg-gradient-to-br from-mint to-mint-dark flex items-center justify-center text-obsidian font-black text-sm shadow-neon-mint overflow-hidden"
             >
-              {profile?.username?.[0]?.toUpperCase() || "P"}
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                profile?.username?.[0]?.toUpperCase() || "P"
+              )}
             </button>
 
             <AnimatePresence>
@@ -157,8 +161,12 @@ export default function Navbar({ profile, onMenuOpen }) {
                 onClick={() => setProfileOpen(!profileOpen)}
                 className="flex items-center gap-4 pl-2 pr-4 py-2 bg-white/[0.03] border border-white/5 rounded-2xl hover:border-white/20 transition-all duration-500"
               >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-mint to-mint-dark flex items-center justify-center text-obsidian font-black text-sm shadow-neon-mint">
-                  {profile?.username?.[0]?.toUpperCase() || "P"}
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-mint to-mint-dark flex items-center justify-center text-obsidian font-black text-sm shadow-neon-mint overflow-hidden">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    profile?.username?.[0]?.toUpperCase() || "P"
+                  )}
                 </div>
                 <div className="hidden lg:block text-left">
                   <p className="text-[10px] font-black text-white uppercase tracking-widest">

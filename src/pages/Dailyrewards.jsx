@@ -34,7 +34,7 @@ function CountdownTimer(){
 }
 
 export default function DailyRewards(){
-  const{profile,refreshProfile}=useOutletContext()||{};
+  const{profile,refreshProfile,refreshCurrentUser,refreshEconomyData}=useOutletContext()||{};
   const[rewards,setRewards]=useState([]);
   const[missions,setMissions]=useState([]);
   const[userMissions,setUserMissions]=useState([]);
@@ -75,7 +75,7 @@ export default function DailyRewards(){
       if(error)throw error;
       setClaimResult(data);
       await fetchAll();
-      refreshProfile?.();
+      await Promise.all([refreshProfile?.(), refreshCurrentUser?.(), refreshEconomyData?.()]);
       setTimeout(()=>setClaimResult(null),4000);
     }catch(e){console.error(e);}
     finally{setClaiming(false);}
@@ -99,7 +99,7 @@ export default function DailyRewards(){
     }
     
     await fetchAll();
-    refreshProfile?.();
+    await Promise.all([refreshProfile?.(), refreshCurrentUser?.(), refreshEconomyData?.()]);
   };
 
   if(loading)return(

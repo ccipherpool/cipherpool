@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Users, ShieldCheck, Trophy, AlertTriangle,
@@ -88,6 +89,7 @@ const NAV_GROUPS = [
 
 export default function SuperAdmin() {
   const navigate = useNavigate();
+  const { refreshCurrentUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -243,6 +245,7 @@ export default function SuperAdmin() {
       } else if (rpcData && !rpcData.success) throw new Error(rpcData.error || "Role change error");
       await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "change_role", details: { target_user: userId, new_role: role } }]);
       showMsg("success", "Role updated successfully");
+      if (userId === profile?.id) await refreshCurrentUser?.(userId);
       await fetchUsers(); await fetchAdmins();
       setShowRoleModal(false);
     } catch (err) { showMsg("error", err.message || "Role change failed"); }
@@ -294,6 +297,7 @@ export default function SuperAdmin() {
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || "Error");
       showMsg("success", `${amount > 0 ? "+" : ""}${amount} CP → ${selectedUser.display_name || selectedUser.username} (${data.new_balance} total)`, 4000);
+      if (selectedUser.id === profile?.id) await refreshCurrentUser?.(selectedUser.id);
       setGrantAmount(""); setGrantReason(""); setShowWalletModal(false);
       await fetchUsers();
     } catch (err) { showMsg("error", err.message || "Coin adjustment failed"); }
@@ -708,7 +712,7 @@ export default function SuperAdmin() {
       {/* ═══ MODALS ═══ */}
       <AnimatePresence>
         {showProfileModal && (
-          <ProfileModal profile={profile} onClose={() => setShowProfileModal(false)} onSaved={updated => setProfile(prev => ({ ...prev, ...updated }))} />
+          <ProfileModal profile={profile} onClose={() => setShowProfileModal(false)} onSaved={async updated => { setProfile(prev => ({ ...prev, ...updated })); await refreshCurrentUser?.(profile?.id); }} />
         )}
         {showRoleModal && selectedUser && (
           <RoleModal selectedUser={selectedUser} updateUserRole={updateUserRole} onClose={() => setShowRoleModal(false)} />

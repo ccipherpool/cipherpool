@@ -3,9 +3,11 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import GamingLogin from "../components/ui/GamingLogin";
 import { motion } from "framer-motion";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { refreshCurrentUser } = useAuth();
   const [error, setError] = useState("");
 
   const handleLogin = async (email, password, remember) => {
@@ -13,6 +15,7 @@ export default function Login() {
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
+      if (data.user) await refreshCurrentUser?.(data.user.id);
 
       if (remember) {
         localStorage.setItem("remember_me", email);

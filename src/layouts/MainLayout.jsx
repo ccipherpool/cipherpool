@@ -1,6 +1,7 @@
-import { Outlet, useNavigate, useLocation, NavLink, Link } from "react-router-dom";
+import { Outlet, useLocation, NavLink, Link } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../contexts/AuthContext";
 import TopNav from "./TopNav";
 import Sidebar from "./Sidebar";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,30 +41,20 @@ const DRAWER_NAV = [
 ];
 
 export default function MainLayout() {
-  const navigate = useNavigate();
   const location = useLocation();
-  const [profile, setProfile]       = useState(null);
-  const [balance, setBalance]       = useState(0);
-  const [loading, setLoading]       = useState(true);
+  const {
+    profile,
+    balance,
+    wallet,
+    userItems,
+    equippedItems,
+    loading,
+    refreshCurrentUser,
+    refreshEconomyData,
+  } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const fetchProfile = useCallback(async () => {
-    // getSession() reads local storage — no network lock, no race with AuthContext
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) { navigate("/login"); return; }
-    const userId = session.user.id;
-    const { data: prof } = await supabase
-      .from("profiles").select("*").eq("id", userId).maybeSingle();
-    if (prof) setProfile(prof);
-    const { data: wallet } = await supabase
-      .from("wallets").select("balance").eq("user_id", userId).maybeSingle();
-    setBalance(wallet?.balance || 0);
-  }, [navigate]);
-
-  useEffect(() => {
-    const init = async () => { await fetchProfile(); setLoading(false); };
-    init();
-  }, [fetchProfile]);
+  const fetchProfile = useCallback(() => refreshCurrentUser(), [refreshCurrentUser]);
 
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
@@ -202,7 +193,16 @@ export default function MainLayout() {
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.15 }}
               >
-                <Outlet context={{ profile, refreshProfile: fetchProfile }} />
+                <Outlet context={{
+                  profile,
+                  balance,
+                  wallet,
+                  userItems,
+                  equippedItems,
+                  refreshProfile: fetchProfile,
+                  refreshCurrentUser,
+                  refreshEconomyData,
+                }} />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -231,3 +231,4 @@ export default function MainLayout() {
     </div>
   );
 }
+

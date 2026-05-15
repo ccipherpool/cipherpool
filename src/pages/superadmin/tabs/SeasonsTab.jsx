@@ -61,26 +61,35 @@ export default function SeasonsTab() {
     if (!form.name.trim() || submitting || confirmText !== "CONFIRM") return;
     setSubmitting(true);
     setResult(null);
-    const { data, error } = await supabase.rpc("start_new_season", {
-      p_name: form.name.trim(),
-      p_number: (seasons[0]?.number || 0) + 1,
-      p_reset_coins:       form.reset_coins,
-      p_reset_xp:          form.reset_xp,
-      p_reset_stats:       form.reset_wins,
-      p_reset_avatars:     form.reset_avatars,
-      p_reset_chat:        form.reset_chat,
-      p_reset_tournaments: form.reset_tournaments,
-      p_reset_clans:       form.reset_clans,
-    });
-    setSubmitting(false);
-    if (error || data?.success === false) {
-      setResult({ ok: false, msg: error?.message || data?.error || "Unknown error" });
-    } else {
-      setResult({ ok: true, msg: "New season launched successfully" });
+    try {
+      // Canonical call — matches the single start_new_season(text,integer,text,bool×8) function.
+      // All 11 params are named explicitly so PostgREST never hits an ambiguity.
+      const { data, error } = await supabase.rpc("start_new_season", {
+        p_name:              form.name.trim(),
+        p_number:            null,                        // auto-computed by the function
+        p_description:       form.description.trim() || null,
+        p_reset_coins:       form.reset_coins,
+        p_reset_xp:          form.reset_xp,
+        p_reset_stats:       form.reset_wins,             // UI label "Wins & Points" maps here
+        p_reset_wins:        form.reset_wins,             // merged with p_reset_stats inside SQL
+        p_reset_avatars:     form.reset_avatars,
+        p_reset_chat:        form.reset_chat,
+        p_reset_tournaments: form.reset_tournaments,
+        p_reset_clans:       form.reset_clans,
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.success === false) throw new Error(data?.error || "Unknown error");
+
+      setResult({ ok: true, msg: `Season ${data?.season_number} launched successfully` });
       setShowModal(false);
       setConfirmText("");
       setForm(f => ({ ...f, name: "", description: "" }));
       fetchData();
+    } catch (err) {
+      setResult({ ok: false, msg: err.message || "Season creation failed" });
+    } finally {
+      setSubmitting(false);
     }
   };
 

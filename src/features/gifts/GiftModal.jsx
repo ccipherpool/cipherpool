@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Gift, Search, X, AlertCircle, CheckCircle, Send, Coins } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function GiftModal({ onClose, senderId }) {
+  const { refreshCurrentUser, refreshEconomyData } = useAuth();
   const [step, setStep]         = useState("select"); // select → compose → sent
   const [query, setQuery]       = useState("");
   const [results, setResults]   = useState([]);
@@ -55,6 +57,8 @@ export default function GiftModal({ onClose, senderId }) {
       });
       if (rpcErr) throw rpcErr;
       if (!data?.success) throw new Error(data?.error || "Failed to send gift");
+      setSenderBalance(prev => Math.max(0, prev - amt));
+      await Promise.all([refreshEconomyData?.(), refreshCurrentUser?.(senderId)]);
       setStep("sent");
     } catch (err) {
       setError(err.message || "Failed to send gift");

@@ -4,9 +4,11 @@ import { supabase } from "../lib/supabase";
 import { motion } from "framer-motion";
 import { ShieldCheck, Loader, AlertTriangle, ArrowRight } from "lucide-react";
 import GamingLogin from "../components/ui/GamingLogin";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function EmailConfirmed() {
   const navigate = useNavigate();
+  const { refreshCurrentUser } = useAuth();
   const [status, setStatus] = useState("loading"); // 'loading' | 'success' | 'error'
   const [errorMsg, setErrorMsg] = useState("");
   const [countdown, setCountdown] = useState(3);
@@ -29,8 +31,9 @@ export default function EmailConfirmed() {
       const code = params.get("code");
 
       if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) { setErrorMsg(error.message); setStatus("error"); return; }
+        if (data?.session?.user) await refreshCurrentUser?.(data.session.user.id);
         setStatus("success");
         return;
       }
@@ -38,6 +41,7 @@ export default function EmailConfirmed() {
       // Legacy hash-based flow or already signed in
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        await refreshCurrentUser?.(session.user.id);
         setStatus("success");
         return;
       }

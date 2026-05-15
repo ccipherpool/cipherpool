@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AdminGrant() {
-  const { profile } = useOutletContext() || {};
+  const { profile, refreshCurrentUser, refreshEconomyData } = useOutletContext() || {};
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState("");
@@ -162,6 +162,7 @@ export default function AdminGrant() {
           text: `✅ ${amountNum} pièces ont été accordées avec succès` 
         });
         setAmount("");
+        if (selectedUser === profile?.id) await Promise.all([refreshCurrentUser?.(), refreshEconomyData?.()]);
         setSelectedUser("");
         setSearchTerm("");
         fetchApprovedUsers();

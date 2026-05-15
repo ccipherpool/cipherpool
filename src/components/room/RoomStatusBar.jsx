@@ -59,7 +59,16 @@ function RoomSetupPanel({ tournament, onDone }) {
     });
     setSaving(false);
     if (e || !data?.success) { setError(e?.message || data?.error); return; }
-    onDone();
+    onDone(data?.tournament || {
+      ...tournament,
+      room_code: code.trim(),
+      room_password: pass.trim() || null,
+      start_time: new Date(startDt).toISOString(),
+      match_duration: duration,
+      result_window: window_,
+      room_status: "ready",
+      status: "closed",
+    });
   };
 
   const inp = {
@@ -253,7 +262,7 @@ export default function RoomStatusBar({ tournament, role, onTournamentUpdate }) 
       <AnimatePresence>
         {showSetup && isOrg && (
           <div style={{padding:"0 20px 12px"}}>
-            <RoomSetupPanel tournament={tournament} onDone={() => { setShowSetup(false); window.location.reload(); }} />
+            <RoomSetupPanel tournament={tournament} onDone={(updatedTournament) => { setShowSetup(false); onTournamentUpdate?.(updatedTournament); }} />
           </div>
         )}
       </AnimatePresence>
