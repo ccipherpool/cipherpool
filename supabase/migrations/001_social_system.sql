@@ -1,9 +1,16 @@
 -- ================================================================
--- CIPHERPOOL SOCIAL SYSTEM — FULL MIGRATION
--- Version: 1.0.0
+-- CIPHERPOOL SOCIAL SYSTEM — FULL MIGRATION (FIXED v1.1)
 -- Tables: user_presence, friend_requests, friends, blocked_users,
 --         stories, story_views, story_reactions,
 --         conversations, conversation_members, direct_messages
+--
+-- FIX: All tables created first, RLS policies added after
+--      (conversations policy was referencing conversation_members
+--       before it existed — PostgreSQL validates at creation time)
+-- ================================================================
+
+-- ================================================================
+-- PART 1: CREATE ALL TABLES (no policies yet)
 -- ================================================================
 
 -- ----------------------------------------------------------------
@@ -17,13 +24,6 @@ CREATE TABLE IF NOT EXISTS user_presence (
   activity     JSONB       NOT NULL DEFAULT '{}',
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-ALTER TABLE user_presence ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "presence_select_all"   ON user_presence FOR SELECT USING (true);
-CREATE POLICY "presence_upsert_self"  ON user_presence FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "presence_update_self"  ON user_presence FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "presence_delete_self"  ON user_presence FOR DELETE USING (auth.uid() = user_id);
 
 -- ----------------------------------------------------------------
 -- 2. FRIEND REQUESTS
@@ -40,19 +40,8 @@ CREATE TABLE IF NOT EXISTS friend_requests (
   CHECK (sender_id <> receiver_id)
 );
 
-ALTER TABLE friend_requests ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "freq_select_parties"  ON friend_requests FOR SELECT
-  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
-CREATE POLICY "freq_insert_sender"   ON friend_requests FOR INSERT
-  WITH CHECK (auth.uid() = sender_id);
-CREATE POLICY "freq_update_parties"  ON friend_requests FOR UPDATE
-  USING (auth.uid() = receiver_id OR auth.uid() = sender_id);
-CREATE POLICY "freq_delete_parties"  ON friend_requests FOR DELETE
-  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
-
 -- ----------------------------------------------------------------
--- 3. FRIENDS  (bidirectional — one row per direction)
+-- 3. FRIENDS (bidirectional — one row per direction)
 -- ----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS friends (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -63,17 +52,6 @@ CREATE TABLE IF NOT EXISTS friends (
   UNIQUE (user_id, friend_id),
   CHECK (user_id <> friend_id)
 );
-
-ALTER TABLE friends ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "friends_select_parties" ON friends FOR SELECT
-  USING (auth.uid() = user_id OR auth.uid() = friend_id);
-CREATE POLICY "friends_insert_self"    ON friends FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "friends_update_self"    ON friends FOR UPDATE
-  USING (auth.uid() = user_id);
-CREATE POLICY "friends_delete_parties" ON friends FOR DELETE
-  USING (auth.uid() = user_id OR auth.uid() = friend_id);
 
 -- ----------------------------------------------------------------
 -- 4. BLOCKED USERS
@@ -86,12 +64,6 @@ CREATE TABLE IF NOT EXISTS blocked_users (
   UNIQUE (blocker_id, blocked_id),
   CHECK (blocker_id <> blocked_id)
 );
-
-ALTER TABLE blocked_users ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "block_select_self"  ON blocked_users FOR SELECT  USING (auth.uid() = blocker_id);
-CREATE POLICY "block_insert_self"  ON blocked_users FOR INSERT  WITH CHECK (auth.uid() = blocker_id);
-CREATE POLICY "block_delete_self"  ON blocked_users FOR DELETE  USING (auth.uid() = blocker_id);
 
 -- ----------------------------------------------------------------
 -- 5. STORIES
@@ -111,29 +83,6 @@ CREATE TABLE IF NOT EXISTS stories (
   tournament_id UUID REFERENCES tournaments(id) ON DELETE SET NULL
 );
 
-ALTER TABLE stories ENABLE ROW LEVEL SECURITY;
-
--- Visibility: own + public + friends-only if friendship exists
-CREATE POLICY "stories_select_visible" ON stories FOR SELECT
-  USING (
-    expires_at > now()
-    AND (
-      user_id = auth.uid()
-      OR privacy = 'public'
-      OR (
-        privacy = 'friends'
-        AND EXISTS (
-          SELECT 1 FROM friends f
-          WHERE f.user_id = stories.user_id AND f.friend_id = auth.uid()
-        )
-      )
-    )
-  );
-
-CREATE POLICY "stories_insert_self"  ON stories FOR INSERT  WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "stories_update_self"  ON stories FOR UPDATE  USING (auth.uid() = user_id);
-CREATE POLICY "stories_delete_self"  ON stories FOR DELETE  USING (auth.uid() = user_id);
-
 -- ----------------------------------------------------------------
 -- 6. STORY VIEWS
 -- ----------------------------------------------------------------
@@ -145,15 +94,6 @@ CREATE TABLE IF NOT EXISTS story_views (
   UNIQUE (story_id, viewer_id)
 );
 
-ALTER TABLE story_views ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "sview_select" ON story_views FOR SELECT
-  USING (
-    auth.uid() = viewer_id
-    OR EXISTS (SELECT 1 FROM stories s WHERE s.id = story_id AND s.user_id = auth.uid())
-  );
-CREATE POLICY "sview_insert_self" ON story_views FOR INSERT WITH CHECK (auth.uid() = viewer_id);
-
 -- ----------------------------------------------------------------
 -- 7. STORY REACTIONS
 -- ----------------------------------------------------------------
@@ -161,17 +101,10 @@ CREATE TABLE IF NOT EXISTS story_reactions (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   story_id   UUID NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
   user_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  reaction   TEXT NOT NULL DEFAULT '❤️',
+  reaction   TEXT NOT NULL DEFAULT '🔥',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (story_id, user_id)
 );
-
-ALTER TABLE story_reactions ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "sreact_select_all"   ON story_reactions FOR SELECT  USING (true);
-CREATE POLICY "sreact_insert_self"  ON story_reactions FOR INSERT  WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "sreact_update_self"  ON story_reactions FOR UPDATE  USING (auth.uid() = user_id);
-CREATE POLICY "sreact_delete_self"  ON story_reactions FOR DELETE  USING (auth.uid() = user_id);
 
 -- ----------------------------------------------------------------
 -- 8. CONVERSATIONS
@@ -186,26 +119,8 @@ CREATE TABLE IF NOT EXISTS conversations (
   updated_at           TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "conv_select_member" ON conversations FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM conversation_members cm
-      WHERE cm.conversation_id = conversations.id AND cm.user_id = auth.uid()
-    )
-  );
-CREATE POLICY "conv_insert_any"    ON conversations FOR INSERT WITH CHECK (true);
-CREATE POLICY "conv_update_member" ON conversations FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM conversation_members cm
-      WHERE cm.conversation_id = conversations.id AND cm.user_id = auth.uid()
-    )
-  );
-
 -- ----------------------------------------------------------------
--- 9. CONVERSATION MEMBERS
+-- 9. CONVERSATION MEMBERS  ← created BEFORE conversations policies
 -- ----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS conversation_members (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -216,13 +131,6 @@ CREATE TABLE IF NOT EXISTS conversation_members (
   joined_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (conversation_id, user_id)
 );
-
-ALTER TABLE conversation_members ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "cmem_select_self"   ON conversation_members FOR SELECT  USING (auth.uid() = user_id);
-CREATE POLICY "cmem_insert_self"   ON conversation_members FOR INSERT  WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "cmem_update_self"   ON conversation_members FOR UPDATE  USING (auth.uid() = user_id);
-CREATE POLICY "cmem_delete_self"   ON conversation_members FOR DELETE  USING (auth.uid() = user_id);
 
 -- ----------------------------------------------------------------
 -- 10. DIRECT MESSAGES
@@ -241,8 +149,149 @@ CREATE TABLE IF NOT EXISTS direct_messages (
   updated_at              TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-ALTER TABLE direct_messages ENABLE ROW LEVEL SECURITY;
+-- ================================================================
+-- PART 2: ENABLE ROW LEVEL SECURITY
+-- ================================================================
+ALTER TABLE user_presence        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE friend_requests      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE friends              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE blocked_users        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stories              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE story_views          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE story_reactions      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conversations        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conversation_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE direct_messages      ENABLE ROW LEVEL SECURITY;
 
+-- ================================================================
+-- PART 3: RLS POLICIES (all tables exist — zero forward refs)
+-- ================================================================
+
+-- user_presence
+DROP POLICY IF EXISTS "presence_select_all"  ON user_presence;
+DROP POLICY IF EXISTS "presence_upsert_self" ON user_presence;
+DROP POLICY IF EXISTS "presence_update_self" ON user_presence;
+DROP POLICY IF EXISTS "presence_delete_self" ON user_presence;
+CREATE POLICY "presence_select_all"  ON user_presence FOR SELECT USING (true);
+CREATE POLICY "presence_upsert_self" ON user_presence FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "presence_update_self" ON user_presence FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "presence_delete_self" ON user_presence FOR DELETE USING (auth.uid() = user_id);
+
+-- friend_requests
+DROP POLICY IF EXISTS "freq_select_parties" ON friend_requests;
+DROP POLICY IF EXISTS "freq_insert_sender"  ON friend_requests;
+DROP POLICY IF EXISTS "freq_update_parties" ON friend_requests;
+DROP POLICY IF EXISTS "freq_delete_parties" ON friend_requests;
+CREATE POLICY "freq_select_parties" ON friend_requests FOR SELECT
+  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+CREATE POLICY "freq_insert_sender"  ON friend_requests FOR INSERT
+  WITH CHECK (auth.uid() = sender_id);
+CREATE POLICY "freq_update_parties" ON friend_requests FOR UPDATE
+  USING (auth.uid() = receiver_id OR auth.uid() = sender_id);
+CREATE POLICY "freq_delete_parties" ON friend_requests FOR DELETE
+  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+
+-- friends
+DROP POLICY IF EXISTS "friends_select_parties" ON friends;
+DROP POLICY IF EXISTS "friends_insert_self"    ON friends;
+DROP POLICY IF EXISTS "friends_update_self"    ON friends;
+DROP POLICY IF EXISTS "friends_delete_parties" ON friends;
+CREATE POLICY "friends_select_parties" ON friends FOR SELECT
+  USING (auth.uid() = user_id OR auth.uid() = friend_id);
+CREATE POLICY "friends_insert_self"    ON friends FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "friends_update_self"    ON friends FOR UPDATE
+  USING (auth.uid() = user_id);
+CREATE POLICY "friends_delete_parties" ON friends FOR DELETE
+  USING (auth.uid() = user_id OR auth.uid() = friend_id);
+
+-- blocked_users
+DROP POLICY IF EXISTS "block_select_self" ON blocked_users;
+DROP POLICY IF EXISTS "block_insert_self" ON blocked_users;
+DROP POLICY IF EXISTS "block_delete_self" ON blocked_users;
+CREATE POLICY "block_select_self" ON blocked_users FOR SELECT  USING (auth.uid() = blocker_id);
+CREATE POLICY "block_insert_self" ON blocked_users FOR INSERT  WITH CHECK (auth.uid() = blocker_id);
+CREATE POLICY "block_delete_self" ON blocked_users FOR DELETE  USING (auth.uid() = blocker_id);
+
+-- stories
+DROP POLICY IF EXISTS "stories_select_visible" ON stories;
+DROP POLICY IF EXISTS "stories_insert_self"    ON stories;
+DROP POLICY IF EXISTS "stories_update_self"    ON stories;
+DROP POLICY IF EXISTS "stories_delete_self"    ON stories;
+CREATE POLICY "stories_select_visible" ON stories FOR SELECT
+  USING (
+    expires_at > now()
+    AND (
+      user_id = auth.uid()
+      OR privacy = 'public'
+      OR (
+        privacy = 'friends'
+        AND EXISTS (
+          SELECT 1 FROM friends f
+          WHERE f.user_id = stories.user_id AND f.friend_id = auth.uid()
+        )
+      )
+    )
+  );
+CREATE POLICY "stories_insert_self" ON stories FOR INSERT  WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "stories_update_self" ON stories FOR UPDATE  USING (auth.uid() = user_id);
+CREATE POLICY "stories_delete_self" ON stories FOR DELETE  USING (auth.uid() = user_id);
+
+-- story_views
+DROP POLICY IF EXISTS "sview_select"      ON story_views;
+DROP POLICY IF EXISTS "sview_insert_self" ON story_views;
+CREATE POLICY "sview_select" ON story_views FOR SELECT
+  USING (
+    auth.uid() = viewer_id
+    OR EXISTS (SELECT 1 FROM stories s WHERE s.id = story_id AND s.user_id = auth.uid())
+  );
+CREATE POLICY "sview_insert_self" ON story_views FOR INSERT WITH CHECK (auth.uid() = viewer_id);
+
+-- story_reactions
+DROP POLICY IF EXISTS "sreact_select_all"  ON story_reactions;
+DROP POLICY IF EXISTS "sreact_insert_self" ON story_reactions;
+DROP POLICY IF EXISTS "sreact_update_self" ON story_reactions;
+DROP POLICY IF EXISTS "sreact_delete_self" ON story_reactions;
+CREATE POLICY "sreact_select_all"  ON story_reactions FOR SELECT  USING (true);
+CREATE POLICY "sreact_insert_self" ON story_reactions FOR INSERT  WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "sreact_update_self" ON story_reactions FOR UPDATE  USING (auth.uid() = user_id);
+CREATE POLICY "sreact_delete_self" ON story_reactions FOR DELETE  USING (auth.uid() = user_id);
+
+-- conversations — conversation_members now exists, no error
+DROP POLICY IF EXISTS "conv_select_member" ON conversations;
+DROP POLICY IF EXISTS "conv_insert_any"    ON conversations;
+DROP POLICY IF EXISTS "conv_update_member" ON conversations;
+CREATE POLICY "conv_select_member" ON conversations FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM conversation_members cm
+      WHERE cm.conversation_id = conversations.id AND cm.user_id = auth.uid()
+    )
+  );
+CREATE POLICY "conv_insert_any"    ON conversations FOR INSERT WITH CHECK (true);
+CREATE POLICY "conv_update_member" ON conversations FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM conversation_members cm
+      WHERE cm.conversation_id = conversations.id AND cm.user_id = auth.uid()
+    )
+  );
+
+-- conversation_members
+DROP POLICY IF EXISTS "cmem_select_self" ON conversation_members;
+DROP POLICY IF EXISTS "cmem_insert_self" ON conversation_members;
+DROP POLICY IF EXISTS "cmem_update_self" ON conversation_members;
+DROP POLICY IF EXISTS "cmem_delete_self" ON conversation_members;
+CREATE POLICY "cmem_select_self" ON conversation_members FOR SELECT  USING (auth.uid() = user_id);
+CREATE POLICY "cmem_insert_self" ON conversation_members FOR INSERT  WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "cmem_update_self" ON conversation_members FOR UPDATE  USING (auth.uid() = user_id);
+CREATE POLICY "cmem_delete_self" ON conversation_members FOR DELETE  USING (auth.uid() = user_id);
+
+-- direct_messages
+DROP POLICY IF EXISTS "dm_select_member" ON direct_messages;
+DROP POLICY IF EXISTS "dm_insert_member" ON direct_messages;
+DROP POLICY IF EXISTS "dm_update_sender" ON direct_messages;
+DROP POLICY IF EXISTS "dm_delete_sender" ON direct_messages;
 CREATE POLICY "dm_select_member" ON direct_messages FOR SELECT
   USING (
     EXISTS (
@@ -262,7 +311,7 @@ CREATE POLICY "dm_update_sender" ON direct_messages FOR UPDATE  USING (auth.uid(
 CREATE POLICY "dm_delete_sender" ON direct_messages FOR DELETE  USING (auth.uid() = sender_id);
 
 -- ================================================================
--- FUNCTIONS
+-- PART 4: FUNCTIONS
 -- ================================================================
 
 -- Upsert own presence
@@ -292,7 +341,7 @@ BEGIN
 END;
 $$;
 
--- Accept friend request → creates bidirectional friendship
+-- Accept friend request — creates bidirectional friendship
 CREATE OR REPLACE FUNCTION accept_friend_request(request_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql SECURITY DEFINER
@@ -362,20 +411,16 @@ BEGIN
 END;
 $$;
 
--- Dashboard stories feed:
--- Returns one row per user who has active stories, ordered:
---   1. current user first
---   2. unseen before seen
---   3. newest first
+-- Dashboard stories feed
 CREATE OR REPLACE FUNCTION get_dashboard_stories()
 RETURNS TABLE (
-  user_id          UUID,
-  username         TEXT,
-  avatar_url       TEXT,
-  has_unseen       BOOLEAN,
-  story_count      BIGINT,
-  latest_story_id  UUID,
-  latest_media_url TEXT,
+  user_id           UUID,
+  username          TEXT,
+  avatar_url        TEXT,
+  has_unseen        BOOLEAN,
+  story_count       BIGINT,
+  latest_story_id   UUID,
+  latest_media_url  TEXT,
   latest_created_at TIMESTAMPTZ
 )
 LANGUAGE plpgsql SECURITY DEFINER
@@ -432,7 +477,7 @@ BEGIN
 END;
 $$;
 
--- All non-expired stories for a given user (for viewer)
+-- All non-expired stories for a given user
 CREATE OR REPLACE FUNCTION get_user_stories(p_user_id UUID)
 RETURNS TABLE (
   id          UUID,
@@ -487,7 +532,7 @@ AS $$
 $$;
 
 -- ================================================================
--- REALTIME — enable for relevant tables
+-- PART 5: REALTIME
 -- ================================================================
 ALTER PUBLICATION supabase_realtime ADD TABLE user_presence;
 ALTER PUBLICATION supabase_realtime ADD TABLE friend_requests;
@@ -498,32 +543,17 @@ ALTER PUBLICATION supabase_realtime ADD TABLE story_reactions;
 ALTER PUBLICATION supabase_realtime ADD TABLE direct_messages;
 
 -- ================================================================
--- STORAGE BUCKET + POLICIES
--- Run these in Supabase Dashboard > SQL Editor (as service role)
+-- STORAGE BUCKET (run separately in Supabase Dashboard → SQL Editor)
 -- ================================================================
-
 -- INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 -- VALUES (
---   'stories', 'stories', true,
---   52428800,  -- 50 MB
+--   'stories', 'stories', true, 52428800,
 --   ARRAY['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm']
--- )
--- ON CONFLICT (id) DO NOTHING;
-
+-- ) ON CONFLICT (id) DO NOTHING;
+--
 -- CREATE POLICY "stories_upload" ON storage.objects FOR INSERT
 --   WITH CHECK (bucket_id = 'stories' AND auth.uid()::text = (storage.foldername(name))[1]);
-
 -- CREATE POLICY "stories_public_read" ON storage.objects FOR SELECT
 --   USING (bucket_id = 'stories');
-
 -- CREATE POLICY "stories_owner_delete" ON storage.objects FOR DELETE
 --   USING (bucket_id = 'stories' AND auth.uid()::text = (storage.foldername(name))[1]);
-
--- ================================================================
--- SCHEDULED CLEANUP (requires pg_cron — enable in Supabase Dashboard)
--- ================================================================
--- SELECT cron.schedule(
---   'cleanup-expired-stories',
---   '0 * * * *',
---   $$ DELETE FROM stories WHERE expires_at < now() - INTERVAL '1 hour' $$
--- );
