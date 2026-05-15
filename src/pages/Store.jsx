@@ -372,6 +372,20 @@ export default function Store() {
     await Promise.all([fetchAll(), refreshCurrentUser?.(), refreshProfile?.()]);
   };
 
+  const handleUnequip = async (item) => {
+    if (!profile?.id) return;
+    const { error } = await supabase.from("user_items")
+      .update({ equipped: false })
+      .eq("user_id", profile.id)
+      .eq("item_id", item.id);
+    if (error) { notify("Erreur de déséquipement", "error"); return; }
+    if (item.type === "avatar") {
+      await supabase.from("profiles").update({ avatar_url: null }).eq("id", profile.id);
+    }
+    notify(`${item.name} déséquipé`);
+    await Promise.all([fetchAll(), refreshCurrentUser?.(), refreshProfile?.()]);
+  };
+
   const isOwned    = (id) => userItems.some(u => u.item_id === id);
   const isEquipped = (id) => userItems.some(u => u.item_id === id && u.equipped);
 
@@ -567,11 +581,7 @@ export default function Store() {
               userItems={userItems}
               items={items}
               onEquip={handleEquip}
-              onUnequip={async (item) => {
-                if (!profile?.id) return;
-                const { error } = await supabase.from("user_items").update({ equipped: false }).eq("user_id", profile.id).eq("item_id", item.id);
-                if (!error) { notify(`${item.name} déséquipé`); await fetchAll(); }
-              }}
+              onUnequip={handleUnequip}
             />
           ) : loading ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 16 }}>
