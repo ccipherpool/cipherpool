@@ -93,43 +93,43 @@ export default function Dashboard() {
       <div className="absolute bottom-[10%] right-[-5%] w-[30%] h-[30%] bg-electric-purple/5 blur-[100px] rounded-full pointer-events-none z-0" />
 
       {/* Header Section */}
-      <header className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2">
+      <header className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="space-y-1.5 md:space-y-3">
           <div className="flex items-center gap-3">
              <div className="px-2 py-0.5 rounded-md bg-mint/10 border border-mint/20">
-                <span className="text-[10px] font-black text-mint uppercase tracking-[0.2em]">Live Session</span>
+                <span className="text-[9px] md:text-[10px] font-black text-mint uppercase tracking-[0.2em]">Live Session</span>
              </div>
              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-mint shadow-neon-mint animate-pulse" />
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Protocol 4.2 Active</span>
+                <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-mint shadow-neon-mint animate-pulse" />
+                <span className="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-widest">Protocol 4.2 Active</span>
              </div>
           </div>
-          <h1 className="text-3xl md:text-8xl font-heading font-black tracking-tighter uppercase leading-none text-white">
+          <h1 className="text-3xl md:text-6xl lg:text-8xl font-heading font-black tracking-tighter uppercase leading-[0.9] text-white">
             OPERATIONAL<br/><span className="text-gradient-mint">DASHBOARD</span>
           </h1>
         </div>
 
-        <div className="flex items-center gap-4">
-           <div className="p-4 md:p-6 rounded-[2rem] bg-obsidian-light/40 border border-white/5 backdrop-blur-xl flex items-center gap-5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-mint/20 to-mint/5 border border-mint/20 flex items-center justify-center">
-                 <Radio size={24} className="text-mint animate-pulse" />
+        <div className="flex items-center gap-3 md:gap-4">
+           <div className="p-3 md:p-6 rounded-2xl md:rounded-[2rem] bg-obsidian-light/40 border border-white/5 backdrop-blur-xl flex items-center gap-3 md:gap-5 flex-1 md:flex-none">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-mint/20 to-mint/5 border border-mint/20 flex items-center justify-center">
+                 <Radio size={20} className="text-mint animate-pulse" />
               </div>
               <div>
-                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">Global Latency</p>
+                 <p className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-0.5 md:mb-1">Latency</p>
                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-heading font-black text-white">24</span>
-                    <span className="text-[10px] font-bold text-mint uppercase">ms</span>
+                    <span className="text-lg md:text-xl font-heading font-black text-white">24</span>
+                    <span className="text-[8px] md:text-[10px] font-bold text-mint uppercase">ms</span>
                  </div>
               </div>
            </div>
            
-           <div className="hidden lg:flex p-4 md:p-6 rounded-[2rem] bg-obsidian-light/40 border border-white/5 backdrop-blur-xl items-center gap-5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyber-gold/20 to-cyber-gold/5 border border-cyber-gold/20 flex items-center justify-center">
-                 <Binary size={24} className="text-cyber-gold" />
+           <div className="flex p-3 md:p-6 rounded-2xl md:rounded-[2rem] bg-obsidian-light/40 border border-white/5 backdrop-blur-xl items-center gap-3 md:gap-5 flex-1 md:flex-none">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-cyber-gold/20 to-cyber-gold/5 border border-cyber-gold/20 flex items-center justify-center">
+                 <Binary size={20} className="text-cyber-gold" />
               </div>
               <div>
-                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">Grid Sync</p>
-                 <p className="text-xs font-mono font-bold text-white uppercase tracking-widest tracking-widest">STABLE_V2</p>
+                 <p className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-0.5 md:mb-1">Sync</p>
+                 <p className="text-[9px] md:text-xs font-mono font-bold text-white uppercase tracking-widest">STABLE_V2</p>
               </div>
            </div>
         </div>

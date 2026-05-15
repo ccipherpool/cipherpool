@@ -30,8 +30,8 @@ export default function TeamLayout({
             </span>
           </div>
 
-          <div className={`grid gap-3 ${
-            team.seats.length === 4 ? 'grid-cols-4' : 
+          <div className={`grid gap-2 md:gap-3 ${
+            team.seats.length === 4 ? 'grid-cols-2 md:grid-cols-4' : 
             team.seats.length === 2 ? 'grid-cols-2' : 
             'grid-cols-1'
           }`}>

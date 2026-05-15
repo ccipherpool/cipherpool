@@ -645,15 +645,7 @@ export default function GlobalChat() {
     <>
       <div
         data-testid="global-chat"
-        style={{
-          display: "flex",
-          height: "calc(100vh - 8rem)",
-          maxHeight: "calc(100dvh - 8rem)",
-          margin: "-1rem -1rem -1rem -1rem",
-          background: "linear-gradient(180deg,#080820 0%,#0a0a1f 100%)",
-          borderRadius: 18, overflow: "hidden",
-          border: "1px solid rgba(255,255,255,0.06)",
-        }}
+        className="h-full flex flex-col md:flex-row bg-gradient-to-b from-[#080820] to-[#0a0a1f] rounded-3xl overflow-hidden border border-white/10"
       >
         <style>{`
           .cipher-chat-scroll::-webkit-scrollbar { width: 3px; }

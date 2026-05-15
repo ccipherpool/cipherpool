@@ -26,6 +26,7 @@ export default function TournamentRoom() {
   const [retryNonce, setRetryNonce] = useState(0);
   // tournamentState removed — useRoomEngine's tournament is single source of truth
   const [showStartModal, setShowStartModal] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const {
     tournament,
@@ -176,7 +177,7 @@ export default function TournamentRoom() {
 
   console.log("🎮 Rendering room with role:", role);
   return (
-    <div className="h-screen bg-[#0B0F19] text-white flex flex-col overflow-hidden">
+    <div className="h-full min-h-[600px] bg-[#0B0F19] text-white flex flex-col overflow-hidden rounded-3xl border border-white/5 relative">
       
       {/* Header */}
       <div 
@@ -187,27 +188,37 @@ export default function TournamentRoom() {
         }}
       >
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-white">{tournament?.name}</h1>
-            <div className="flex items-center gap-4 mt-1 text-sm">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg md:text-xl font-bold text-white truncate">{tournament?.name}</h1>
+            <div className="flex items-center gap-3 md:gap-4 mt-1 text-[10px] md:text-sm">
               <span className="text-white/40">
-                {members.length}/{tournament?.max_players} Players
+                {members.length}/{tournament?.max_players} <span className="hidden sm:inline">Players</span>
               </span>
               <span className="text-green-400">
-                ✓ {readyCount} Ready
+                ✓ {readyCount} <span className="hidden sm:inline">Ready</span>
               </span>
-              <span className="text-purple-400">
-                Role: {role}
+              <span className="text-purple-400 font-bold uppercase tracking-widest text-[9px]">
+                {role}
               </span>
             </div>
           </div>
 
-          {/* Countdown Display */}
-          {countdown > 0 && (
-            <div className="text-2xl font-bold text-purple-400 animate-pulse">
-              {countdown}s
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Countdown Display */}
+            {countdown > 0 && (
+              <div className="text-xl md:text-2xl font-black text-purple-400 animate-pulse font-mono">
+                {countdown}s
+              </div>
+            )}
+            
+            {/* Mobile Sidebar Toggle */}
+            <button 
+              onClick={() => setMobileSidebarOpen(true)}
+              className="md:hidden p-2 rounded-xl bg-white/5 text-slate-400"
+            >
+              <Menu size={20} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -221,11 +232,11 @@ export default function TournamentRoom() {
       </div>
 
       {/* Main Content - Teams + Sidebar */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         
-        {/* Teams Area - 70% */}
-        <div className="flex-1 overflow-hidden p-4">
-          <div className="h-full overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-purple-500/20 scrollbar-track-transparent">
+        {/* Teams Area - Full on mobile, 70% on desktop */}
+        <div className="flex-1 overflow-hidden p-2 md:p-4">
+          <div className="h-full overflow-y-auto pr-1 md:pr-2 scrollbar-thin scrollbar-thumb-purple-500/20 scrollbar-track-transparent">
             {teams.length > 0 ? (
               <TeamLayout 
                 teams={teams}
@@ -245,20 +256,39 @@ export default function TournamentRoom() {
           </div>
         </div>
 
-        {/* Right Sidebar - 30% */}
-        <div className="w-80 border-l border-white/5 flex-shrink-0">
-          <RoomSidebar
-            tournament={tournament}
-            players={members}
-            readyCount={readyCount}
-            role={role}
-            roomLocked={tournament?.status !== "open"}
-            countdown={countdown}
-            onLockRoom={lockRoom}
-            onStartMatch={() => setShowStartModal(true)}
-            onToggleReady={toggleReady}
-            currentUserReady={currentUserReady}
+        {/* Right Sidebar - Desktop Fixed, Mobile Drawer */}
+        <div className={`
+          fixed inset-0 z-[100] md:relative md:inset-auto md:z-0
+          md:w-72 lg:w-80 border-l border-white/5 flex-shrink-0
+          transition-transform duration-300 transform
+          ${mobileSidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+        `}>
+          {/* Mobile Overlay */}
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm md:hidden" 
+            onClick={() => setMobileSidebarOpen(false)}
           />
+          
+          <div className="absolute right-0 top-0 bottom-0 w-[280px] md:w-full bg-[#0B0F19] md:bg-transparent flex flex-col shadow-2xl md:shadow-none">
+            <div className="md:hidden flex items-center justify-between p-4 border-b border-white/5">
+               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Room Info</span>
+               <button onClick={() => setMobileSidebarOpen(false)} className="p-2 text-slate-400"><X size={18}/></button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <RoomSidebar
+                tournament={tournament}
+                players={members}
+                readyCount={readyCount}
+                role={role}
+                roomLocked={tournament?.status !== "open"}
+                countdown={countdown}
+                onLockRoom={lockRoom}
+                onStartMatch={() => setShowStartModal(true)}
+                onToggleReady={toggleReady}
+                currentUserReady={currentUserReady}
+              />
+            </div>
+          </div>
         </div>
       </div>
 

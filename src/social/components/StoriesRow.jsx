@@ -70,7 +70,7 @@ function StoryBubble({ entry, index, isOwn, onClick }) {
       </div>
 
       {/* Username */}
-      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none truncate w-full text-center">
+      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none truncate w-full text-center">
         {isOwn ? 'Your Story' : entry.username}
       </span>
     </motion.button>
@@ -149,8 +149,8 @@ export default function StoriesRow({ profile }) {
   return (
     <>
       {/* Row container */}
-      <div className="relative z-10 -mx-1 md:-mx-0">
-        <div className="flex items-end gap-4 overflow-x-auto pb-2 px-1 scroll-smooth scrollbar-none">
+      <div className="relative z-10 -mx-4 md:-mx-0 mb-4">
+        <div className="flex items-end gap-3 overflow-x-auto pb-4 px-4 scroll-smooth scrollbar-hide">
           {/* "My Story" bubble */}
           <StoryBubble
             entry={myStoryEntry}
@@ -161,7 +161,7 @@ export default function StoriesRow({ profile }) {
 
           {/* Divider line */}
           {othersFeed.length > 0 && (
-            <div className="h-12 w-px bg-white/5 flex-shrink-0 self-center" />
+            <div className="h-10 w-px bg-white/5 flex-shrink-0 self-center mx-1" />
           )}
 
           {/* Friends / others */}
@@ -181,9 +181,12 @@ export default function StoriesRow({ profile }) {
 
           {/* Empty state */}
           {othersFeed.length === 0 && !loading && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/[0.02] border border-white/5">
-              <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">
-                Add friends to see their stories
+            <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white/[0.02] border border-white/5 flex-shrink-0">
+               <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                  <Plus size={14} className="text-slate-500" />
+               </div>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                Invite friends to see stories
               </span>
             </div>
           )}
