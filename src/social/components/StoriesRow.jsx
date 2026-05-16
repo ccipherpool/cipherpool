@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useStories } from '../hooks/useStories';
 import StoryViewer from './StoryViewer';
 import StoryCreator from './StoryCreator';
@@ -87,12 +87,6 @@ export default function StoriesRow({ profile }) {
   const [viewerIndex, setViewerIndex] = useState(0);
   const [creatorOpen, setCreatorOpen] = useState(false);
 
-  // Build entries list for the viewer (each entry needs a fetchStories fn)
-  const viewerEntries = feed.map((entry) => ({
-    ...entry,
-    fetchStories: () => fetchUserStories(entry.user_id),
-  }));
-
   const openViewer = useCallback((index) => {
     setViewerIndex(index);
     setViewerOpen(true);
@@ -101,7 +95,6 @@ export default function StoriesRow({ profile }) {
   const handleBubbleClick = useCallback((entry, index) => {
     const isOwn = entry.user_id === profile?.id;
     if (isOwn) {
-      // Always open creator to add new story; if they have stories, open viewer first
       if (entry.story_count > 0) openViewer(index);
       else setCreatorOpen(true);
     } else {
@@ -138,20 +131,18 @@ export default function StoriesRow({ profile }) {
     latest_created_at: null,
   };
 
-  // Feed without own entry (we render it separately first)
   const othersFeed = feed.filter((e) => e.user_id !== profile?.id);
+  const orderedFeed = currentUserEntry ? [currentUserEntry, ...othersFeed] : othersFeed;
 
-  // Full ordered list for viewer: own first
-  const orderedFeed = currentUserEntry
-    ? [currentUserEntry, ...othersFeed]
-    : othersFeed;
+  const viewerEntries = orderedFeed.map((entry) => ({
+    ...entry,
+    fetchStories: () => fetchUserStories(entry.user_id),
+  }));
 
   return (
     <>
-      {/* Row container */}
       <div className="relative z-10 -mx-4 md:-mx-0 mb-4">
         <div className="flex items-end gap-3 overflow-x-auto pb-4 px-4 scroll-smooth scrollbar-hide">
-          {/* "My Story" bubble */}
           <StoryBubble
             entry={myStoryEntry}
             index={0}
@@ -159,14 +150,11 @@ export default function StoriesRow({ profile }) {
             onClick={() => handleBubbleClick(myStoryEntry, 0)}
           />
 
-          {/* Divider line */}
           {othersFeed.length > 0 && (
             <div className="h-10 w-px bg-white/5 flex-shrink-0 self-center mx-1" />
           )}
 
-          {/* Friends / others */}
           {othersFeed.map((entry, idx) => {
-            // Index in the full viewer list (0 is own, so +1 if own exists)
             const viewerIdx = currentUserEntry ? idx + 1 : idx;
             return (
               <StoryBubble
@@ -179,7 +167,6 @@ export default function StoriesRow({ profile }) {
             );
           })}
 
-          {/* Empty state */}
           {othersFeed.length === 0 && !loading && (
             <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white/[0.02] border border-white/5 flex-shrink-0">
                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
@@ -193,7 +180,6 @@ export default function StoriesRow({ profile }) {
         </div>
       </div>
 
-      {/* Story Viewer */}
       {viewerOpen && viewerEntries.length > 0 && (
         <StoryViewer
           entries={viewerEntries}
@@ -205,7 +191,6 @@ export default function StoriesRow({ profile }) {
         />
       )}
 
-      {/* Story Creator */}
       {creatorOpen && (
         <StoryCreator
           onClose={() => setCreatorOpen(false)}

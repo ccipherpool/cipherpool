@@ -7,6 +7,7 @@ import {
 import { supabase } from "../lib/supabase";
 import ThemeToggle from "../components/ui/ThemeToggle";
 import NotificationBell from "../components/NotificationBell";
+import SeasonBadge from "../components/ui/SeasonBadge";
 
 const NavItem = ({ item, isActive }) => (
   <NavLink
@@ -77,7 +78,11 @@ export default function TopNav({ profile }) {
       </div>
 
       {/* Profile & Controls */}
-      <div className="flex items-center gap-6 min-w-[240px] justify-end">
+      <div className="flex items-center gap-4 lg:gap-6 min-w-[240px] justify-end">
+        <div className="hidden lg:block">
+           <SeasonBadge />
+        </div>
+
         <ThemeToggle variant="icon" buttonSize={32} />
         
         <NotificationBell userId={profile?.id} />
