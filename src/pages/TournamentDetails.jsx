@@ -11,11 +11,16 @@ const GREEN  = "#10b981";
 const RED    = "#f43f5e";
 
 const STATUS_MAP = {
-  active:    { label: "EN COURS",  color: CYAN,   glow: "rgba(0,212,255,0.25)"   },
-  upcoming:  { label: "À VENIR",   color: ORANGE, glow: "rgba(249,115,22,0.25)"  },
-  open:      { label: "OUVERT",    color: GREEN,  glow: "rgba(16,185,129,0.25)"  },
-  completed: { label: "TERMINÉ",   color: "rgba(255,255,255,0.3)", glow: "transparent" },
-  cancelled: { label: "ANNULÉ",    color: RED,    glow: "rgba(244,63,94,0.25)"   },
+  draft:            { label: "BROUILLON",    color: "rgba(255,255,255,0.3)", glow: "transparent" },
+  published:        { label: "À VENIR",      color: ORANGE, glow: "rgba(249,115,22,0.25)"  },
+  registration_open:{ label: "OUVERT",       color: GREEN,  glow: "rgba(16,185,129,0.25)"  },
+  full:             { label: "COMPLET",      color: ORANGE, glow: "rgba(249,115,22,0.25)"  },
+  ready:            { label: "PRÊT",         color: CYAN,   glow: "rgba(0,212,255,0.25)"   },
+  live:             { label: "EN COURS",     color: CYAN,   glow: "rgba(0,212,255,0.25)"   },
+  results_pending:  { label: "RÉSULTATS",    color: VIOLET, glow: "rgba(139,92,246,0.25)"  },
+  completed:        { label: "TERMINÉ",      color: "rgba(255,255,255,0.3)", glow: "transparent" },
+  archived:         { label: "ARCHIVÉ",      color: "rgba(255,255,255,0.2)", glow: "transparent" },
+  cancelled:        { label: "ANNULÉ",       color: RED,    glow: "rgba(244,63,94,0.25)"   },
 };
 
 // ── Pill badge ─────────────────────────────────────────────────────────────────
@@ -73,18 +78,14 @@ export default function TournamentDetails() {
   const requestToJoin = async () => {
     if (!profile) { navigate("/login"); return; }
     setError("");
-    if (tournament.status !== "open" && tournament.status !== "upcoming" && tournament.status !== "active") { setError("Les inscriptions sont fermées pour ce tournoi."); return; }
-    if (tournament.current_players >= tournament.max_players) { setError("Ce tournoi est complet."); return; }
     setRequesting(true);
-    const { data: { user } } = await supabase.auth.getUser();
     try {
-      const { error: e } = await supabase.from("tournament_participants").insert([{ tournament_id: id, user_id: user.id, status: "pending" }]);
-      if (e) {
-        if (e.code === "23505") setError("Vous êtes déjà inscrit à ce tournoi.");
-        else setError(e.message);
-      } else { navigate(`/tournaments/${id}/waiting`); }
+      const { data, error: e } = await supabase.rpc("join_tournament", { p_tournament_id: id });
+      if (e) { setError(e.message); return; }
+      if (!data.success) { setError(data.error || "Impossible de rejoindre ce tournoi."); return; }
+      navigate(`/tournaments/${id}/waiting`);
     } catch { setError("Une erreur est survenue."); }
-    setRequesting(false);
+    finally { setRequesting(false); }
   };
 
   if (loading) return (
@@ -96,7 +97,7 @@ export default function TournamentDetails() {
 
   const pct  = tournament.max_players > 0 ? Math.round((tournament.current_players / tournament.max_players) * 100) : 0;
   const full = tournament.current_players >= tournament.max_players;
-  const s    = STATUS_MAP[tournament.status] || STATUS_MAP.upcoming;
+  const s    = STATUS_MAP[tournament.status] || STATUS_MAP.published;
   const free = (tournament.entry_fee || 0) === 0;
 
   const RULES = [

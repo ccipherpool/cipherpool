@@ -280,7 +280,7 @@ export default function TournamentRoom() {
                 players={members}
                 readyCount={readyCount}
                 role={role}
-                roomLocked={tournament?.status !== "open"}
+                roomLocked={tournament?.status !== "registration_open"}
                 countdown={countdown}
                 onLockRoom={lockRoom}
                 onStartMatch={() => setShowStartModal(true)}
@@ -373,7 +373,7 @@ export default function TournamentRoom() {
           onSendMessage={sendMessage}
           currentUser={user}
           role={role}
-          roomLocked={tournament?.status !== "open"}
+          roomLocked={tournament?.status !== "registration_open"}
           onSelectPlayer={setSelectedPlayer}
           accentColor={tournament?.background_color}
         />

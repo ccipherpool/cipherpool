@@ -247,7 +247,7 @@ function MiniProfileCard({ user: target, currentUserId, friends, onClose, onSend
       // Fetch latest active item of the requested type
       let resourceId = null;
       if (type === "tournament") {
-        const { data } = await supabase.from("tournaments").select("id").in("status", ["active","upcoming"]).limit(1).maybeSingle();
+        const { data } = await supabase.from("tournaments").select("id").in("status", ["registration_open","published","live"]).limit(1).maybeSingle();
         resourceId = data?.id;
       } else if (type === "clan") {
         const { data } = await supabase.from("clans").select("id").eq("leader_id", currentUserId).maybeSingle();

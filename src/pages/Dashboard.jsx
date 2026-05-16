@@ -79,7 +79,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data } = await supabase.from("tournaments").select("*").in("status", ["active", "upcoming"]).limit(3);
+      const { data } = await supabase.from("tournaments").select("*").in("status", ["registration_open", "published"]).limit(3);
       setTournaments(data || []);
       setLoading(false);
     };

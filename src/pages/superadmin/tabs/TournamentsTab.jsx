@@ -31,8 +31,8 @@ export default function TournamentsTab({ tournaments, setSelectedTournament, set
                     </p>
                     <div className="flex gap-2 mt-2 flex-wrap">
                       <span className={`px-2 py-1 text-xs rounded-full ${
-                        tournament.status === "open"      ? "bg-green-500/20 text-green-400 border border-green-500/30" :
-                        tournament.status === "ongoing"   ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" :
+                        tournament.status === "registration_open" ? "bg-green-500/20 text-green-400 border border-green-500/30" :
+                        tournament.status === "live"      ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" :
                         tournament.status === "completed" ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" :
                         "bg-gray-500/20 text-gray-400 border border-gray-500/30"
                       }`}>

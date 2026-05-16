@@ -19,13 +19,20 @@ import {
 import Button from "../components/ui/Button";
 
 const STATUS_CONFIG = {
-  active: { label: "Live Now", color: "text-mint", bg: "bg-mint/10", border: "border-mint/20" },
-  upcoming: { label: "Upcoming", color: "text-cyber-gold", bg: "bg-cyber-gold/10", border: "border-cyber-gold/20" },
-  completed: { label: "Finished", color: "text-slate-500", bg: "bg-slate-500/10", border: "border-white/5" },
+  draft:             { label: "Brouillon",    color: "text-slate-500",    bg: "bg-slate-500/10",    border: "border-white/5"             },
+  published:         { label: "À venir",      color: "text-cyber-gold",   bg: "bg-cyber-gold/10",   border: "border-cyber-gold/20"       },
+  registration_open: { label: "Inscriptions", color: "text-mint",         bg: "bg-mint/10",         border: "border-mint/20"             },
+  full:              { label: "Complet",      color: "text-amber-400",    bg: "bg-amber-400/10",    border: "border-amber-400/20"        },
+  ready:             { label: "Prêt",         color: "text-cyan-400",     bg: "bg-cyan-400/10",     border: "border-cyan-400/20"         },
+  live:              { label: "Live Now",     color: "text-mint",         bg: "bg-mint/10",         border: "border-mint/20"             },
+  results_pending:   { label: "Résultats",    color: "text-violet-400",   bg: "bg-violet-400/10",   border: "border-violet-400/20"       },
+  completed:         { label: "Terminé",      color: "text-slate-500",    bg: "bg-slate-500/10",    border: "border-white/5"             },
+  archived:          { label: "Archivé",      color: "text-slate-600",    bg: "bg-slate-600/10",    border: "border-white/5"             },
+  cancelled:         { label: "Annulé",       color: "text-red-400",      bg: "bg-red-400/10",      border: "border-red-400/20"          },
 };
 
 const TournamentCard = ({ t, i, balance }) => {
-  const status = STATUS_CONFIG[t.status] || STATUS_CONFIG.upcoming;
+  const status = STATUS_CONFIG[t.status] || STATUS_CONFIG.published;
   const progress = t.max_players > 0 ? (t.current_players / t.max_players) * 100 : 0;
   const canAfford = (balance || 0) >= (t.entry_fee || 0);
 
@@ -170,7 +177,7 @@ export default function Tournaments() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2 pb-2">
-        {['all', 'active', 'upcoming', 'completed'].map((f) => (
+        {['all', 'registration_open', 'published', 'live', 'completed'].map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}

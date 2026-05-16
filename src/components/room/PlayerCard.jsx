@@ -23,12 +23,12 @@ export default function PlayerCard({
   const handleSeatClick = () => {
     if (!player) {
       // Empty seat → move here directly
-      if (role === "participant" && tournament?.status === "open") {
+      if (role === "participant" && tournament?.status === "registration_open") {
         onChangeSeat?.(teamNumber, seatNumber);
       }
     } else if (!isCurrentUser) {
       // Occupied by OTHER player → request swap
-      if (role === "participant" && tournament?.status === "open") {
+      if (role === "participant" && tournament?.status === "registration_open") {
         onSwapRequest?.(teamNumber, seatNumber, player);
       } else {
         onSelect?.(player);
@@ -87,7 +87,7 @@ export default function PlayerCard({
       )}
 
       {/* Swap icon overlay (not my seat, is participant) */}
-      {player && !isCurrentUser && role === "participant" && tournament?.status === "open" && (
+      {player && !isCurrentUser && role === "participant" && tournament?.status === "registration_open" && (
         <div className="absolute inset-0 rounded-xl bg-black/0 hover:bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-all duration-200 z-5">
           <span className="text-2xl">🔄</span>
         </div>

@@ -33,7 +33,7 @@ export default function SubmitResultPanel({ tournament, tournamentId, userId, on
   useEffect(() => {
     if (tData?.id) return;
     if (!tid) return;
-    supabase.from("tournaments").select("id,name,game_type,mode,max_players,cs_format,prize_pool")
+    supabase.from("tournaments").select("id,name,game_type,mode,max_players,cs_format,prize_coins")
       .eq("id", tid).maybeSingle()
       .then(({ data }) => { if (data) setTData(data); });
   }, [tid]);

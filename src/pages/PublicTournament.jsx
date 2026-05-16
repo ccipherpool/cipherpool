@@ -219,7 +219,7 @@ export default function PublicTournament() {
             {[
               { icon: Users,  label: "Players",    value: `${players.length} / ${tournament.max_players || "?"}` },
               { icon: Coins,  label: "Entry Fee",  value: tournament.entry_fee ? `${tournament.entry_fee} CP` : "Free" },
-              { icon: Trophy, label: "Prize Pool",  value: tournament.prize_pool ? `${tournament.prize_pool.toLocaleString()} CP` : "—" },
+              { icon: Trophy, label: "Prize Pool",  value: tournament.prize_coins ? `${tournament.prize_coins.toLocaleString()} CP` : "—" },
               { icon: Calendar, label: "Date",     value: formatDate(tournament.starts_at) },
             ].map((s, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -394,7 +394,7 @@ export default function PublicTournament() {
               { icon: Calendar, label: "Starts",    value: formatDate(tournament.starts_at) },
               { icon: Clock,    label: "Duration",  value: tournament.duration ? `${tournament.duration} min` : "—" },
               { icon: Lock,     label: "Entry Fee", value: tournament.entry_fee ? `${tournament.entry_fee} CP` : "Free" },
-              { icon: Trophy,   label: "Prize Pool",value: tournament.prize_pool ? `${tournament.prize_pool.toLocaleString()} CP` : "—" },
+              { icon: Trophy,   label: "Prize Pool",value: tournament.prize_coins ? `${tournament.prize_coins.toLocaleString()} CP` : "—" },
               { icon: Shield,   label: "Mode",      value: tournament.mode || "—" },
             ].map((d, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>

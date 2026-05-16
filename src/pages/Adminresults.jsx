@@ -73,7 +73,7 @@ export default function AdminResults() {
           id, tournament_id, user_id, placement, kills, points, estimated_coins,
           coins_awarded, screenshot_url, status, is_mvp, auto_verified, submitted_at, verified_at,
           profiles!match_results_user_id_fkey(username, full_name, avatar_url, fair_play_score),
-          tournaments!match_results_tournament_id_fkey(id, name, game_type, mode, prize_pool)
+          tournaments!match_results_tournament_id_fkey(id, name, game_type, mode, prize_coins)
         `)
         .order("submitted_at", { ascending: false });
 

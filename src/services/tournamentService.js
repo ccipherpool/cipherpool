@@ -1,171 +1,147 @@
 // src/services/tournamentService.js
+// All mutations go through RPCs — never direct inserts on tournament_participants.
+// Canonical table: tournament_participants (tournament_players is a view alias).
+// Canonical prize column: prize_coins (not prize_pool).
 
 import { supabase } from '../lib/supabase';
+import { RPC, TOURNAMENT_STATUS } from '../lib/schema';
 
-class TournamentService {
-  /**
-   * إنشاء بطولة جديدة
-   */
-  async createTournament(data, creatorId) {
-    const { error } = await supabase
-      .from('tournaments')
-      .insert([{
-        ...data,
-        created_by: creatorId,
-        status: 'open',
-        current_players: 0
-      }]);
+// ── Queries ──────────────────────────────────────────────────────
 
-    if (error) throw error;
-    return true;
-  }
-
-  /**
-   * جلب بطولة محددة مع التحقق
-   */
-  async getTournament(tournamentId) {
-    const { data, error } = await supabase
-      .from('tournaments')
-      .select(`
-        *,
-        creator:profiles!tournaments_created_by_fkey (
-          id,
-          full_name,
-          role
-        ),
-        participants:tournament_participants(
-          id,
-          user_id,
-          status,
-          team_number,
-          seat_number,
-          is_ready,
-          profiles:user_id(
-            full_name,
-            free_fire_id,
-            avatar_url
-          )
+export async function getTournament(tournamentId) {
+  const { data, error } = await supabase
+    .from('tournaments')
+    .select(`
+      *,
+      creator:profiles!tournaments_created_by_fkey(id, username, full_name, role, avatar_url),
+      participants:tournament_participants(
+        id, user_id, status, team_name, team_slot, rank, kills, is_ready, joined_at,
+        profile:profiles!tournament_participants_user_id_fkey(
+          username, full_name, free_fire_id, avatar_url, fair_play_score
         )
-      `)
-      .eq('id', tournamentId)
-      .single();
+      )
+    `)
+    .eq('id', tournamentId)
+    .single();
 
-    if (error) throw error;
-    return data;
-  }
-
-  /**
-   * طلب الانضمام إلى بطولة
-   */
-  async requestToJoin(tournamentId, userId) {
-    // التحقق من عدم وجود طلب سابق
-    const { data: existing } = await supabase
-      .from('tournament_participants')
-      .select('id')
-      .eq('tournament_id', tournamentId)
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (existing) {
-      throw new Error('You have already requested to join this tournament');
-    }
-
-    const { error } = await supabase
-      .from('tournament_participants')
-      .insert([{
-        tournament_id: tournamentId,
-        user_id: userId,
-        status: 'pending'
-      }]);
-
-    if (error) throw error;
-    return true;
-  }
-
-  /**
-   * قبول طلب انضمام (للمؤسس)
-   */
-  async approveRequest(requestId, tournamentId, userId, reviewerId) {
-    // بدء معاملة
-    const { error } = await supabase.rpc('approve_tournament_request', {
-      p_request_id: requestId,
-      p_tournament_id: tournamentId,
-      p_user_id: userId,
-      p_reviewer_id: reviewerId
-    });
-
-    if (error) throw error;
-    return true;
-  }
-
-  /**
-   * رفض طلب انضمام
-   */
-  async rejectRequest(requestId, reviewerId) {
-    const { error } = await supabase
-      .from('tournament_participants')
-      .update({
-        status: 'rejected',
-        reviewed_by: reviewerId,
-        reviewed_at: new Date().toISOString()
-      })
-      .eq('id', requestId);
-
-    if (error) throw error;
-    return true;
-  }
-
-  /**
-   * بدء البطولة (إنشاء مباراة)
-   */
-  async startTournament(tournamentId) {
-    const { data, error } = await supabase
-      .rpc('start_match', {
-        tournament_id: tournamentId
-      });
-
-    if (error) throw error;
-    return data; // match_id
-  }
-
-  /**
-   * تغيير مقعد لاعب
-   */
-  async changeSeat(tournamentId, userId, teamNumber, seatNumber) {
-    const { error } = await supabase
-      .from('tournament_participants')
-      .update({
-        team_number: teamNumber,
-        seat_number: seatNumber
-      })
-      .eq('tournament_id', tournamentId)
-      .eq('user_id', userId)
-      .eq('status', 'approved');
-
-    if (error) throw error;
-    return true;
-  }
-
-  /**
-   * تبديل حالة الاستعداد
-   */
-  async toggleReady(tournamentId, userId) {
-    const { data: current } = await supabase
-      .from('tournament_participants')
-      .select('is_ready')
-      .eq('tournament_id', tournamentId)
-      .eq('user_id', userId)
-      .single();
-
-    const { error } = await supabase
-      .from('tournament_participants')
-      .update({ is_ready: !current.is_ready })
-      .eq('tournament_id', tournamentId)
-      .eq('user_id', userId);
-
-    if (error) throw error;
-    return !current.is_ready;
-  }
+  if (error) throw error;
+  return data;
 }
 
-export const tournamentService = new TournamentService();
+export async function listTournaments({ status, limit = 20, offset = 0 } = {}) {
+  let q = supabase
+    .from('tournaments')
+    .select('id, name, status, mode, entry_fee, prize_coins, max_players, current_players, start_time, banner_url, created_at')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (status) q = q.eq('status', status);
+
+  const { data, error } = await q;
+  if (error) throw error;
+  return data;
+}
+
+export async function getMyTournaments(userId) {
+  const { data, error } = await supabase
+    .from('tournament_participants')
+    .select(`
+      status, joined_at,
+      tournament:tournaments(id, name, status, mode, entry_fee, prize_coins, start_time)
+    `)
+    .eq('user_id', userId)
+    .in('status', ['approved', 'joined'])
+    .order('joined_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
+
+// ── Mutations (all through RPC) ───────────────────────────────────
+
+export async function joinTournament(tournamentId) {
+  const { data, error } = await supabase.rpc(RPC.joinTournament, {
+    p_tournament_id: tournamentId,
+  });
+  if (error) throw error;
+  if (!data.success) throw new Error(data.error);
+  return data;
+}
+
+export async function leaveTournament(tournamentId) {
+  const { data, error } = await supabase.rpc(RPC.leaveTournament, {
+    p_tournament_id: tournamentId,
+  });
+  if (error) throw error;
+  if (!data.success) throw new Error(data.error);
+  return data;
+}
+
+export async function advanceTournamentStatus(tournamentId, toStatus) {
+  const { data, error } = await supabase.rpc(RPC.advanceTournamentStatus, {
+    p_tournament_id: tournamentId,
+    p_to_status:     toStatus,
+  });
+  if (error) throw error;
+  if (!data.success) throw new Error(data.error);
+  return data;
+}
+
+// Admin: create tournament (founders/admins only — RLS enforced server-side)
+export async function createTournament(fields, creatorId) {
+  const { data, error } = await supabase
+    .from('tournaments')
+    .insert([{
+      ...fields,
+      created_by:      creatorId,
+      status:          TOURNAMENT_STATUS.draft,
+      current_players: 0,
+    }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Admin: update room credentials
+export async function setRoomCredentials(tournamentId, { roomId, roomPassword }) {
+  const { error } = await supabase
+    .from('tournaments')
+    .update({ room_id: roomId, room_password: roomPassword, updated_at: new Date().toISOString() })
+    .eq('id', tournamentId);
+
+  if (error) throw error;
+}
+
+// Admin: approve a pending participant
+export async function approveParticipant(tournamentId, participantUserId, reviewerId) {
+  const { data, error } = await supabase.rpc('approve_tournament_request', {
+    p_tournament_id: tournamentId,
+    p_user_id:       participantUserId,
+    p_reviewer_id:   reviewerId,
+  });
+  if (error) throw error;
+  return data;
+}
+
+// Toggle ready state
+export async function toggleReady(tournamentId, userId) {
+  const { data: current, error: fetchErr } = await supabase
+    .from('tournament_participants')
+    .select('is_ready')
+    .eq('tournament_id', tournamentId)
+    .eq('user_id', userId)
+    .single();
+
+  if (fetchErr) throw fetchErr;
+
+  const { error } = await supabase
+    .from('tournament_participants')
+    .update({ is_ready: !current.is_ready })
+    .eq('tournament_id', tournamentId)
+    .eq('user_id', userId);
+
+  if (error) throw error;
+  return !current.is_ready;
+}

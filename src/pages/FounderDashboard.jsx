@@ -82,7 +82,7 @@ export default function FounderDashboard() {
       const totalPlayers = data.reduce((sum, t) => sum + (t.current_players || 0), 0);
       setStats({
         total: data.length,
-        open: data.filter(t => t.status === "open").length,
+        open: data.filter(t => t.status === "registration_open").length,
         full: data.filter(t => t.status === "full").length,
         ongoing: data.filter(t => t.status === "ongoing").length,
         completed: data.filter(t => t.status === "completed").length,
@@ -122,7 +122,7 @@ export default function FounderDashboard() {
       .insert([{
         ...newTournament,
         created_by: user.id,
-        status: "open",
+        status: "draft",
         current_players: 0
       }]);
 
@@ -419,7 +419,7 @@ export default function FounderDashboard() {
                       <p className="text-sm text-white/40">{tournament.description || "No description"}</p>
                     </div>
                     <span className={`px-3 py-1 text-xs rounded-full ${
-                      tournament.status === "open" ? "bg-green-500/20 text-green-400" :
+                      tournament.status === "registration_open" ? "bg-green-500/20 text-green-400" :
                       tournament.status === "full" ? "bg-yellow-500/20 text-yellow-400" :
                       tournament.status === "ongoing" ? "bg-blue-500/20 text-blue-400" :
                       "bg-purple-500/20 text-purple-400"
@@ -463,7 +463,7 @@ export default function FounderDashboard() {
                       >
                         View
                       </Link>
-                      {tournament.status === "open" && tournament.current_players >= 2 && (
+                      {tournament.status === "registration_open" && tournament.current_players >= 2 && (
                         <button
                           onClick={() => startMatch(tournament.id)}
                           className="px-4 py-2 bg-green-600/20 text-green-400 rounded-lg text-sm hover:bg-green-600/30 transition"

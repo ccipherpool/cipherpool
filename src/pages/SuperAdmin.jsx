@@ -215,7 +215,7 @@ export default function SuperAdmin() {
         safeCount(supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "banned")),
         safeCount(supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "pending")),
         safeCount(supabase.from("tournaments").select("*", { count: "exact", head: true })),
-        safeCount(supabase.from("tournaments").select("*", { count: "exact", head: true }).eq("status", "open")),
+        safeCount(supabase.from("tournaments").select("*", { count: "exact", head: true }).eq("status", "registration_open")),
         safeCount(supabase.from("match_results").select("*", { count: "exact", head: true })),
         safeCount(supabase.from("reports").select("*", { count: "exact", head: true }).eq("status", "pending")),
         safeCount(supabase.from("support_tickets").select("*", { count: "exact", head: true }).eq("status", "open")),
