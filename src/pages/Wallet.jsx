@@ -1,21 +1,24 @@
 import { useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
+import { Wallet as WalletIcon, TrendingUp, TrendingDown, BarChart2, Trophy, ShoppingBag, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 
 const TX_CONFIG = {
-  purchase:    { icon: "🛒", color: "#ef4444", label: "Achat boutique" },
-  reward:      { icon: "🏆", color: "#f59e0b", label: "Récompense" },
-  penalty:     { icon: "⚠️", color: "#ef4444", label: "Pénalité" },
-  debit:       { icon: "💸", color: "#ef4444", label: "Débit" },
-  credit:      { icon: "💰", color: "#10b981", label: "Crédit" },
-  tournament:  { icon: "🎮", color: "#10b981", label: "Tournoi" },
-  daily:       { icon: "🎁", color: "#06b6d4", label: "Bonus quotidien" },
-  refund:      { icon: "↩️", color: "#10b981", label: "Remboursement" },
-  admin_grant: { icon: "👑", color: "#a855f7", label: "Don Admin" },
+  purchase:    { icon: "🛒", color: "#ef4444", label: "Store Purchase"    },
+  reward:      { icon: "🏆", color: "#f59e0b", label: "Reward"           },
+  penalty:     { icon: "⚠️", color: "#ef4444", label: "Penalty"          },
+  debit:       { icon: "💸", color: "#ef4444", label: "Debit"            },
+  credit:      { icon: "💰", color: "#10b981", label: "Credit"           },
+  tournament:  { icon: "🎮", color: "#10b981", label: "Tournament"       },
+  prize:       { icon: "🥇", color: "#f59e0b", label: "Prize"            },
+  daily:       { icon: "🎁", color: "#06b6d4", label: "Daily Reward"     },
+  refund:      { icon: "↩️", color: "#10b981", label: "Refund"           },
+  admin_grant: { icon: "👑", color: "#a855f7", label: "Admin Grant"      },
+  fee:         { icon: "🔑", color: "#ef4444", label: "Entry Fee"        },
 };
 
-function getTxConfig(type, desc) {
+function getTxCfg(type) {
   if (!type) return { icon: "💱", color: "#6b7280", label: "Transaction" };
   const key = Object.keys(TX_CONFIG).find(k => type.toLowerCase().includes(k));
   return key ? TX_CONFIG[key] : { icon: "💱", color: "#6b7280", label: type };
@@ -23,25 +26,28 @@ function getTxConfig(type, desc) {
 
 function timeAgo(date) {
   const d = new Date(date);
-  const now = new Date();
-  const diff = Math.floor((now - d) / 1000);
-  if (diff < 60) return "À l'instant";
-  if (diff < 3600) return `Il y a ${Math.floor(diff / 60)}min`;
-  if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)}h`;
-  if (diff < 604800) return `Il y a ${Math.floor(diff / 86400)}j`;
-  return d.toLocaleDateString("fr-FR");
+  const diff = Math.floor((Date.now() - d) / 1000);
+  if (diff < 60)     return "Just now";
+  if (diff < 3600)   return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400)  return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  return d.toLocaleDateString("en-GB");
 }
 
+const FILTERS = [
+  { key: "all",   label: "All"     },
+  { key: "plus",  label: "Received" },
+  { key: "moins", label: "Spent"   },
+];
+
 export default function Wallet() {
-  const { profile, balance: ctxBalance, setBalance } = useOutletContext() || {};
+  const { profile, balance: ctxBalance } = useOutletContext() || {};
   const [balance, setLocalBalance] = useState(ctxBalance || 0);
   const [transactions, setTransactions] = useState([]);
-  const [loading] = useState(false);
   const [txLoading, setTxLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [balanceChange, setBalanceChange] = useState(null);
 
-  // Sync with context balance (real-time from MainLayout)
   useEffect(() => {
     if (ctxBalance !== undefined && ctxBalance !== balance) {
       const diff = ctxBalance - balance;
@@ -55,12 +61,8 @@ export default function Wallet() {
 
   useEffect(() => {
     if (!profile?.id) return;
-    fetchTransactions();
-  }, [profile?.id]);
-
-  const fetchTransactions = async () => {
-    setTxLoading(true);
-    try {
+    (async () => {
+      setTxLoading(true);
       const { data } = await supabase
         .from("wallet_transactions")
         .select("*")
@@ -68,275 +70,257 @@ export default function Wallet() {
         .order("created_at", { ascending: false })
         .limit(50);
       setTransactions(data || []);
-    } catch (_e) {
-      setTransactions([]);
-    } finally {
       setTxLoading(false);
-    }
-  };
+    })();
+  }, [profile?.id]);
+
+  const isDebit = (tx) => ["purchase", "penalty", "debit", "fee"].some(k => tx.type?.toLowerCase().includes(k));
 
   const filtered = filter === "all"
     ? transactions
-    : transactions.filter(tx => {
-        if (filter === "plus") return (tx.amount || 0) > 0 && !["purchase","penalty","debit"].includes(tx.type);
-        if (filter === "moins") return ["purchase","penalty","debit"].includes(tx.type) || (tx.amount || 0) < 0;
-        return true;
-      });
+    : transactions.filter(tx => filter === "plus" ? !isDebit(tx) : isDebit(tx));
 
-  const totalIn  = transactions.filter(tx => !["purchase","penalty","debit"].includes(tx.type)).reduce((s, tx) => s + (tx.amount || 0), 0);
-  const totalOut = transactions.filter(tx =>  ["purchase","penalty","debit"].includes(tx.type)).reduce((s, tx) => s + (tx.amount || 0), 0);
+  const totalIn  = transactions.filter(tx => !isDebit(tx)).reduce((s, tx) => s + (tx.amount || 0), 0);
+  const totalOut = transactions.filter(tx =>  isDebit(tx)).reduce((s, tx) => s + Math.abs(tx.amount || 0), 0);
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&display=swap');
-        .wallet-page { font-family: 'Rajdhani', sans-serif; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.3); border-radius: 99px; }
-      `}</style>
+    <div className="space-y-5">
 
-      <div className="wallet-page space-y-6">
-
-        {/* ── HEADER ── */}
-        <div>
-          <h1 style={{ fontFamily: "Orbitron, sans-serif", fontSize: 22, fontWeight: 900, letterSpacing: 2, color: "#fff" }}>
-            MON <span style={{ color: "#f59e0b" }}>PORTEFEUILLE</span>
-          </h1>
-          <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 13, marginTop: 4 }}>
-            Gérez vos pièces et consultez votre historique
-          </p>
+      {/* ── HEADER ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <WalletIcon size={13} className="text-[#f59e0b]" />
+          <span className="text-[9px] font-black text-[rgba(245,158,11,0.7)] uppercase tracking-[0.2em]">
+            Economy
+          </span>
         </div>
+        <h1 className="text-[2rem] md:text-[2.6rem] font-heading font-black text-white uppercase tracking-tighter leading-[0.9]">
+          My <span style={{ background: "linear-gradient(135deg, #f59e0b, #fbbf24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Wallet</span>
+        </h1>
+      </motion.div>
 
-        {/* ── BALANCE CARD ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
+      {/* ── BALANCE CARD ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.06, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        className="relative overflow-hidden rounded-[20px] p-6 md:p-8"
+        style={{
+          background: "linear-gradient(135deg, rgba(20,10,50,0.9) 0%, rgba(13,18,32,0.95) 100%)",
+          border: "1px solid rgba(245,158,11,0.2)",
+          boxShadow: "0 20px 60px rgba(245,158,11,0.08)",
+        }}
+      >
+        {/* grid bg */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
           style={{
-            borderRadius: 20, padding: "32px 36px",
-            background: "linear-gradient(135deg, #1e0a3c 0%, #0d0520 50%, #0a1628 100%)",
-            border: "1px solid rgba(124,58,237,0.25)",
-            boxShadow: "0 20px 60px rgba(124,58,237,0.15)",
-            position: "relative", overflow: "hidden",
+            backgroundImage: "linear-gradient(rgba(245,158,11,1) 1px, transparent 1px), linear-gradient(90deg, rgba(245,158,11,1) 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
           }}
-        >
-          {/* Glow */}
-          <div style={{
-            position: "absolute", top: -60, right: -60,
-            width: 200, height: 200, borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(245,158,11,0.15), transparent 70%)",
-          }} />
+        />
+        {/* glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 pointer-events-none"
+          style={{ background: "radial-gradient(circle at 80% 20%, rgba(245,158,11,0.12), transparent 60%)" }}
+        />
 
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-            <div>
-              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, letterSpacing: 2, fontWeight: 700 }}>
-                SOLDE ACTUEL
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 8 }}>
-                {loading ? (
-                  <div style={{ width: 120, height: 52, background: "rgba(255,255,255,0.05)", borderRadius: 8, animation: "pulse 1.5s infinite" }} />
-                ) : (
-                  <motion.div
-                    key={balance}
-                    initial={{ scale: 0.95 }}
-                    animate={{ scale: 1 }}
-                    style={{ fontFamily: "Orbitron, sans-serif", fontSize: 52, fontWeight: 900, color: "#f59e0b", lineHeight: 1 }}
-                  >
-                    {balance.toLocaleString("fr-FR")}
-                  </motion.div>
-                )}
-                <span style={{ fontSize: 18, color: "rgba(255,255,255,0.3)", fontWeight: 700 }}>💰</span>
-              </div>
-              <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 12, marginTop: 8 }}>PIÈCES CIPHERPOOL</p>
-
-              {/* Balance change animation */}
-              <AnimatePresence>
-                {balanceChange && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, x: 0 }}
-                    animate={{ opacity: 1, y: -5, x: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    style={{
-                      marginTop: 8, fontSize: 16, fontWeight: 700,
-                      color: balanceChange > 0 ? "#10b981" : "#ef4444",
-                      fontFamily: "Orbitron, sans-serif",
-                    }}
-                  >
-                    {balanceChange > 0 ? "+" : ""}{balanceChange.toLocaleString()} pièces
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Stats */}
-            <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-              <div style={{ textAlign: "center" }}>
-                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, letterSpacing: 1.5, fontWeight: 700 }}>TOTAL REÇU</p>
-                <p style={{ color: "#10b981", fontFamily: "Orbitron, sans-serif", fontSize: 18, fontWeight: 700, marginTop: 4 }}>
-                  +{totalIn.toLocaleString()}
-                </p>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, letterSpacing: 1.5, fontWeight: 700 }}>TOTAL DÉPENSÉ</p>
-                <p style={{ color: "#ef4444", fontFamily: "Orbitron, sans-serif", fontSize: 18, fontWeight: 700, marginTop: 4 }}>
-                  -{totalOut.toLocaleString()}
-                </p>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, letterSpacing: 1.5, fontWeight: 700 }}>TRANSACTIONS</p>
-                <p style={{ color: "#a855f7", fontFamily: "Orbitron, sans-serif", fontSize: 18, fontWeight: 700, marginTop: 4 }}>
-                  {transactions.length}
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ── QUICK ACTIONS ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <motion.a
-            href="/tournaments"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            style={{
-              display: "block", padding: "20px 24px", borderRadius: 14, textDecoration: "none",
-              background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)",
-              cursor: "pointer", transition: "border-color 0.2s",
-            }}
-          >
-            <span style={{ fontSize: 28 }}>🏆</span>
-            <p style={{ fontFamily: "Orbitron, sans-serif", fontSize: 13, fontWeight: 700, color: "#10b981", marginTop: 8, letterSpacing: 1 }}>
-              TOURNOIS
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <p className="text-[9px] font-black text-[rgba(255,255,255,0.35)] uppercase tracking-[0.3em] mb-2">
+              Current Balance
             </p>
-            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 4 }}>Gagne jusqu'à 500 pièces</p>
-          </motion.a>
-
-          <motion.a
-            href="/store"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            style={{
-              display: "block", padding: "20px 24px", borderRadius: 14, textDecoration: "none",
-              background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.15)",
-              cursor: "pointer",
-            }}
-          >
-            <span style={{ fontSize: 28 }}>🛒</span>
-            <p style={{ fontFamily: "Orbitron, sans-serif", fontSize: 13, fontWeight: 700, color: "#a855f7", marginTop: 8, letterSpacing: 1 }}>
-              BOUTIQUE
-            </p>
-            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 4 }}>Dépense tes pièces</p>
-          </motion.a>
-        </div>
-
-        {/* ── TRANSACTIONS ── */}
-        <div style={{
-          background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: 16, overflow: "hidden",
-        }}>
-          {/* Header + filters */}
-          <div style={{
-            padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)",
-            display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10,
-          }}>
-            <h2 style={{ fontFamily: "Orbitron, sans-serif", fontSize: 13, fontWeight: 700, color: "#fff", letterSpacing: 1.5 }}>
-              HISTORIQUE DES TRANSACTIONS
-            </h2>
-            <div style={{ display: "flex", gap: 6 }}>
-              {[
-                { key: "all",   label: "TOUT" },
-                { key: "plus",  label: "➕ REÇU" },
-                { key: "moins", label: "➖ DÉPENSÉ" },
-              ].map(f => (
-                <button key={f.key} onClick={() => setFilter(f.key)}
-                  style={{
-                    padding: "5px 12px", borderRadius: 8, cursor: "pointer",
-                    background: filter === f.key ? "rgba(124,58,237,0.25)" : "transparent",
-                    border: `1px solid ${filter === f.key ? "rgba(124,58,237,0.5)" : "rgba(255,255,255,0.08)"}`,
-                    color: filter === f.key ? "#a855f7" : "rgba(255,255,255,0.35)",
-                    fontSize: 11, fontWeight: 700, letterSpacing: 1,
-                    fontFamily: "Rajdhani, sans-serif",
-                  }}
+            <div className="flex items-end gap-3">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={balance}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="text-[3.5rem] md:text-[4.5rem] font-heading font-black leading-none tracking-tighter"
+                  style={{ color: "#f59e0b" }}
                 >
-                  {f.label}
-                </button>
-              ))}
+                  {balance.toLocaleString()}
+                </motion.span>
+              </AnimatePresence>
+              <span className="text-[1rem] font-black text-[rgba(245,158,11,0.5)] uppercase pb-2">CP</span>
             </div>
+
+            <AnimatePresence>
+              {balanceChange && (
+                <motion.p
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="text-[12px] font-black mt-1"
+                  style={{ color: balanceChange > 0 ? "#10b981" : "#ef4444" }}
+                >
+                  {balanceChange > 0 ? "+" : ""}{balanceChange.toLocaleString()} coins
+                </motion.p>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* List */}
-          {txLoading ? (
-            <div style={{ padding: 40, textAlign: "center" }}>
-              <div style={{ color: "rgba(255,255,255,0.2)", fontSize: 14, letterSpacing: 2 }}>CHARGEMENT...</div>
+          {/* Stat pills */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.18)]">
+              <ArrowUpRight size={13} className="text-[#10b981]" />
+              <div>
+                <p className="text-[8px] font-black text-[rgba(255,255,255,0.3)] uppercase tracking-widest">Received</p>
+                <p className="text-[13px] font-black text-[#10b981]">+{totalIn.toLocaleString()}</p>
+              </div>
             </div>
-          ) : filtered.length === 0 ? (
-            <div style={{ padding: 60, textAlign: "center" }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>💸</div>
-              <p style={{ color: "rgba(255,255,255,0.2)", letterSpacing: 2, fontSize: 12 }}>
-                AUCUNE TRANSACTION
-              </p>
-              <p style={{ color: "rgba(255,255,255,0.1)", fontSize: 12, marginTop: 6 }}>
-                Participe à des tournois pour gagner des pièces !
-              </p>
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[rgba(239,68,68,0.08)] border border-[rgba(239,68,68,0.18)]">
+              <ArrowDownLeft size={13} className="text-[#ef4444]" />
+              <div>
+                <p className="text-[8px] font-black text-[rgba(255,255,255,0.3)] uppercase tracking-widest">Spent</p>
+                <p className="text-[13px] font-black text-[#ef4444]">-{totalOut.toLocaleString()}</p>
+              </div>
             </div>
-          ) : (
-            <div>
-              {filtered.map((tx, i) => {
-                const cfg = getTxConfig(tx.type, tx.description);
-                const isCredit = !["purchase","penalty","debit"].includes(tx.type?.toLowerCase());
-                const amt = tx.amount || 0;
-
-                return (
-                  <motion.div
-                    key={tx.id || i}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    style={{
-                      display: "flex", alignItems: "center", padding: "14px 20px",
-                      borderBottom: i < filtered.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                      transition: "background 0.15s",
-                    }}
-                    onMouseOver={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
-                    onMouseOut={e => e.currentTarget.style.background = "transparent"}
-                  >
-                    {/* Icon */}
-                    <div style={{
-                      width: 40, height: 40, borderRadius: 10, flexShrink: 0, marginRight: 14,
-                      background: `${cfg.color}15`,
-                      border: `1px solid ${cfg.color}30`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 18,
-                    }}>
-                      {cfg.icon}
-                    </div>
-
-                    {/* Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontWeight: 700, color: "#fff", fontSize: 14, marginBottom: 2 }}>
-                        {tx.description || cfg.label}
-                      </p>
-                      <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>
-                        {timeAgo(tx.created_at)} · {cfg.label}
-                      </p>
-                    </div>
-
-                    {/* Amount */}
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <span style={{
-                        fontFamily: "Orbitron, sans-serif", fontSize: 15, fontWeight: 700,
-                        color: isCredit ? "#10b981" : "#ef4444",
-                      }}>
-                        {isCredit ? "+" : "-"}{Math.abs(amt).toLocaleString()}
-                      </span>
-                      <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 10, marginTop: 2 }}>pièces</p>
-                    </div>
-                  </motion.div>
-                );
-              })}
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[rgba(99,102,241,0.08)] border border-[rgba(99,102,241,0.18)]">
+              <BarChart2 size={13} className="text-cp-indigo" />
+              <div>
+                <p className="text-[8px] font-black text-[rgba(255,255,255,0.3)] uppercase tracking-widest">Total Txs</p>
+                <p className="text-[13px] font-black text-cp-indigo">{transactions.length}</p>
+              </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
-    </>
+      </motion.div>
+
+      {/* ── QUICK ACTIONS ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="grid grid-cols-2 gap-3"
+      >
+        <Link to="/tournaments">
+          <motion.div
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+            className="flex items-center gap-3 p-4 rounded-[16px] transition-all duration-[220ms] cursor-pointer"
+            style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}
+          >
+            <Trophy size={22} className="text-[#10b981] flex-shrink-0" />
+            <div>
+              <p className="text-[11px] font-black text-[#10b981] uppercase tracking-wider">Tournaments</p>
+              <p className="text-[9px] text-[rgba(255,255,255,0.3)]">Earn up to 500 CP</p>
+            </div>
+          </motion.div>
+        </Link>
+
+        <Link to="/store">
+          <motion.div
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+            className="flex items-center gap-3 p-4 rounded-[16px] transition-all duration-[220ms] cursor-pointer"
+            style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)" }}
+          >
+            <ShoppingBag size={22} className="text-cp-indigo flex-shrink-0" />
+            <div>
+              <p className="text-[11px] font-black text-cp-indigo uppercase tracking-wider">Store</p>
+              <p className="text-[9px] text-[rgba(255,255,255,0.3)]">Spend your coins</p>
+            </div>
+          </motion.div>
+        </Link>
+      </motion.div>
+
+      {/* ── TRANSACTIONS ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.18, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="cp-card overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,255,255,0.05)]">
+          <span className="text-[10px] font-black text-[rgba(255,255,255,0.5)] uppercase tracking-[0.2em]">
+            Transaction History
+          </span>
+          <div className="flex items-center gap-1.5">
+            {FILTERS.map(f => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all duration-[220ms] ${
+                  filter === f.key
+                    ? "bg-[rgba(99,102,241,0.15)] border border-[rgba(99,102,241,0.3)] text-[#818cf8]"
+                    : "bg-transparent border border-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.6)]"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* List */}
+        {txLoading ? (
+          <div className="p-4 space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="cp-skeleton h-14 rounded-xl" style={{ animationDelay: `${i * 0.04}s` }} />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="text-3xl mb-3">💸</p>
+            <p className="text-[10px] font-black text-[rgba(255,255,255,0.2)] uppercase tracking-[0.2em]">
+              No transactions yet
+            </p>
+            <p className="text-[9px] text-[rgba(255,255,255,0.12)] mt-1">
+              Join tournaments to earn coins!
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[rgba(255,255,255,0.04)]">
+            {filtered.map((tx, i) => {
+              const cfg = getTxCfg(tx.type);
+              const credit = !isDebit(tx);
+              const amt = Math.abs(tx.amount || 0);
+
+              return (
+                <motion.div
+                  key={tx.id || i}
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.025, duration: 0.3 }}
+                  className="group flex items-center gap-3 px-5 py-3.5 hover:bg-[rgba(255,255,255,0.02)] transition-colors duration-[220ms]"
+                >
+                  {/* Icon */}
+                  <div
+                    className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-base"
+                    style={{ background: `${cfg.color}15`, border: `1px solid ${cfg.color}25` }}
+                  >
+                    {cfg.icon}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-black text-white truncate">
+                      {tx.description || cfg.label}
+                    </p>
+                    <p className="text-[8px] font-black text-[rgba(255,255,255,0.25)] uppercase tracking-widest mt-0.5">
+                      {timeAgo(tx.created_at)} · {cfg.label}
+                    </p>
+                  </div>
+
+                  {/* Amount */}
+                  <div className="text-right flex-shrink-0">
+                    <p
+                      className="text-[13px] font-black tabular-nums"
+                      style={{ color: credit ? "#10b981" : "#ef4444" }}
+                    >
+                      {credit ? "+" : "-"}{amt.toLocaleString()}
+                    </p>
+                    <p className="text-[7px] font-black text-[rgba(255,255,255,0.2)] uppercase tracking-widest">CP</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </motion.div>
+    </div>
   );
 }

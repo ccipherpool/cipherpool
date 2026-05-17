@@ -2,119 +2,156 @@ import { useState, useEffect } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Trophy, 
-  Search, 
-  Filter, 
-  Sword, 
-  Users2, 
-  Wallet, 
-  Calendar, 
-  ChevronRight,
-  Sparkles,
-  Zap,
-  Flame,
-  Target
+import {
+  Trophy, Search, Sword, Users2, Wallet,
+  ChevronRight, Zap, Flame, Star, Crown,
 } from "lucide-react";
-import Button from "../components/ui/Button";
 
-const STATUS_CONFIG = {
-  draft:             { label: "Brouillon",    color: "text-slate-500",    bg: "bg-slate-500/10",    border: "border-white/5"             },
-  published:         { label: "À venir",      color: "text-cyber-gold",   bg: "bg-cyber-gold/10",   border: "border-cyber-gold/20"       },
-  registration_open: { label: "Inscriptions", color: "text-mint",         bg: "bg-mint/10",         border: "border-mint/20"             },
-  full:              { label: "Complet",      color: "text-amber-400",    bg: "bg-amber-400/10",    border: "border-amber-400/20"        },
-  ready:             { label: "Prêt",         color: "text-cyan-400",     bg: "bg-cyan-400/10",     border: "border-cyan-400/20"         },
-  live:              { label: "Live Now",     color: "text-mint",         bg: "bg-mint/10",         border: "border-mint/20"             },
-  results_pending:   { label: "Résultats",    color: "text-violet-400",   bg: "bg-violet-400/10",   border: "border-violet-400/20"       },
-  completed:         { label: "Terminé",      color: "text-slate-500",    bg: "bg-slate-500/10",    border: "border-white/5"             },
-  archived:          { label: "Archivé",      color: "text-slate-600",    bg: "bg-slate-600/10",    border: "border-white/5"             },
-  cancelled:         { label: "Annulé",       color: "text-red-400",      bg: "bg-red-400/10",      border: "border-red-400/20"          },
+const STATUS_MAP = {
+  draft:             { label: "Draft",         dot: "#475569" },
+  published:         { label: "Upcoming",      dot: "#f59e0b" },
+  registration_open: { label: "Open",          dot: "#10b981" },
+  full:              { label: "Full",           dot: "#f59e0b" },
+  ready:             { label: "Ready",          dot: "#22d3ee" },
+  live:              { label: "Live",           dot: "#ef4444" },
+  results_pending:   { label: "Results",       dot: "#a78bfa" },
+  completed:         { label: "Ended",         dot: "#475569" },
+  archived:          { label: "Archived",      dot: "#374151" },
+  cancelled:         { label: "Cancelled",     dot: "#ef4444" },
 };
 
-const TournamentCard = ({ t, i, balance }) => {
-  const status = STATUS_CONFIG[t.status] || STATUS_CONFIG.published;
-  const progress = t.max_players > 0 ? (t.current_players / t.max_players) * 100 : 0;
-  const canAfford = (balance || 0) >= (t.entry_fee || 0);
+const FILTERS = [
+  { key: "all",              label: "All"         },
+  { key: "registration_open", label: "Open"       },
+  { key: "live",             label: "Live"        },
+  { key: "published",        label: "Upcoming"    },
+  { key: "completed",        label: "Ended"       },
+];
+
+// ─── TOURNAMENT CARD ─────────────────────────────────────────────────────────
+const TCard = ({ t, i, balance }) => {
+  const cfg = STATUS_MAP[t.status] || STATUS_MAP.published;
+  const progress = t.max_players > 0 ? Math.min((t.current_players / t.max_players) * 100, 100) : 0;
+  const isLive = t.status === "live";
+  const isOpen = t.status === "registration_open";
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: i * 0.05, duration: 0.4 }}
-      className="glass-card group overflow-hidden flex flex-col h-full"
+      transition={{ delay: i * 0.04, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      className="cp-card group overflow-hidden flex flex-col h-full"
     >
-      {/* Card Header Image/Pattern */}
-      <div className="relative h-40 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-obsidian-light to-transparent z-10" />
-        <div className={`absolute inset-0 opacity-20 bg-gradient-to-br ${t.status === 'active' ? 'from-mint to-transparent' : 'from-cyber-gold to-transparent'}`} />
-        <div className="absolute top-4 right-4 z-20">
-          <div className={`px-3 py-1 rounded-full ${status.bg} ${status.border} border backdrop-blur-md flex items-center gap-1.5`}>
-            {t.status === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-mint animate-pulse" />}
-            <span className={`text-[10px] font-black uppercase tracking-widest ${status.color}`}>
-              {status.label}
-            </span>
-          </div>
+      {/* Card top accent */}
+      <div
+        className="h-[3px] w-full"
+        style={{
+          background: isLive
+            ? "linear-gradient(90deg, #ef4444, #f97316)"
+            : isOpen
+            ? "linear-gradient(90deg, #10b981, #6366f1)"
+            : "linear-gradient(90deg, rgba(99,102,241,0.4), rgba(167,139,250,0.3))",
+        }}
+      />
+
+      {/* Card header */}
+      <div className="relative overflow-hidden h-36 flex-shrink-0">
+        {t.banner_url ? (
+          <img
+            src={t.banner_url}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          />
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{
+              background: isLive
+                ? "linear-gradient(135deg, rgba(239,68,68,0.12) 0%, rgba(249,115,22,0.06) 100%)"
+                : "linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(16,185,129,0.05) 100%)",
+            }}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1220] via-[#0d1220]/40 to-transparent" />
+
+        {/* HUD icon */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-10 group-hover:opacity-20 transition-opacity duration-500">
+          <Trophy size={64} className="text-white" />
         </div>
-        <div className="absolute inset-0 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-           <Trophy size={64} className={`${t.status === 'active' ? 'text-mint' : 'text-white/20'} opacity-20`} />
+
+        {/* Status badge */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[rgba(0,0,0,0.5)] border border-[rgba(255,255,255,0.08)] backdrop-blur-sm">
+          <span
+            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+            style={{ background: cfg.dot, boxShadow: isLive ? `0 0 6px ${cfg.dot}` : "none" }}
+          />
+          {isLive && <span className="absolute inset-0 rounded-full animate-ping opacity-30" style={{ background: cfg.dot }} />}
+          <span className="text-[8px] font-black text-white uppercase tracking-[0.2em]">{cfg.label}</span>
         </div>
-        <div className="absolute bottom-4 left-6 z-20">
-           <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight leading-none group-hover:text-mint transition-colors">
+
+        {/* Title */}
+        <div className="absolute bottom-3 left-4 right-4">
+          <h3 className="text-[13px] font-black text-white uppercase tracking-wide leading-tight truncate group-hover:text-cp-indigo-light transition-colors duration-[220ms]">
             {t.name}
-           </h3>
+          </h3>
         </div>
       </div>
 
-      <div className="p-6 flex-1 flex flex-col">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
-          <div className="p-2 rounded-xl bg-white/5 border border-white/5 text-center">
-            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Prize</p>
-            <p className="text-xs font-black text-cyber-gold">{t.prize_coins} CP</p>
-          </div>
-          <div className="p-2 rounded-xl bg-white/5 border border-white/5 text-center">
-            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Entry</p>
-            <p className="text-xs font-black text-white">{t.entry_fee === 0 ? 'FREE' : `${t.entry_fee} CP`}</p>
-          </div>
-          <div className="p-2 rounded-xl bg-white/5 border border-white/5 text-center">
-            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Mode</p>
-            <p className="text-xs font-black text-mint uppercase">{t.mode || 'SOLO'}</p>
-          </div>
+      {/* Card body */}
+      <div className="p-4 flex-1 flex flex-col gap-4">
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: "Prize", value: `${(t.prize_coins || 0).toLocaleString()} CP`, color: "#f59e0b" },
+            { label: "Entry", value: t.entry_fee === 0 ? "FREE" : `${t.entry_fee} CP`, color: "rgba(255,255,255,0.8)" },
+            { label: "Mode",  value: t.mode || "SOLO", color: "#10b981" },
+          ].map(s => (
+            <div key={s.label} className="text-center py-2 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]">
+              <p className="text-[7px] font-black text-[rgba(255,255,255,0.25)] uppercase tracking-widest mb-0.5">{s.label}</p>
+              <p className="text-[10px] font-black uppercase truncate" style={{ color: s.color }}>{s.value}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Players Progress */}
-        <div className="space-y-2 mb-6">
-          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-            <span className="text-slate-500">Squads Enrolled</span>
-            <span className="text-white">{t.current_players} / {t.max_players}</span>
+        {/* Slots progress */}
+        <div>
+          <div className="flex justify-between text-[8px] font-black text-[rgba(255,255,255,0.3)] uppercase tracking-widest mb-1.5">
+            <span>Players</span>
+            <span className="text-[rgba(255,255,255,0.6)]">{t.current_players ?? 0} / {t.max_players ?? "∞"}</span>
           </div>
-          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-            <motion.div 
+          <div className="cp-progress">
+            <motion.div
+              className="cp-progress-fill"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 1, delay: 0.2 }}
-              className={`h-full bg-gradient-to-r ${t.status === 'active' ? 'from-mint to-mint-dark' : 'from-cyber-gold to-cyber-gold-dark'}`} 
+              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+              style={{
+                background: progress >= 100
+                  ? "#f59e0b"
+                  : "linear-gradient(90deg, #6366f1, #818cf8)",
+              }}
             />
           </div>
         </div>
 
-        {/* Description/Requirements */}
-        <div className="mb-6 flex-1">
-          <p className="text-xs text-slate-500 font-medium line-clamp-2">
-            {t.description || "Join the high-stakes battle. Requires Level 5+ and verified Free Fire ID."}
-          </p>
-        </div>
-
-        {/* Action Button */}
+        {/* CTA */}
         <div className="mt-auto">
-          <Link to={`/tournaments/${t.id}`} className="block">
-            <Button 
-              variant={t.status === 'active' ? 'primary' : 'outline'} 
-              className="w-full"
-              disabled={t.status === 'completed'}
+          <Link to={`/tournaments/${t.id}`}>
+            <button
+              className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-[220ms] ${
+                t.status === "completed" || t.status === "archived" || t.status === "cancelled"
+                  ? "bg-[rgba(255,255,255,0.04)] text-[rgba(255,255,255,0.3)] cursor-not-allowed border border-[rgba(255,255,255,0.05)]"
+                  : isLive
+                  ? "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] hover:scale-[1.02] active:scale-[0.98]"
+                  : "bg-gradient-to-r from-cp-indigo to-cp-indigo-light text-white shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] hover:scale-[1.02] active:scale-[0.98]"
+              }`}
             >
-              {t.status === 'completed' ? 'Tournament Ended' : !canAfford ? `Need ${t.entry_fee} CP` : t.status === 'active' ? 'Enter Arena' : 'Join Bracket'}
-            </Button>
+              {t.status === "completed" || t.status === "archived" ? "View Results"
+                : t.status === "cancelled" ? "Cancelled"
+                : isLive ? "Watch Live"
+                : isOpen ? "Join Tournament"
+                : "View Details"}
+            </button>
           </Link>
         </div>
       </div>
@@ -122,6 +159,7 @@ const TournamentCard = ({ t, i, balance }) => {
   );
 };
 
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function Tournaments() {
   const { profile } = useOutletContext() || {};
   const [tournaments, setTournaments] = useState([]);
@@ -130,7 +168,7 @@ export default function Tournaments() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const fetchTournaments = async () => {
+    (async () => {
       setLoading(true);
       const { data } = await supabase
         .from("tournaments")
@@ -138,84 +176,134 @@ export default function Tournaments() {
         .order("created_at", { ascending: false });
       setTournaments(data || []);
       setLoading(false);
-    };
-    fetchTournaments();
+    })();
   }, []);
 
   const filtered = tournaments.filter(t => {
-    const matchesFilter = filter === "all" || t.status === filter;
-    const matchesSearch = t.name.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
+    const matchFilter = filter === "all" || t.status === filter;
+    const matchSearch = t.name.toLowerCase().includes(search.toLowerCase());
+    return matchFilter && matchSearch;
   });
 
-  return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-heading font-black tracking-tighter uppercase">
-            ACTIVE <span className="text-mint">BRACKETS</span>
-          </h1>
-          <p className="text-slate-500 font-medium mt-1">
-            Browse and join available tournaments. Prove your skills and earn rewards.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-mint transition-colors" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search brackets..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-obsidian-light border border-white/5 rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-mint/30 w-full md:w-64"
-            />
-          </div>
-        </div>
-      </div>
+  const liveCount = tournaments.filter(t => t.status === "live").length;
+  const openCount = tournaments.filter(t => t.status === "registration_open").length;
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2 pb-2">
-        {['all', 'registration_open', 'published', 'live', 'completed'].map((f) => (
+  return (
+    <div className="space-y-6">
+
+      {/* ── HEADER ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="flex flex-col md:flex-row md:items-end justify-between gap-4"
+      >
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            {liveCount > 0 && (
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/25">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                <span className="text-[8px] font-black text-red-400 uppercase tracking-[0.2em]">{liveCount} Live</span>
+              </span>
+            )}
+            {openCount > 0 && (
+              <span className="text-[9px] font-black text-[rgba(16,185,129,0.6)] uppercase tracking-widest">
+                {openCount} Open
+              </span>
+            )}
+          </div>
+          <h1 className="text-[2rem] md:text-[2.8rem] font-heading font-black text-white uppercase tracking-tighter leading-[0.9]">
+            Tournament<br />
+            <span style={{ background: "linear-gradient(135deg, #6366f1, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              Arena
+            </span>
+          </h1>
+        </div>
+
+        {/* Search */}
+        <div className="relative group max-w-xs w-full md:w-auto">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[rgba(255,255,255,0.2)] group-focus-within:text-cp-indigo transition-colors duration-[220ms]" />
+          <input
+            type="text"
+            placeholder="Search tournaments..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="cp-input pl-9 w-full md:w-56"
+          />
+        </div>
+      </motion.div>
+
+      {/* ── FILTER TABS ── */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+        className="flex flex-wrap items-center gap-2"
+      >
+        {FILTERS.map(f => (
           <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
-              filter === f 
-                ? 'bg-mint text-obsidian border-mint shadow-neon-mint' 
-                : 'bg-white/5 text-slate-500 border-white/5 hover:border-white/10'
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className={`relative px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-[220ms] ${
+              filter === f.key
+                ? "text-white bg-[rgba(99,102,241,0.15)] border border-[rgba(99,102,241,0.35)]"
+                : "text-[rgba(255,255,255,0.35)] bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] hover:text-[rgba(255,255,255,0.7)] hover:bg-[rgba(255,255,255,0.06)]"
             }`}
           >
-            {f === 'all' ? 'All Events' : f}
+            {filter === f.key && (
+              <motion.div
+                layoutId="tour-filter-bg"
+                className="absolute inset-0 rounded-xl"
+                style={{ background: "rgba(99,102,241,0.08)" }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+            )}
+            <span className="relative z-10">{f.label}</span>
           </button>
         ))}
-      </div>
+        {search && (
+          <span className="text-[9px] font-black text-[rgba(255,255,255,0.3)] uppercase tracking-widest">
+            {filtered.length} result{filtered.length !== 1 && "s"}
+          </span>
+        )}
+      </motion.div>
 
-      {/* Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {[1,2,3,4,5,6,7,8].map(i => (
-            <div key={i} className="glass-card h-96 animate-pulse bg-white/5" />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="py-20 text-center glass-card">
-          <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6">
-             <Sword size={40} className="text-slate-700" />
+      {/* ── GRID ── */}
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <div key="skeleton" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="cp-skeleton h-80 rounded-[16px]" style={{ animationDelay: `${i * 0.05}s` }} />
+            ))}
           </div>
-          <h3 className="text-xl font-heading font-black text-white uppercase mb-2">No Tournaments Found</h3>
-          <p className="text-slate-500 max-w-xs mx-auto text-sm">
-            We couldn't find any tournaments matching your criteria. Try adjusting your filters.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filtered.map((t, i) => (
-            <TournamentCard key={t.id} t={t} i={i} balance={profile?.coins} />
-          ))}
-        </div>
-      )}
+        ) : filtered.length === 0 ? (
+          <motion.div
+            key="empty"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="cp-card py-20 text-center"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] flex items-center justify-center mx-auto mb-4">
+              <Sword size={28} className="text-[rgba(255,255,255,0.12)]" />
+            </div>
+            <p className="text-[11px] font-black text-[rgba(255,255,255,0.25)] uppercase tracking-[0.2em] mb-1">
+              No Tournaments Found
+            </p>
+            <p className="text-[10px] text-[rgba(255,255,255,0.15)]">
+              {search ? "Try different search terms" : "Check back soon"}
+            </p>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="grid"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+          >
+            {filtered.map((t, i) => (
+              <TCard key={t.id} t={t} i={i} balance={profile?.balance} />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

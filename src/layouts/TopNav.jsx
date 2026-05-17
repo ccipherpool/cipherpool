@@ -1,137 +1,206 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Trophy, BarChart3, MessageSquare, Users2,
   ShoppingBag, Wallet, Newspaper, Ticket, TrendingUp,
-  ShieldAlert, Zap, LogOut, User
+  ShieldAlert, Zap, LogOut, User, Gift, Star,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import ThemeToggle from "../components/ui/ThemeToggle";
 import NotificationBell from "../components/NotificationBell";
 import SeasonBadge from "../components/ui/SeasonBadge";
 
-const NavItem = ({ item, isActive }) => (
-  <NavLink
-    to={item.path}
-    className={`px-3 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-2 group text-[11px] font-black uppercase tracking-widest ${
-      isActive
-        ? 'text-mint bg-mint/[0.10]'
-        : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
-    }`}
-  >
-    <item.icon size={16} strokeWidth={isActive ? 2.5 : 2} />
-    <span>{item.label}</span>
-  </NavLink>
-);
+const NAV_MAIN = [
+  { path: "/dashboard",   icon: LayoutDashboard, label: "Command" },
+  { path: "/tournaments", icon: Trophy,           label: "Arena"   },
+  { path: "/chat",        icon: MessageSquare,    label: "Chat"    },
+  { path: "/clans",       icon: Users2,           label: "Clans"   },
+  { path: "/leaderboard", icon: BarChart3,        label: "Rankings"},
+];
+
+const NAV_ICONS = [
+  { path: "/store",        icon: ShoppingBag, label: "Store"    },
+  { path: "/wallet",       icon: Wallet,      label: "Wallet"   },
+  { path: "/daily-rewards",icon: Gift,        label: "Rewards"  },
+  { path: "/achievements", icon: Star,        label: "Achievements"},
+  { path: "/news",         icon: Newspaper,   label: "News"     },
+  { path: "/support",      icon: Ticket,      label: "Support"  },
+];
 
 export default function TopNav({ profile }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const p = location.pathname;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
   };
 
-  const mainItems = [
-    { path: "/dashboard", icon: LayoutDashboard, label: "Command" },
-    { path: "/tournaments", icon: Trophy, label: "Arena" },
-    { path: "/chat", icon: MessageSquare, label: "Global Chat" },
-    { path: "/clans", icon: Users2, label: "Tactical Clans" },
-    { path: "/leaderboard", icon: BarChart3, label: "Rankings" },
-  ];
-
-  const subItems = [
-    { path: "/store", icon: ShoppingBag, label: "Tactical Store" },
-    { path: "/wallet", icon: Wallet, label: "Assets" },
-    { path: "/stats", icon: TrendingUp, label: "Intelligence" },
-    { path: "/news", icon: Newspaper, label: "Flash News" },
-    { path: "/support", icon: Ticket, label: "Support" },
-  ];
-
-  const isAdmin = ["admin", "super_admin", "founder", "fondateur"].includes(profile?.role);
+  const isAdmin      = ["admin", "super_admin", "founder", "fondateur"].includes(profile?.role);
+  const isSuperAdmin = profile?.role === "super_admin";
 
   return (
-    <nav className="h-14 bg-[#080d18]/90 backdrop-blur-xl border-b border-white/[0.06] px-6 hidden md:flex items-center justify-between flex-shrink-0">
-      {/* Empty left spacer (brand is in sidebar) */}
-      <div className="w-4" />
+    <nav className="h-13 bg-[rgba(7,9,26,0.92)] backdrop-blur-[24px] border-b border-[rgba(255,255,255,0.05)] px-5 hidden md:flex items-center justify-between flex-shrink-0 relative z-40" style={{ height: "52px" }}>
+      {/* Top gradient line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[rgba(99,102,241,0.3)] to-transparent pointer-events-none" />
 
-      {/* Main Nav */}
-      <div className="flex items-center gap-2">
-        {mainItems.map(item => (
-          <NavItem key={item.path} item={item} isActive={location.pathname === item.path} />
-        ))}
-        <div className="h-8 w-[1px] bg-white/5 mx-4" />
-        <div className="flex items-center gap-2">
-          {subItems.map(item => (
+      {/* Main nav items */}
+      <div className="flex items-center gap-1">
+        {NAV_MAIN.map(item => {
+          const active = p === item.path || (item.path !== "/dashboard" && p.startsWith(item.path));
+          return (
             <NavLink
               key={item.path}
               to={item.path}
-              className={`p-2 rounded-xl transition-all duration-300 ${
-                location.pathname === item.path ? 'text-mint bg-mint/5' : 'text-slate-500 hover:text-white'
-              }`}
-              title={item.label}
+              className={[
+                "relative flex items-center gap-2 px-3 py-1.5 rounded-xl",
+                "text-[10px] font-black uppercase tracking-[0.1em]",
+                "transition-all duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+                active
+                  ? "text-white bg-[rgba(99,102,241,0.12)]"
+                  : "text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.8)] hover:bg-[rgba(255,255,255,0.04)]",
+              ].join(" ")}
             >
-              <item.icon size={18} />
+              <item.icon size={13} strokeWidth={active ? 2.5 : 2} />
+              <span>{item.label}</span>
+              {active && (
+                <motion.div
+                  layoutId="topnav-active"
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cp-indigo"
+                  style={{ boxShadow: "0 0 6px rgba(99,102,241,0.8)" }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
             </NavLink>
-          ))}
+          );
+        })}
+
+        <div className="w-px h-5 bg-[rgba(255,255,255,0.06)] mx-2" />
+
+        <div className="flex items-center gap-0.5">
+          {NAV_ICONS.map(item => {
+            const active = p === item.path;
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                title={item.label}
+                aria-label={item.label}
+                className={[
+                  "p-2 rounded-xl transition-all duration-[220ms]",
+                  active
+                    ? "text-cp-indigo bg-[rgba(99,102,241,0.1)]"
+                    : "text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.7)] hover:bg-[rgba(255,255,255,0.04)]",
+                ].join(" ")}
+              >
+                <item.icon size={15} />
+              </NavLink>
+            );
+          })}
         </div>
       </div>
 
-      {/* Profile & Controls */}
-      <div className="flex items-center gap-4 lg:gap-6 min-w-[240px] justify-end">
+      {/* Right cluster */}
+      <div className="flex items-center gap-3">
         <div className="hidden lg:block">
-           <SeasonBadge />
+          <SeasonBadge />
         </div>
 
-        <ThemeToggle variant="icon" buttonSize={32} />
-        
         <NotificationBell userId={profile?.id} />
 
+        {/* Profile dropdown */}
         <div className="relative group">
-           <button className="flex items-center gap-3 pl-2 pr-1 py-1.5 bg-white/[0.03] border border-white/5 rounded-2xl hover:border-white/20 transition-all">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-mint to-mint-dark flex items-center justify-center text-obsidian font-black text-xs shadow-neon-mint overflow-hidden">
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  profile?.username?.[0]?.toUpperCase() || 'P'
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            className="flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.07)] rounded-2xl hover:border-[rgba(255,255,255,0.14)] hover:bg-[rgba(255,255,255,0.07)] transition-all duration-[220ms] outline-none focus-visible:ring-1 focus-visible:ring-white/20"
+            aria-label="Profile menu"
+          >
+            {/* Avatar */}
+            <div
+              className="w-7 h-7 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-black text-[10px]"
+              style={{ background: "linear-gradient(135deg, #6366f1, #10b981)" }}
+            >
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                profile?.username?.[0]?.toUpperCase() || "P"
+              )}
+            </div>
+
+            <div className="hidden lg:flex flex-col items-start">
+              <span className="text-[9px] font-black text-white uppercase tracking-widest leading-none">
+                {profile?.username || "Agent"}
+              </span>
+              <span className="text-[7px] font-bold text-[rgba(16,185,129,0.7)] uppercase tracking-wider mt-0.5">
+                Lvl {profile?.level || 1}
+              </span>
+            </div>
+          </motion.button>
+
+          {/* Dropdown panel */}
+          <div className="absolute right-0 top-full pt-2 opacity-0 translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-[110]">
+            <div className="w-56 bg-[#0d1220] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-[24px] overflow-hidden">
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.05)]">
+                <p className="text-[8px] font-black text-[rgba(255,255,255,0.25)] uppercase tracking-[0.3em] mb-1">Logged in as</p>
+                <p className="text-[11px] font-bold text-white truncate">{profile?.email}</p>
+                {profile?.role && (
+                  <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider bg-[rgba(99,102,241,0.15)] text-[#818cf8] border border-[rgba(99,102,241,0.2)]">
+                    {profile.role.replace("_", " ")}
+                  </span>
                 )}
               </div>
-              <div className="text-left hidden lg:block pr-4">
-                 <p className="text-[9px] font-black text-white uppercase tracking-widest">{profile?.username || "Agent"}</p>
-                 <p className="text-[8px] font-bold text-mint/60 uppercase">Lvl {profile?.level || 1}</p>
+
+              <div className="p-1.5">
+                <NavLink
+                  to="/profile"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[rgba(255,255,255,0.45)] hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition-all duration-[220ms]"
+                >
+                  <User size={13} />
+                  <span>Profile</span>
+                </NavLink>
+
+                <NavLink
+                  to="/wallet"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[rgba(255,255,255,0.45)] hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition-all duration-[220ms]"
+                >
+                  <Wallet size={13} />
+                  <span>Wallet</span>
+                </NavLink>
+
+                {isAdmin && (
+                  <>
+                    <div className="my-1 h-px bg-[rgba(255,255,255,0.05)]" />
+                    <NavLink
+                      to="/admin"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[rgba(255,255,255,0.45)] hover:text-orange-400 hover:bg-orange-400/5 transition-all duration-[220ms]"
+                    >
+                      <ShieldAlert size={13} />
+                      <span>Admin Panel</span>
+                    </NavLink>
+                    {isSuperAdmin && (
+                      <NavLink
+                        to="/super-admin"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[rgba(255,255,255,0.45)] hover:text-red-400 hover:bg-red-400/5 transition-all duration-[220ms]"
+                      >
+                        <Zap size={13} />
+                        <span>Root Access</span>
+                      </NavLink>
+                    )}
+                  </>
+                )}
+
+                <div className="my-1 h-px bg-[rgba(255,255,255,0.05)]" />
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-400/70 hover:text-red-400 hover:bg-red-400/5 transition-all duration-[220ms]"
+                >
+                  <LogOut size={13} />
+                  <span>Sign Out</span>
+                </button>
               </div>
-           </button>
-
-           {/* Hover Menu */}
-           <div className="absolute right-0 top-full pt-2 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300 z-[110]">
-              <div className="w-56 bg-[#080d18] border border-white/[0.08] rounded-2xl p-2 shadow-2xl backdrop-blur-xl">
-                 <div className="px-4 py-3 border-b border-white/5 mb-1">
-                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Authorization</p>
-                    <p className="text-[10px] font-bold text-white truncate">{profile?.email}</p>
-                 </div>
-                 
-                 <NavLink to="/profile" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-                    <User size={14} /> Profile Specs
-                 </NavLink>
-
-                 {isAdmin && (
-                    <div className="mt-1 pt-1 border-t border-white/5">
-                       <NavLink to="/admin" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-orange-400 hover:bg-orange-400/5 transition-all">
-                          <ShieldAlert size={14} /> Control Panel
-                       </NavLink>
-                       {profile?.role === 'super_admin' && (
-                          <NavLink to="/super-admin" className="flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-400 hover:bg-red-400/5 transition-all">
-                             <Zap size={14} /> System Override
-                          </NavLink>
-                       )}
-                    </div>
-                 )}
-
-                 <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/5 transition-all mt-1">
-                    <LogOut size={14} /> Terminate
-                 </button>
-              </div>
-           </div>
+            </div>
+          </div>
         </div>
       </div>
     </nav>

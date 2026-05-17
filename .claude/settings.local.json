@@ -50,7 +50,10 @@
       "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\cipherpool\\\\src\\\\features\\\\community\")",
       "Bash(mkdir -p \"C:\\\\cipherpool\\\\supabase\\\\migrations\")",
       "Bash(mkdir -p \"C:\\\\cipherpool\\\\src\\\\social\\\\hooks\")",
-      "Bash(mkdir -p \"C:\\\\cipherpool\\\\src\\\\social\\\\components\")"
+      "Bash(mkdir -p \"C:\\\\cipherpool\\\\src\\\\social\\\\components\")",
+      "Bash(Get-Content \"C:\\\\cipherpool\\\\sql\\\\34_production_complete_sync.sql\")",
+      "Bash(Measure-Object -Line)",
+      "Bash(Select-Object Lines)"
     ]
   }
 }
