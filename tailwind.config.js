@@ -125,6 +125,16 @@ export default {
         'cp-slow': '380ms',
       },
 
+      backgroundImage: {
+        'cyber-radial':  'radial-gradient(circle at top, rgba(139,92,246,0.25), transparent 40%)',
+        'cyan-glow':     'radial-gradient(circle at center, rgba(6,182,212,0.18), transparent 45%)',
+        'gold-glow':     'radial-gradient(circle at center, rgba(245,158,11,0.15), transparent 45%)',
+        'luxury-panel':  'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))',
+        'cp-surface':    'linear-gradient(135deg, #07091a 0%, #0d1220 100%)',
+        'cp-hero':       'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(6,182,212,0.08) 100%)',
+        'cyber-grid-sm': 'repeating-linear-gradient(0deg,rgba(139,92,246,0.06) 0,transparent 1px,transparent 40px,rgba(139,92,246,0.06) 40px),repeating-linear-gradient(90deg,rgba(139,92,246,0.06) 0,transparent 1px,transparent 40px,rgba(139,92,246,0.06) 40px)',
+      },
+
       spacing: {
         'safe-bottom': 'env(safe-area-inset-bottom)',
         'safe-top':    'env(safe-area-inset-top)',

@@ -17,7 +17,8 @@ export default function SeasonBadge({ compact = false, className = "" }) {
         .from("seasons")
         .select("number, name, theme_color")
         .eq("status", "active")
-        .maybeSingle();
+        .maybeSingle()
+        .catch(() => ({ data: null }));
       if (!cancelled && data) setSeason(data);
     })();
     return () => { cancelled = true; };

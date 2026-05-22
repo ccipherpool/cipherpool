@@ -40,9 +40,9 @@ export default function TopNav({ profile }) {
   const isSuperAdmin = profile?.role === "super_admin";
 
   return (
-    <nav className="h-13 bg-[rgba(7,9,26,0.92)] backdrop-blur-[24px] border-b border-[rgba(255,255,255,0.05)] px-5 hidden md:flex items-center justify-between flex-shrink-0 relative z-40" style={{ height: "52px" }}>
+    <nav className="h-13 bg-cp-s1/92 backdrop-blur-[24px] border-b border-white/[0.05] px-5 hidden md:flex items-center justify-between flex-shrink-0 relative z-40" style={{ height: "52px" }}>
       {/* Top gradient line */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[rgba(99,102,241,0.3)] to-transparent pointer-events-none" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-border to-transparent pointer-events-none" />
 
       {/* Main nav items */}
       <div className="flex items-center gap-1">
@@ -57,8 +57,8 @@ export default function TopNav({ profile }) {
                 "text-[10px] font-black uppercase tracking-[0.1em]",
                 "transition-all duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
                 active
-                  ? "text-white bg-[rgba(99,102,241,0.12)]"
-                  : "text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.8)] hover:bg-[rgba(255,255,255,0.04)]",
+                  ? "text-white bg-cyber-dim"
+                  : "text-white/40 hover:text-white/80 hover:bg-white/[0.04]",
               ].join(" ")}
             >
               <item.icon size={13} strokeWidth={active ? 2.5 : 2} />
@@ -66,8 +66,8 @@ export default function TopNav({ profile }) {
               {active && (
                 <motion.div
                   layoutId="topnav-active"
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cp-indigo"
-                  style={{ boxShadow: "0 0 6px rgba(99,102,241,0.8)" }}
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cyber-500"
+                  style={{ boxShadow: "0 0 6px rgba(139,92,246,0.8)" }}
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
@@ -89,8 +89,8 @@ export default function TopNav({ profile }) {
                 className={[
                   "p-2 rounded-xl transition-all duration-[220ms]",
                   active
-                    ? "text-cp-indigo bg-[rgba(99,102,241,0.1)]"
-                    : "text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.7)] hover:bg-[rgba(255,255,255,0.04)]",
+                    ? "text-cyber-400 bg-cyber-dim"
+                    : "text-white/30 hover:text-white/70 hover:bg-white/[0.04]",
                 ].join(" ")}
               >
                 <item.icon size={15} />
@@ -118,7 +118,7 @@ export default function TopNav({ profile }) {
             {/* Avatar */}
             <div
               className="w-7 h-7 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-black text-[10px]"
-              style={{ background: "linear-gradient(135deg, #6366f1, #10b981)" }}
+              style={{ background: "linear-gradient(135deg, #8B5CF6, #06B6D4)" }}
             >
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
@@ -145,7 +145,7 @@ export default function TopNav({ profile }) {
                 <p className="text-[8px] font-black text-[rgba(255,255,255,0.25)] uppercase tracking-[0.3em] mb-1">Logged in as</p>
                 <p className="text-[11px] font-bold text-white truncate">{profile?.email}</p>
                 {profile?.role && (
-                  <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider bg-[rgba(99,102,241,0.15)] text-[#818cf8] border border-[rgba(99,102,241,0.2)]">
+                  <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider bg-cyber-dim text-cyber-400 border border-cyber-border">
                     {profile.role.replace("_", " ")}
                   </span>
                 )}

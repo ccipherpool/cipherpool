@@ -74,7 +74,7 @@ function LoadingScreen() {
   return (
     <div className="fixed inset-0 bg-[#020617] flex items-center justify-center z-[9999]">
       {/* Ambient orbs */}
-      <div className="absolute w-[400px] h-[400px] rounded-full bg-[rgba(99,102,241,0.06)] blur-[100px] pointer-events-none" />
+      <div className="absolute w-[400px] h-[400px] rounded-full bg-[rgba(139,92,246,0.06)] blur-[100px] pointer-events-none" />
       <div className="absolute w-[300px] h-[300px] rounded-full bg-[rgba(16,185,129,0.04)] blur-[80px] pointer-events-none translate-x-32 translate-y-16" />
 
       <motion.div
@@ -86,15 +86,15 @@ function LoadingScreen() {
         {/* Animated cipher icon */}
         <div className="relative w-16 h-16">
           {/* Outer ring */}
-          <div className="absolute inset-0 rounded-2xl border border-[rgba(99,102,241,0.15)]"
+          <div className="absolute inset-0 rounded-2xl border border-cyber-border"
             style={{ transform: "rotate(45deg)" }} />
           {/* Spinning ring */}
-          <div className="absolute inset-0 rounded-2xl border border-[rgba(99,102,241,0.5)]"
+          <div className="absolute inset-0 rounded-2xl border border-[rgba(139,92,246,0.5)]"
             style={{ transform: "rotate(45deg)", animation: "cp-orbit 2.5s linear infinite" }} />
           {/* Inner pulse */}
-          <div className="absolute inset-3 rounded-xl bg-[rgba(99,102,241,0.12)] flex items-center justify-center"
+          <div className="absolute inset-3 rounded-xl bg-cyber-dim flex items-center justify-center"
             style={{ animation: "cp-pulse-glow 2s ease-in-out infinite" }}>
-            <Zap size={16} className="text-[#6366f1]" />
+            <Zap size={16} className="text-cyber-400" />
           </div>
         </div>
 
@@ -111,7 +111,7 @@ function LoadingScreen() {
         {/* Progress bar */}
         <div className="w-40 h-[2px] bg-[rgba(255,255,255,0.05)] rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-[#6366f1] to-[#10b981] rounded-full"
+            className="h-full bg-gradient-to-r from-cyber-500 to-neon-cyan rounded-full"
             initial={{ x: "-100%" }}
             animate={{ x: "0%" }}
             transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
@@ -155,7 +155,7 @@ function MobileDrawer({ open, onClose, profile }) {
             className="fixed left-0 top-0 bottom-0 w-[300px] z-[210] md:hidden flex flex-col bg-[#07091a] overflow-hidden"
           >
             {/* Left gradient accent */}
-            <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-[rgba(99,102,241,0.8)] via-[rgba(16,185,129,0.4)] to-transparent" />
+            <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-[rgba(139,92,246,0.8)] via-[rgba(6,182,212,0.4)] to-transparent" />
 
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,255,255,0.05)]">
@@ -175,7 +175,7 @@ function MobileDrawer({ open, onClose, profile }) {
               <div className="mx-4 mt-4 flex items-center gap-3 px-3 py-3 rounded-2xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)]">
                 <div
                   className="w-9 h-9 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-black text-sm"
-                  style={{ background: "linear-gradient(135deg, #6366f1, #10b981)" }}
+                  style={{ background: "linear-gradient(135deg, #8B5CF6, #06B6D4)" }}
                 >
                   {profile.avatar_url
                     ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
@@ -206,7 +206,7 @@ function MobileDrawer({ open, onClose, profile }) {
                           "text-[11px] font-black uppercase tracking-[0.08em]",
                           "transition-all duration-[220ms] min-h-[44px]",
                           isActive
-                            ? "bg-[rgba(99,102,241,0.12)] text-white"
+                            ? "bg-cyber-dim text-white"
                             : "text-[rgba(255,255,255,0.45)] hover:text-white hover:bg-[rgba(255,255,255,0.04)]",
                         ].join(" ")
                       }
@@ -214,7 +214,7 @@ function MobileDrawer({ open, onClose, profile }) {
                       {({ isActive }) => (
                         <>
                           <item.icon size={15} strokeWidth={isActive ? 2.5 : 2}
-                            className={isActive ? "text-[#6366f1]" : ""} />
+                            className={isActive ? "text-cyber-400" : ""} />
                           {item.label}
                         </>
                       )}
@@ -287,7 +287,7 @@ export default function MainLayout() {
       {/* ── MOBILE HEADER ────────────────────────────────────────────── */}
       <header className="md:hidden flex-shrink-0 z-50 relative">
         {/* Gradient accent top */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[rgba(99,102,241,0.5)] to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-border to-transparent" />
 
         <div className="h-14 flex items-center px-4 bg-[rgba(7,9,26,0.95)] backdrop-blur-[24px] border-b border-[rgba(255,255,255,0.05)]">
           {/* Menu button */}
@@ -337,7 +337,7 @@ export default function MainLayout() {
           {/* Page content */}
           <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#020617] cp-scroll-container">
             {/* Ambient gradient at top of content area */}
-            <div className="pointer-events-none absolute top-0 left-1/4 w-1/2 h-[300px] bg-[rgba(99,102,241,0.03)] blur-[80px] rounded-full" style={{ position: "sticky" }} />
+            <div className="pointer-events-none fixed top-[52px] left-1/4 w-1/2 h-[300px] bg-[rgba(139,92,246,0.03)] blur-[80px] rounded-full z-0" />
 
             <div className="max-w-7xl w-full mx-auto px-4 md:px-7 py-5 md:py-7 min-w-0 pb-[calc(env(safe-area-inset-bottom)+80px)] md:pb-7">
               <AnimatePresence mode="wait">
@@ -377,7 +377,7 @@ export default function MainLayout() {
         }}
       >
         {/* Top gradient line */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[rgba(99,102,241,0.25)] to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-border to-transparent" />
 
         <div className="flex items-center justify-around px-2 h-14">
           {MOBILE_BOTTOM.map(item => {
@@ -397,14 +397,14 @@ export default function MainLayout() {
                   <item.icon
                     size={20}
                     strokeWidth={isActive ? 2.5 : 1.8}
-                    className={isActive ? "text-[#6366f1]" : "text-[rgba(255,255,255,0.35)]"}
-                    style={isActive ? { filter: "drop-shadow(0 0 6px rgba(99,102,241,0.7))" } : {}}
+                    className={isActive ? "text-cyber-400" : "text-[rgba(255,255,255,0.35)]"}
+                    style={isActive ? { filter: "drop-shadow(0 0 6px rgba(139,92,246,0.7))" } : {}}
                   />
                 </motion.div>
                 <span
                   className={[
                     "text-[7px] font-black uppercase tracking-[0.1em] leading-none",
-                    isActive ? "text-[#6366f1]" : "text-[rgba(255,255,255,0.25)]",
+                    isActive ? "text-cyber-400" : "text-[rgba(255,255,255,0.25)]",
                   ].join(" ")}
                 >
                   {item.label}
@@ -413,8 +413,8 @@ export default function MainLayout() {
                 {isActive && (
                   <motion.div
                     layoutId="mobile-nav-dot"
-                    className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#6366f1]"
-                    style={{ boxShadow: "0 0 6px rgba(99,102,241,0.8)" }}
+                    className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cyber-500"
+                    style={{ boxShadow: "0 0 6px rgba(139,92,246,0.8)" }}
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}

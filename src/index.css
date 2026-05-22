@@ -214,7 +214,22 @@ input, textarea, select {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
+}
+
+/* ── MOBILE PERFORMANCE: limit expensive effects on low-end devices ──── */
+@media (max-width: 768px) {
+  /* Avoid animating filter/box-shadow on cards — these are GPU-expensive */
+  .luxury-card, .tournament-card, .stat-card, .wallet-card {
+    transition: transform 220ms cubic-bezier(0.16,1,0.3,1),
+                border-color 220ms cubic-bezier(0.16,1,0.3,1);
+  }
+  /* Disable heavy blur on mobile for performance */
+  .cyber-scan-overlay::after { display: none; }
+  .animate-glow-pulse         { animation: none; }
+  .rarity-mythic              { animation: none; }
+  .status-live                { animation: none; }
 }
 
 /* ── COMPONENT LAYER ────────────────────────────────────────────────── */
@@ -1624,6 +1639,30 @@ input, textarea, select {
   align-items: center;
   gap: 2px;
 }
+
+/* ── 3D DEPTH UTILITIES ──────────────────────────────────────────────── */
+.preserve-3d     { transform-style: preserve-3d; }
+.perspective-sm  { perspective: 600px; }
+.perspective-card{ perspective: 1000px; }
+.perspective-far { perspective: 1600px; }
+.backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.rotate-y-180    { transform: rotateY(180deg); }
+.translate-z-20  { transform: translateZ(20px); }
+.translate-z-40  { transform: translateZ(40px); }
+
+/* ── TEXT GLOW EFFECTS ───────────────────────────────────────────────── */
+.text-glow-violet { text-shadow: 0 0 24px rgba(139,92,246,0.65), 0 0 48px rgba(139,92,246,0.30); }
+.text-glow-cyan   { text-shadow: 0 0 24px rgba(6,182,212,0.65),  0 0 48px rgba(6,182,212,0.30); }
+.text-glow-gold   { text-shadow: 0 0 20px rgba(245,158,11,0.60), 0 0 40px rgba(245,158,11,0.25); }
+.text-glow-white  { text-shadow: 0 0 20px rgba(255,255,255,0.40), 0 0 40px rgba(255,255,255,0.15); }
+
+/* ── PERFORMANCE HELPERS ─────────────────────────────────────────────── */
+.motion-safe { will-change: transform, opacity; }
+.gpu-accel   { transform: translateZ(0); will-change: transform; }
+
+/* Only animate box-shadow on hover, not always — avoids mobile jank */
+.glow-on-hover { transition: box-shadow 220ms cubic-bezier(0.16,1,0.3,1); }
+.glow-on-hover:hover { box-shadow: 0 0 30px rgba(139,92,246,0.30), 0 0 60px rgba(139,92,246,0.12); }
 
 /* ── STAGGER ANIMATION CHILDREN ──────────────────────────────────────── */
 .stagger-children > *:nth-child(1)  { animation-delay: 0ms; }

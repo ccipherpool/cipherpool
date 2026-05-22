@@ -33,19 +33,19 @@ import DeleteConfirmModal from "./superadmin/modals/DeleteConfirmModal";
 import ProfileModal       from "./superadmin/modals/ProfileModal";
 
 const T = {
-  bg:        "#08080d",
-  sidebar:   "#0c0c15",
-  surface:   "#111119",
-  surface2:  "#171720",
-  surface3:  "#1e1e2a",
-  border:    "rgba(255,255,255,0.06)",
-  border2:   "rgba(255,255,255,0.1)",
-  accent:    "#6366f1",
-  accentDim: "rgba(99,102,241,0.12)",
+  bg:        "#020617",
+  sidebar:   "#07091a",
+  surface:   "#0d1220",
+  surface2:  "#111928",
+  surface3:  "#1a2235",
+  border:    "rgba(255,255,255,0.05)",
+  border2:   "rgba(255,255,255,0.08)",
+  accent:    "#8b5cf6",
+  accentDim: "rgba(139,92,246,0.12)",
   green:     "#10b981",
   red:       "#ef4444",
   amber:     "#f59e0b",
-  purple:    "#8b5cf6",
+  purple:    "#a78bfa",
   cyan:      "#06b6d4",
   pink:      "#ec4899",
   orange:    "#f97316",
@@ -53,7 +53,7 @@ const T = {
   text2:     "#a1a1aa",
   text3:     "#52525b",
   text4:     "#3f3f46",
-  font:      "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+  font:      "Satoshi, Inter, system-ui, sans-serif",
 };
 
 const NAV_GROUPS = [
@@ -379,40 +379,38 @@ export default function SuperAdmin() {
   // ─── Loading ───────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: 16,
-            background: `linear-gradient(135deg, ${T.accent}, #818cf8)`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 20px",
-            boxShadow: `0 0 32px ${T.accent}50`,
-            animation: "sa-pulse 1.5s ease-in-out infinite",
-          }}>
-            <ShieldCheck size={26} color="#fff" />
+      <div className="fixed inset-0 bg-[#020617] flex items-center justify-center z-[9999]">
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-[rgba(139,92,246,0.06)] blur-[100px] pointer-events-none" />
+        <div className="text-center relative">
+          <div className="relative w-16 h-16 mx-auto mb-5">
+            <div className="absolute inset-0 rounded-2xl border border-[rgba(139,92,246,0.3)]" style={{ transform: "rotate(45deg)" }} />
+            <div className="absolute inset-0 rounded-2xl border border-[rgba(139,92,246,0.5)]" style={{ transform: "rotate(45deg)", animation: "cp-orbit 2.5s linear infinite" }} />
+            <div className="absolute inset-3 rounded-xl bg-cyber-dim flex items-center justify-center" style={{ animation: "cp-pulse-glow 2s ease-in-out infinite" }}>
+              <ShieldCheck size={18} className="text-cyber-400" />
+            </div>
           </div>
-          <p style={{ color: T.text3, fontSize: 11, letterSpacing: 3, textTransform: "uppercase" }}>Initializing CipherPool Control</p>
+          <p className="text-[9px] font-black text-[rgba(255,255,255,0.2)] uppercase tracking-[0.3em]">Initializing Root Access</p>
         </div>
-        <style>{`@keyframes sa-pulse { 0%,100%{opacity:0.7;transform:scale(0.96)} 50%{opacity:1;transform:scale(1)} }`}</style>
       </div>
     );
   }
 
   // ─── Render ────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.font }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.font }} className="cp-scroll-container">
       <style>{`
-        .sa-nav-item { transition: background 0.12s, color 0.12s, border-color 0.12s; }
-        .sa-nav-item:hover { background: rgba(255,255,255,0.04) !important; color: ${T.text} !important; }
-        .sa-icon-btn { transition: background 0.12s, color 0.12s, border-color 0.12s; }
-        .sa-icon-btn:hover { background: rgba(255,255,255,0.07) !important; color: ${T.text} !important; }
-        .sa-stat-card { transition: border-color 0.15s, transform 0.15s; }
-        .sa-stat-card:hover { border-color: rgba(255,255,255,0.12) !important; transform: translateY(-1px); }
-        .sa-profile-btn { transition: background 0.12s; }
-        .sa-profile-btn:hover { background: rgba(255,255,255,0.06) !important; }
+        .sa-nav-item { transition: background 0.18s, color 0.18s, border-color 0.18s; }
+        .sa-nav-item:hover { background: rgba(255,255,255,0.04) !important; color: rgba(255,255,255,0.85) !important; }
+        .sa-icon-btn { transition: background 0.18s, color 0.18s; }
+        .sa-icon-btn:hover { background: rgba(255,255,255,0.07) !important; color: rgba(255,255,255,0.9) !important; }
+        .sa-stat-card { transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s; }
+        .sa-stat-card:hover { border-color: rgba(139,92,246,0.25) !important; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; }
+        .sa-profile-btn { transition: background 0.18s, border-color 0.18s; }
+        .sa-profile-btn:hover { background: rgba(255,255,255,0.05) !important; border-color: rgba(139,92,246,0.25) !important; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(139,92,246,0.4); }
       `}</style>
 
       {/* ═══ SIDEBAR ═══ */}
@@ -420,7 +418,7 @@ export default function SuperAdmin() {
         width: 240,
         flexShrink: 0,
         background: T.sidebar,
-        borderRight: `1px solid ${T.border}`,
+        borderRight: "1px solid rgba(139,92,246,0.08)",
         display: "flex",
         flexDirection: "column",
         position: "sticky",
@@ -428,6 +426,7 @@ export default function SuperAdmin() {
         height: "100vh",
         overflow: "hidden",
         zIndex: 20,
+        backgroundImage: "repeating-linear-gradient(0deg,rgba(139,92,246,0.03) 0,transparent 1px,transparent 40px,rgba(139,92,246,0.03) 40px),repeating-linear-gradient(90deg,rgba(139,92,246,0.03) 0,transparent 1px,transparent 40px,rgba(139,92,246,0.03) 40px)",
       }}>
 
         {/* Logo */}
@@ -435,9 +434,9 @@ export default function SuperAdmin() {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{
               width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-              background: `linear-gradient(135deg, ${T.accent} 0%, #818cf8 100%)`,
+              background: `linear-gradient(135deg, ${T.accent} 0%, #06b6d4 100%)`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: `0 0 20px ${T.accent}35`,
+              boxShadow: `0 0 24px ${T.accent}40`,
             }}>
               <ShieldCheck size={17} color="#fff" />
             </div>
@@ -475,13 +474,14 @@ export default function SuperAdmin() {
                     className="sa-nav-item"
                     onClick={() => setActiveTab(item.id)}
                     style={{
-                      width: "100%", padding: "7px 8px", border: "none", borderRadius: 8,
+                      width: "100%", padding: "8px 10px", border: "none", borderRadius: 10,
                       borderLeft: `2px solid ${active ? T.accent : "transparent"}`,
                       background: active ? T.accentDim : "transparent",
                       color: active ? T.text : T.text3,
                       cursor: "pointer", display: "flex", alignItems: "center", gap: 9,
-                      fontSize: 13, fontWeight: active ? 600 : 400,
-                      textAlign: "left", marginBottom: 1, outline: "none",
+                      fontSize: 12, fontWeight: active ? 700 : 400,
+                      textAlign: "left", marginBottom: 2, outline: "none",
+                      boxShadow: active ? `inset 0 0 0 1px rgba(139,92,246,0.12)` : "none",
                     }}
                   >
                     <item.icon size={14.5} color={active ? T.accent : "currentColor"} style={{ flexShrink: 0, opacity: active ? 1 : 0.7 }} />
@@ -517,8 +517,8 @@ export default function SuperAdmin() {
             >
               <div style={{
                 width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
-                background: `linear-gradient(135deg, ${T.accent}40, ${T.purple}40)`,
-                border: `2px solid ${T.accent}40`,
+                background: "linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.2))",
+                border: `2px solid rgba(139,92,246,0.35)`,
                 display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
               }}>
                 {profile?.avatar_url
@@ -544,10 +544,11 @@ export default function SuperAdmin() {
                   transition={{ duration: 0.13 }}
                   style={{
                     position: "absolute", bottom: "calc(100% + 6px)", left: 0, right: 0,
-                    background: T.surface2, border: `1px solid ${T.border2}`,
-                    borderRadius: 10, padding: 6,
-                    boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
+                    background: T.surface2, border: "1px solid rgba(139,92,246,0.15)",
+                    borderRadius: 12, padding: 6,
+                    boxShadow: "0 -12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(139,92,246,0.08)",
                     zIndex: 100,
+                    backdropFilter: "blur(20px)",
                   }}
                 >
                   {[
@@ -585,24 +586,28 @@ export default function SuperAdmin() {
 
         {/* TOP BAR */}
         <header style={{
-          height: 52, borderBottom: `1px solid ${T.border}`,
+          height: 52, borderBottom: "1px solid rgba(255,255,255,0.05)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 24px", background: T.bg, flexShrink: 0,
+          padding: "0 28px", background: T.bg, flexShrink: 0,
           position: "sticky", top: 0, zIndex: 10,
+          backdropFilter: "blur(16px)",
         }}>
-          <div>
-            <h1 style={{ fontSize: 15, fontWeight: 700, color: T.text, margin: 0 }}>
+          {/* Top gradient line */}
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.3), transparent)" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.accent, boxShadow: `0 0 8px ${T.accent}` }} />
+            <h1 style={{ fontSize: 13, fontWeight: 800, color: T.text, margin: 0, letterSpacing: "0.1em", textTransform: "uppercase" }}>
               {NAV_GROUPS.flatMap(g => g.items).find(i => i.id === activeTab)?.label || "Control Panel"}
             </h1>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Link to="/super-admin/grant" style={{ padding: "5px 12px", borderRadius: 7, background: T.accentDim, border: `1px solid ${T.accent}30`, color: T.accent, fontSize: 11, fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 5, letterSpacing: 0.3 }}>
-              <Zap size={12} /> Grant CP
+            <Link to="/super-admin/grant" style={{ padding: "5px 14px", borderRadius: 8, background: T.accentDim, border: `1px solid rgba(139,92,246,0.25)`, color: T.accent, fontSize: 10, fontWeight: 800, textDecoration: "none", display: "flex", alignItems: "center", gap: 5, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              <Zap size={11} /> Grant CP
             </Link>
             <button
               onClick={fetchAllData}
               className="sa-icon-btn"
-              style={{ width: 32, height: 32, borderRadius: 7, border: `1px solid ${T.border}`, background: "transparent", color: T.text3, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", outline: "none" }}
+              style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid rgba(255,255,255,0.07)", background: "transparent", color: T.text3, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", outline: "none" }}
               title="Refresh all data"
             >
               <RefreshCw size={13} />
@@ -611,7 +616,7 @@ export default function SuperAdmin() {
         </header>
 
         {/* SCROLLABLE CONTENT */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
 
           {/* Toast */}
           <AnimatePresence>
@@ -637,30 +642,32 @@ export default function SuperAdmin() {
           </AnimatePresence>
 
           {/* ─── Stats Row ─── */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10, marginBottom: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 10, marginBottom: 20 }}>
             {STAT_CARDS.map((s, i) => (
               <motion.div
                 key={i}
                 className="sa-stat-card"
-                initial={{ opacity: 0, y: 6 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
+                transition={{ delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
                 style={{
                   background: T.surface,
                   border: `1px solid ${T.border}`,
-                  borderRadius: 10, padding: "14px",
-                  cursor: "default",
+                  borderRadius: 14, padding: "16px 14px",
+                  cursor: "default", position: "relative", overflow: "hidden",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 7, background: `${s.color}14`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <s.icon size={13} color={s.color} />
+                {/* Subtle top accent line */}
+                <div style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 1, background: `${s.color}35` }} />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: `${s.color}14`, border: `1px solid ${s.color}25`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <s.icon size={14} color={s.color} />
                   </div>
                 </div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: T.text, lineHeight: 1, marginBottom: 3 }}>
+                <div style={{ fontSize: 24, fontWeight: 900, color: T.text, lineHeight: 1, marginBottom: 4, letterSpacing: "-0.02em" }}>
                   {s.value.toLocaleString()}
                 </div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: T.text3, letterSpacing: 0.8, textTransform: "uppercase" }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.text4, letterSpacing: "0.12em", textTransform: "uppercase" }}>
                   {s.label}
                 </div>
               </motion.div>
@@ -670,16 +677,17 @@ export default function SuperAdmin() {
           {/* ─── Revenue Strip ─── */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
             {[
-              { label: "Revenue Today", value: stats.todayRevenue, color: T.purple },
+              { label: "Revenue Today", value: stats.todayRevenue, color: T.accent },
               { label: "Revenue This Month", value: stats.monthlyRevenue, color: T.cyan },
             ].map(c => (
-              <div key={c.label} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "14px 18px", display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 9, background: `${c.color}12`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <TrendingUp size={16} color={c.color} />
+              <div key={c.label} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, padding: "16px 20px", display: "flex", alignItems: "center", gap: 14, position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 1, background: `${c.color}30` }} />
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: `${c.color}12`, border: `1px solid ${c.color}25`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <TrendingUp size={17} color={c.color} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: T.text3, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 2 }}>{c.label}</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: T.text, lineHeight: 1 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: T.text4, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 3 }}>{c.label}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: T.text, lineHeight: 1, letterSpacing: "-0.02em" }}>
                     {c.value.toLocaleString()} <span style={{ fontSize: 11, color: T.text3, fontWeight: 500 }}>CP</span>
                   </div>
                 </div>
@@ -688,7 +696,7 @@ export default function SuperAdmin() {
           </div>
 
           {/* ─── Tab Content ─── */}
-          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: "20px", minHeight: 400 }}>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: "20px", minHeight: 400 }}>
             <AnimatePresence mode="wait">
               {activeTab === "dashboard"   && <DashboardTab   key="dashboard"   stats={stats} users={users} logs={logs} setActiveTab={setActiveTab} setFilter={setFilter} setSelectedUser={setSelectedUser} setGrantAmount={setGrantAmount} setGrantReason={setGrantReason} setWalletSearch={setWalletSearch} setShowWalletModal={setShowWalletModal} />}
               {activeTab === "users"       && <UsersTab        key="users"       filteredUsers={filteredUsers} search={search} setSearch={setSearch} filter={filter} setFilter={setFilter} setSelectedUser={setSelectedUser} setShowRoleModal={setShowRoleModal} setShowBanModal={setShowBanModal} setShowWalletModal={setShowWalletModal} unbanUser={unbanUser} deleteUser={deleteUser} />}

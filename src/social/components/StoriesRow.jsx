@@ -40,7 +40,7 @@ function StoryBubble({ entry, index, isOwn, onClick }) {
           <div className="w-[50px] h-[50px] rounded-full overflow-hidden border-2 border-obsidian-deep bg-obsidian-deep">
             {isOwn && !entry.story_count ? (
               // "Your Story" — no story yet, show plus
-              <div className="w-full h-full bg-gradient-to-br from-mint/30 to-electric-purple/20 flex items-center justify-center">
+              <div className="w-full h-full bg-gradient-to-br from-mint/30 to-cyber-dim flex items-center justify-center">
                 {entry.avatar_url
                   ? <img src={entry.avatar_url} className="w-full h-full object-cover opacity-60" alt="" />
                   : <span className="text-obsidian font-black text-lg">{entry.username?.[0]?.toUpperCase() || '?'}</span>
@@ -141,8 +141,8 @@ export default function StoriesRow({ profile }) {
 
   return (
     <>
-      <div className="relative z-10 -mx-4 md:-mx-0 mb-4">
-        <div className="flex items-end gap-3 overflow-x-auto pb-4 px-4 scroll-smooth scrollbar-hide">
+      <div className="relative z-10 mb-4">
+        <div className="flex items-end gap-3 overflow-x-auto pb-3 scroll-smooth scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
           <StoryBubble
             entry={myStoryEntry}
             index={0}
