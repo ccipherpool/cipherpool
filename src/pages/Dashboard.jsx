@@ -1,86 +1,72 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { motion, useMotionValue, useTransform, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Trophy, Target, TrendingUp, Crown, Sword, Clock,
   ChevronRight, ArrowUpRight, Flame, Star, Medal,
   Wallet, Activity, ShieldCheck, Cpu, Zap, Radio,
-  BarChart, Users2, Gamepad2, Sparkles,
+  Users2, Gamepad2, Sparkles, Swords,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
 import StoriesRow from "../social/components/StoriesRow";
+import { AnimatedStatCard } from "../components/ui/AnimatedStatCard";
+import { useCountUp } from "../hooks/useCountUp";
+import { useScrollReveal } from "../hooks/useScrollReveal";
 
-// ─── AMBIENT ORB ────────────────────────────────────────────────────────────
-const Orb = ({ color, size, x, y, blur }) => (
-  <div
-    className="absolute pointer-events-none"
-    style={{
-      width: size, height: size, top: y, left: x,
-      background: color, borderRadius: "50%",
-      filter: `blur(${blur || 80}px)`, opacity: 0.18,
-    }}
-  />
-);
-
-// ─── STAT CARD ───────────────────────────────────────────────────────────────
-const StatCard = ({ icon: Icon, label, value, sub, accent, delay }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 16 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-    className="cp-card relative overflow-hidden group"
-  >
-    <div
-      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-      style={{ background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${accent}0d, transparent)` }}
-    />
-    <div className="relative z-10 p-5">
-      <div className="flex items-start justify-between mb-4">
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: `${accent}1a`, border: `1px solid ${accent}33` }}
-        >
-          <Icon size={16} style={{ color: accent }} />
-        </div>
-        <span className="text-[8px] font-black uppercase tracking-[0.25em] text-[rgba(255,255,255,0.18)]">
-          {label}
-        </span>
-      </div>
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-[2rem] font-heading font-black text-white leading-none tracking-tighter">
-          {value}
-        </span>
-        {sub && (
-          <span className="text-[9px] font-black uppercase tracking-wider" style={{ color: accent }}>
-            {sub}
-          </span>
-        )}
-      </div>
+// ── XP Ring ────────────────────────────────────────────────────────────
+const XpRing = ({ progress, children, size = 80 }) => {
+  const r = 33;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (circ * Math.min(progress, 100)) / 100;
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <svg className="absolute inset-0 -rotate-90" width={size} height={size} viewBox="0 0 76 76">
+        <circle cx="38" cy="38" r={r} fill="none" stroke="rgba(139,92,246,0.12)" strokeWidth="4" />
+        <motion.circle
+          cx="38" cy="38" r={r} fill="none"
+          stroke="url(#xpGrad)" strokeWidth="4"
+          strokeLinecap="round"
+          strokeDasharray={circ}
+          initial={{ strokeDashoffset: circ }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
+          style={{ filter: "drop-shadow(0 0 4px rgba(139,92,246,0.5))" }}
+        />
+        <defs>
+          <linearGradient id="xpGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#06B6D4" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">{children}</div>
     </div>
-  </motion.div>
-);
+  );
+};
 
-// ─── TOURNAMENT ITEM ─────────────────────────────────────────────────────────
+// ── Tournament row ─────────────────────────────────────────────────────
 const TournamentItem = ({ t, idx }) => (
   <motion.div
-    initial={{ opacity: 0, x: 12 }}
+    initial={{ opacity: 0, x: 10 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ delay: 0.05 * idx, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
   >
-    <Link to={`/tournaments/${t.id}`} className="group/row flex items-center gap-3 p-3 rounded-xl hover:bg-[rgba(255,255,255,0.03)] transition-all duration-[220ms]">
-      <div className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] flex items-center justify-center">
-        {t.banner_url ? (
-          <img src={t.banner_url} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <Sword size={16} className="text-[rgba(99,102,241,0.6)]" />
-        )}
+    <Link
+      to={`/tournaments/${t.id}`}
+      className="group flex items-center gap-3 p-3 rounded-xl hover:bg-white/[0.03] transition-all duration-[220ms]"
+    >
+      <div className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden bg-white/[0.04] border border-white/[0.06] flex items-center justify-center">
+        {t.banner_url
+          ? <img src={t.banner_url} alt="" className="w-full h-full object-cover" />
+          : <Swords size={15} className="text-cyber-400/50" />
+        }
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <p className="text-[11px] font-black text-white uppercase tracking-wide truncate group-hover/row:text-cp-indigo transition-colors duration-[220ms]">
+          <p className="text-[11px] font-black text-white uppercase tracking-wide truncate group-hover:text-cyber-400 transition-colors">
             {t.name}
           </p>
           {t.status === "live" && (
@@ -91,58 +77,64 @@ const TournamentItem = ({ t, idx }) => (
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[9px] font-black text-[rgba(245,158,11,0.7)] uppercase tracking-wider">
+          <span className="text-[9px] font-black text-yellow-500/70 uppercase tracking-wider">
             {(t.prize_coins || 0).toLocaleString()} CP
           </span>
-          <span className="text-[9px] text-[rgba(255,255,255,0.3)] uppercase">
+          <span className="text-[9px] text-white/25 uppercase">
             {t.current_players ?? 0}/{t.max_players ?? "∞"}
           </span>
         </div>
       </div>
-      <ChevronRight size={13} className="flex-shrink-0 text-[rgba(255,255,255,0.15)] group-hover/row:text-cp-indigo transition-colors duration-[220ms]" />
+      <ChevronRight size={13} className="flex-shrink-0 text-white/15 group-hover:text-cyber-400 transition-colors" />
     </Link>
   </motion.div>
 );
 
-// ─── XP RING ─────────────────────────────────────────────────────────────────
-const XpRing = ({ progress, children, size = 140 }) => {
-  const r = 54;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (circ * Math.min(progress, 100)) / 100;
-  return (
-    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-      <svg className="absolute inset-0 -rotate-90" width={size} height={size} viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r={r} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="5" />
-        <motion.circle
-          cx="60" cy="60" r={r} fill="none"
-          stroke="#6366f1" strokeWidth="5"
-          strokeLinecap="round"
-          strokeDasharray={circ}
-          initial={{ strokeDashoffset: circ }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
-          style={{ filter: "drop-shadow(0 0 6px rgba(99,102,241,0.6))" }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        {children}
-      </div>
-    </div>
-  );
-};
-
-// ─── CUSTOM TOOLTIP ──────────────────────────────────────────────────────────
+// ── Custom chart tooltip ───────────────────────────────────────────────
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="px-3 py-2 rounded-xl bg-[#0d1220] border border-[rgba(99,102,241,0.3)] shadow-lg">
-      <p className="text-[8px] font-black text-[rgba(255,255,255,0.4)] uppercase tracking-widest mb-0.5">{label}</p>
-      <p className="text-[13px] font-black text-white">{payload[0].value} <span className="text-[9px] text-cp-indigo">pts</span></p>
+    <div className="px-3 py-2 rounded-xl bg-cp-s3 border border-cyber-border shadow-lg">
+      <p className="text-[8px] font-black text-white/35 uppercase tracking-widest mb-0.5">{label}</p>
+      <p className="text-[13px] font-black text-white">
+        {payload[0].value} <span className="text-[9px] text-cyber-400">pts</span>
+      </p>
     </div>
   );
 };
 
-// ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
+// ── Quick action card ──────────────────────────────────────────────────
+function QuickCard({ to, icon: Icon, label, accent, delay }) {
+  const colors = {
+    cyber: { bg: 'bg-cyber-dim', text: 'text-cyber-400', border: 'border-cyber-border' },
+    cyan:  { bg: 'bg-cyan-dim',  text: 'text-neon-cyan', border: 'border-cyan-400/20' },
+    gold:  { bg: 'bg-gold-dim',  text: 'text-cyber-gold', border: 'border-cyber-gold/20' },
+    mint:  { bg: 'bg-mint-glow/10', text: 'text-mint', border: 'border-mint/20' },
+  };
+  const c = colors[accent] ?? colors.cyber;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.94 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <Link
+        to={to}
+        className="group flex flex-col items-center gap-3 py-5 px-3 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] hover:border-white/[0.10] transition-all duration-[220ms] text-center"
+      >
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${c.bg} ${c.border} group-hover:scale-110 transition-transform duration-[220ms]`}>
+          <Icon size={17} className={c.text} />
+        </div>
+        <span className={`text-[9px] font-black uppercase tracking-wider text-white/35 group-hover:text-white transition-colors`}>
+          {label}
+        </span>
+      </Link>
+    </motion.div>
+  );
+}
+
+// ── MAIN DASHBOARD ─────────────────────────────────────────────────────
 export default function Dashboard() {
   const { profile } = useOutletContext() || {};
   const [tournaments, setTournaments] = useState([]);
@@ -178,16 +170,17 @@ export default function Dashboard() {
 
   return (
     <div className="relative min-h-screen">
-      {/* ── AMBIENT BACKGROUND ── */}
+
+      {/* ── Ambient background ── */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <Orb color="#6366f1" size="50vw" x="-15%" y="-20%" blur={120} />
-        <Orb color="#10b981" size="35vw" x="70%" y="55%" blur={100} />
-        <Orb color="#f59e0b" size="25vw" x="40%" y="80%" blur={90} />
+        <div className="orb-cyber w-[600px] h-[600px] -top-40 -left-40 opacity-60" />
+        <div className="orb-cyan  w-[400px] h-[400px] bottom-0 right-0 opacity-50" />
+        <div className="orb-gold  w-[300px] h-[300px] top-1/2 right-1/4 opacity-30" />
       </div>
 
-      <div className="relative z-10 space-y-7 pb-8">
+      <div className="relative z-10 space-y-6 pb-10">
 
-        {/* ── PAGE HEADER ── */}
+        {/* ── Page header ── */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -197,89 +190,79 @@ export default function Dashboard() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="cp-live-dot" />
-              <span className="text-[9px] font-black text-[rgba(16,185,129,0.8)] uppercase tracking-[0.25em]">
-                Active Session
-              </span>
+              <span className="text-[9px] font-black text-mint/80 uppercase tracking-[0.25em]">Active Session</span>
               {season && (
                 <>
-                  <span className="w-px h-3 bg-[rgba(255,255,255,0.1)]" />
-                  <span className="text-[9px] font-black text-[rgba(255,255,255,0.25)] uppercase tracking-[0.2em]">
-                    {season.name}
-                  </span>
+                  <span className="w-px h-3 bg-white/10" />
+                  <span className="text-[9px] font-black text-white/25 uppercase tracking-[0.2em]">{season.name}</span>
                 </>
               )}
             </div>
-            <h1 className="text-[2.2rem] md:text-[3.5rem] font-heading font-black text-white uppercase tracking-tighter leading-[0.9]">
+            <h1 className="font-heading text-[clamp(28px,6vw,52px)] font-black text-white uppercase tracking-tighter leading-[0.9]">
               Command<br />
-              <span style={{ background: "linear-gradient(135deg, #6366f1, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                Center
-              </span>
+              <span className="text-cyber">Center</span>
             </h1>
           </div>
 
           <div className="hidden md:flex items-center gap-2">
-            <div className="px-4 py-2.5 rounded-2xl bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.18)] flex items-center gap-2">
-              <Wallet size={13} className="text-[#f59e0b]" />
-              <span className="text-[11px] font-black text-[#f59e0b] uppercase tracking-widest">
-                {balance.toLocaleString()} CP
-              </span>
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gold-dim border border-cyber-gold/20">
+              <Wallet size={13} className="text-cyber-gold" />
+              <span className="text-[11px] font-black text-cyber-gold uppercase tracking-widest">{balance.toLocaleString()} CP</span>
             </div>
-            <Link
-              to="/tournaments"
-              className="cp-btn cp-btn-indigo text-[10px] px-4 py-2.5"
-            >
+            <Link to="/tournaments" className="cyber-btn cyber-btn-primary cyber-btn-sm">
+              <Swords size={12} />
               Enter Arena
             </Link>
           </div>
         </motion.div>
 
-        {/* ── STORIES ── */}
+        {/* ── Stories ── */}
         <div className="overflow-visible">
           <StoriesRow profile={profile} />
         </div>
 
-        {/* ── TOP STATS STRIP ── */}
+        {/* ── Stat cards strip ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard icon={Wallet}   label="Balance"      value={balance.toLocaleString()} sub="CP"      accent="#f59e0b" delay={0}    />
-          <StatCard icon={Trophy}   label="Rank"         value={stats?.rank ? `#${stats.rank}` : "—"}   accent="#6366f1" delay={0.06} />
-          <StatCard icon={TrendingUp} label="Win Rate"   value={`${winRate}%`}                           accent="#10b981" delay={0.12} />
-          <StatCard icon={Flame}    label="Streak"       value={`${stats?.streak ?? 0}d`} sub="Active"  accent="#f59e0b" delay={0.18} />
+          <AnimatedStatCard icon={<Wallet size={18} />}     label="Balance"   value={balance}             suffix=" CP"      accent="gold"  />
+          <AnimatedStatCard icon={<Trophy size={18} />}     label="Rank"      value={stats?.rank ?? 0}    prefix="#"        accent="cyber" />
+          <AnimatedStatCard icon={<TrendingUp size={18} />} label="Win Rate"  value={winRate}             suffix="%"        accent="cyan"  format="compact" />
+          <AnimatedStatCard icon={<Flame size={18} />}      label="Streak"    value={stats?.streak ?? 0}  suffix="d"        accent="gold"  />
         </div>
 
-        {/* ── MAIN CONTENT GRID ── */}
+        {/* ── Main grid ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
-          {/* LEFT — Profile + Tournaments */}
+          {/* LEFT — profile + tournaments */}
           <div className="lg:col-span-4 space-y-4">
 
-            {/* PROFILE CARD */}
+            {/* Profile card */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="cp-card overflow-hidden"
+              className="luxury-card overflow-hidden"
             >
-              {/* header gradient */}
-              <div
-                className="h-20 relative overflow-hidden"
-                style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(16,185,129,0.08) 100%)" }}
-              >
-                <div className="absolute inset-0 cp-noise opacity-30" />
-                <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#0d1220] to-transparent" />
+              {/* Header gradient */}
+              <div className="h-20 relative overflow-hidden">
+                <div
+                  className="absolute inset-0"
+                  style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(6,182,212,0.10) 100%)' }}
+                />
+                <div className="absolute inset-0 cyber-grid opacity-40" />
+                <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#07091a] to-transparent" />
               </div>
 
-              <div className="px-5 pb-5 -mt-8">
+              <div className="px-5 pb-5 -mt-10">
                 <div className="flex items-end gap-4 mb-4">
                   <XpRing progress={xpProgress} size={80}>
                     <div
-                      className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#0d1220] flex items-center justify-center text-white font-black text-xl"
-                      style={{ background: "linear-gradient(135deg, #6366f1, #10b981)" }}
+                      className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-cp-s1 flex items-center justify-center text-white font-black text-xl"
+                      style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)' }}
                     >
-                      {profile?.avatar_url ? (
-                        <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        profile?.username?.[0]?.toUpperCase() || "P"
-                      )}
+                      {profile?.avatar_url
+                        ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                        : profile?.username?.[0]?.toUpperCase() || "P"
+                      }
                     </div>
                   </XpRing>
 
@@ -288,19 +271,20 @@ export default function Dashboard() {
                       {profile?.username || "Operative"}
                     </h3>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[9px] font-black text-[rgba(16,185,129,0.7)] uppercase tracking-wider">
+                      <span className="text-[9px] font-black text-mint/70 uppercase tracking-wider">
                         Level {profile?.level || 1}
                       </span>
-                      <ShieldCheck size={10} className="text-[rgba(99,102,241,0.6)]" />
+                      <ShieldCheck size={10} className="text-cyber-400/60" />
                     </div>
                     <div className="mt-2">
-                      <div className="flex justify-between text-[8px] font-black text-[rgba(255,255,255,0.25)] uppercase tracking-widest mb-1">
+                      <div className="flex justify-between text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">
                         <span>XP</span>
                         <span>{profile?.xp || 0} / 1000</span>
                       </div>
                       <div className="cp-progress">
                         <motion.div
                           className="cp-progress-fill"
+                          style={{ background: 'linear-gradient(90deg, #8B5CF6, #06B6D4)' }}
                           initial={{ width: 0 }}
                           animate={{ width: `${xpProgress}%` }}
                           transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
@@ -310,122 +294,100 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* mini stats */}
+                {/* Mini stats */}
                 <div className="grid grid-cols-3 gap-2 mb-4">
                   {[
                     { label: "Matches", value: stats?.tournaments_played ?? 0 },
-                    { label: "Wins", value: stats?.wins ?? 0 },
-                    { label: "Win%", value: `${winRate}%` },
+                    { label: "Wins",    value: stats?.wins ?? 0 },
+                    { label: "Win%",    value: `${winRate}%` },
                   ].map(s => (
-                    <div key={s.label} className="text-center py-2.5 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]">
+                    <div key={s.label} className="text-center py-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
                       <p className="text-[14px] font-black text-white leading-none">{s.value}</p>
-                      <p className="text-[7px] font-black text-[rgba(255,255,255,0.25)] uppercase tracking-widest mt-0.5">{s.label}</p>
+                      <p className="text-[7px] font-black text-white/25 uppercase tracking-widest mt-1">{s.label}</p>
                     </div>
                   ))}
                 </div>
 
-                <Link
-                  to="/profile"
-                  className="cp-btn cp-btn-ghost w-full justify-center text-[10px]"
-                >
+                <Link to="/profile" className="cyber-btn cyber-btn-ghost w-full justify-center text-[10px]">
                   View Profile <ArrowUpRight size={11} className="ml-1" />
                 </Link>
               </div>
             </motion.div>
 
-            {/* ACTIVE TOURNAMENTS */}
+            {/* Active tournaments */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.18, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="cp-card p-4"
+              className="luxury-card p-4"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <Sword size={13} className="text-cp-indigo" />
-                  <span className="text-[10px] font-black text-[rgba(255,255,255,0.6)] uppercase tracking-[0.15em]">
-                    Active Operations
-                  </span>
+                  <Swords size={13} className="text-cyber-400" />
+                  <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.15em]">Active Operations</span>
                 </div>
-                <Link to="/tournaments" className="text-[9px] font-black text-[rgba(99,102,241,0.6)] hover:text-cp-indigo uppercase tracking-widest transition-colors duration-[220ms]">
+                <Link to="/tournaments" className="text-[9px] font-black text-cyber-400/60 hover:text-cyber-400 uppercase tracking-widest transition-colors">
                   All →
                 </Link>
               </div>
 
               {loading ? (
                 <div className="space-y-2">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="cp-skeleton h-14 rounded-xl" />
-                  ))}
+                  {[...Array(3)].map((_, i) => <div key={i} className="cp-skeleton h-14 rounded-xl" />)}
                 </div>
               ) : tournaments.length > 0 ? (
                 <div className="space-y-0.5">
-                  {tournaments.map((t, i) => (
-                    <TournamentItem key={t.id} t={t} idx={i} />
-                  ))}
+                  {tournaments.map((t, i) => <TournamentItem key={t.id} t={t} idx={i} />)}
                 </div>
               ) : (
                 <div className="py-8 text-center">
-                  <Radio size={24} className="text-[rgba(255,255,255,0.1)] mx-auto mb-2 animate-pulse" />
-                  <p className="text-[9px] font-black text-[rgba(255,255,255,0.2)] uppercase tracking-widest">
-                    No active operations
-                  </p>
+                  <Radio size={22} className="text-white/10 mx-auto mb-2 animate-pulse" />
+                  <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">No active operations</p>
                 </div>
               )}
             </motion.div>
           </div>
 
-          {/* RIGHT — Chart + Season + Quick Links */}
+          {/* RIGHT — hero banner + chart + quick access */}
           <div className="lg:col-span-8 space-y-4">
 
-            {/* HERO BANNER — season or CTA */}
+            {/* Hero banner */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.08, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="relative overflow-hidden rounded-[20px] h-[200px] md:h-[260px] border border-[rgba(255,255,255,0.05)] group"
-              style={{ background: "linear-gradient(135deg, #07091a 0%, #0d1220 50%, #0a0f1e 100%)" }}
+              className="command-panel h-[200px] md:h-[240px] overflow-hidden"
             >
-              {/* animated grid lines */}
-              <div
-                className="absolute inset-0 opacity-[0.04] pointer-events-none"
-                style={{
-                  backgroundImage: "linear-gradient(rgba(99,102,241,1) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,1) 1px, transparent 1px)",
-                  backgroundSize: "40px 40px",
-                }}
-              />
+              {/* Grid background */}
+              <div className="absolute inset-0 cyber-grid opacity-50" />
+
+              {/* Ambient orb */}
+              <div className="absolute top-1/2 right-8 -translate-y-1/2 w-52 h-52 rounded-full pointer-events-none orb-cyber opacity-60" />
 
               {/* Corner brackets */}
-              <div className="absolute top-5 left-5 w-8 h-8 border-l-2 border-t-2 border-[rgba(99,102,241,0.3)] rounded-tl-lg pointer-events-none" />
-              <div className="absolute bottom-5 right-5 w-8 h-8 border-r-2 border-b-2 border-[rgba(99,102,241,0.3)] rounded-br-lg pointer-events-none" />
-
-              {/* Glow orb */}
-              <div className="absolute top-1/2 right-12 -translate-y-1/2 w-48 h-48 rounded-full pointer-events-none"
-                style={{ background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)" }}
-              />
+              <div className="absolute top-4 left-4 w-7 h-7 border-l-2 border-t-2 border-cyber-border rounded-tl-lg" />
+              <div className="absolute bottom-4 right-4 w-7 h-7 border-r-2 border-b-2 border-cyber-border rounded-br-lg" />
 
               <div className="relative z-10 p-6 md:p-8 h-full flex flex-col justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="px-2.5 py-1 rounded-full bg-[rgba(99,102,241,0.12)] border border-[rgba(99,102,241,0.25)] flex items-center gap-1.5">
-                    <Zap size={9} className="text-cp-indigo" />
-                    <span className="text-[8px] font-black text-[#818cf8] uppercase tracking-[0.2em]">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyber-dim border border-cyber-border">
+                    <Zap size={9} className="text-cyber-400" />
+                    <span className="text-[8px] font-black text-cyber-400 uppercase tracking-[0.2em]">
                       {season ? `Season: ${season.name}` : "CipherPool Arena"}
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <h2 className="text-[1.8rem] md:text-[2.8rem] font-heading font-black text-white uppercase tracking-tighter leading-[0.9] mb-4">
+                  <h2 className="font-heading text-[clamp(24px,4vw,40px)] font-black text-white uppercase tracking-tighter leading-[0.9] mb-4">
                     Deploy Your<br />
-                    <span style={{ background: "linear-gradient(90deg, #6366f1, #818cf8, #a78bfa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                      Squad Now
-                    </span>
+                    <span className="text-cyber">Squad Now</span>
                   </h2>
                   <div className="flex flex-wrap items-center gap-3">
-                    <Link to="/tournaments" className="cp-btn cp-btn-indigo text-[10px] px-5 py-2.5">
+                    <Link to="/tournaments" className="cyber-btn cyber-btn-primary cyber-btn-sm">
                       Browse Tournaments <ChevronRight size={11} className="ml-0.5" />
                     </Link>
-                    <Link to="/leaderboard" className="cp-btn cp-btn-ghost text-[10px] px-5 py-2.5">
+                    <Link to="/leaderboard" className="cyber-btn cyber-btn-ghost cyber-btn-sm">
                       Global Rankings
                     </Link>
                   </div>
@@ -433,85 +395,57 @@ export default function Dashboard() {
               </div>
             </motion.div>
 
-            {/* PERFORMANCE CHART */}
+            {/* Performance chart */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.22, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="cp-card p-5"
+              className="luxury-card p-5"
             >
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
-                  <Activity size={13} className="text-cp-indigo" />
-                  <span className="text-[10px] font-black text-[rgba(255,255,255,0.6)] uppercase tracking-[0.15em]">
-                    Performance
-                  </span>
+                  <Activity size={13} className="text-cyber-400" />
+                  <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.15em]">Performance</span>
                 </div>
-                <span className="text-[8px] font-black text-[rgba(255,255,255,0.2)] uppercase tracking-widest">7-day</span>
+                <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">7-day</span>
               </div>
 
-              <div className="h-[160px] w-full">
+              <div className="h-[150px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
                     <defs>
-                      <linearGradient id="cpGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#6366f1" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      <linearGradient id="cyberGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%"  stopColor="#8B5CF6" stopOpacity={0.30} />
+                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis
                       dataKey="d"
                       axisLine={false} tickLine={false}
-                      tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 9, fontWeight: 900, letterSpacing: "0.1em" }}
+                      tick={{ fill: "rgba(255,255,255,0.20)", fontSize: 9, fontWeight: 900, letterSpacing: "0.1em" }}
                       dy={8}
                     />
-                    <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(99,102,241,0.2)", strokeWidth: 1 }} />
-                    <Area type="monotone" dataKey="v" stroke="#6366f1" strokeWidth={2} fill="url(#cpGrad)" dot={false} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(139,92,246,0.25)", strokeWidth: 1 }} />
+                    <Area
+                      type="monotone" dataKey="v"
+                      stroke="#8B5CF6" strokeWidth={2}
+                      fill="url(#cyberGrad)"
+                      dot={false}
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </motion.div>
 
-            {/* QUICK ACCESS GRID */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-3"
-            >
-              {[
-                { to: "/store",         icon: Sparkles, label: "Store",       accent: "#f59e0b" },
-                { to: "/daily-rewards", icon: Star,     label: "Rewards",     accent: "#10b981" },
-                { to: "/achievements",  icon: Medal,    label: "Achievements", accent: "#a78bfa" },
-                { to: "/leaderboard",   icon: Crown,    label: "Rankings",    accent: "#6366f1" },
-              ].map((item, i) => (
-                <motion.div
-                  key={item.to}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 + i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <Link
-                    to={item.to}
-                    className="group flex flex-col items-center gap-2.5 py-5 px-3 rounded-[16px] bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)] hover:border-opacity-30 hover:bg-[rgba(255,255,255,0.05)] transition-all duration-[220ms] text-center"
-                    style={{ "--hover-border": item.accent }}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-[220ms] group-hover:scale-110"
-                      style={{ background: `${item.accent}1a`, border: `1px solid ${item.accent}33` }}
-                    >
-                      <item.icon size={18} style={{ color: item.accent }} />
-                    </div>
-                    <span className="text-[9px] font-black text-[rgba(255,255,255,0.4)] group-hover:text-white uppercase tracking-wider transition-colors duration-[220ms]">
-                      {item.label}
-                    </span>
-                  </Link>
-                </motion.div>
-              ))}
-            </motion.div>
+            {/* Quick access grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <QuickCard to="/store"         icon={Sparkles} label="Store"        accent="gold"  delay={0.30} />
+              <QuickCard to="/daily-rewards" icon={Star}     label="Rewards"      accent="mint"  delay={0.35} />
+              <QuickCard to="/achievements"  icon={Medal}    label="Achievements"  accent="cyber" delay={0.40} />
+              <QuickCard to="/leaderboard"   icon={Crown}    label="Rankings"     accent="cyan"  delay={0.45} />
+            </div>
           </div>
         </div>
-
       </div>
     </div>
   );
