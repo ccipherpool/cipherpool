@@ -46,7 +46,7 @@ export default {
 
         /* ── CYBER LUXURY PALETTE (new) ── */
         'cyber': {
-          DEFAULT: '#7C3AED',
+          DEFAULT: '#8B5CF6',
           50:      '#F5F3FF',
           100:     '#EDE9FE',
           400:     '#A78BFA',
@@ -54,7 +54,8 @@ export default {
           600:     '#7C3AED',
           700:     '#6D28D9',
           glow:    'rgba(139,92,246,0.45)',
-          dim:     'rgba(139,92,246,0.12)',
+          dim:     'rgba(139,92,246,0.10)',
+          border:  'rgba(139,92,246,0.20)',
         },
         'neon': {
           cyan:   '#06B6D4',
@@ -73,8 +74,7 @@ export default {
       },
 
       fontFamily: {
-        'heading': ['Unbounded', 'Space Grotesk', 'system-ui', 'sans-serif'],
-        'impact':  ['Bebas Neue', 'sans-serif'],
+        'heading': ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
         'sans':    ['Satoshi', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
         'mono':    ['JetBrains Mono', 'monospace'],
         'display': ['Space Grotesk', 'system-ui', 'sans-serif'],

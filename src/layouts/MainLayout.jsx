@@ -72,7 +72,7 @@ const PAGE_VARIANTS = {
 /* ── LOADING SCREEN ────────────────────────────────────────────────── */
 function LoadingScreen() {
   return (
-    <div className="fixed inset-0 bg-[#020617] flex items-center justify-center z-[9999]">
+    <div className="fixed inset-0 bg-[#09090f] flex items-center justify-center z-[9999]">
       {/* Ambient orbs */}
       <div className="absolute w-[400px] h-[400px] rounded-full bg-[rgba(139,92,246,0.06)] blur-[100px] pointer-events-none" />
       <div className="absolute w-[300px] h-[300px] rounded-full bg-[rgba(16,185,129,0.04)] blur-[80px] pointer-events-none translate-x-32 translate-y-16" />
@@ -182,8 +182,8 @@ function MobileDrawer({ open, onClose, profile }) {
                     : profile.username?.[0]?.toUpperCase() || "U"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-black text-white uppercase tracking-wider truncate">{profile.username}</p>
-                  <p className="text-[9px] text-[rgba(16,185,129,0.7)] font-bold">Lvl {profile.level || 1}</p>
+                  <p className="text-sm font-medium text-white truncate">{profile.username}</p>
+                  <p className="text-xs text-white/40">Level {profile.level || 1}</p>
                 </div>
               </div>
             )}
@@ -192,7 +192,7 @@ function MobileDrawer({ open, onClose, profile }) {
             <div className="flex-1 overflow-y-auto py-4 px-4 space-y-5 scrollbar-hide">
               {DRAWER_SECTIONS.map(section => (
                 <div key={section.label} className="space-y-0.5">
-                  <p className="text-[8px] font-black uppercase tracking-[0.35em] text-[rgba(255,255,255,0.2)] px-3 mb-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25 px-3 mb-1.5">
                     {section.label}
                   </p>
                   {section.items.map(item => (
@@ -203,18 +203,18 @@ function MobileDrawer({ open, onClose, profile }) {
                       className={({ isActive }) =>
                         [
                           "flex items-center gap-3 px-3 py-3 rounded-xl",
-                          "text-[11px] font-black uppercase tracking-[0.08em]",
-                          "transition-all duration-[220ms] min-h-[44px]",
+                          "text-sm font-medium",
+                          "transition-all duration-200 min-h-[44px]",
                           isActive
-                            ? "bg-cyber-dim text-white"
-                            : "text-[rgba(255,255,255,0.45)] hover:text-white hover:bg-[rgba(255,255,255,0.04)]",
+                            ? "bg-[rgba(139,92,246,0.10)] text-white"
+                            : "text-white/45 hover:text-white hover:bg-white/[0.04]",
                         ].join(" ")
                       }
                     >
                       {({ isActive }) => (
                         <>
-                          <item.icon size={15} strokeWidth={isActive ? 2.5 : 2}
-                            className={isActive ? "text-cyber-400" : ""} />
+                          <item.icon size={16} strokeWidth={isActive ? 2 : 1.75}
+                            className={isActive ? "text-violet-400" : ""} />
                           {item.label}
                         </>
                       )}
@@ -225,22 +225,22 @@ function MobileDrawer({ open, onClose, profile }) {
 
               {/* Admin section */}
               {isAdmin && (
-                <div className="space-y-0.5 pt-3 border-t border-[rgba(255,255,255,0.05)]">
-                  <p className="text-[8px] font-black uppercase tracking-[0.35em] text-[rgba(255,255,255,0.2)] px-3 mb-2">
+                <div className="space-y-0.5 pt-3 border-t border-white/[0.05]">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25 px-3 mb-1.5">
                     System
                   </p>
                   <NavLink
                     to="/admin"
                     onClick={onClose}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-[11px] font-black uppercase tracking-[0.08em] text-[rgba(255,255,255,0.45)] hover:text-orange-400 hover:bg-orange-400/5 transition-all min-h-[44px]"
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-white/45 hover:text-orange-400 hover:bg-orange-400/[0.06] transition-all min-h-[44px]"
                   >
-                    <ShieldAlert size={15} /> Control Panel
+                    <ShieldAlert size={16} /> Control Panel
                   </NavLink>
                   {isSuperAdmin && (
                     <NavLink
                       to="/super-admin"
                       onClick={onClose}
-                      className="flex items-center gap-3 px-3 py-3 rounded-xl text-[11px] font-black uppercase tracking-[0.08em] text-[rgba(255,255,255,0.45)] hover:text-red-400 hover:bg-red-400/5 transition-all min-h-[44px]"
+                      className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-white/45 hover:text-red-400 hover:bg-red-400/[0.06] transition-all min-h-[44px]"
                     >
                       <Zap size={15} /> Root Access
                     </NavLink>
@@ -253,7 +253,7 @@ function MobileDrawer({ open, onClose, profile }) {
             <div className="p-4 border-t border-[rgba(255,255,255,0.05)]">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-3 h-12 rounded-2xl bg-[rgba(239,68,68,0.08)] text-red-400 border border-[rgba(239,68,68,0.15)] font-black uppercase tracking-[0.12em] text-[10px] hover:bg-[rgba(239,68,68,0.14)] transition-all active:scale-[0.97]"
+                className="w-full flex items-center justify-center gap-3 h-11 rounded-xl bg-[rgba(239,68,68,0.08)] text-red-400 border border-[rgba(239,68,68,0.15)] text-sm font-medium hover:bg-[rgba(239,68,68,0.14)] transition-all active:scale-[0.97]"
               >
                 <LogOut size={15} /> Sign Out
               </button>
@@ -282,7 +282,7 @@ export default function MainLayout() {
   if (loading) return <LoadingScreen />;
 
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#020617]">
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#09090f]">
 
       {/* ── MOBILE HEADER ────────────────────────────────────────────── */}
       <header className="md:hidden flex-shrink-0 z-50 relative">
@@ -314,7 +314,7 @@ export default function MainLayout() {
               className="flex items-center gap-1.5 h-8 px-3 rounded-xl bg-[rgba(245,158,11,0.08)] border border-[rgba(245,158,11,0.2)] hover:bg-[rgba(245,158,11,0.12)] transition-all"
             >
               <span className="text-[10px]">💎</span>
-              <span className="text-[10px] font-black text-white font-mono">
+              <span className="text-xs font-semibold text-white/85 font-mono">
                 {(balance || 0).toLocaleString()}
               </span>
             </motion.div>
@@ -335,7 +335,7 @@ export default function MainLayout() {
           <TopNav profile={profile} />
 
           {/* Page content */}
-          <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#020617] cp-scroll-container">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#09090f] cp-scroll-container">
             {/* Ambient gradient at top of content area */}
             <div className="pointer-events-none fixed top-[52px] left-1/4 w-1/2 h-[300px] bg-[rgba(139,92,246,0.03)] blur-[80px] rounded-full z-0" />
 

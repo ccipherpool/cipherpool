@@ -49,8 +49,8 @@ const TCard = ({ t, i, balance }) => {
           background: isLive
             ? "linear-gradient(90deg, #ef4444, #f97316)"
             : isOpen
-            ? "linear-gradient(90deg, #10b981, #6366f1)"
-            : "linear-gradient(90deg, rgba(99,102,241,0.4), rgba(167,139,250,0.3))",
+            ? "linear-gradient(90deg, #10b981, #8b5cf6)"
+            : "linear-gradient(90deg, rgba(139,92,246,0.4), rgba(167,139,250,0.3))",
         }}
       />
 
@@ -68,11 +68,11 @@ const TCard = ({ t, i, balance }) => {
             style={{
               background: isLive
                 ? "linear-gradient(135deg, rgba(239,68,68,0.12) 0%, rgba(249,115,22,0.06) 100%)"
-                : "linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(16,185,129,0.05) 100%)",
+                : "linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(16,185,129,0.05) 100%)",
             }}
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1220] via-[#0d1220]/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#09090f] via-[#09090f]/40 to-transparent" />
 
         {/* HUD icon */}
         <div className="absolute inset-0 flex items-center justify-center opacity-10 group-hover:opacity-20 transition-opacity duration-500">
@@ -86,12 +86,12 @@ const TCard = ({ t, i, balance }) => {
             style={{ background: cfg.dot, boxShadow: isLive ? `0 0 6px ${cfg.dot}` : "none" }}
           />
           {isLive && <span className="absolute inset-0 rounded-full animate-ping opacity-30" style={{ background: cfg.dot }} />}
-          <span className="text-[8px] font-black text-white uppercase tracking-[0.2em]">{cfg.label}</span>
+          <span className="text-[10px] font-medium text-white">{cfg.label}</span>
         </div>
 
         {/* Title */}
         <div className="absolute bottom-3 left-4 right-4">
-          <h3 className="text-[13px] font-black text-white uppercase tracking-wide leading-tight truncate group-hover:text-cp-indigo-light transition-colors duration-[220ms]">
+          <h3 className="text-sm font-semibold text-white leading-tight truncate group-hover:text-violet-300 transition-colors duration-[220ms]">
             {t.name}
           </h3>
         </div>
@@ -107,17 +107,17 @@ const TCard = ({ t, i, balance }) => {
             { label: "Mode",  value: t.mode || "SOLO", color: "#10b981" },
           ].map(s => (
             <div key={s.label} className="text-center py-2 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]">
-              <p className="text-[7px] font-black text-[rgba(255,255,255,0.25)] uppercase tracking-widest mb-0.5">{s.label}</p>
-              <p className="text-[10px] font-black uppercase truncate" style={{ color: s.color }}>{s.value}</p>
+              <p className="text-[10px] text-white/30 mb-0.5">{s.label}</p>
+              <p className="text-xs font-semibold truncate" style={{ color: s.color }}>{s.value}</p>
             </div>
           ))}
         </div>
 
         {/* Slots progress */}
         <div>
-          <div className="flex justify-between text-[8px] font-black text-[rgba(255,255,255,0.3)] uppercase tracking-widest mb-1.5">
+          <div className="flex justify-between text-xs text-white/35 mb-1.5">
             <span>Players</span>
-            <span className="text-[rgba(255,255,255,0.6)]">{t.current_players ?? 0} / {t.max_players ?? "∞"}</span>
+            <span className="text-white/55">{t.current_players ?? 0} / {t.max_players ?? "∞"}</span>
           </div>
           <div className="cp-progress">
             <motion.div
@@ -128,7 +128,7 @@ const TCard = ({ t, i, balance }) => {
               style={{
                 background: progress >= 100
                   ? "#f59e0b"
-                  : "linear-gradient(90deg, #6366f1, #818cf8)",
+                  : "linear-gradient(90deg, #8b5cf6, #a78bfa)",
               }}
             />
           </div>
@@ -138,12 +138,12 @@ const TCard = ({ t, i, balance }) => {
         <div className="mt-auto">
           <Link to={`/tournaments/${t.id}`}>
             <button
-              className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-[220ms] ${
+              className={`w-full py-2.5 rounded-xl text-sm font-medium transition-all duration-[220ms] ${
                 t.status === "completed" || t.status === "archived" || t.status === "cancelled"
-                  ? "bg-[rgba(255,255,255,0.04)] text-[rgba(255,255,255,0.3)] cursor-not-allowed border border-[rgba(255,255,255,0.05)]"
+                  ? "bg-white/[0.04] text-white/30 cursor-not-allowed border border-white/[0.06]"
                   : isLive
-                  ? "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] hover:scale-[1.02] active:scale-[0.98]"
-                  : "bg-gradient-to-r from-cp-indigo to-cp-indigo-light text-white shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] hover:scale-[1.02] active:scale-[0.98]"
+                  ? "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.25)] hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+                  : "bg-gradient-to-r from-violet-600 to-violet-400 text-white shadow-[0_0_20px_rgba(139,92,246,0.25)] hover:shadow-[0_0_30px_rgba(139,92,246,0.4)] hover:scale-[1.02] active:scale-[0.98]"
               }`}
             >
               {t.status === "completed" || t.status === "archived" ? "View Results"
@@ -203,20 +203,17 @@ export default function Tournaments() {
             {liveCount > 0 && (
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/25">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                <span className="text-[8px] font-black text-red-400 uppercase tracking-[0.2em]">{liveCount} Live</span>
+                <span className="text-[10px] font-medium text-red-400">{liveCount} Live</span>
               </span>
             )}
             {openCount > 0 && (
-              <span className="text-[9px] font-black text-[rgba(16,185,129,0.6)] uppercase tracking-widest">
+              <span className="text-xs text-emerald-400/60">
                 {openCount} Open
               </span>
             )}
           </div>
-          <h1 className="text-[2rem] md:text-[2.8rem] font-heading font-black text-white uppercase tracking-tighter leading-[0.9]">
-            Tournament<br />
-            <span style={{ background: "linear-gradient(135deg, #6366f1, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              Arena
-            </span>
+          <h1 className="font-heading text-3xl md:text-4xl font-bold text-white tracking-tight">
+            Tournament <span style={{ background: "linear-gradient(135deg, #8b5cf6, #a78bfa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Arena</span>
           </h1>
         </div>
 
@@ -244,17 +241,17 @@ export default function Tournaments() {
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`relative px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-[220ms] ${
+            className={`relative px-4 py-2 rounded-xl text-xs font-medium transition-all duration-[220ms] ${
               filter === f.key
-                ? "text-white bg-[rgba(99,102,241,0.15)] border border-[rgba(99,102,241,0.35)]"
-                : "text-[rgba(255,255,255,0.35)] bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] hover:text-[rgba(255,255,255,0.7)] hover:bg-[rgba(255,255,255,0.06)]"
+                ? "text-white bg-[rgba(139,92,246,0.15)] border border-[rgba(139,92,246,0.30)]"
+                : "text-white/35 bg-white/[0.03] border border-white/[0.06] hover:text-white/70 hover:bg-white/[0.06]"
             }`}
           >
             {filter === f.key && (
               <motion.div
                 layoutId="tour-filter-bg"
                 className="absolute inset-0 rounded-xl"
-                style={{ background: "rgba(99,102,241,0.08)" }}
+                style={{ background: "rgba(139,92,246,0.08)" }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
             )}

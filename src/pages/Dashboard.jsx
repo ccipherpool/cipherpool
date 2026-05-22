@@ -66,21 +66,21 @@ const TournamentItem = ({ t, idx }) => (
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <p className="text-[11px] font-black text-white uppercase tracking-wide truncate group-hover:text-cyber-400 transition-colors">
+          <p className="text-sm font-medium text-white/85 truncate group-hover:text-cyber-400 transition-colors">
             {t.name}
           </p>
           {t.status === "live" && (
             <span className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-red-500/15 border border-red-500/30">
               <span className="w-1 h-1 rounded-full bg-red-400 animate-pulse" />
-              <span className="text-[7px] font-black text-red-400 uppercase">Live</span>
+              <span className="text-[10px] font-semibold text-red-400">Live</span>
             </span>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[9px] font-black text-yellow-500/70 uppercase tracking-wider">
+          <span className="text-xs text-yellow-400/70 font-medium">
             {(t.prize_coins || 0).toLocaleString()} CP
           </span>
-          <span className="text-[9px] text-white/25 uppercase">
+          <span className="text-xs text-white/30">
             {t.current_players ?? 0}/{t.max_players ?? "∞"}
           </span>
         </div>
@@ -95,9 +95,9 @@ const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="px-3 py-2 rounded-xl bg-cp-s3 border border-cyber-border shadow-lg">
-      <p className="text-[8px] font-black text-white/35 uppercase tracking-widest mb-0.5">{label}</p>
-      <p className="text-[13px] font-black text-white">
-        {payload[0].value} <span className="text-[9px] text-cyber-400">pts</span>
+      <p className="text-[10px] font-medium text-white/40 mb-0.5">{label}</p>
+      <p className="text-sm font-semibold text-white">
+        {payload[0].value} <span className="text-xs text-cyber-400">pts</span>
       </p>
     </div>
   );
@@ -126,7 +126,7 @@ function QuickCard({ to, icon: Icon, label, accent, delay }) {
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${c.bg} ${c.border} group-hover:scale-110 transition-transform duration-[220ms]`}>
           <Icon size={17} className={c.text} />
         </div>
-        <span className={`text-[9px] font-black uppercase tracking-wider text-white/35 group-hover:text-white transition-colors`}>
+        <span className="text-xs font-medium text-white/45 group-hover:text-white transition-colors">
           {label}
         </span>
       </Link>
@@ -188,26 +188,25 @@ export default function Dashboard() {
           className="flex items-end justify-between gap-4"
         >
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <span className="cp-live-dot" />
-              <span className="text-[9px] font-black text-mint/80 uppercase tracking-[0.25em]">Active Session</span>
+              <span className="text-xs font-medium text-mint/80">Active Session</span>
               {season && (
                 <>
                   <span className="w-px h-3 bg-white/10" />
-                  <span className="text-[9px] font-black text-white/25 uppercase tracking-[0.2em]">{season.name}</span>
+                  <span className="text-xs text-white/35">{season.name}</span>
                 </>
               )}
             </div>
-            <h1 className="font-heading text-[clamp(28px,6vw,52px)] font-black text-white uppercase tracking-tighter leading-[0.9]">
-              Command<br />
-              <span className="text-cyber">Center</span>
+            <h1 className="font-heading text-[clamp(26px,5vw,44px)] font-bold text-white tracking-tight leading-[1.05]">
+              Command <span className="text-cyber">Center</span>
             </h1>
           </div>
 
           <div className="hidden md:flex items-center gap-2">
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gold-dim border border-cyber-gold/20">
               <Wallet size={13} className="text-cyber-gold" />
-              <span className="text-[11px] font-black text-cyber-gold uppercase tracking-widest">{balance.toLocaleString()} CP</span>
+              <span className="text-xs font-semibold text-cyber-gold">{balance.toLocaleString()} CP</span>
             </div>
             <Link to="/tournaments" className="cyber-btn cyber-btn-primary cyber-btn-sm">
               <Swords size={12} />
@@ -267,17 +266,17 @@ export default function Dashboard() {
                   </XpRing>
 
                   <div className="flex-1 pb-1">
-                    <h3 className="text-[13px] font-black text-white uppercase tracking-wide truncate">
+                    <h3 className="text-sm font-semibold text-white truncate">
                       {profile?.username || "Operative"}
                     </h3>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[9px] font-black text-mint/70 uppercase tracking-wider">
+                      <span className="text-xs text-mint/70">
                         Level {profile?.level || 1}
                       </span>
                       <ShieldCheck size={10} className="text-cyber-400/60" />
                     </div>
                     <div className="mt-2">
-                      <div className="flex justify-between text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">
+                      <div className="flex justify-between text-[10px] font-medium text-white/30 mb-1">
                         <span>XP</span>
                         <span>{profile?.xp || 0} / 1000</span>
                       </div>
@@ -302,13 +301,13 @@ export default function Dashboard() {
                     { label: "Win%",    value: `${winRate}%` },
                   ].map(s => (
                     <div key={s.label} className="text-center py-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
-                      <p className="text-[14px] font-black text-white leading-none">{s.value}</p>
-                      <p className="text-[7px] font-black text-white/25 uppercase tracking-widest mt-1">{s.label}</p>
+                      <p className="text-base font-bold text-white leading-none">{s.value}</p>
+                      <p className="text-[10px] text-white/35 mt-1">{s.label}</p>
                     </div>
                   ))}
                 </div>
 
-                <Link to="/profile" className="cyber-btn cyber-btn-ghost w-full justify-center text-[10px]">
+                <Link to="/profile" className="cyber-btn cyber-btn-ghost w-full justify-center">
                   View Profile <ArrowUpRight size={11} className="ml-1" />
                 </Link>
               </div>
@@ -324,10 +323,10 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Swords size={13} className="text-cyber-400" />
-                  <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.15em]">Active Operations</span>
+                  <span className="text-sm font-medium text-white/55">Active Operations</span>
                 </div>
-                <Link to="/tournaments" className="text-[9px] font-black text-cyber-400/60 hover:text-cyber-400 uppercase tracking-widest transition-colors">
-                  All →
+                <Link to="/tournaments" className="text-xs text-cyber-400/60 hover:text-cyber-400 transition-colors">
+                  View all →
                 </Link>
               </div>
 
@@ -342,7 +341,7 @@ export default function Dashboard() {
               ) : (
                 <div className="py-8 text-center">
                   <Radio size={22} className="text-white/10 mx-auto mb-2 animate-pulse" />
-                  <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">No active operations</p>
+                  <p className="text-sm text-white/30">No active operations</p>
                 </div>
               )}
             </motion.div>
@@ -372,16 +371,15 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyber-dim border border-cyber-border">
                     <Zap size={9} className="text-cyber-400" />
-                    <span className="text-[8px] font-black text-cyber-400 uppercase tracking-[0.2em]">
+                    <span className="text-[10px] font-medium text-cyber-400">
                       {season ? `Season: ${season.name}` : "CipherPool Arena"}
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <h2 className="font-heading text-[clamp(24px,4vw,40px)] font-black text-white uppercase tracking-tighter leading-[0.9] mb-4">
-                    Deploy Your<br />
-                    <span className="text-cyber">Squad Now</span>
+                  <h2 className="font-heading text-[clamp(22px,3.5vw,36px)] font-bold text-white tracking-tight leading-[1.1] mb-4">
+                    Deploy Your <span className="text-cyber">Squad Now</span>
                   </h2>
                   <div className="flex flex-wrap items-center gap-3">
                     <Link to="/tournaments" className="cyber-btn cyber-btn-primary cyber-btn-sm">
@@ -405,9 +403,9 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <Activity size={13} className="text-cyber-400" />
-                  <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.15em]">Performance</span>
+                  <span className="text-sm font-medium text-white/55">Performance</span>
                 </div>
-                <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">7-day</span>
+                <span className="text-xs text-white/25">7-day</span>
               </div>
 
               <div className="h-[150px] w-full">
@@ -422,7 +420,7 @@ export default function Dashboard() {
                     <XAxis
                       dataKey="d"
                       axisLine={false} tickLine={false}
-                      tick={{ fill: "rgba(255,255,255,0.20)", fontSize: 9, fontWeight: 900, letterSpacing: "0.1em" }}
+                      tick={{ fill: "rgba(255,255,255,0.25)", fontSize: 11, fontWeight: 500 }}
                       dy={8}
                     />
                     <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(139,92,246,0.25)", strokeWidth: 1 }} />

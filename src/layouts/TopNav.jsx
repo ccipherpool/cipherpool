@@ -54,10 +54,10 @@ export default function TopNav({ profile }) {
               to={item.path}
               className={[
                 "relative flex items-center gap-2 px-3 py-1.5 rounded-xl",
-                "text-[10px] font-black uppercase tracking-[0.1em]",
-                "transition-all duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
+                "text-sm font-medium",
+                "transition-all duration-200",
                 active
-                  ? "text-white bg-cyber-dim"
+                  ? "text-white bg-[rgba(139,92,246,0.10)]"
                   : "text-white/40 hover:text-white/80 hover:bg-white/[0.04]",
               ].join(" ")}
             >
@@ -128,11 +128,11 @@ export default function TopNav({ profile }) {
             </div>
 
             <div className="hidden lg:flex flex-col items-start">
-              <span className="text-[9px] font-black text-white uppercase tracking-widest leading-none">
-                {profile?.username || "Agent"}
+              <span className="text-sm font-medium text-white/85 leading-none">
+                {profile?.username || "Player"}
               </span>
-              <span className="text-[7px] font-bold text-[rgba(16,185,129,0.7)] uppercase tracking-wider mt-0.5">
-                Lvl {profile?.level || 1}
+              <span className="text-xs text-white/40 mt-0.5">
+                Level {profile?.level || 1}
               </span>
             </div>
           </motion.button>
@@ -141,11 +141,11 @@ export default function TopNav({ profile }) {
           <div className="absolute right-0 top-full pt-2 opacity-0 translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-[110]">
             <div className="w-56 bg-[#0d1220] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-[24px] overflow-hidden">
               {/* Header */}
-              <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.05)]">
-                <p className="text-[8px] font-black text-[rgba(255,255,255,0.25)] uppercase tracking-[0.3em] mb-1">Logged in as</p>
-                <p className="text-[11px] font-bold text-white truncate">{profile?.email}</p>
+              <div className="px-4 py-3 border-b border-white/[0.05]">
+                <p className="text-xs text-white/35 mb-0.5">Logged in as</p>
+                <p className="text-sm font-medium text-white truncate">{profile?.email}</p>
                 {profile?.role && (
-                  <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider bg-cyber-dim text-cyber-400 border border-cyber-border">
+                  <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-[rgba(139,92,246,0.10)] text-violet-400 border border-[rgba(139,92,246,0.20)] capitalize">
                     {profile.role.replace("_", " ")}
                   </span>
                 )}
@@ -154,48 +154,48 @@ export default function TopNav({ profile }) {
               <div className="p-1.5">
                 <NavLink
                   to="/profile"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[rgba(255,255,255,0.45)] hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition-all duration-[220ms]"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-white hover:bg-white/[0.05] transition-all duration-200"
                 >
-                  <User size={13} />
+                  <User size={14} />
                   <span>Profile</span>
                 </NavLink>
 
                 <NavLink
                   to="/wallet"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[rgba(255,255,255,0.45)] hover:text-white hover:bg-[rgba(255,255,255,0.05)] transition-all duration-[220ms]"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-white hover:bg-white/[0.05] transition-all duration-200"
                 >
-                  <Wallet size={13} />
+                  <Wallet size={14} />
                   <span>Wallet</span>
                 </NavLink>
 
                 {isAdmin && (
                   <>
-                    <div className="my-1 h-px bg-[rgba(255,255,255,0.05)]" />
+                    <div className="my-1 h-px bg-white/[0.05]" />
                     <NavLink
                       to="/admin"
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[rgba(255,255,255,0.45)] hover:text-orange-400 hover:bg-orange-400/5 transition-all duration-[220ms]"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-orange-400 hover:bg-orange-400/[0.06] transition-all duration-200"
                     >
-                      <ShieldAlert size={13} />
+                      <ShieldAlert size={14} />
                       <span>Admin Panel</span>
                     </NavLink>
                     {isSuperAdmin && (
                       <NavLink
                         to="/super-admin"
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[rgba(255,255,255,0.45)] hover:text-red-400 hover:bg-red-400/5 transition-all duration-[220ms]"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-red-400 hover:bg-red-400/[0.06] transition-all duration-200"
                       >
-                        <Zap size={13} />
+                        <Zap size={14} />
                         <span>Root Access</span>
                       </NavLink>
                     )}
                   </>
                 )}
 
-                <div className="my-1 h-px bg-[rgba(255,255,255,0.05)]" />
+                <div className="my-1 h-px bg-white/[0.05]" />
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-400/70 hover:text-red-400 hover:bg-red-400/5 transition-all duration-[220ms]"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-400/60 hover:text-red-400 hover:bg-red-400/[0.06] transition-all duration-200"
                 >
-                  <LogOut size={13} />
+                  <LogOut size={14} />
                   <span>Sign Out</span>
                 </button>
               </div>
