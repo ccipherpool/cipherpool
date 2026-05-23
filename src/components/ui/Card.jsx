@@ -1,63 +1,73 @@
-import { motion } from "framer-motion";
-import clsx from "clsx";
+// Card — base surface component using CipherPool design system
+// variant: "default" | "luxury" | "glass" | "cyan" | "gold"
 
-/**
- * Card Component - Base Card with Variants
- * Variants: default, hover, glow, gradient
- */
-export function Card({
-  children,
+const VARIANTS = {
+  default: "cp-card",
+  luxury:  "luxury-card",
+  glass:   "cp-card-glass",
+  cyan:    "luxury-card luxury-card-cyan",
+  gold:    "luxury-card luxury-card-gold",
+};
+
+export default function Card({
   variant = "default",
   className = "",
-  onClick = null,
+  padding = "p-5",
+  children,
+  as: Tag = "div",
+  glow,
+  onClick,
   ...props
 }) {
-  const baseStyles = "rounded-xl border transition-all";
-
-  const variants = {
-    default: "bg-bg-card border-primary-900/30 hover:border-primary-500/50",
-    hover: "bg-bg-card border-primary-900/30 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/10 cursor-pointer",
-    glow: "bg-gradient-to-br from-primary-600/10 to-secondary-600/10 border-primary-500/30 hover:border-primary-500/50 hover:shadow-glow-primary",
-    gradient: "bg-gradient-to-br from-primary-600/20 to-secondary-600/20 border-primary-500/30",
-  };
+  const glowClass = glow === "purple" ? "glow-indigo"
+    : glow === "gold" ? "glow-gold"
+    : glow === "cyan" ? "glow-on-hover"
+    : "";
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={onClick ? { scale: 1.02 } : {}}
+    <Tag
+      className={`${VARIANTS[variant] ?? VARIANTS.default} ${padding} ${glowClass} ${onClick ? "cursor-pointer" : ""} ${className}`}
       onClick={onClick}
-      className={clsx(
-        baseStyles,
-        variants[variant],
-        onClick && "cursor-pointer",
-        className
-      )}
       {...props}
     >
       {children}
-    </motion.div>
+    </Tag>
   );
 }
 
-export function CardHeader({ children, className = "" }) {
+Card.Header = function CardHeader({ className = "", children, ...props }) {
   return (
-    <div className={clsx("px-6 py-4 border-b border-primary-900/20", className)}>
+    <div className={`flex items-center justify-between gap-3 mb-4 ${className}`} {...props}>
       {children}
     </div>
   );
-}
+};
 
+Card.Title = function CardTitle({ className = "", children, ...props }) {
+  return (
+    <h3 className={`font-heading font-bold text-base leading-tight ${className}`}
+      style={{ color: "var(--cp-text-1)" }} {...props}>
+      {children}
+    </h3>
+  );
+};
+
+Card.Divider = function CardDivider({ className = "" }) {
+  return <div className={`cp-separator my-4 ${className}`} />;
+};
+
+export { Card };
+export function CardHeader({ children, className = "" }) {
+  return <div className={`flex items-center justify-between gap-3 mb-4 ${className}`}>{children}</div>;
+}
 export function CardContent({ children, className = "" }) {
-  return <div className={clsx("px-6 py-4", className)}>{children}</div>;
+  return <div className={className}>{children}</div>;
 }
-
 export function CardFooter({ children, className = "" }) {
   return (
-    <div className={clsx("px-6 py-4 border-t border-primary-900/20 flex gap-2 justify-end", className)}>
+    <div className={`flex gap-2 justify-end mt-4 pt-4 ${className}`}
+      style={{ borderTop: "1px solid var(--cp-border)" }}>
       {children}
     </div>
   );
 }
-
-export default Card;

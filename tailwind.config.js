@@ -7,19 +7,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        /* Depth layers */
-        'cp-base':      '#020617',
-        'cp-s1':        '#07091a',
-        'cp-s2':        '#0d1220',
-        'cp-s3':        '#121929',
-        'cp-s4':        '#1a2235',
+        /* ── BACKGROUND DEPTH LAYERS (deep navy, not black) */
+        'cp-base':      '#0B1020',
+        'cp-s1':        '#12182B',
+        'cp-s2':        '#161D33',
+        'cp-s3':        '#1B2440',
+        'cp-s4':        '#1F2A4A',
 
-        /* Legacy compat */
+        /* Legacy compat — updated to navy */
         'obsidian': {
-          DEFAULT: '#07091a',
-          light:   '#0d1220',
-          lighter: '#121929',
-          deep:    '#020617',
+          DEFAULT: '#12182B',
+          light:   '#161D33',
+          lighter: '#1B2440',
+          deep:    '#0B1020',
         },
 
         /* Accents */
@@ -30,10 +30,10 @@ export default {
           glow:    'rgba(16,185,129,0.35)',
         },
         'cp-indigo': {
-          DEFAULT: '#6366f1',
-          dark:    '#4f46e5',
-          light:   '#818cf8',
-          glow:    'rgba(99,102,241,0.35)',
+          DEFAULT: '#7C3AED',
+          dark:    '#6D28D9',
+          light:   '#A78BFA',
+          glow:    'rgba(124,58,237,0.35)',
         },
         'cyber-gold': {
           DEFAULT: '#f59e0b',
@@ -68,16 +68,16 @@ export default {
 
         /* ── CYBER LUXURY PALETTE (new) ── */
         'cyber': {
-          DEFAULT: '#8B5CF6',
+          DEFAULT: '#7C3AED',
           50:      '#F5F3FF',
           100:     '#EDE9FE',
           400:     '#A78BFA',
           500:     '#8B5CF6',
           600:     '#7C3AED',
           700:     '#6D28D9',
-          glow:    'rgba(139,92,246,0.45)',
-          dim:     'rgba(139,92,246,0.10)',
-          border:  'rgba(139,92,246,0.20)',
+          glow:    'rgba(124,58,237,0.45)',
+          dim:     'rgba(124,58,237,0.10)',
+          border:  'rgba(124,58,237,0.20)',
         },
         'neon': {
           cyan:   '#06B6D4',

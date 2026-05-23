@@ -47,7 +47,9 @@ export default function News(){
     finally{setLoading(false);}
   };
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const incrementView=async(id)=>{
+    if (!UUID_RE.test(id)) return;
     try {
       const{data:nData}=await supabase.from("news").select("views").eq("id",id).maybeSingle();
       if(nData)await supabase.from("news").update({views:(nData.views||0)+1}).eq("id",id);

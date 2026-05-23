@@ -15,7 +15,7 @@ export function useFriends() {
     const [friendsRes, receivedRes, sentRes] = await Promise.all([
       supabase
         .from('friends')
-        .select('*, profile:profiles!friends_friend_id_fkey(id,username,avatar_url,level), presence:user_presence(status,last_seen)')
+        .select('*, profile:profiles!friends_friend_id_fkey(id,username,avatar_url,level)')
         .eq('user_id', user.id)
         .order('is_favorite', { ascending: false }),
       supabase

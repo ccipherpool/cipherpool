@@ -80,7 +80,12 @@
       "PowerShell(npx eslint \"src/components/AnnouncementModal.jsx\" 2>&1)",
       "PowerShell(ls node_modules | Where-Object { $_.Name -eq \"eslint-plugin-react\" })",
       "PowerShell(npm install *)",
-      "PowerShell(node -e \"const rh = require\\('./node_modules/eslint-plugin-react-hooks'\\); console.log\\(Object.keys\\(rh.rules || {}\\)\\)\")"
+      "PowerShell(node -e \"const rh = require\\('./node_modules/eslint-plugin-react-hooks'\\); console.log\\(Object.keys\\(rh.rules || {}\\)\\)\")",
+      "Bash(npx eslint *)",
+      "Bash(grep -rn \"import.*App\\\\.css\" src/)",
+      "Bash(grep -rn \"App\\\\.css\" src/)",
+      "Bash(grep -rn \"'App\\\\.css'\" src/)",
+      "Bash(Select-String *)"
     ]
   }
 }

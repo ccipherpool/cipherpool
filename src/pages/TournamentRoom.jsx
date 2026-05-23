@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { Menu } from "lucide-react";
 import { useRoomEngine } from "../hooks/useRoomEngine";
 import TeamLayout from "../components/room/TeamLayout";
 import RoomSidebar from "../components/room/RoomSidebar";

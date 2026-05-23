@@ -1,11 +1,16 @@
+// CipherPool UI Kit — core design system components
 export { Button } from "./Button";
 export { Card, CardHeader, CardContent, CardFooter } from "./Card";
 export { Input } from "./Input";
-export { Modal } from "./Modal";
 export { Badge } from "./Badge";
+export { Modal } from "./Modal";
+export { default as StatCard } from "./StatCard";
+export { default as PageHeader } from "./PageHeader";
+export { default as EmptyState } from "./EmptyState";
+export { default as Panel } from "./Panel";
 export { Tabs } from "./Tabs";
 
-// Cyber Luxury system
+// Legacy cyber luxury components (use Button/Card/Badge from above instead)
 export { PremiumGlassCard } from "./PremiumGlassCard";
 export { CyberButton } from "./CyberButton";
 export { NeonBadge } from "./NeonBadge";

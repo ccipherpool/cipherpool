@@ -9,37 +9,73 @@
 
 /* ── DESIGN TOKENS ──────────────────────────────────────────────────── */
 :root {
-  /* Depth system — 5 layers */
-  --cp-base:      #09090f;
-  --cp-surface-1: #111118;
-  --cp-surface-2: #16161f;
-  --cp-surface-3: #1c1c27;
-  --cp-surface-4: #22222f;
+  /* ── BACKGROUND LAYERS — deep navy, not black (Discord/Linear/Riot feel) */
+  --cp-base:      #0B1020;   /* root page bg — deep midnight navy            */
+  --cp-surface-1: #12182B;   /* sidebar, secondary surfaces                  */
+  --cp-surface-2: #161D33;   /* cards, panels                                */
+  --cp-surface-3: #1B2440;   /* modals, dropdowns                            */
+  --cp-surface-4: #1F2A4A;   /* highest elevation, tooltips                  */
 
-  /* Primary accent: cyber violet */
-  --cp-accent:       #8b5cf6;
-  --cp-accent-dim:   rgba(139, 92, 246, 0.10);
-  --cp-accent-glow:  rgba(139, 92, 246, 0.35);
-  --cp-accent-border:rgba(139, 92, 246, 0.20);
+  /* ── BRAND PRIMARY — CipherPool Purple */
+  --cp-accent:        #7C3AED;
+  --cp-accent-dim:    rgba(124, 58, 237, 0.12);
+  --cp-accent-glow:   rgba(124, 58, 237, 0.35);
+  --cp-accent-border: rgba(124, 58, 237, 0.25);
 
-  /* Secondary accents */
-  --cp-mint:       #10b981;
-  --cp-mint-dim:   rgba(16, 185, 129, 0.10);
+  /* ── SECONDARY ACCENTS */
+  --cp-mint:       #10B981;
+  --cp-mint-dim:   rgba(16, 185, 129, 0.12);
   --cp-mint-glow:  rgba(16, 185, 129, 0.30);
-  --cp-cyan:       #06b6d4;
-  --cp-cyan-dim:   rgba(6, 182, 212, 0.10);
-  --cp-gold:       #f59e0b;
-  --cp-gold-dim:   rgba(245, 158, 11, 0.10);
+  --cp-cyan:       #06B6D4;
+  --cp-cyan-dim:   rgba(6, 182, 212, 0.12);
+  --cp-cyan-glow:  rgba(6, 182, 212, 0.30);
+  --cp-gold:       #F59E0B;
+  --cp-gold-dim:   rgba(245, 158, 11, 0.12);
   --cp-gold-glow:  rgba(245, 158, 11, 0.30);
-  --cp-red:        #ef4444;
+  --cp-red:        #EF4444;
+  --cp-red-dim:    rgba(239, 68, 68, 0.10);
 
-  /* Legacy compat */
-  --cp-indigo:      #8b5cf6;
-  --cp-indigo-dim:  rgba(139, 92, 246, 0.10);
-  --cp-indigo-glow: rgba(139, 92, 246, 0.35);
-  --cp-violet:      #a78bfa;
+  /* ── LEGACY COMPAT (aliases for old code) */
+  --cp-indigo:       #7C3AED;
+  --cp-indigo-dim:   rgba(124, 58, 237, 0.12);
+  --cp-indigo-glow:  rgba(124, 58, 237, 0.35);
+  --cp-violet:       #A78BFA;
 
-  /* ── LIGHT / SaaS DESIGN SYSTEM (used by light-mode pages) ── */
+  /* ── TEXT HIERARCHY — named, not opacity-based for clarity */
+  --cp-text-1: #F8FAFC;   /* headings, primary values  */
+  --cp-text-2: #CBD5E1;   /* body, descriptions        */
+  --cp-text-3: #94A3B8;   /* labels, muted info        */
+  --cp-text-4: #64748B;   /* disabled, hints           */
+
+  /* ── BORDERS */
+  --cp-border:        rgba(255, 255, 255, 0.07);
+  --cp-border-hover:  rgba(255, 255, 255, 0.12);
+  --cp-border-active: rgba(124, 58, 237, 0.40);
+
+  /* ── SHADOWS */
+  --cp-shadow-sm:  0 1px 4px rgba(0, 0, 0, 0.5), 0 2px 12px rgba(0, 0, 0, 0.3);
+  --cp-shadow-md:  0 4px 16px rgba(0, 0, 0, 0.5), 0 8px 32px rgba(0, 0, 0, 0.3);
+  --cp-shadow-lg:  0 12px 40px rgba(0, 0, 0, 0.6), 0 24px 64px rgba(0, 0, 0, 0.4);
+  --cp-shadow-glow-mint:   0 0 20px rgba(16, 185, 129, 0.20), 0 0 40px rgba(16, 185, 129, 0.08);
+  --cp-shadow-glow-indigo: 0 0 20px rgba(124, 58, 237, 0.20), 0 0 40px rgba(124, 58, 237, 0.08);
+  --cp-shadow-glow-gold:   0 0 20px rgba(245, 158, 11, 0.20), 0 0 40px rgba(245, 158, 11, 0.08);
+
+  /* ── RADIUS */
+  --cp-radius-sm:  8px;
+  --cp-radius:     12px;
+  --cp-radius-md:  16px;
+  --cp-radius-lg:  20px;
+  --cp-radius-xl:  24px;
+
+  /* ── MOTION */
+  --cp-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --cp-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --cp-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --cp-duration-fast: 120ms;
+  --cp-duration-base: 200ms;
+  --cp-duration-slow: 350ms;
+
+  /* ── LEGACY LIGHT THEME (keep for backward compat) */
   --light-bg:          #F8FAFC;
   --light-bg-card:     #FFFFFF;
   --light-bg-subtle:   #F1F5F9;
@@ -61,40 +97,6 @@
   --light-shadow-sm:   0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
   --light-shadow-md:   0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
   --light-shadow-lg:   0 10px 15px rgba(0,0,0,0.10), 0 4px 6px rgba(0,0,0,0.05);
-
-  /* Text hierarchy — WCAG-friendly contrast */
-  --cp-text-1: rgba(255, 255, 255, 0.92);
-  --cp-text-2: rgba(255, 255, 255, 0.60);
-  --cp-text-3: rgba(255, 255, 255, 0.38);
-  --cp-text-4: rgba(255, 255, 255, 0.15);
-
-  /* Borders — subtle, not harsh */
-  --cp-border:       rgba(255, 255, 255, 0.06);
-  --cp-border-hover: rgba(255, 255, 255, 0.11);
-  --cp-border-active:rgba(139, 92, 246, 0.35);
-
-  /* Shadows */
-  --cp-shadow-sm:  0 1px 4px rgba(0, 0, 0, 0.5), 0 2px 12px rgba(0, 0, 0, 0.3);
-  --cp-shadow-md:  0 4px 16px rgba(0, 0, 0, 0.5), 0 8px 32px rgba(0, 0, 0, 0.3);
-  --cp-shadow-lg:  0 12px 40px rgba(0, 0, 0, 0.6), 0 24px 64px rgba(0, 0, 0, 0.4);
-  --cp-shadow-glow-mint:   0 0 16px rgba(16, 185, 129, 0.20), 0 0 40px rgba(16, 185, 129, 0.08);
-  --cp-shadow-glow-indigo: 0 0 16px rgba(139, 92, 246, 0.20), 0 0 40px rgba(139, 92, 246, 0.08);
-  --cp-shadow-glow-gold:   0 0 16px rgba(245, 158, 11, 0.20), 0 0 40px rgba(245, 158, 11, 0.08);
-
-  /* Radius system */
-  --cp-radius-sm:  8px;
-  --cp-radius:     12px;
-  --cp-radius-md:  16px;
-  --cp-radius-lg:  20px;
-  --cp-radius-xl:  24px;
-
-  /* Motion */
-  --cp-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
-  --cp-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --cp-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --cp-duration-fast: 120ms;
-  --cp-duration-base: 200ms;
-  --cp-duration-slow: 350ms;
 }
 
 /* ── GLOBAL BASE ─────────────────────────────────────────────────────── */
@@ -1047,10 +1049,10 @@ input, textarea, select {
 
 /* ── CYBER LUXURY TOKENS ────────────────────────────────────────────── */
 :root {
-  --cyber:        #8B5CF6;
-  --cyber-dim:    rgba(139, 92, 246, 0.12);
-  --cyber-glow:   rgba(139, 92, 246, 0.45);
-  --cyber-border: rgba(139, 92, 246, 0.30);
+  --cyber:        #7C3AED;   /* updated to match brand primary */
+  --cyber-dim:    rgba(124, 58, 237, 0.12);
+  --cyber-glow:   rgba(124, 58, 237, 0.45);
+  --cyber-border: rgba(124, 58, 237, 0.30);
   --cyan:         #06B6D4;
   --cyan-dim:     rgba(6, 182, 212, 0.12);
   --cyan-glow:    rgba(6, 182, 212, 0.40);
