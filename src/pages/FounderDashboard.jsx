@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { usePermissions } from "../utils/permissions";
+import { Crown, Gamepad2, ClipboardList, BarChart2, Plus, Trash2, Play, FolderOpen, Trophy, Users, Clock, CheckCircle } from "lucide-react";
 
 export default function FounderDashboard() {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ export default function FounderDashboard() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [tournamentToDelete, setTournamentToDelete] = useState(null);
   const { isFounder, isSuperAdmin } = usePermissions(profile);
-  
+
   const [newTournament, setNewTournament] = useState({
     name: "",
     description: "",
@@ -39,7 +40,6 @@ export default function FounderDashboard() {
 
   useEffect(() => {
     checkFounder();
-    // Fetch pending results count
     supabase.from("match_results").select("id", { count: "exact" })
       .eq("status", "pending")
       .then(({ count }) => setPendingResults(count || 0));
@@ -94,14 +94,14 @@ export default function FounderDashboard() {
   };
 
   const fetchPendingRequestsCount = async (userId) => {
-    const { data: tournaments } = await supabase
+    const { data: tData } = await supabase
       .from("tournaments")
       .select("id")
       .eq("created_by", userId);
 
-    if (tournaments && tournaments.length > 0) {
-      const tournamentIds = tournaments.map(t => t.id);
-      
+    if (tData && tData.length > 0) {
+      const tournamentIds = tData.map(t => t.id);
+
       const { count } = await supabase
         .from("tournament_participants")
         .select("*", { count: "exact", head: true })
@@ -114,7 +114,7 @@ export default function FounderDashboard() {
 
   const createTournament = async (e) => {
     e.preventDefault();
-    
+
     const { data: { user } } = await supabase.auth.getUser();
 
     const { error } = await supabase
@@ -153,13 +153,11 @@ export default function FounderDashboard() {
     const tournamentName = tournamentToDelete.name;
 
     try {
-      // محاولة 1: استعمل RPC delete_tournament_complete (الأفضل)
       const { error: rpcError } = await supabase.rpc('delete_tournament_complete', {
         tournament_id: tournamentId
       });
 
       if (rpcError) {
-        // محاولة 2: حذف يدوي كامل مع تحقق من كل خطوة
         console.warn("RPC failed, trying manual delete:", rpcError.message);
 
         const steps = [
@@ -174,14 +172,12 @@ export default function FounderDashboard() {
             .from(step.table)
             .delete()
             .eq(step.column, tournamentId);
-          
+
           if (stepError) {
             console.warn(`Warning deleting ${step.table}:`, stepError.message);
-            // نكملو حتى لو كاين table ما موجودش
           }
         }
 
-        // الحذف النهائي للتورنوا
         const { error: deleteError } = await supabase
           .from("tournaments")
           .delete()
@@ -190,7 +186,6 @@ export default function FounderDashboard() {
         if (deleteError) throw deleteError;
       }
 
-      // تأكد أنو الحذف صرا فعلاً
       const { data: checkData } = await supabase
         .from("tournaments")
         .select("id")
@@ -198,25 +193,23 @@ export default function FounderDashboard() {
         .maybeSingle();
 
       if (checkData) {
-        // لا يزال موجود — خاصك تشوف RLS policies فـ Supabase
         throw new Error("Tournament still exists after delete. Check RLS policies in Supabase.");
       }
 
-      // ✅ نجح الحذف
       setShowDeleteModal(false);
       setTournamentToDelete(null);
-      
+
       const { data: { user } } = await supabase.auth.getUser();
       await fetchTournaments(user.id);
       await fetchPendingRequestsCount(user.id);
 
-      alert(`✅ "${tournamentName}" supprimé avec succès !`);
+      alert(`"${tournamentName}" supprimé avec succès !`);
 
     } catch (error) {
       console.error("Error deleting tournament:", error);
       setShowDeleteModal(false);
       setTournamentToDelete(null);
-      alert(`❌ Échec de la suppression: ${error.message}\n\nSolution: Vérifie les RLS policies dans Supabase Dashboard.`);
+      alert(`Échec de la suppression: ${error.message}\n\nSolution: Vérifie les RLS policies dans Supabase Dashboard.`);
     }
   };
 
@@ -228,7 +221,7 @@ export default function FounderDashboard() {
 
       if (error) throw error;
 
-      alert("✅ Match démarré avec succès !");
+      alert("Match démarré avec succès !");
       fetchTournaments(profile.id);
     } catch (err) {
       console.error("Error starting match:", err);
@@ -241,184 +234,159 @@ export default function FounderDashboard() {
     return t.status === filter;
   });
 
+  const inputCls = "w-full px-4 py-3 rounded-lg text-white text-sm outline-none transition-colors border border-white/10 focus:border-purple-500/50";
+  const inputStyle = { background: "var(--cp-surface-2)" };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="text-white space-y-6">
-      
-      {/* Header Section with Gradient */}
-      <div className="border-b border-white/5 bg-gradient-to-r from-[#11151C] to-[#1A1F2B]">
-        <div className="max-w-7xl mx-auto px-8 py-8">
-          
-          <div className="flex justify-between items-center mb-8">
+
+      {/* Header */}
+      <div className="rounded-2xl border border-white/5 overflow-hidden" style={{ background: "linear-gradient(135deg, var(--cp-base), var(--cp-surface-1))" }}>
+        <div className="px-6 py-6 md:px-8 md:py-8">
+
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">
-                {isSuperAdmin ? '👑 SUPER ADMIN / FOUNDER' : '🎮 FOUNDER DASHBOARD'}
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 flex items-center gap-3">
+                {isSuperAdmin
+                  ? <><Crown size={28} className="text-yellow-400 flex-shrink-0" /> SUPER ADMIN / FOUNDER</>
+                  : <><Gamepad2 size={28} className="text-purple-400 flex-shrink-0" /> FOUNDER DASHBOARD</>
+                }
               </h1>
-              <p className="text-white/40">
-                Welcome back, {profile?.full_name} • {profile?.free_fire_id || "No FF ID"}
+              <p className="text-white/40 text-sm">
+                Welcome back, {profile?.full_name} · {profile?.free_fire_id || "No FF ID"}
               </p>
             </div>
-            
-            <div className="flex gap-4">
+
+            <div className="flex flex-wrap gap-3">
               <Link
                 to="/founder/requests"
-                className="px-6 py-3 bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30 rounded-lg font-medium transition flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl font-medium text-sm transition flex items-center gap-2 border border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10"
+                style={{ background: "rgba(234,179,8,0.08)" }}
               >
-                <span>📋 PENDING REQUESTS</span>
+                <ClipboardList size={16} />
+                <span>PENDING REQUESTS</span>
                 {pendingRequests > 0 && (
-                  <span className="px-2 py-1 bg-yellow-600 text-white text-xs rounded-full">
+                  <span className="px-2 py-0.5 bg-yellow-500 text-black text-xs rounded-full font-black">
                     {pendingRequests}
                   </span>
                 )}
               </Link>
               <Link
                 to="/admin/results"
-                className="px-6 py-3 bg-green-600/20 text-green-400 hover:bg-green-600/30 rounded-lg font-medium transition flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl font-medium text-sm transition flex items-center gap-2 border border-green-500/20 text-green-400 hover:bg-green-500/10"
+                style={{ background: "rgba(16,185,129,0.08)" }}
               >
-                <span>📊 RÉSULTATS</span>
+                <BarChart2 size={16} />
+                <span>RÉSULTATS</span>
                 {pendingResults > 0 && (
-                  <span className="px-2 py-1 bg-green-600 text-white text-xs rounded-full">
+                  <span className="px-2 py-0.5 bg-green-500 text-black text-xs rounded-full font-black">
                     {pendingResults}
                   </span>
                 )}
               </Link>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition flex items-center gap-2"
+                className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 rounded-xl font-medium text-sm transition flex items-center gap-2"
               >
-                <span>+</span> CREATE TOURNAMENT
+                <Plus size={16} />
+                CREATE TOURNAMENT
               </button>
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-5 gap-4">
-            <div className="bg-[#1A1F2B] rounded-xl p-6">
-              <p className="text-sm text-white/40 mb-2">Total Tournaments</p>
-              <p className="text-3xl font-bold text-white">{stats.total}</p>
-            </div>
-            <div className="bg-[#1A1F2B] rounded-xl p-6">
-              <p className="text-sm text-white/40 mb-2">Open</p>
-              <p className="text-3xl font-bold text-green-400">{stats.open}</p>
-            </div>
-            <div className="bg-[#1A1F2B] rounded-xl p-6">
-              <p className="text-sm text-white/40 mb-2">Full</p>
-              <p className="text-3xl font-bold text-yellow-400">{stats.full}</p>
-            </div>
-            <div className="bg-[#1A1F2B] rounded-xl p-6">
-              <p className="text-sm text-white/40 mb-2">Ongoing</p>
-              <p className="text-3xl font-bold text-blue-400">{stats.ongoing}</p>
-            </div>
-            <div className="bg-[#1A1F2B] rounded-xl p-6">
-              <p className="text-sm text-white/40 mb-2">Total Players</p>
-              <p className="text-3xl font-bold text-purple-400">{stats.totalPlayers}</p>
-            </div>
+          {/* Stat Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[
+              { label: "Total", value: stats.total, color: "text-white", icon: Trophy },
+              { label: "Open", value: stats.open, color: "text-green-400", icon: CheckCircle },
+              { label: "Full", value: stats.full, color: "text-yellow-400", icon: Users },
+              { label: "Ongoing", value: stats.ongoing, color: "text-blue-400", icon: Play },
+              { label: "Players", value: stats.totalPlayers, color: "text-purple-400", icon: Users },
+            ].map(s => (
+              <div key={s.label} className="rounded-xl p-4 border border-white/5" style={{ background: "var(--cp-surface-2)" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <s.icon size={12} className={s.color} />
+                  <p className="text-xs text-white/40">{s.label}</p>
+                </div>
+                <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-8 py-12">
-        
-        {/* Filter Buttons */}
-        <div className="flex gap-4 mb-8 flex-wrap">
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-6 py-3 rounded-lg font-medium transition ${
-              filter === "all" 
-                ? "bg-purple-600 text-white" 
-                : "bg-[#1A1F2B] text-white/60 hover:bg-[#2A2F3B]"
-            }`}
-          >
-            All Tournaments
-          </button>
-          <button
-            onClick={() => setFilter("open")}
-            className={`px-6 py-3 rounded-lg font-medium transition ${
-              filter === "open" 
-                ? "bg-green-600 text-white" 
-                : "bg-[#1A1F2B] text-white/60 hover:bg-[#2A2F3B]"
-            }`}
-          >
-            Open
-          </button>
-          <button
-            onClick={() => setFilter("full")}
-            className={`px-6 py-3 rounded-lg font-medium transition ${
-              filter === "full" 
-                ? "bg-yellow-600 text-white" 
-                : "bg-[#1A1F2B] text-white/60 hover:bg-[#2A2F3B]"
-            }`}
-          >
-            Full
-          </button>
-          <button
-            onClick={() => setFilter("ongoing")}
-            className={`px-6 py-3 rounded-lg font-medium transition ${
-              filter === "ongoing" 
-                ? "bg-blue-600 text-white" 
-                : "bg-[#1A1F2B] text-white/60 hover:bg-[#2A2F3B]"
-            }`}
-          >
-            Ongoing
-          </button>
-          <button
-            onClick={() => setFilter("completed")}
-            className={`px-6 py-3 rounded-lg font-medium transition ${
-              filter === "completed" 
-                ? "bg-purple-600 text-white" 
-                : "bg-[#1A1F2B] text-white/60 hover:bg-[#2A2F3B]"
-            }`}
-          >
-            Completed
-          </button>
+      {/* Filter + Grid */}
+      <div>
+        <div className="flex gap-3 mb-6 flex-wrap">
+          {[
+            { key: "all", label: "All", activeClass: "bg-purple-600 text-white" },
+            { key: "registration_open", label: "Open", activeClass: "bg-green-600 text-white" },
+            { key: "full", label: "Full", activeClass: "bg-yellow-600 text-white" },
+            { key: "ongoing", label: "Ongoing", activeClass: "bg-blue-600 text-white" },
+            { key: "completed", label: "Completed", activeClass: "bg-purple-600 text-white" },
+          ].map(f => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`px-5 py-2.5 rounded-xl font-medium text-sm transition border ${
+                filter === f.key
+                  ? `${f.activeClass} border-transparent`
+                  : "border-white/10 text-white/60 hover:text-white/80"
+              }`}
+              style={filter !== f.key ? { background: "var(--cp-surface-1)" } : {}}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
 
-        {/* Tournaments Grid */}
         {filteredTournaments.length === 0 ? (
-          <div className="text-center py-20 bg-[#11151C] border border-white/5 rounded-xl">
+          <div className="text-center py-20 rounded-2xl border border-white/5" style={{ background: "var(--cp-base)" }}>
+            <Trophy size={40} className="mx-auto text-white/20 mb-4" />
             <p className="text-white/40 mb-4">No tournaments found</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="text-purple-400 hover:text-purple-300 transition"
+              className="text-purple-400 hover:text-purple-300 transition text-sm"
             >
               Create your first tournament →
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filteredTournaments.map((tournament) => (
               <div
                 key={tournament.id}
-                className="bg-gradient-to-br from-[#11151C] to-[#1A1F2B] border border-white/5 rounded-xl overflow-hidden hover:border-purple-500/50 transition group"
+                className="rounded-2xl border border-white/5 overflow-hidden hover:border-purple-500/40 transition group"
                 style={{
+                  background: "linear-gradient(135deg, var(--cp-base), var(--cp-surface-1))",
                   borderLeft: `4px solid ${tournament.background_color || '#6D28D9'}`
                 }}
               >
                 {tournament.banner_url && (
                   <div className="h-32 overflow-hidden">
-                    <img 
-                      src={tournament.banner_url} 
+                    <img
+                      src={tournament.banner_url}
                       alt={tournament.name}
                       className="w-full h-full object-cover opacity-50 group-hover:scale-105 transition"
                     />
                   </div>
                 )}
 
-                <div className="p-6">
+                <div className="p-5">
                   <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-white mb-2">{tournament.name}</h3>
-                      <p className="text-sm text-white/40">{tournament.description || "No description"}</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-lg font-bold text-white mb-1 truncate">{tournament.name}</h3>
+                      <p className="text-sm text-white/40 line-clamp-2">{tournament.description || "No description"}</p>
                     </div>
-                    <span className={`px-3 py-1 text-xs rounded-full ${
+                    <span className={`ml-3 px-2.5 py-1 text-[10px] font-black rounded-full shrink-0 ${
                       tournament.status === "registration_open" ? "bg-green-500/20 text-green-400" :
                       tournament.status === "full" ? "bg-yellow-500/20 text-yellow-400" :
                       tournament.status === "ongoing" ? "bg-blue-500/20 text-blue-400" :
@@ -428,47 +396,51 @@ export default function FounderDashboard() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="grid grid-cols-2 gap-3 mb-5">
                     <div>
-                      <p className="text-xs text-white/40 mb-1">Game Type</p>
+                      <p className="text-[10px] text-white/40 mb-0.5 uppercase tracking-wider">Type</p>
                       <p className="text-sm font-medium text-white">
                         {tournament.game_type === "battle_royale" ? "Battle Royale" : "Clash Squad"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-white/40 mb-1">Mode</p>
-                      <p className="text-sm font-medium text-white">{tournament.mode}</p>
+                      <p className="text-[10px] text-white/40 mb-0.5 uppercase tracking-wider">Mode</p>
+                      <p className="text-sm font-medium text-white capitalize">{tournament.mode}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-white/40 mb-1">Prize</p>
+                      <p className="text-[10px] text-white/40 mb-0.5 uppercase tracking-wider">Prize</p>
                       <p className="text-sm font-medium text-purple-400">{tournament.prize_coins} Coins</p>
                     </div>
                     <div>
-                      <p className="text-xs text-white/40 mb-1">Players</p>
+                      <p className="text-[10px] text-white/40 mb-0.5 uppercase tracking-wider">Players</p>
                       <p className="text-sm font-medium text-white">{tournament.current_players}/{tournament.max_players}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Link
                         to={`/tournaments/${tournament.id}/manage`}
-                        className="px-4 py-2 bg-purple-600/20 text-purple-400 rounded-lg text-sm hover:bg-purple-600/30 transition"
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 text-purple-400 hover:bg-purple-500/20 border border-purple-500/20"
+                        style={{ background: "rgba(168,85,247,0.08)" }}
                       >
                         Manage
                       </Link>
                       <Link
                         to={`/tournaments/${tournament.id}`}
-                        className="px-4 py-2 bg-white/5 text-white/60 rounded-lg text-sm hover:bg-white/10 transition"
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/60 hover:text-white/80 border border-white/10 transition"
+                        style={{ background: "rgba(255,255,255,0.05)" }}
                       >
                         View
                       </Link>
                       {tournament.status === "registration_open" && tournament.current_players >= 2 && (
                         <button
                           onClick={() => startMatch(tournament.id)}
-                          className="px-4 py-2 bg-green-600/20 text-green-400 rounded-lg text-sm hover:bg-green-600/30 transition"
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 text-green-400 hover:bg-green-500/20 border border-green-500/20"
+                          style={{ background: "rgba(16,185,129,0.08)" }}
                         >
-                          Start Match
+                          <Play size={11} />
+                          Start
                         </button>
                       )}
                     </div>
@@ -477,9 +449,10 @@ export default function FounderDashboard() {
                         setTournamentToDelete(tournament);
                         setShowDeleteModal(true);
                       }}
-                      className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30 transition"
+                      className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/20 border border-red-500/20 transition"
+                      style={{ background: "rgba(239,68,68,0.08)" }}
                     >
-                      Delete
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -491,38 +464,43 @@ export default function FounderDashboard() {
 
       {/* Create Tournament Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-[#11151C] border border-white/10 rounded-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold text-white mb-6">Create New Tournament</h2>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="rounded-2xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/10" style={{ background: "var(--cp-surface-1)" }}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">Create New Tournament</h2>
+              <button onClick={() => setShowCreateModal(false)} className="text-white/40 hover:text-white transition">✕</button>
+            </div>
 
-            <form onSubmit={createTournament} className="space-y-6">
+            <form onSubmit={createTournament} className="space-y-5">
               <div>
-                <label className="block text-sm text-white/40 mb-2">Tournament Name</label>
+                <label className="block text-xs text-white/40 uppercase tracking-widest mb-2">Tournament Name</label>
                 <input
                   type="text"
                   value={newTournament.name}
                   onChange={(e) => setNewTournament({...newTournament, name: e.target.value})}
-                  className="w-full px-4 py-3 bg-[#1A1F2B] border border-white/10 rounded-lg text-white"
+                  className={inputCls}
+                  style={inputStyle}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-white/40 mb-2">Description</label>
+                <label className="block text-xs text-white/40 uppercase tracking-widest mb-2">Description</label>
                 <textarea
                   value={newTournament.description}
                   onChange={(e) => setNewTournament({...newTournament, description: e.target.value})}
-                  className="w-full px-4 py-3 bg-[#1A1F2B] border border-white/10 rounded-lg text-white h-24"
+                  className={`${inputCls} h-24 resize-none`}
+                  style={inputStyle}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-white/40 mb-2">Banner Image</label>
+                  <label className="block text-xs text-white/40 uppercase tracking-widest mb-2">Banner Image</label>
                   <div className="flex items-center gap-3">
-                    <label className="cursor-pointer px-4 py-3 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg text-white text-sm font-medium transition flex items-center gap-2">
-                      <span>📁</span>
-                      <span>Choisir une image</span>
+                    <label className="cursor-pointer px-4 py-2.5 rounded-xl text-white text-sm font-medium transition flex items-center gap-2 bg-purple-600 hover:bg-purple-700">
+                      <FolderOpen size={16} />
+                      <span>Choose Image</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -540,42 +518,44 @@ export default function FounderDashboard() {
                       />
                     </label>
                     {newTournament.banner_url ? (
-                      <img src={newTournament.banner_url} alt="banner" className="h-12 w-20 object-cover rounded-lg border border-white/20" />
+                      <img src={newTournament.banner_url} alt="banner" className="h-10 w-16 object-cover rounded-lg border border-white/20" />
                     ) : (
-                      <span className="text-white/30 text-xs">Aucune image choisie</span>
+                      <span className="text-white/30 text-xs">None selected</span>
                     )}
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm text-white/40 mb-2">Accent Color</label>
+                  <label className="block text-xs text-white/40 uppercase tracking-widest mb-2">Accent Color</label>
                   <input
                     type="color"
                     value={newTournament.background_color}
                     onChange={(e) => setNewTournament({...newTournament, background_color: e.target.value})}
-                    className="w-full h-12 bg-[#1A1F2B] border border-white/10 rounded-lg"
+                    className="w-full h-11 rounded-xl border border-white/10 cursor-pointer"
+                    style={inputStyle}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-white/40 mb-2">Game Type</label>
+                  <label className="block text-xs text-white/40 uppercase tracking-widest mb-2">Game Type</label>
                   <select
                     value={newTournament.game_type}
                     onChange={(e) => setNewTournament({...newTournament, game_type: e.target.value})}
-                    className="w-full px-4 py-3 bg-[#1A1F2B] border border-white/10 rounded-lg text-white"
+                    className={inputCls}
+                    style={inputStyle}
                   >
                     <option value="battle_royale">Battle Royale</option>
                     <option value="cs">Clash Squad</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-sm text-white/40 mb-2">Mode</label>
+                  <label className="block text-xs text-white/40 uppercase tracking-widest mb-2">Mode</label>
                   <select
                     value={newTournament.mode}
                     onChange={(e) => setNewTournament({...newTournament, mode: e.target.value})}
-                    className="w-full px-4 py-3 bg-[#1A1F2B] border border-white/10 rounded-lg text-white"
+                    className={inputCls}
+                    style={inputStyle}
                   >
                     <option value="solo">Solo</option>
                     <option value="duo">Duo</option>
@@ -587,58 +567,40 @@ export default function FounderDashboard() {
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-white/40 mb-2">Max Players</label>
-                  <input
-                    type="number"
-                    value={newTournament.max_players}
+                  <label className="block text-xs text-white/40 uppercase tracking-widest mb-2">Max Players</label>
+                  <input type="number" value={newTournament.max_players}
                     onChange={(e) => setNewTournament({...newTournament, max_players: parseInt(e.target.value)})}
-                    className="w-full px-4 py-3 bg-[#1A1F2B] border border-white/10 rounded-lg text-white"
-                  />
+                    className={inputCls} style={inputStyle} />
                 </div>
-
                 <div>
-                  <label className="block text-sm text-white/40 mb-2">Entry Fee</label>
-                  <input
-                    type="number"
-                    value={newTournament.entry_fee}
+                  <label className="block text-xs text-white/40 uppercase tracking-widest mb-2">Entry Fee</label>
+                  <input type="number" value={newTournament.entry_fee}
                     onChange={(e) => setNewTournament({...newTournament, entry_fee: parseInt(e.target.value)})}
-                    className="w-full px-4 py-3 bg-[#1A1F2B] border border-white/10 rounded-lg text-white"
-                  />
+                    className={inputCls} style={inputStyle} />
                 </div>
-
                 <div>
-                  <label className="block text-sm text-white/40 mb-2">Prize</label>
-                  <input
-                    type="number"
-                    value={newTournament.prize_coins}
+                  <label className="block text-xs text-white/40 uppercase tracking-widest mb-2">Prize</label>
+                  <input type="number" value={newTournament.prize_coins}
                     onChange={(e) => setNewTournament({...newTournament, prize_coins: parseInt(e.target.value)})}
-                    className="w-full px-4 py-3 bg-[#1A1F2B] border border-white/10 rounded-lg text-white"
-                  />
+                    className={inputCls} style={inputStyle} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm text-white/40 mb-2">Start Date</label>
-                <input
-                  type="datetime-local"
-                  value={newTournament.start_date}
+                <label className="block text-xs text-white/40 uppercase tracking-widest mb-2">Start Date</label>
+                <input type="datetime-local" value={newTournament.start_date}
                   onChange={(e) => setNewTournament({...newTournament, start_date: e.target.value})}
-                  className="w-full px-4 py-3 bg-[#1A1F2B] border border-white/10 rounded-lg text-white"
-                />
+                  className={inputCls} style={inputStyle} />
               </div>
 
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-6 py-3 border border-white/10 hover:border-white/30 rounded-lg text-white font-medium transition"
-                >
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-5 py-3 border border-white/10 hover:border-white/30 rounded-xl text-white/70 hover:text-white font-medium text-sm transition">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-medium transition"
-                >
+                <button type="submit"
+                  className="flex-1 px-5 py-3 bg-purple-600 hover:bg-purple-700 rounded-xl text-white font-medium text-sm transition flex items-center justify-center gap-2">
+                  <Plus size={16} />
                   Create Tournament
                 </button>
               </div>
@@ -647,26 +609,28 @@ export default function FounderDashboard() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-[#11151C] border border-white/10 rounded-xl p-8 max-w-md w-full">
-            <h3 className="text-xl font-bold text-white mb-4">Delete Tournament</h3>
-            <p className="text-white/60 mb-6">
-              Are you sure you want to delete <span className="text-white font-medium">{tournamentToDelete?.name}</span>?
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="rounded-2xl p-6 md:p-8 max-w-md w-full border border-white/10" style={{ background: "var(--cp-surface-1)" }}>
+            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <Trash2 size={18} className="text-red-400" />
+              Delete Tournament
+            </h3>
+            <p className="text-white/60 text-sm mb-6">
+              Are you sure you want to delete <span className="text-white font-semibold">{tournamentToDelete?.name}</span>?
               This action cannot be undone.
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-6 py-3 border border-white/10 hover:border-white/30 rounded-lg text-white font-medium transition"
-              >
+                className="flex-1 px-5 py-2.5 border border-white/10 hover:border-white/30 rounded-xl text-white/70 hover:text-white text-sm font-medium transition">
                 Cancel
               </button>
               <button
                 onClick={deleteTournament}
-                className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg text-white font-medium transition"
-              >
+                className="flex-1 px-5 py-2.5 bg-red-600 hover:bg-red-700 rounded-xl text-white text-sm font-medium transition flex items-center justify-center gap-2">
+                <Trash2 size={14} />
                 Delete
               </button>
             </div>

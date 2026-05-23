@@ -406,7 +406,8 @@ export default function Support() {
               exit={{ y: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full md:max-w-lg bg-[#0a0a1f] border-t md:border border-white/10 rounded-t-3xl md:rounded-3xl p-6 max-h-[90vh] overflow-y-auto"
+              className="w-full md:max-w-lg border-t md:border border-white/10 rounded-t-3xl md:rounded-3xl p-6 max-h-[90vh] overflow-y-auto"
+              style={{ background: "var(--cp-surface-1)" }}
             >
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-xl font-bold text-white">Nouveau ticket</h2>

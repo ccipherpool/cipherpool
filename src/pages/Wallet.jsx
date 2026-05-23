@@ -2,26 +2,26 @@ import { useState, useEffect } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wallet as WalletIcon, TrendingUp, TrendingDown, BarChart2, Trophy, ShoppingBag, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { Wallet as WalletIcon, TrendingUp, TrendingDown, BarChart2, Trophy, ShoppingBag, ArrowUpRight, ArrowDownLeft, ShoppingCart, AlertTriangle, Gamepad2, Medal, Gift, RotateCcw, Crown, Key, ArrowRightLeft } from "lucide-react";
 
 const TX_CONFIG = {
-  purchase:    { icon: "🛒", color: "#ef4444", label: "Store Purchase"    },
-  reward:      { icon: "🏆", color: "#f59e0b", label: "Reward"           },
-  penalty:     { icon: "⚠️", color: "#ef4444", label: "Penalty"          },
-  debit:       { icon: "💸", color: "#ef4444", label: "Debit"            },
-  credit:      { icon: "💰", color: "#10b981", label: "Credit"           },
-  tournament:  { icon: "🎮", color: "#10b981", label: "Tournament"       },
-  prize:       { icon: "🥇", color: "#f59e0b", label: "Prize"            },
-  daily:       { icon: "🎁", color: "#06b6d4", label: "Daily Reward"     },
-  refund:      { icon: "↩️", color: "#10b981", label: "Refund"           },
-  admin_grant: { icon: "👑", color: "#a855f7", label: "Admin Grant"      },
-  fee:         { icon: "🔑", color: "#ef4444", label: "Entry Fee"        },
+  purchase:    { icon: ShoppingCart,  color: "#ef4444", label: "Store Purchase"    },
+  reward:      { icon: Trophy,        color: "#f59e0b", label: "Reward"           },
+  penalty:     { icon: AlertTriangle, color: "#ef4444", label: "Penalty"          },
+  debit:       { icon: TrendingDown,  color: "#ef4444", label: "Debit"            },
+  credit:      { icon: TrendingUp,    color: "#10b981", label: "Credit"           },
+  tournament:  { icon: Gamepad2,      color: "#10b981", label: "Tournament"       },
+  prize:       { icon: Medal,         color: "#f59e0b", label: "Prize"            },
+  daily:       { icon: Gift,          color: "#06b6d4", label: "Daily Reward"     },
+  refund:      { icon: RotateCcw,     color: "#10b981", label: "Refund"           },
+  admin_grant: { icon: Crown,         color: "#a855f7", label: "Admin Grant"      },
+  fee:         { icon: Key,           color: "#ef4444", label: "Entry Fee"        },
 };
 
 function getTxCfg(type) {
-  if (!type) return { icon: "💱", color: "#6b7280", label: "Transaction" };
+  if (!type) return { icon: ArrowRightLeft, color: "#6b7280", label: "Transaction" };
   const key = Object.keys(TX_CONFIG).find(k => type.toLowerCase().includes(k));
-  return key ? TX_CONFIG[key] : { icon: "💱", color: "#6b7280", label: type };
+  return key ? TX_CONFIG[key] : { icon: ArrowRightLeft, color: "#6b7280", label: type };
 }
 
 function timeAgo(date) {
@@ -264,7 +264,9 @@ export default function Wallet() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-3xl mb-3">💸</p>
+            <div className="w-12 h-12 mx-auto mb-3 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.04)" }}>
+              <TrendingDown size={22} style={{ color: "rgba(255,255,255,0.2)" }} />
+            </div>
             <p className="text-[10px] font-black text-[rgba(255,255,255,0.2)] uppercase tracking-[0.2em]">
               No transactions yet
             </p>
@@ -289,10 +291,10 @@ export default function Wallet() {
                 >
                   {/* Icon */}
                   <div
-                    className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-base"
+                    className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center"
                     style={{ background: `${cfg.color}15`, border: `1px solid ${cfg.color}25` }}
                   >
-                    {cfg.icon}
+                    <cfg.icon size={16} style={{ color: cfg.color }} />
                   </div>
 
                   {/* Info */}

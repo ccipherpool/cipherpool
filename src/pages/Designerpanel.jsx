@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Settings, Clock, CheckCircle, Pencil, Trash2, RefreshCw, Eye, EyeOff, Upload, ImageIcon, X, AlertCircle } from "lucide-react";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const ITEM_TYPES = [
@@ -48,7 +49,7 @@ function ItemPreview({ form, imageUrl }) {
     <div style={{
       borderRadius: 14, overflow: "hidden",
       border: `1px solid ${rc.color}40`,
-      background: "#08031a",
+      background: "var(--cp-surface-1)",
       boxShadow: `0 0 30px ${rc.color}20`,
       maxWidth: 220,
     }}>
@@ -96,7 +97,7 @@ function ItemPreview({ form, imageUrl }) {
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontSize: 16, fontFamily: "Orbitron, sans-serif", fontWeight: 700, color: "#f59e0b" }}>
-            💰 {(form.price || 0).toLocaleString()}
+            {(form.price || 0).toLocaleString()} CP
           </span>
           {form.source !== "store" && (
             <span style={{ fontSize: 9, color: "#10b981", fontWeight: 700 }}>GRATUIT</span>
@@ -124,7 +125,6 @@ export default function DesignerPanel() {
   const [notification, setNotification] = useState(null);
   const [editItem, setEditItem]   = useState(null);
 
-  // Access check
   useEffect(() => {
     if (!["designer","admin","super_admin"].includes(profile?.role)) {
       navigate("/dashboard");
@@ -177,7 +177,6 @@ export default function DesignerPanel() {
     try {
       let url = imageUrl;
 
-      // Upload image if new file selected
       if (imageFile) {
         setUploading(true);
         url = await uploadImage();
@@ -189,7 +188,6 @@ export default function DesignerPanel() {
         image_url:   url || null,
         price:       form.source !== "store" ? 0 : parseInt(form.price) || 0,
         created_by:  profile.id,
-        // super_admin & admin: auto-approve. designer: needs approval
         approved:    ["super_admin","admin"].includes(profile.role),
         approved_by: ["super_admin","admin"].includes(profile.role) ? profile.id : null,
         limited_until: form.limited && form.limited_until ? form.limited_until : null,
@@ -201,7 +199,7 @@ export default function DesignerPanel() {
           .update(payload)
           .eq("id", editItem.id);
         if (error) throw error;
-        notify("✅ Item mis à jour !");
+        notify("Item mis à jour !");
         setEditItem(null);
       } else {
         const { error } = await supabase
@@ -210,8 +208,8 @@ export default function DesignerPanel() {
         if (error) throw error;
         notify(
           ["super_admin","admin"].includes(profile.role)
-            ? "✅ Item créé et publié !"
-            : "✅ Item créé — en attente d'approbation"
+            ? "Item créé et publié !"
+            : "Item créé — en attente d'approbation"
         );
       }
 
@@ -231,14 +229,14 @@ export default function DesignerPanel() {
       .update({ active: !item.active })
       .eq("id", item.id);
     setItems(prev => prev.map(i => i.id === item.id ? { ...i, active: !i.active } : i));
-    notify(item.active ? "🔴 Item désactivé" : "✅ Item activé");
+    notify(item.active ? "Item désactivé" : "Item activé");
   };
 
   const deleteItem = async (id) => {
     if (!confirm("Supprimer cet item ?")) return;
     await supabase.from("store_items").delete().eq("id", id);
     setItems(prev => prev.filter(i => i.id !== id));
-    notify("🗑️ Item supprimé");
+    notify("Item supprimé");
   };
 
   const startEdit = (item) => {
@@ -259,6 +257,12 @@ export default function DesignerPanel() {
 
   const upd = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
+  const TABS = [
+    { key: "create",  label: editItem ? "MODIFIER L'ITEM" : "CRÉER UN ITEM", Icon: Plus },
+    { key: "manage",  label: "GÉRER LES ITEMS",    Icon: Settings },
+    { key: "pending", label: "EN ATTENTE",          Icon: Clock },
+  ];
+
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <>
@@ -266,33 +270,21 @@ export default function DesignerPanel() {
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&display=swap');
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.3); border-radius: 99px; }
-        input, textarea, select {
-          font-family: 'Rajdhani', sans-serif;
-        }
+        input, textarea, select { font-family: 'Rajdhani', sans-serif; }
         .field-label {
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 1.5px;
-          color: rgba(255,255,255,0.45);
-          margin-bottom: 6px;
-          display: block;
+          font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+          color: rgba(255,255,255,0.45); margin-bottom: 6px; display: block;
           font-family: 'Rajdhani', sans-serif;
         }
         .field-input {
-          width: 100%;
-          padding: 10px 14px;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 8px;
-          color: #fff;
-          font-size: 14px;
-          font-family: 'Rajdhani', sans-serif;
-          outline: none;
-          transition: border-color 0.2s;
-          box-sizing: border-box;
+          width: 100%; padding: 10px 14px;
+          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 8px; color: #fff; font-size: 14px;
+          font-family: 'Rajdhani', sans-serif; outline: none;
+          transition: border-color 0.2s; box-sizing: border-box;
         }
         .field-input:focus { border-color: rgba(124,58,237,0.6); }
-        .field-input option { background: #0d0e1f; }
+        .field-input option { background: var(--cp-surface-1, #12182b); }
       `}</style>
 
       {/* Notification */}
@@ -305,19 +297,24 @@ export default function DesignerPanel() {
             style={{
               position: "fixed", top: 20, left: "50%", zIndex: 9999,
               padding: "12px 24px", borderRadius: 10,
-              background: notification.type === "error" ? "#1a0505" : "#050d1a",
-              border: `1px solid ${notification.type === "error" ? "#ef4444" : "#7c3aed"}`,
+              background: notification.type === "error" ? "rgba(239,68,68,0.12)" : "var(--cp-surface-3, rgba(255,255,255,0.06))",
+              border: `1px solid ${notification.type === "error" ? "rgba(239,68,68,0.4)" : "rgba(124,58,237,0.4)"}`,
               color: notification.type === "error" ? "#ef4444" : "#fff",
               fontSize: 14, fontWeight: 600,
-              boxShadow: `0 8px 30px rgba(0,0,0,0.5)`,
+              boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
+              display: "flex", alignItems: "center", gap: 8,
             }}
           >
+            {notification.type === "error"
+              ? <AlertCircle size={16} style={{ color: "#ef4444", flexShrink: 0 }} />
+              : <CheckCircle size={16} style={{ color: "#10b981", flexShrink: 0 }} />
+            }
             {notification.msg}
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div style={{ minHeight: "100vh", background: "#030014", color: "#fff", fontFamily: "Rajdhani, sans-serif" }}>
+      <div style={{ minHeight: "100vh", background: "var(--cp-base)", color: "#fff", fontFamily: "Rajdhani, sans-serif" }}>
 
         {/* ── HEADER ── */}
         <div style={{
@@ -331,9 +328,9 @@ export default function DesignerPanel() {
                 width: 46, height: 46, borderRadius: 12,
                 background: "linear-gradient(135deg, #a855f7, #ec4899)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 22, boxShadow: "0 8px 25px rgba(168,85,247,0.4)",
+                boxShadow: "0 8px 25px rgba(168,85,247,0.4)",
               }}>
-                🎨
+                <Settings size={22} color="#fff" />
               </div>
               <div>
                 <h1 style={{ fontFamily: "Orbitron", fontSize: 20, fontWeight: 900, color: "#fff", margin: 0, letterSpacing: 2 }}>
@@ -346,7 +343,6 @@ export default function DesignerPanel() {
               <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8,
                 padding: "8px 14px", borderRadius: 10,
                 background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)" }}>
-                <span style={{ fontSize: 12 }}>🎨</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#a855f7", letterSpacing: 1.5 }}>
                   {profile?.role?.toUpperCase()}
                 </span>
@@ -358,17 +354,14 @@ export default function DesignerPanel() {
         {/* ── TABS ── */}
         <div style={{
           position: "sticky", top: 0, zIndex: 10,
-          background: "rgba(3,0,20,0.97)", backdropFilter: "blur(20px)",
+          background: "rgba(11,16,32,0.97)", backdropFilter: "blur(20px)",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
           padding: "0 32px",
         }}>
           <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", gap: 0 }}>
-            {[
-              { key: "create",  label: editItem ? "MODIFIER L'ITEM" : "CRÉER UN ITEM", icon: "➕" },
-              { key: "manage",  label: "GÉRER LES ITEMS",    icon: "⚙️" },
-              { key: "pending", label: "EN ATTENTE",          icon: "⏳" },
-            ].map(t => (
-              <button key={t.key} onClick={() => { setTab(t.key); if (t.key === "manage" || t.key === "pending") fetchItems(); }}
+            {TABS.map(t => (
+              <button key={t.key}
+                onClick={() => { setTab(t.key); if (t.key === "manage" || t.key === "pending") fetchItems(); }}
                 style={{
                   padding: "14px 20px", background: "transparent", border: "none",
                   borderBottom: `2px solid ${tab === t.key ? "#a855f7" : "transparent"}`,
@@ -379,7 +372,8 @@ export default function DesignerPanel() {
                   display: "flex", alignItems: "center", gap: 7,
                 }}
               >
-                <span>{t.icon}</span><span>{t.label}</span>
+                <t.Icon size={13} />
+                <span>{t.label}</span>
               </button>
             ))}
           </div>
@@ -400,12 +394,13 @@ export default function DesignerPanel() {
                     background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)",
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                   }}>
-                    <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 600 }}>
-                      ✏️ Mode édition — {editItem.name}
+                    <span style={{ color: "#f59e0b", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                      <Pencil size={13} />
+                      Mode édition — {editItem.name}
                     </span>
                     <button onClick={() => { setEditItem(null); setForm(EMPTY_FORM); setImageUrl(""); setImageFile(null); }}
-                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 18 }}>
-                      ✕
+                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", display: "flex" }}>
+                      <X size={18} />
                     </button>
                   </div>
                 )}
@@ -444,7 +439,7 @@ export default function DesignerPanel() {
                   />
                 </div>
 
-                {/* Rarity + Price */}
+                {/* Rarity + Source */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <div>
                     <label className="field-label">RARETÉ *</label>
@@ -478,7 +473,7 @@ export default function DesignerPanel() {
                   </div>
                 </div>
 
-                {/* Price (only for store source) */}
+                {/* Price */}
                 {form.source === "store" && (
                   <div>
                     <label className="field-label">PRIX (COINS)</label>
@@ -557,15 +552,17 @@ export default function DesignerPanel() {
                         <img src={imageUrl} alt="preview"
                           style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 10 }} />
                         <div>
-                          <p style={{ color: "#10b981", fontSize: 13, fontWeight: 600 }}>✅ Image sélectionnée</p>
+                          <p style={{ color: "#10b981", fontSize: 13, fontWeight: 600 }}>Image sélectionnée</p>
                           <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>Cliquer pour changer</p>
                         </div>
                       </div>
                     ) : (
                       <div>
-                        <div style={{ fontSize: 36, marginBottom: 8 }}>📁</div>
+                        <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+                          <ImageIcon size={36} color="rgba(255,255,255,0.3)" />
+                        </div>
                         <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>Cliquer pour choisir une image</p>
-                        <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 4 }}>PNG, JPG, GIF, WEBP • Max 5MB</p>
+                        <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 11, marginTop: 4 }}>PNG, JPG, GIF, WEBP · Max 5MB</p>
                       </div>
                     )}
                   </div>
@@ -579,8 +576,8 @@ export default function DesignerPanel() {
                     <label className="field-label">OPTIONS</label>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {[
-                        { key: "limited", label: "Item Limité ⏳" },
-                        { key: "daily_rotation", label: "Rotation Quotidienne 🔄" },
+                        { key: "limited", label: "Item Limité" },
+                        { key: "daily_rotation", label: "Rotation Quotidienne" },
                       ].map(opt => (
                         <label key={opt.key} style={{
                           display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
@@ -628,16 +625,25 @@ export default function DesignerPanel() {
                     fontFamily: "Orbitron, sans-serif",
                     boxShadow: "0 8px 25px rgba(124,58,237,0.35)",
                     transition: "all 0.2s",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
                   }}
                 >
-                  {uploading ? "⏫ UPLOAD EN COURS..." : saving ? "💾 SAUVEGARDE..." :
-                   editItem ? "✏️ METTRE À JOUR" :
-                   ["super_admin","admin"].includes(profile?.role) ? "🚀 CRÉER ET PUBLIER" : "📤 SOUMETTRE POUR APPROBATION"}
+                  {uploading ? (
+                    <><Upload size={16} /> UPLOAD EN COURS...</>
+                  ) : saving ? (
+                    "SAUVEGARDE..."
+                  ) : editItem ? (
+                    <><Pencil size={16} /> METTRE À JOUR</>
+                  ) : ["super_admin","admin"].includes(profile?.role) ? (
+                    <><Plus size={16} /> CRÉER ET PUBLIER</>
+                  ) : (
+                    <><Upload size={16} /> SOUMETTRE POUR APPROBATION</>
+                  )}
                 </button>
 
                 {!["super_admin","admin"].includes(profile?.role) && (
                   <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, textAlign: "center", letterSpacing: 1 }}>
-                    ⚠️ Les items des designers nécessitent une approbation admin avant publication
+                    Les items des designers nécessitent une approbation admin avant publication
                   </p>
                 )}
               </div>
@@ -647,7 +653,6 @@ export default function DesignerPanel() {
                 <label className="field-label" style={{ marginBottom: 12 }}>APERÇU ITEM</label>
                 <ItemPreview form={form} imageUrl={imageUrl} />
 
-                {/* Type info */}
                 <div style={{
                   marginTop: 16, padding: "14px", borderRadius: 10,
                   background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
@@ -666,7 +671,6 @@ export default function DesignerPanel() {
                   ))}
                 </div>
 
-                {/* Rarity colors reference */}
                 <div style={{
                   marginTop: 12, padding: "14px", borderRadius: 10,
                   background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)",
@@ -685,7 +689,7 @@ export default function DesignerPanel() {
             </div>
           )}
 
-          {/* ════════════ TAB: MANAGE ════════════ */}
+          {/* ════════════ TAB: MANAGE / PENDING ════════════ */}
           {(tab === "manage" || tab === "pending") && (
             <div>
               <div style={{ marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -693,10 +697,13 @@ export default function DesignerPanel() {
                   {tab === "pending" ? "Items en attente d'approbation" : `${items.length} items au total`}
                 </div>
                 <button onClick={fetchItems}
-                  style={{ padding: "8px 14px", borderRadius: 8, background: "rgba(255,255,255,0.05)",
+                  style={{ padding: "8px 14px", borderRadius: 8,
+                    background: "rgba(255,255,255,0.05)",
                     border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)",
-                    cursor: "pointer", fontSize: 11, fontFamily: "Rajdhani, sans-serif" }}>
-                  🔄 Rafraîchir
+                    cursor: "pointer", fontSize: 11, fontFamily: "Rajdhani, sans-serif",
+                    display: "flex", alignItems: "center", gap: 6,
+                  }}>
+                  <RefreshCw size={12} /> Rafraîchir
                 </button>
               </div>
 
@@ -716,12 +723,11 @@ export default function DesignerPanel() {
                           style={{
                             display: "flex", alignItems: "center", gap: 16,
                             padding: "14px 18px", borderRadius: 12,
-                            background: "#08031a",
+                            background: "var(--cp-surface-1)",
                             border: `1px solid ${item.active && item.approved ? "rgba(255,255,255,0.07)" : "rgba(239,68,68,0.2)"}`,
                             opacity: item.active ? 1 : 0.6,
                           }}
                         >
-                          {/* Image */}
                           <div style={{
                             width: 52, height: 52, borderRadius: 10, flexShrink: 0,
                             background: `radial-gradient(circle, ${rc.color}30, transparent)`,
@@ -734,7 +740,6 @@ export default function DesignerPanel() {
                             }
                           </div>
 
-                          {/* Info */}
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
                               <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{item.name}</span>
@@ -749,23 +754,22 @@ export default function DesignerPanel() {
                                 </span>
                               )}
                               {item.limited && (
-                                <span style={{ fontSize: 9, color: "#ef4444", fontWeight: 700 }}>⏳ LIMITÉ</span>
+                                <span style={{ fontSize: 9, color: "#ef4444", fontWeight: 700 }}>LIMITÉ</span>
                               )}
                             </div>
                             <div style={{ display: "flex", gap: 14 }}>
                               <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
                                 {ITEM_TYPES.find(t => t.value === item.type)?.icon} {item.type}
                               </span>
-                              <span style={{ fontSize: 11, color: "#f59e0b" }}>💰 {item.price}</span>
-                              <span style={{ fontSize: 11, color: item.active ? "#10b981" : "#ef4444" }}>
-                                {item.active ? "● Actif" : "● Inactif"}
+                              <span style={{ fontSize: 11, color: "#f59e0b" }}>{item.price} CP</span>
+                              <span style={{ fontSize: 11, color: item.active ? "#10b981" : "#ef4444", display: "flex", alignItems: "center", gap: 4 }}>
+                                {item.active ? <Eye size={11} /> : <EyeOff size={11} />}
+                                {item.active ? "Actif" : "Inactif"}
                               </span>
                             </div>
                           </div>
 
-                          {/* Actions */}
                           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                            {/* Approve (admin/super_admin only for pending) */}
                             {!item.approved && ["admin","super_admin"].includes(profile?.role) && (
                               <button
                                 onClick={async () => {
@@ -773,38 +777,38 @@ export default function DesignerPanel() {
                                     .update({ approved: true, approved_by: profile.id })
                                     .eq("id", item.id);
                                   fetchItems();
-                                  notify("✅ Item approuvé !");
+                                  notify("Item approuvé !");
                                 }}
                                 style={{
                                   padding: "8px 14px", borderRadius: 8, cursor: "pointer",
                                   background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)",
                                   color: "#10b981", fontSize: 11, fontWeight: 700,
                                   fontFamily: "Rajdhani, sans-serif",
+                                  display: "flex", alignItems: "center", gap: 5,
                                 }}
                               >
-                                ✅ APPROUVER
+                                <CheckCircle size={12} /> APPROUVER
                               </button>
                             )}
 
                             <button onClick={() => toggleActive(item)}
                               style={{
-                                padding: "8px 14px", borderRadius: 8, cursor: "pointer",
+                                padding: "8px 12px", borderRadius: 8, cursor: "pointer",
                                 background: item.active ? "rgba(239,68,68,0.1)" : "rgba(16,185,129,0.1)",
                                 border: `1px solid ${item.active ? "rgba(239,68,68,0.3)" : "rgba(16,185,129,0.3)"}`,
                                 color: item.active ? "#ef4444" : "#10b981",
-                                fontSize: 11, fontWeight: 700, fontFamily: "Rajdhani, sans-serif",
+                                display: "flex", alignItems: "center",
                               }}>
-                              {item.active ? "🔴 DÉSACTIVER" : "✅ ACTIVER"}
+                              {item.active ? <EyeOff size={14} /> : <Eye size={14} />}
                             </button>
 
                             <button onClick={() => startEdit(item)}
                               style={{
-                                padding: "8px 14px", borderRadius: 8, cursor: "pointer",
+                                padding: "8px 12px", borderRadius: 8, cursor: "pointer",
                                 background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.25)",
-                                color: "#a855f7", fontSize: 11, fontWeight: 700,
-                                fontFamily: "Rajdhani, sans-serif",
+                                color: "#a855f7", display: "flex", alignItems: "center",
                               }}>
-                              ✏️ MODIFIER
+                              <Pencil size={14} />
                             </button>
 
                             {["admin","super_admin"].includes(profile?.role) && (
@@ -812,9 +816,9 @@ export default function DesignerPanel() {
                                 style={{
                                   padding: "8px 12px", borderRadius: 8, cursor: "pointer",
                                   background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
-                                  color: "#ef4444", fontSize: 14, fontFamily: "Rajdhani, sans-serif",
+                                  color: "#ef4444", display: "flex", alignItems: "center",
                                 }}>
-                                🗑️
+                                <Trash2 size={14} />
                               </button>
                             )}
                           </div>
@@ -824,8 +828,11 @@ export default function DesignerPanel() {
 
                   {items.filter(i => tab === "pending" ? !i.approved : true).length === 0 && (
                     <div style={{ textAlign: "center", padding: 60 }}>
-                      <div style={{ fontSize: 48, marginBottom: 12 }}>
-                        {tab === "pending" ? "✅" : "📦"}
+                      <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                        {tab === "pending"
+                          ? <CheckCircle size={48} color="rgba(255,255,255,0.15)" />
+                          : <ImageIcon size={48} color="rgba(255,255,255,0.15)" />
+                        }
                       </div>
                       <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
                         {tab === "pending" ? "Aucun item en attente" : "Aucun item créé"}

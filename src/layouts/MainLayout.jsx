@@ -281,8 +281,10 @@ export default function MainLayout() {
 
   if (loading) return <LoadingScreen />;
 
+  const isChatPage = location.pathname === "/chat";
+
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden bg-slate-50">
+    <div className="flex flex-col h-[100dvh] overflow-hidden" style={{ background: "var(--cp-base)" }}>
 
       {/* ── MOBILE HEADER ────────────────────────────────────────────── */}
       <header className="md:hidden flex-shrink-0 z-50 relative">
@@ -335,11 +337,14 @@ export default function MainLayout() {
           <TopNav profile={profile} />
 
           {/* Page content */}
-          <main className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-50 cp-scroll-container">
-            {/* Subtle top divider */}
-            <div className="pointer-events-none" />
-
-            <div className="max-w-7xl w-full mx-auto px-4 md:px-7 py-5 md:py-7 min-w-0 pb-[calc(env(safe-area-inset-bottom)+80px)] md:pb-7">
+          <main
+            className={`flex-1 overflow-x-hidden cp-scroll-container ${isChatPage ? "overflow-hidden" : "overflow-y-auto"}`}
+            style={{ background: "var(--cp-base)" }}
+          >
+            <div className={isChatPage
+              ? "h-full flex flex-col"
+              : "max-w-7xl w-full mx-auto px-4 md:px-7 py-5 md:py-7 min-w-0 pb-[calc(env(safe-area-inset-bottom)+80px)] md:pb-7"
+            }>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={location.pathname}
@@ -347,6 +352,7 @@ export default function MainLayout() {
                   initial="initial"
                   animate="animate"
                   exit="exit"
+                  className={isChatPage ? "h-full" : undefined}
                 >
                   <Outlet context={{
                     profile,

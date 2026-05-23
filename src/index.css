@@ -1,3 +1,6 @@
+/* ── Fonts ─────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Patrick+Hand&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,6 +100,24 @@
   --light-shadow-sm:   0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
   --light-shadow-md:   0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
   --light-shadow-lg:   0 10px 15px rgba(0,0,0,0.10), 0 4px 6px rgba(0,0,0,0.05);
+
+  /* ── LEGACY ALIASES (from global.css — keeps old pages from breaking) ─ */
+  --color-bg-primary:      #0B1020;
+  --color-bg-secondary:    #12182B;
+  --color-bg-card:         rgba(18, 24, 43, 0.95);
+  --color-bg-tertiary:     #161D33;
+  --color-cyan:            #06B6D4;
+  --color-violet:          #8B5CF6;
+  --color-indigo:          #7C3AED;
+  --color-orange:          #F97316;
+  --color-green:           #10B981;
+  --color-red:             #EF4444;
+  --color-text-primary:    #F8FAFC;
+  --color-text-secondary:  #94A3B8;
+  --color-text-muted:      rgba(255, 255, 255, 0.35);
+  --color-border:          rgba(255, 255, 255, 0.07);
+  --color-border-2:        rgba(255, 255, 255, 0.12);
+  --color-brand:           #7C3AED;
 }
 
 /* ── GLOBAL BASE ─────────────────────────────────────────────────────── */
