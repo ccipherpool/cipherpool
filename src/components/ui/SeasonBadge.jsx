@@ -13,13 +13,16 @@ export default function SeasonBadge({ compact = false, className = "" }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("seasons")
-        .select("number, name, theme_color")
-        .eq("status", "active")
-        .maybeSingle()
-        .catch(() => ({ data: null }));
-      if (!cancelled && data) setSeason(data);
+      try {
+        const { data } = await supabase
+          .from("seasons")
+          .select("number, name, theme_color")
+          .eq("status", "active")
+          .maybeSingle();
+        if (!cancelled && data) setSeason(data);
+      } catch {
+        // season unavailable — badge stays hidden
+      }
     })();
     return () => { cancelled = true; };
   }, []);

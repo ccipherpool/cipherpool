@@ -315,7 +315,7 @@ export default function Store() {
   }, [profile?.id]);
 
   const fetchAll = useCallback(async () => {
-    if (!profile?.id) return;
+    if (!profile?.id) { setLoading(false); return; }
     setLoading(true);
     const [{ data: storeData }, { data: owned }, { data: daily }] = await Promise.all([
       supabase.from("store_items").select("*").eq("active", true).eq("approved", true).order("sort_order", { ascending: true }),
@@ -401,6 +401,15 @@ export default function Store() {
   const ownedCount = userItems.length;
   const totalItems = items.length;
   const confirmRc = confirmItem ? RARITY[confirmItem.rarity] || RARITY.common : null;
+
+  if (!profile?.id && !loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "100px 0", fontFamily: "'Space Grotesk',sans-serif" }}>
+        <div style={{ fontSize: 56, marginBottom: 20 }}>🔒</div>
+        <p style={{ fontSize: 16, color: "rgba(255,255,255,0.5)" }}>Connecte-toi pour accéder à la boutique.</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -591,8 +600,17 @@ export default function Store() {
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "80px 0" }}>
-              <div style={{ fontSize: 56, marginBottom: 16 }}>🛒</div>
-              <p style={{ fontFamily: "'Orbitron',sans-serif", fontSize: 11, letterSpacing: 3, color: "rgba(255,255,255,0.2)" }}>AUCUN ITEM DANS CETTE CATÉGORIE</p>
+              <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3, repeat: Infinity }}>
+                <div style={{ fontSize: 64, marginBottom: 20 }}>🛒</div>
+              </motion.div>
+              <p style={{ fontFamily: "'Orbitron',sans-serif", fontSize: 13, letterSpacing: 3, color: "rgba(255,255,255,0.25)", marginBottom: 10 }}>
+                {tab === "all" ? "BOUTIQUE VIDE" : "AUCUN ITEM ICI"}
+              </p>
+              <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 13, color: "rgba(255,255,255,0.18)", maxWidth: 320, margin: "0 auto" }}>
+                {tab === "all"
+                  ? "Les items de boutique seront disponibles prochainement. Revenez bientôt !"
+                  : `Aucun item dans la catégorie "${STORE_TABS.find(t => t.key === tab)?.label}".`}
+              </p>
             </div>
           ) : (
             ["legendary", "epic", "rare", "common"].map(r => {

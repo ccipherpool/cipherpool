@@ -2,186 +2,303 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../../lib/supabase";
 import {
-  Settings, Globe, Palette, Flag, Layers, Database,
-  Save, RefreshCw, CheckCircle2, AlertTriangle, Eye,
-  EyeOff, ToggleLeft, ToggleRight, Edit3, Clock,
-  FileText, Image, X, Plus,
+  Settings, Flag, Layers, Clock, Save, RefreshCw,
+  CheckCircle2, AlertTriangle, X, ToggleLeft, ToggleRight,
+  ChevronDown, ChevronUp, Globe, Eye, EyeOff,
 } from "lucide-react";
 
-const T = {
-  s2: "#0d1220", s3: "#121929",
-  border: "rgba(255,255,255,0.05)",
-  b2: "rgba(255,255,255,0.08)",
-  violet: "#8b5cf6", green: "#10b981", amber: "#f59e0b", red: "#ef4444", cyan: "#06b6d4",
-  text: "rgba(255,255,255,0.85)", text2: "rgba(255,255,255,0.45)", text3: "rgba(255,255,255,0.25)",
+// ── Design tokens (clean, readable admin style) ──────────────────────────────
+const D = {
+  bg:      "#0d1220",
+  card:    "#111927",
+  border:  "rgba(255,255,255,0.07)",
+  border2: "rgba(255,255,255,0.12)",
+  text:    "rgba(255,255,255,0.90)",
+  text2:   "rgba(255,255,255,0.55)",
+  text3:   "rgba(255,255,255,0.30)",
+  indigo:  "#6366f1",
+  green:   "#10b981",
+  amber:   "#f59e0b",
+  red:     "#ef4444",
+  cyan:    "#06b6d4",
 };
 
-// ── Shared input styles ───────────────────────────────────────────────────────
-const inputClass = "w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/25 focus:outline-none focus:border-violet-500/50 transition-colors";
-const labelClass = "block text-xs font-semibold text-white/40 uppercase tracking-wider mb-1.5";
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
-function Toast({ msg, type = "success", onDismiss }) {
+function toast(setState, msg, type = "success") {
+  const id = Date.now();
+  setState({ id, msg, type });
+  setTimeout(() => setState(null), 3500);
+}
+
+function Toast({ toast: t, onDismiss }) {
+  if (!t) return null;
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -8 }}
-      className="fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl"
-      style={{
-        background: type === "success" ? `${T.green}18` : `${T.red}18`,
-        border: `1px solid ${type === "success" ? T.green : T.red}30`,
-        backdropFilter: "blur(20px)",
-      }}
-    >
-      {type === "success"
-        ? <CheckCircle2 size={16} style={{ color: T.green }} />
-        : <AlertTriangle size={16} style={{ color: T.red }} />
-      }
-      <span className="text-sm font-medium text-white">{msg}</span>
-      <button onClick={onDismiss} className="ml-1 text-white/30 hover:text-white transition-colors">
-        <X size={13} />
-      </button>
-    </motion.div>
+    <AnimatePresence>
+      <motion.div
+        key={t.id}
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -8 }}
+        className="fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl"
+        style={{
+          background: t.type === "success" ? "rgba(16,185,129,0.10)" : "rgba(239,68,68,0.10)",
+          border: `1px solid ${t.type === "success" ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
+          backdropFilter: "blur(20px)",
+        }}
+      >
+        {t.type === "success"
+          ? <CheckCircle2 size={15} className="text-emerald-400 flex-shrink-0" />
+          : <AlertTriangle size={15} className="text-red-400 flex-shrink-0" />
+        }
+        <span className="text-sm font-medium text-white">{t.msg}</span>
+        <button onClick={onDismiss} className="ml-1 text-white/30 hover:text-white/80 transition-colors">
+          <X size={12} />
+        </button>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
-// ── SITE SETTINGS TAB ────────────────────────────────────────────────────────
+function SectionHeader({ children }) {
+  return (
+    <p className="text-[10px] font-bold uppercase tracking-widest mb-3 mt-2"
+      style={{ color: D.text3 }}>
+      {children}
+    </p>
+  );
+}
+
+function Card({ children, className = "" }) {
+  return (
+    <div className={`rounded-2xl border ${className}`}
+      style={{ background: D.card, borderColor: D.border }}>
+      {children}
+    </div>
+  );
+}
+
+function SaveBtn({ loading, dirty, onClick }) {
+  if (!dirty) return null;
+  return (
+    <motion.button
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileTap={{ scale: 0.94 }}
+      onClick={onClick}
+      disabled={loading}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+      style={{
+        background: `${D.indigo}20`,
+        border: `1px solid ${D.indigo}35`,
+        color: D.indigo,
+        opacity: loading ? 0.6 : 1,
+      }}
+    >
+      {loading
+        ? <RefreshCw size={11} className="animate-spin" />
+        : <Save size={11} />
+      }
+      {loading ? "Saving…" : "Save"}
+    </motion.button>
+  );
+}
+
+// ── 1. SITE SETTINGS PANEL ───────────────────────────────────────────────────
+
+const CATEGORY_ORDER = ["general", "economy", "gameplay", "social", "ui", "security", "maintenance"];
+
 function SiteSettingsPanel({ onToast }) {
   const [settings, setSettings] = useState([]);
   const [loading, setLoading]   = useState(true);
+  const [dirty, setDirty]       = useState({});  // key → new raw string value
   const [saving, setSaving]     = useState({});
-  const [edits, setEdits]       = useState({});
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.from("site_settings").select("*").order("category").order("key");
-      setSettings(data || []);
-      setLoading(false);
-    })();
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("site_settings")
+      .select("*")
+      .order("category")
+      .order("key");
+    if (!error) setSettings(data || []);
+    setLoading(false);
+  };
 
-  const save = async (key, rawValue) => {
+  useEffect(() => { load(); }, []);
+
+  const save = async (key) => {
+    const rawVal = dirty[key];
+    if (rawVal === undefined) return;
+
     setSaving(s => ({ ...s, [key]: true }));
     try {
+      // Parse to proper JSON value
       let jsonValue;
-      try { jsonValue = JSON.parse(rawValue); }
-      catch { jsonValue = rawValue; } // treat as string if not valid JSON
+      try { jsonValue = JSON.parse(rawVal); }
+      catch { jsonValue = rawVal; }
 
-      const { error } = await supabase.rpc("update_site_setting", {
-        p_key: key,
-        p_value: jsonValue,
+      // Try RPC first
+      const { error: rpcErr } = await supabase.rpc("update_site_setting", {
+        p_key: key, p_value: jsonValue,
       });
-      if (error) throw error;
+
+      if (rpcErr) {
+        // Fallback: direct update (needs UPDATE grant + RLS)
+        const { error: directErr } = await supabase
+          .from("site_settings")
+          .update({ value: jsonValue, updated_at: new Date().toISOString() })
+          .eq("key", key);
+        if (directErr) throw directErr;
+      }
+
       setSettings(prev => prev.map(s => s.key === key ? { ...s, value: jsonValue } : s));
-      setEdits(e => { const n = { ...e }; delete n[key]; return n; });
-      onToast(`"${key}" updated`, "success");
+      setDirty(d => { const n = { ...d }; delete n[key]; return n; });
+      onToast(`"${key}" saved`, "success");
     } catch (e) {
-      onToast(e.message, "error");
+      onToast(e.message || "Save failed", "error");
     } finally {
       setSaving(s => ({ ...s, [key]: false }));
     }
   };
 
-  const grouped = settings.reduce((acc, s) => {
-    if (!acc[s.category]) acc[s.category] = [];
-    acc[s.category].push(s);
+  const grouped = CATEGORY_ORDER.reduce((acc, cat) => {
+    const items = settings.filter(s => s.category === cat);
+    if (items.length) acc[cat] = items;
     return acc;
   }, {});
-
-  const categories = Object.keys(grouped).sort();
+  // catch any categories not in the ordered list
+  settings.forEach(s => {
+    if (!grouped[s.category]) grouped[s.category] = settings.filter(x => x.category === s.category);
+  });
 
   if (loading) return (
-    <div className="space-y-3">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: T.s3 }} />
+    <div className="space-y-2">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
       ))}
     </div>
   );
 
   return (
     <div className="space-y-6">
-      {categories.map(cat => (
+      {Object.entries(grouped).map(([cat, items]) => (
         <div key={cat}>
-          <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: T.text3 }}>
-            {cat}
-          </p>
-          <div className="space-y-2">
-            {grouped[cat].map(s => {
-              const editVal = edits[s.key] ?? JSON.stringify(s.value);
-              const isDirty = edits[s.key] !== undefined;
+          <SectionHeader>{cat}</SectionHeader>
+          <Card>
+            {items.map((s, idx) => {
               const isBoolean = typeof s.value === "boolean";
+              const currentRaw = dirty[s.key] ?? (isBoolean ? String(s.value) : JSON.stringify(s.value));
+              const isDirty = dirty[s.key] !== undefined;
 
               return (
-                <div key={s.key} className="flex items-center gap-4 px-4 py-3.5 rounded-xl transition-colors"
-                  style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${isDirty ? T.violet + "30" : T.border}` }}>
-
+                <div
+                  key={s.key}
+                  className="flex items-center gap-4 px-5 py-4 transition-colors"
+                  style={{
+                    borderBottom: idx < items.length - 1 ? `1px solid ${D.border}` : undefined,
+                    background: isDirty ? "rgba(99,102,241,0.04)" : undefined,
+                  }}
+                >
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="text-sm font-medium" style={{ color: T.text }}>{s.label}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold" style={{ color: D.text }}>{s.label}</span>
+                      <code className="text-[10px] px-1.5 py-0.5 rounded font-mono"
+                        style={{ background: "rgba(255,255,255,0.06)", color: D.text3 }}>
+                        {s.key}
+                      </code>
                       {!s.is_public && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded font-mono" style={{ background: "rgba(255,255,255,0.05)", color: T.text3 }}>
-                          private
+                        <span className="flex items-center gap-1 text-[10px]" style={{ color: D.text3 }}>
+                          <EyeOff size={9} /> private
                         </span>
                       )}
                     </div>
-                    {s.description && <p className="text-xs" style={{ color: T.text3 }}>{s.description}</p>}
-                    <code className="text-[10px] font-mono" style={{ color: T.text3 }}>{s.key}</code>
+                    {s.description && (
+                      <p className="text-xs mt-0.5" style={{ color: D.text3 }}>{s.description}</p>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-3 flex-shrink-0">
                     {isBoolean ? (
                       <button
                         onClick={() => {
-                          const newVal = !s.value;
-                          setSettings(prev => prev.map(x => x.key === s.key ? { ...x, value: newVal } : x));
-                          save(s.key, JSON.stringify(newVal));
+                          const newVal = !(dirty[s.key] !== undefined ? dirty[s.key] === "true" : s.value);
+                          setDirty(d => ({ ...d, [s.key]: String(newVal) }));
+                          // auto-save boolean toggles
+                          (async () => {
+                            setSaving(sv => ({ ...sv, [s.key]: true }));
+                            try {
+                              const { error: rpcErr } = await supabase.rpc("update_site_setting", {
+                                p_key: s.key, p_value: newVal,
+                              });
+                              if (rpcErr) {
+                                const { error: dErr } = await supabase.from("site_settings")
+                                  .update({ value: newVal }).eq("key", s.key);
+                                if (dErr) throw dErr;
+                              }
+                              setSettings(prev => prev.map(x => x.key === s.key ? { ...x, value: newVal } : x));
+                              setDirty(d => { const n = { ...d }; delete n[s.key]; return n; });
+                              onToast(`${s.label}: ${newVal ? "enabled" : "disabled"}`, "success");
+                            } catch (e) {
+                              onToast(e.message || "Toggle failed", "error");
+                              setDirty(d => { const n = { ...d }; delete n[s.key]; return n; });
+                            } finally {
+                              setSaving(sv => ({ ...sv, [s.key]: false }));
+                            }
+                          })();
                         }}
-                        className="transition-colors"
+                        disabled={saving[s.key]}
+                        className="transition-all"
                       >
-                        {s.value
-                          ? <ToggleRight size={28} style={{ color: T.green }} />
-                          : <ToggleLeft size={28} style={{ color: T.text3 }} />
+                        {saving[s.key]
+                          ? <RefreshCw size={22} className="animate-spin" style={{ color: D.text3 }} />
+                          : (dirty[s.key] !== undefined ? dirty[s.key] === "true" : s.value)
+                            ? <ToggleRight size={28} style={{ color: D.green }} />
+                            : <ToggleLeft  size={28} style={{ color: D.text3 }} />
                         }
                       </button>
                     ) : (
                       <>
                         <input
-                          value={editVal}
-                          onChange={e => setEdits(x => ({ ...x, [s.key]: e.target.value }))}
-                          className="w-40 bg-white/[0.04] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500/40 transition-colors"
-                          placeholder={String(s.value)}
+                          value={currentRaw}
+                          onChange={e => setDirty(d => ({ ...d, [s.key]: e.target.value }))}
+                          className="w-44 rounded-lg px-3 py-1.5 text-xs font-mono focus:outline-none transition-colors"
+                          style={{
+                            background: "rgba(255,255,255,0.04)",
+                            border: `1px solid ${isDirty ? D.indigo + "60" : D.border}`,
+                            color: D.text,
+                          }}
                         />
-                        {isDirty && (
-                          <motion.button
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            whileTap={{ scale: 0.93 }}
-                            onClick={() => save(s.key, editVal)}
-                            disabled={saving[s.key]}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                            style={{ background: `${T.violet}18`, border: `1px solid ${T.violet}25`, color: T.violet }}
-                          >
-                            {saving[s.key] ? <RefreshCw size={11} className="animate-spin" /> : <Save size={11} />}
-                            Save
-                          </motion.button>
-                        )}
+                        <SaveBtn
+                          loading={saving[s.key]}
+                          dirty={isDirty}
+                          onClick={() => save(s.key)}
+                        />
                       </>
                     )}
                   </div>
                 </div>
               );
             })}
-          </div>
+          </Card>
         </div>
       ))}
+
+      {settings.length === 0 && (
+        <div className="py-20 text-center">
+          <Settings size={28} className="mx-auto mb-3" style={{ color: D.text3 }} />
+          <p className="text-sm font-medium" style={{ color: D.text2 }}>No settings found</p>
+          <p className="text-xs mt-1" style={{ color: D.text3 }}>Run migration 44 to seed defaults</p>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── FEATURE FLAGS TAB ────────────────────────────────────────────────────────
+// ── 2. FEATURE FLAGS PANEL ───────────────────────────────────────────────────
+
 function FeatureFlagsPanel({ onToast }) {
-  const [flags, setFlags]   = useState([]);
+  const [flags, setFlags]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState({});
 
@@ -193,78 +310,105 @@ function FeatureFlagsPanel({ onToast }) {
     })();
   }, []);
 
-  const toggle = async (key, newVal) => {
-    setSaving(s => ({ ...s, [key]: true }));
+  const toggle = async (flag, newVal) => {
+    // Optimistic update
+    setFlags(prev => prev.map(f => f.key === flag.key ? { ...f, is_enabled: newVal } : f));
+    setSaving(s => ({ ...s, [flag.key]: true }));
     try {
-      const { error } = await supabase.rpc("toggle_feature_flag", { p_key: key, p_enabled: newVal });
-      if (error) throw error;
-      setFlags(prev => prev.map(f => f.key === key ? { ...f, is_enabled: newVal } : f));
-      onToast(`Flag "${key}" ${newVal ? "enabled" : "disabled"}`, "success");
+      // Try RPC
+      const { error: rpcErr } = await supabase.rpc("toggle_feature_flag", {
+        p_key: flag.key, p_enabled: newVal,
+      });
+      if (rpcErr) {
+        // Fallback: direct update
+        const { error: dErr } = await supabase
+          .from("feature_flags")
+          .update({ is_enabled: newVal, updated_at: new Date().toISOString() })
+          .eq("key", flag.key);
+        if (dErr) throw dErr;
+      }
+      onToast(`"${flag.name}" ${newVal ? "enabled" : "disabled"}`, "success");
     } catch (e) {
-      onToast(e.message, "error");
+      // Rollback optimistic update
+      setFlags(prev => prev.map(f => f.key === flag.key ? { ...f, is_enabled: !newVal } : f));
+      onToast(e.message || "Toggle failed", "error");
     } finally {
-      setSaving(s => ({ ...s, [key]: false }));
+      setSaving(s => ({ ...s, [flag.key]: false }));
     }
   };
 
   if (loading) return (
     <div className="space-y-2">
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: T.s3 }} />
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
       ))}
     </div>
   );
 
   return (
-    <div className="rounded-2xl border overflow-hidden" style={{ background: T.s2, borderColor: T.border }}>
+    <Card>
       {flags.map((flag, i) => (
         <div
           key={flag.key}
-          className="flex items-center justify-between px-5 py-4 border-b"
-          style={{ borderColor: T.border }}
+          className="flex items-center gap-4 px-5 py-4 transition-colors"
+          style={{
+            borderBottom: i < flags.length - 1 ? `1px solid ${D.border}` : undefined,
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
+          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
         >
-          <div className="flex-1 min-w-0 mr-6">
-            <div className="flex items-center gap-2 mb-0.5">
-              <p className="text-sm font-semibold" style={{ color: T.text }}>{flag.name}</p>
-              <code className="text-[9px] px-1.5 py-0.5 rounded font-mono"
-                style={{ background: "rgba(255,255,255,0.05)", color: T.text3 }}>{flag.key}</code>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-semibold" style={{ color: D.text }}>{flag.name}</span>
+              <code className="text-[10px] px-1.5 py-0.5 rounded font-mono"
+                style={{ background: "rgba(255,255,255,0.06)", color: D.text3 }}>
+                {flag.key}
+              </code>
+              <span
+                className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                style={{
+                  background: flag.is_enabled ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.06)",
+                  color: flag.is_enabled ? D.green : D.text3,
+                }}
+              >
+                {flag.is_enabled ? "Enabled" : "Disabled"}
+              </span>
             </div>
-            {flag.description && <p className="text-xs" style={{ color: T.text3 }}>{flag.description}</p>}
+            {flag.description && (
+              <p className="text-xs mt-0.5" style={{ color: D.text3 }}>{flag.description}</p>
+            )}
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <span className="text-xs font-semibold" style={{ color: flag.is_enabled ? T.green : T.text3 }}>
-              {flag.is_enabled ? "On" : "Off"}
-            </span>
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              onClick={() => toggle(flag.key, !flag.is_enabled)}
-              disabled={saving[flag.key]}
-              className="transition-all"
-            >
-              {saving[flag.key]
-                ? <RefreshCw size={22} className="animate-spin" style={{ color: T.text3 }} />
-                : flag.is_enabled
-                  ? <ToggleRight size={28} style={{ color: T.green }} />
-                  : <ToggleLeft  size={28} style={{ color: T.text3 }} />
-              }
-            </motion.button>
-          </div>
+          <button
+            onClick={() => toggle(flag, !flag.is_enabled)}
+            disabled={saving[flag.key]}
+            className="flex-shrink-0 transition-all"
+          >
+            {saving[flag.key]
+              ? <RefreshCw size={22} className="animate-spin" style={{ color: D.text3 }} />
+              : flag.is_enabled
+                ? <ToggleRight size={30} style={{ color: D.green }} />
+                : <ToggleLeft  size={30} style={{ color: D.text3 }} />
+            }
+          </button>
         </div>
       ))}
       {flags.length === 0 && (
         <div className="py-16 text-center">
-          <Flag size={24} className="mx-auto mb-2" style={{ color: T.text3 }} />
-          <p className="text-sm" style={{ color: T.text3 }}>No feature flags. Run migration 44.</p>
+          <Flag size={24} className="mx-auto mb-2" style={{ color: D.text3 }} />
+          <p className="text-sm font-medium" style={{ color: D.text2 }}>No feature flags</p>
+          <p className="text-xs mt-1" style={{ color: D.text3 }}>Run migration 44 to seed defaults</p>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
-// ── HOMEPAGE SECTIONS TAB ────────────────────────────────────────────────────
+// ── 3. HOMEPAGE SECTIONS PANEL ───────────────────────────────────────────────
+
 function HomepageSectionsPanel({ onToast }) {
   const [sections, setSections] = useState([]);
   const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState({});
 
   useEffect(() => {
     (async () => {
@@ -274,67 +418,100 @@ function HomepageSectionsPanel({ onToast }) {
     })();
   }, []);
 
-  const toggleSection = async (id, enabled) => {
-    const { error } = await supabase.from("homepage_sections").update({ is_enabled: enabled }).eq("id", id);
-    if (!error) {
-      setSections(prev => prev.map(s => s.id === id ? { ...s, is_enabled: enabled } : s));
-      onToast(`Section ${enabled ? "shown" : "hidden"}`, "success");
-    } else {
-      onToast(error.message, "error");
+  const toggleSection = async (sec) => {
+    const newVal = !sec.is_enabled;
+    setSections(prev => prev.map(s => s.id === sec.id ? { ...s, is_enabled: newVal } : s));
+    setSaving(s => ({ ...s, [sec.id]: true }));
+    try {
+      const { error } = await supabase
+        .from("homepage_sections")
+        .update({ is_enabled: newVal, updated_at: new Date().toISOString() })
+        .eq("id", sec.id);
+      if (error) throw error;
+      onToast(`Section "${sec.title || sec.key}" ${newVal ? "shown" : "hidden"}`, "success");
+    } catch (e) {
+      setSections(prev => prev.map(s => s.id === sec.id ? { ...s, is_enabled: !newVal } : s));
+      onToast(e.message || "Update failed", "error");
+    } finally {
+      setSaving(s => ({ ...s, [sec.id]: false }));
     }
   };
 
   if (loading) return (
     <div className="space-y-2">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: T.s3 }} />
+        <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
       ))}
     </div>
   );
 
+  const sectionTypeColor = {
+    hero: D.indigo, stats: D.cyan, features: D.green,
+    tournaments: D.amber, cta: D.red, generic: D.text3,
+  };
+
   return (
     <div className="space-y-3">
-      <p className="text-xs" style={{ color: T.text3 }}>
-        Control which sections appear on the homepage. Drag to reorder (coming soon).
+      <p className="text-xs" style={{ color: D.text3 }}>
+        Show/hide homepage sections. Changes apply immediately to all visitors.
       </p>
-      <div className="rounded-2xl border overflow-hidden" style={{ background: T.s2, borderColor: T.border }}>
-        {sections.map((sec, i) => (
-          <div
-            key={sec.id}
-            className="flex items-center gap-4 px-5 py-4 border-b transition-colors"
-            style={{ borderColor: T.border }}
-          >
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-              style={{ background: "rgba(255,255,255,0.05)", color: T.text3 }}>
-              {sec.sort_order}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold" style={{ color: T.text }}>{sec.title || sec.key}</p>
-              <p className="text-xs" style={{ color: T.text3 }}>{sec.section_type} · key: {sec.key}</p>
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              onClick={() => toggleSection(sec.id, !sec.is_enabled)}
+      <Card>
+        {sections.map((sec, i) => {
+          const color = sectionTypeColor[sec.section_type] || D.text3;
+          return (
+            <div
+              key={sec.id}
+              className="flex items-center gap-4 px-5 py-4 transition-colors"
+              style={{ borderBottom: i < sections.length - 1 ? `1px solid ${D.border}` : undefined }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
             >
-              {sec.is_enabled
-                ? <ToggleRight size={28} style={{ color: T.green }} />
-                : <ToggleLeft  size={28} style={{ color: T.text3 }} />
-              }
-            </motion.button>
-          </div>
-        ))}
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                style={{ background: `${color}14`, color, border: `1px solid ${color}25` }}
+              >
+                {sec.sort_order}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold" style={{ color: D.text }}>{sec.title || sec.key}</span>
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded font-mono"
+                    style={{ background: `${color}14`, color }}
+                  >
+                    {sec.section_type}
+                  </span>
+                </div>
+                <code className="text-[10px]" style={{ color: D.text3 }}>key: {sec.key}</code>
+              </div>
+              <button
+                onClick={() => toggleSection(sec)}
+                disabled={saving[sec.id]}
+                className="flex-shrink-0 transition-all"
+              >
+                {saving[sec.id]
+                  ? <RefreshCw size={22} className="animate-spin" style={{ color: D.text3 }} />
+                  : sec.is_enabled
+                    ? <ToggleRight size={30} style={{ color: D.green }} />
+                    : <ToggleLeft  size={30} style={{ color: D.text3 }} />
+                }
+              </button>
+            </div>
+          );
+        })}
         {sections.length === 0 && (
           <div className="py-16 text-center">
-            <Layers size={24} className="mx-auto mb-2" style={{ color: T.text3 }} />
-            <p className="text-sm" style={{ color: T.text3 }}>No homepage sections. Run migration 44.</p>
+            <Layers size={24} className="mx-auto mb-2" style={{ color: D.text3 }} />
+            <p className="text-sm font-medium" style={{ color: D.text2 }}>No homepage sections</p>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
 
-// ── CMS LOGS ─────────────────────────────────────────────────────────────────
+// ── 4. CMS LOGS PANEL ───────────────────────────────────────────────────────
+
 function CMSLogsPanel() {
   const [logs, setLogs]       = useState([]);
   const [loading, setLoading] = useState(true);
@@ -343,7 +520,7 @@ function CMSLogsPanel() {
     (async () => {
       const { data } = await supabase
         .from("cms_logs")
-        .select("*, actor:profiles(username)")
+        .select("*, actor:profiles(username, avatar_url)")
         .order("created_at", { ascending: false })
         .limit(50);
       setLogs(data || []);
@@ -351,106 +528,123 @@ function CMSLogsPanel() {
     })();
   }, []);
 
-  const actionColor = {
-    UPDATE: T.amber, INSERT: T.green, DELETE: T.red,
-  };
-
   if (loading) return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {[...Array(8)].map((_, i) => (
-        <div key={i} className="h-12 rounded-xl animate-pulse" style={{ background: T.s3 }} />
+        <div key={i} className="h-11 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
       ))}
     </div>
   );
 
+  const actionStyle = {
+    UPDATE: { bg: "rgba(245,158,11,0.12)", color: D.amber },
+    INSERT: { bg: "rgba(16,185,129,0.12)", color: D.green },
+    DELETE: { bg: "rgba(239,68,68,0.12)",  color: D.red   },
+  };
+
   return (
-    <div className="rounded-2xl border overflow-hidden" style={{ background: T.s2, borderColor: T.border }}>
-      <div className="px-5 py-3.5 border-b grid grid-cols-4 gap-4 text-[10px] font-semibold uppercase tracking-widest"
-        style={{ borderColor: T.border, color: T.text3, background: T.s3 }}>
+    <Card>
+      {/* Header row */}
+      <div className="grid grid-cols-4 gap-3 px-5 py-3 border-b text-[10px] font-bold uppercase tracking-widest"
+        style={{ borderColor: D.border, color: D.text3, background: "rgba(255,255,255,0.02)" }}>
         <span>Actor</span>
         <span>Action</span>
-        <span>Table · Key</span>
-        <span>Time</span>
+        <span>Target</span>
+        <span>When</span>
       </div>
-      {logs.map((log, i) => (
-        <div
-          key={log.id}
-          className="px-5 py-3.5 border-b grid grid-cols-4 gap-4 text-sm transition-colors"
-          style={{ borderColor: T.border }}
-          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
-          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-        >
-          <span style={{ color: T.text }}>{log.actor?.username ?? "system"}</span>
-          <span className="font-mono text-xs font-semibold" style={{ color: actionColor[log.action] ?? T.text2 }}>
-            {log.action}
-          </span>
-          <span style={{ color: T.text2 }}>
-            {log.table_name} {log.record_id && <code className="text-[10px]" style={{ color: T.text3 }}>· {log.record_id.slice(0, 16)}</code>}
-          </span>
-          <span className="text-xs" style={{ color: T.text3 }}>
-            {new Date(log.created_at).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}
-          </span>
-        </div>
-      ))}
+
+      {logs.map((log, i) => {
+        const style = actionStyle[log.action] || { bg: "rgba(255,255,255,0.06)", color: D.text2 };
+        return (
+          <div
+            key={log.id}
+            className="grid grid-cols-4 gap-3 px-5 py-3 text-sm transition-colors"
+            style={{ borderBottom: i < logs.length - 1 ? `1px solid ${D.border}` : undefined }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+          >
+            <span className="font-medium truncate" style={{ color: D.text }}>
+              {log.actor?.username ?? "system"}
+            </span>
+            <span>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded"
+                style={{ background: style.bg, color: style.color }}>
+                {log.action}
+              </span>
+            </span>
+            <span className="text-xs truncate" style={{ color: D.text2 }}>
+              {log.table_name}
+              {log.record_id && (
+                <code className="ml-1 text-[10px]" style={{ color: D.text3 }}>
+                  {log.record_id.slice(0, 12)}…
+                </code>
+              )}
+            </span>
+            <span className="text-xs" style={{ color: D.text3 }}>
+              {new Date(log.created_at).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })}
+            </span>
+          </div>
+        );
+      })}
+
       {logs.length === 0 && (
         <div className="py-16 text-center">
-          <FileText size={24} className="mx-auto mb-2" style={{ color: T.text3 }} />
-          <p className="text-sm" style={{ color: T.text3 }}>No CMS changes logged yet</p>
+          <Clock size={24} className="mx-auto mb-2" style={{ color: D.text3 }} />
+          <p className="text-sm font-medium" style={{ color: D.text2 }}>No changes logged yet</p>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
 // ── MAIN CMS TAB ──────────────────────────────────────────────────────────────
+
 const PANELS = [
-  { id: "settings", label: "Site Settings",      icon: Settings },
-  { id: "flags",    label: "Feature Flags",       icon: Flag     },
-  { id: "sections", label: "Homepage Sections",   icon: Layers   },
-  { id: "logs",     label: "Change Log",          icon: Clock    },
+  { id: "settings", label: "Site Settings",    icon: Settings },
+  { id: "flags",    label: "Feature Flags",    icon: Flag     },
+  { id: "sections", label: "Homepage",         icon: Globe    },
+  { id: "logs",     label: "Change Log",       icon: Clock    },
 ];
 
 export default function CMSTab() {
-  const [panel, setPanel]     = useState("settings");
-  const [toast, setToast]     = useState(null);
+  const [panel, setPanel] = useState("settings");
+  const [toastState, setToastState] = useState(null);
 
   const showToast = useCallback((msg, type = "success") => {
-    setToast({ msg, type, id: Date.now() });
-    setTimeout(() => setToast(null), 3500);
+    toast(setToastState, msg, type);
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            CMS Control System
-          </h2>
-          <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
-            Manage platform content, feature flags, and settings without touching code.
-          </p>
-        </div>
+      <div>
+        <h2 className="text-lg font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          CMS Control System
+        </h2>
+        <p className="text-sm mt-0.5" style={{ color: D.text2 }}>
+          Manage platform settings, feature flags, and homepage content.
+        </p>
       </div>
 
       {/* Panel tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+      <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide border-b"
+        style={{ borderColor: D.border }}>
         {PANELS.map(p => (
           <button
             key={p.id}
             onClick={() => setPanel(p.id)}
-            className="relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 flex-shrink-0"
-            style={{ color: panel === p.id ? "white" : "rgba(255,255,255,0.40)" }}
+            className="relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0"
+            style={{ color: panel === p.id ? "white" : D.text3 }}
           >
-            <p.icon size={13} style={{ color: panel === p.id ? "#8b5cf6" : "inherit" }} />
+            <p.icon size={13} style={{ color: panel === p.id ? D.indigo : "inherit" }} />
             {p.label}
             {panel === p.id && (
               <motion.div
-                layoutId="cms-tab-indicator"
-                className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
-                style={{ background: "linear-gradient(90deg, #8b5cf6, #a78bfa)" }}
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                layoutId="cms-active-bar"
+                className="absolute bottom-0 left-3 right-3 h-[2px] rounded-t-full"
+                style={{ background: D.indigo }}
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
               />
             )}
           </button>
@@ -461,10 +655,10 @@ export default function CMSTab() {
       <AnimatePresence mode="wait">
         <motion.div
           key={panel}
-          initial={{ opacity: 0, y: 6 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.18 }}
         >
           {panel === "settings" && <SiteSettingsPanel onToast={showToast} />}
           {panel === "flags"    && <FeatureFlagsPanel onToast={showToast} />}
@@ -473,10 +667,7 @@ export default function CMSTab() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && <Toast key={toast.id} msg={toast.msg} type={toast.type} onDismiss={() => setToast(null)} />}
-      </AnimatePresence>
+      <Toast toast={toastState} onDismiss={() => setToastState(null)} />
     </div>
   );
 }

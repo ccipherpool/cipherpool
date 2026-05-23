@@ -34,15 +34,15 @@ const XpRing = ({ progress, size = 96, children }) => {
 };
 
 // ─── STAT ITEM ────────────────────────────────────────────────────────────────
-const StatItem = ({ label, value, icon: Icon, accent = "#8b5cf6" }) => (
-  <div className="flex flex-col gap-1 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.10] transition-colors">
+const StatItem = ({ label, value, icon: Icon, accent = "#4f46e5" }) => (
+  <div className="flex flex-col gap-1 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-300 transition-all">
     <div className="flex items-center gap-2 mb-1">
-      <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${accent}18`, border: `1px solid ${accent}28` }}>
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `${accent}14`, border: `1px solid ${accent}25` }}>
         <Icon size={13} style={{ color: accent }} />
       </div>
     </div>
-    <p className="text-xl font-bold text-white leading-none" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{value}</p>
-    <p className="text-xs text-white/40 mt-0.5">{label}</p>
+    <p className="text-xl font-bold text-slate-900 leading-none" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{value}</p>
+    <p className="text-xs text-slate-500 mt-0.5">{label}</p>
   </div>
 );
 
@@ -51,16 +51,15 @@ const TabBtn = ({ active, icon: Icon, label, onClick }) => (
   <button
     onClick={onClick}
     className={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 flex-shrink-0 ${
-      active ? "text-white" : "text-white/40 hover:text-white/70"
+      active ? "text-indigo-600" : "text-slate-400 hover:text-slate-700"
     }`}
   >
-    <Icon size={14} className={active ? "text-violet-400" : ""} />
+    <Icon size={14} className={active ? "text-indigo-500" : ""} />
     <span>{label}</span>
     {active && (
       <motion.div
         layoutId="profile-tab-indicator"
-        className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
-        style={{ background: "linear-gradient(90deg, #8b5cf6, #a78bfa)" }}
+        className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-indigo-500"
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
       />
     )}
@@ -167,16 +166,16 @@ export default function Profile() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="cp-card overflow-hidden"
+        className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm"
       >
         {/* Banner */}
         <div className="h-24 relative overflow-hidden" style={{
-          background: "linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(6,182,212,0.06) 50%, rgba(17,17,24,0) 100%)"
+          background: "linear-gradient(135deg, #4f46e5 0%, #2563eb 50%, #0891b2 100%)"
         }}>
-          <div className="absolute inset-0" style={{
-            backgroundImage: "radial-gradient(circle at 30% 50%, rgba(139,92,246,0.12), transparent 60%), radial-gradient(circle at 80% 30%, rgba(6,182,212,0.08), transparent 50%)"
-          }} />
-          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[var(--cp-surface-1)] to-transparent" />
+          <div className="absolute inset-0 opacity-15"
+            style={{ backgroundImage: "radial-gradient(circle at 30% 50%, white 1px, transparent 1px), radial-gradient(circle at 70% 60%, white 1px, transparent 1px)", backgroundSize: "18px 18px" }}
+          />
+          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent" />
         </div>
 
         <div className="px-5 pb-5 -mt-10">
@@ -198,7 +197,7 @@ export default function Profile() {
             {/* Info block */}
             <div className="flex-1 pb-1">
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <h1 className="text-xl font-bold text-white leading-none" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                <h1 className="text-xl font-bold text-slate-900 leading-none" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                   {profile?.username || profile?.email?.split("@")[0] || "Player"}
                 </h1>
                 {profile?.verification_status === "approved" && (
@@ -218,18 +217,18 @@ export default function Profile() {
               </div>
 
               {profile?.bio && (
-                <p className="text-sm text-white/50 max-w-md mb-3 leading-relaxed">{profile.bio}</p>
+                <p className="text-sm text-slate-500 max-w-md mb-3 leading-relaxed">{profile.bio}</p>
               )}
 
               {/* XP progress */}
               <div className="max-w-xs">
-                <div className="flex justify-between text-xs text-white/35 mb-1.5">
+                <div className="flex justify-between text-xs text-slate-400 mb-1.5">
                   <span>XP Progress</span>
                   <span>{(profile?.xp || 0) % 1000} / 1000</span>
                 </div>
-                <div className="cp-progress">
+                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <motion.div
-                    className="cp-progress-fill"
+                    className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400"
                     initial={{ width: 0 }}
                     animate={{ width: `${xpProgress}%` }}
                     transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
@@ -241,9 +240,9 @@ export default function Profile() {
             {/* Actions */}
             <div className="flex items-center gap-2 flex-shrink-0 pb-1">
               {profile?.free_fire_id && (
-                <div className="hidden sm:block px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <p className="text-[10px] text-white/35 mb-0.5">Free Fire ID</p>
-                  <p className="text-sm font-semibold text-white/70">{profile.free_fire_id}</p>
+                <div className="hidden sm:block px-3 py-2 rounded-xl bg-slate-50 border border-slate-200">
+                  <p className="text-[10px] text-slate-400 mb-0.5">Free Fire ID</p>
+                  <p className="text-sm font-semibold text-slate-700">{profile.free_fire_id}</p>
                 </div>
               )}
               <button onClick={openEdit} className="cp-btn cp-btn-ghost flex items-center gap-2">
@@ -279,10 +278,10 @@ export default function Profile() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.18, duration: 0.35 }}
-        className="cp-card overflow-hidden"
+        className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm"
       >
         {/* Tab bar */}
-        <div className="flex items-center border-b border-white/[0.05] overflow-x-auto scrollbar-hide px-2">
+        <div className="flex items-center border-b border-slate-100 overflow-x-auto scrollbar-hide px-2">
           <TabBtn active={activeTab === "overview"}     icon={BarChart3} label="Overview"     onClick={() => setActiveTab("overview")} />
           <TabBtn active={activeTab === "matches"}      icon={History}   label="Matches"      onClick={() => setActiveTab("matches")} />
           <TabBtn active={activeTab === "achievements"} icon={Award}     label="Achievements" onClick={() => setActiveTab("achievements")} />
@@ -302,34 +301,34 @@ export default function Profile() {
               >
                 {/* Recent Activity */}
                 <div>
-                  <p className="text-xs font-semibold text-white/40 uppercase tracking-wide mb-3">Recent Activity</p>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Recent Activity</p>
                   <div className="space-y-2">
                     {recentMatches?.slice(0, 5).map((match, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.025] border border-white/[0.05] hover:bg-white/[0.04] transition-colors">
+                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors">
                         <div
                           className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-sm font-bold"
                           style={{
-                            background: match.position === 1 ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.04)",
-                            color: match.position === 1 ? "#f59e0b" : "rgba(255,255,255,0.5)",
-                            border: `1px solid ${match.position === 1 ? "rgba(245,158,11,0.25)" : "rgba(255,255,255,0.07)"}`,
+                            background: match.position === 1 ? "rgba(245,158,11,0.12)" : "#f1f5f9",
+                            color: match.position === 1 ? "#f59e0b" : "#64748b",
+                            border: `1px solid ${match.position === 1 ? "rgba(245,158,11,0.25)" : "#e2e8f0"}`,
                           }}
                         >
                           #{match.position}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white/80 truncate">{match.matches?.tournaments?.name || "Match"}</p>
-                          <p className="text-xs text-white/35">{new Date(match.created_at).toLocaleDateString("en-GB")}</p>
+                          <p className="text-sm font-medium text-slate-800 truncate">{match.matches?.tournaments?.name || "Match"}</p>
+                          <p className="text-xs text-slate-400">{new Date(match.created_at).toLocaleDateString("en-GB")}</p>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-semibold text-emerald-400">+{match.reward || 0} CP</p>
-                          <p className="text-xs text-white/35">{match.kills} kills</p>
+                          <p className="text-sm font-semibold text-emerald-600">+{match.reward || 0} CP</p>
+                          <p className="text-xs text-slate-400">{match.kills} kills</p>
                         </div>
                       </div>
                     ))}
                     {(!recentMatches || recentMatches.length === 0) && (
                       <div className="py-10 text-center">
-                        <Gamepad2 size={28} className="mx-auto mb-2 text-white/15" />
-                        <p className="text-sm text-white/30">No matches yet</p>
+                        <Gamepad2 size={28} className="mx-auto mb-2 text-slate-300" />
+                        <p className="text-sm text-slate-400">No matches yet</p>
                       </div>
                     )}
                   </div>
@@ -337,21 +336,21 @@ export default function Profile() {
 
                 {/* Badges */}
                 <div>
-                  <p className="text-xs font-semibold text-white/40 uppercase tracking-wide mb-3">Badges</p>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Badges</p>
                   <div className="grid grid-cols-2 gap-2">
                     {achievements?.slice(0, 6).map((ach, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.025] border border-white/[0.05]">
+                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
                         <span className="text-xl flex-shrink-0">{ach.achievements?.icon || "🏆"}</span>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-white/80 truncate">{ach.achievements?.name}</p>
-                          <p className="text-xs text-white/35">Unlocked</p>
+                          <p className="text-sm font-medium text-slate-800 truncate">{ach.achievements?.name}</p>
+                          <p className="text-xs text-slate-400">Unlocked</p>
                         </div>
                       </div>
                     ))}
                     {(!achievements || achievements.length === 0) && (
                       <div className="col-span-2 py-10 text-center">
-                        <Star size={28} className="mx-auto mb-2 text-white/15" />
-                        <p className="text-sm text-white/30">No badges yet</p>
+                        <Star size={28} className="mx-auto mb-2 text-slate-300" />
+                        <p className="text-sm text-slate-400">No badges yet</p>
                       </div>
                     )}
                   </div>
@@ -368,10 +367,10 @@ export default function Profile() {
                 transition={{ duration: 0.25 }}
                 className="py-16 text-center"
               >
-                <div className="w-12 h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center mx-auto mb-3">
-                  {activeTab === "matches" ? <History size={22} className="text-white/25" /> : <Award size={22} className="text-white/25" />}
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                  {activeTab === "matches" ? <History size={22} className="text-slate-400" /> : <Award size={22} className="text-slate-400" />}
                 </div>
-                <p className="text-sm font-medium text-white/30">Coming soon</p>
+                <p className="text-sm font-medium text-slate-400">Coming soon</p>
               </motion.div>
             )}
           </AnimatePresence>

@@ -282,19 +282,19 @@ export default function MainLayout() {
   if (loading) return <LoadingScreen />;
 
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#09090f]">
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-slate-50">
 
       {/* ── MOBILE HEADER ────────────────────────────────────────────── */}
       <header className="md:hidden flex-shrink-0 z-50 relative">
         {/* Gradient accent top */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-border to-transparent" />
 
-        <div className="h-14 flex items-center px-4 bg-[rgba(7,9,26,0.95)] backdrop-blur-[24px] border-b border-[rgba(255,255,255,0.05)]">
+        <div className="h-14 flex items-center px-4 bg-white/95 backdrop-blur-[24px] border-b border-slate-200">
           {/* Menu button */}
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setDrawerOpen(true)}
-            className="w-10 h-10 flex items-center justify-center rounded-xl text-[rgba(255,255,255,0.5)] hover:text-white hover:bg-[rgba(255,255,255,0.06)] transition-all -ml-1"
+            className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all -ml-1"
             aria-label="Open menu"
           >
             <Menu size={20} />
@@ -335,9 +335,9 @@ export default function MainLayout() {
           <TopNav profile={profile} />
 
           {/* Page content */}
-          <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#09090f] cp-scroll-container">
-            {/* Ambient gradient at top of content area */}
-            <div className="pointer-events-none fixed top-[52px] left-1/4 w-1/2 h-[300px] bg-[rgba(139,92,246,0.03)] blur-[80px] rounded-full z-0" />
+          <main className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-50 cp-scroll-container">
+            {/* Subtle top divider */}
+            <div className="pointer-events-none" />
 
             <div className="max-w-7xl w-full mx-auto px-4 md:px-7 py-5 md:py-7 min-w-0 pb-[calc(env(safe-area-inset-bottom)+80px)] md:pb-7">
               <AnimatePresence mode="wait">
@@ -369,15 +369,14 @@ export default function MainLayout() {
       <nav
         className="md:hidden flex-shrink-0 z-50 relative"
         style={{
-          background: "rgba(7, 9, 26, 0.97)",
+          background: "rgba(255,255,255,0.97)",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          borderTop: "1px solid rgba(255,255,255,0.05)",
+          borderTop: "1px solid rgba(15,23,42,0.08)",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
-        {/* Top gradient line */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-border to-transparent" />
+        <div />
 
         <div className="flex items-center justify-around px-2 h-14">
           {MOBILE_BOTTOM.map(item => {
@@ -397,14 +396,13 @@ export default function MainLayout() {
                   <item.icon
                     size={20}
                     strokeWidth={isActive ? 2.5 : 1.8}
-                    className={isActive ? "text-cyber-400" : "text-[rgba(255,255,255,0.35)]"}
-                    style={isActive ? { filter: "drop-shadow(0 0 6px rgba(139,92,246,0.7))" } : {}}
+                    className={isActive ? "text-indigo-600" : "text-slate-400"}
                   />
                 </motion.div>
                 <span
                   className={[
                     "text-[7px] font-black uppercase tracking-[0.1em] leading-none",
-                    isActive ? "text-cyber-400" : "text-[rgba(255,255,255,0.25)]",
+                    isActive ? "text-indigo-600" : "text-slate-400",
                   ].join(" ")}
                 >
                   {item.label}
@@ -413,8 +411,8 @@ export default function MainLayout() {
                 {isActive && (
                   <motion.div
                     layoutId="mobile-nav-dot"
-                    className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cyber-500"
-                    style={{ boxShadow: "0 0 6px rgba(139,92,246,0.8)" }}
+                    className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-indigo-500"
+                    style={{ boxShadow: "0 0 6px rgba(99,102,241,0.6)" }}
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}

@@ -26,16 +26,16 @@ const SidebarLink = ({ to, icon: Icon, label, isActive, badge }) => (
       "text-sm font-medium",
       "transition-all duration-200",
       isActive
-        ? "bg-[rgba(139,92,246,0.10)] text-white"
-        : "text-white/40 hover:text-white/80 hover:bg-white/[0.04]",
+        ? "bg-indigo-500/10 text-white"
+        : "text-white/45 hover:text-white/80 hover:bg-white/[0.05]",
     ].join(" ")}
   >
     {/* Active indicator bar */}
     {isActive && (
       <motion.div
         layoutId="sidebar-active-bar"
-        className="absolute left-0 top-[18%] w-[2px] h-[64%] rounded-r-full bg-violet-400"
-        style={{ boxShadow: "0 0 6px rgba(139,92,246,0.7)" }}
+        className="absolute left-0 top-[18%] w-[2px] h-[64%] rounded-r-full bg-indigo-400"
+        style={{ boxShadow: "0 0 6px rgba(99,102,241,0.6)" }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
       />
     )}
@@ -43,12 +43,12 @@ const SidebarLink = ({ to, icon: Icon, label, isActive, badge }) => (
     <Icon
       size={15}
       strokeWidth={isActive ? 2 : 1.75}
-      className={isActive ? "text-violet-400 flex-shrink-0" : "flex-shrink-0"}
+      className={isActive ? "text-indigo-400 flex-shrink-0" : "flex-shrink-0"}
     />
     <span className="flex-1 truncate">{label}</span>
 
     {badge != null && badge > 0 && (
-      <span className="flex-shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full bg-[rgba(139,92,246,0.12)] text-violet-400 text-[10px] font-semibold flex items-center justify-center">
+      <span className="flex-shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full bg-indigo-500/10 text-indigo-400 text-[10px] font-semibold flex items-center justify-center">
         {badge > 99 ? "99+" : badge}
       </span>
     )}
@@ -72,9 +72,9 @@ export default function Sidebar({ profile }) {
   const isSuperAdmin = profile?.role === "super_admin";
 
   return (
-    <aside className="hidden md:flex w-[220px] flex-shrink-0 flex-col h-full overflow-hidden relative" style={{ background: "var(--cp-surface-1)" }}>
+    <aside className="hidden md:flex w-[220px] flex-shrink-0 flex-col h-full overflow-hidden relative" style={{ background: "#0f172a" }}>
       {/* Right border — single pixel, subtle */}
-      <div className="absolute right-0 top-0 bottom-0 w-px bg-white/[0.05]" />
+      <div className="absolute right-0 top-0 bottom-0 w-px bg-white/[0.06]" />
 
       <div className="relative flex flex-col h-full z-10">
         {/* Logo */}

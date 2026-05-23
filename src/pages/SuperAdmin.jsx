@@ -230,11 +230,17 @@ export default function SuperAdmin() {
 
   const fetchSystemConfig = async () => {
     try {
-      const { data, error } = await supabase.from("system_config").select("*").single();
-      if (error && error.code !== "PGRST116") throw error;
-      setMaintenanceMode(data?.maintenance_mode || false);
-      setRegistrationEnabled(data?.registration_enabled !== false);
-      setTournamentsEnabled(data?.tournaments_enabled !== false);
+      const { data } = await supabase
+        .from("system_config")
+        .select("*")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setMaintenanceMode(data.maintenance_mode || false);
+        setRegistrationEnabled(data.registration_enabled !== false);
+        setTournamentsEnabled(data.tournaments_enabled !== false);
+      }
     } catch {}
   };
 
