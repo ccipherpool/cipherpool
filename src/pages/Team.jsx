@@ -97,7 +97,7 @@ export default function Team() {
       const { data } = await supabase
         .from("profiles")
         .select("id,full_name,avatar_url,role,level,free_fire_id")
-        .in("role", ["super_admin","founder","fondateur","admin","designer"])
+        .in("role", ["super_admin","founder","admin","designer"])
         .order("created_at");
       setStaff(
         (data || []).sort((a, b) => {
@@ -113,7 +113,7 @@ export default function Team() {
 
   const groups = [
     { roles: ["super_admin"],           label: "DIRECTION",       color: "#f97316" },
-    { roles: ["founder","fondateur"],   label: "FONDATEURS",      color: "#f43f5e" },
+    { roles: ["founder"],               label: "FOUNDERS",        color: "#f43f5e" },
     { roles: ["admin"],                 label: "ADMINISTRATION",  color: "#818cf8" },
     { roles: ["designer"],              label: "DESIGN",          color: "#818cf8" },
   ];

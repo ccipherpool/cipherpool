@@ -179,7 +179,7 @@ export default function SuperAdmin() {
 
   const fetchAdmins = async () => {
     try {
-      const { data, error } = await supabase.from("profiles").select("*").in("role", ["admin", "super_admin", "founder", "fondateur", "designer"]).order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("profiles").select("*").in("role", ["admin", "super_admin", "founder", "designer"]).order("created_at", { ascending: false });
       if (error) throw error;
       setAdmins(data || []);
     } catch (err) { if (import.meta.env.DEV) console.error("fetchAdmins:", err); }

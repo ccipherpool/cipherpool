@@ -163,7 +163,7 @@ export default function App() {
           </Route>
 
           {/* ── FOUNDER ── */}
-          <Route element={<ProtectedRoute allowedRoles={["founder","fondateur","super_admin"]}><MainLayout /></ProtectedRoute>}>
+          <Route element={<ProtectedRoute allowedRoles={["founder","super_admin"]}><MainLayout /></ProtectedRoute>}>
             <Route path="/founder"           element={<FounderDashboard />} />
             <Route path="/founder/requests"  element={<FounderRequests />} />
             <Route path="/founder/results"   element={<Adminresults />} />
@@ -171,7 +171,7 @@ export default function App() {
           </Route>
 
           {/* ── ADMIN ── */}
-          <Route element={<ProtectedRoute allowedRoles={["admin","fondateur","founder","super_admin"]}><MainLayout /></ProtectedRoute>}>
+          <Route element={<ProtectedRoute allowedRoles={["admin","founder","super_admin"]}><MainLayout /></ProtectedRoute>}>
             <Route path="/admin"              element={<AdminDashboard />} />
             <Route path="/admin/support"      element={<AdminSupport />} />
             <Route path="/admin/results"      element={<Adminresults />} />

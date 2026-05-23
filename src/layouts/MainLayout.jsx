@@ -124,7 +124,7 @@ function LoadingScreen() {
 
 /* ── MOBILE DRAWER ─────────────────────────────────────────────────── */
 function MobileDrawer({ open, onClose, profile }) {
-  const isAdmin      = ["admin", "super_admin", "founder", "fondateur"].includes(profile?.role);
+  const isAdmin      = ["admin", "super_admin", "founder"].includes(profile?.role);
   const isSuperAdmin = profile?.role === "super_admin";
 
   const handleLogout = async () => {

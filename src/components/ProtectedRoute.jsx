@@ -14,7 +14,10 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
+  // Normalize legacy 'fondateur' → 'founder' for role checks
+  const normalizedRole = role === 'fondateur' ? 'founder' : role;
+
+  if (allowedRoles.length > 0 && !allowedRoles.includes(normalizedRole)) {
     return <Navigate to="/dashboard" replace />;
   }
 

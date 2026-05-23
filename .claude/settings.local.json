@@ -72,7 +72,15 @@
       "PowerShell(npx supabase db push --help 2>&1 | Select-Object -First 30)",
       "Bash(psql *)",
       "PowerShell(Get-Command *)",
-      "PowerShell(psql *)"
+      "PowerShell(psql *)",
+      "PowerShell(Select-String -Path \"C:\\\\cipherpool\\\\sql\\\\backup_schema_20260523_163816.sql\" -Pattern \"^CREATE OR REPLACE FUNCTION public\\\\.\" | Select-Object -First 100 | ForEach-Object { $_.Line })",
+      "PowerShell(Select-String -Path \"C:\\\\cipherpool\\\\sql\\\\backup_schema_20260523_163816.sql\" -Pattern \"^CREATE OR REPLACE FUNCTION\" | ForEach-Object { $_.Line } | Sort-Object)",
+      "PowerShell(Get-Content \"C:\\\\cipherpool\\\\sql\\\\backup_schema_20260523_163816.sql\" | Select-String \"CREATE OR REPLACE FUNCTION\" | Select-Object -First 80 | ForEach-Object { $_.Line })",
+      "PowerShell(Get-Content *)",
+      "PowerShell(npx eslint \"src/components/AnnouncementModal.jsx\" 2>&1)",
+      "PowerShell(ls node_modules | Where-Object { $_.Name -eq \"eslint-plugin-react\" })",
+      "PowerShell(npm install *)",
+      "PowerShell(node -e \"const rh = require\\('./node_modules/eslint-plugin-react-hooks'\\); console.log\\(Object.keys\\(rh.rules || {}\\)\\)\")"
     ]
   }
 }

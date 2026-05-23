@@ -36,7 +36,7 @@ export default function TopNav({ profile }) {
     navigate("/login");
   };
 
-  const isAdmin      = ["admin", "super_admin", "founder", "fondateur"].includes(profile?.role);
+  const isAdmin      = ["admin", "super_admin", "founder"].includes(profile?.role);
   const isSuperAdmin = profile?.role === "super_admin";
 
   return (

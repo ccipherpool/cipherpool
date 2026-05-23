@@ -90,7 +90,7 @@ export default function TournamentRoom() {
 
         const isOrganizer  = tournamentData?.created_by === session.user.id;
         const isMember     = !!memberData;
-        const isPrivileged = ["admin","fondateur","super_admin","founder"].includes(profileData?.role);
+        const isPrivileged = ["admin","super_admin","founder"].includes(profileData?.role);
 
         if (!isOrganizer && !isMember && !isPrivileged) {
           console.log("⚠️ User not authorized for this room");

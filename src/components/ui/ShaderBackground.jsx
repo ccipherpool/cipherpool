@@ -1,5 +1,4 @@
 import { MeshGradient, PulsingBorder } from "@paper-design/shaders-react";
-import { motion } from "framer-motion";
 
 export function ShaderBackground({ children, className = "" }) {
   return (

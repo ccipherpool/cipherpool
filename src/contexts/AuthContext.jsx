@@ -62,8 +62,11 @@ export function AuthProvider({ children }) {
           }
         : null;
 
+      // Normalize legacy 'fondateur' → 'founder' at the app level
+      const normalizedRole = nextProfile?.role === 'fondateur' ? 'founder' : (nextProfile?.role ?? null);
+
       setProfile(nextProfile);
-      setRole(nextProfile?.role ?? null);
+      setRole(normalizedRole);
       setWallet(walletData);
       setBalance(walletData.balance || 0);
       setUserItems(itemRows);
@@ -166,6 +169,7 @@ export function AuthProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   return useContext(AuthContext);
 }

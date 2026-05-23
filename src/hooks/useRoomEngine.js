@@ -99,10 +99,10 @@ export function useRoomEngine(id, user, authLoading) {
             setRole("organizer");
             console.log("👑 User is organizer");
           } else {
-            // Check if admin/fondateur/super_admin → organizer access
+            // Check if admin/super_admin/founder → organizer access
             const { data: profileData } = await supabase
               .from("profiles").select("role").eq("id", user.id).maybeSingle();
-            const isPrivileged = ["admin","fondateur","super_admin","founder"]
+            const isPrivileged = ["admin","super_admin","founder"]
               .includes(profileData?.role);
 
             if (isPrivileged) {

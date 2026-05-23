@@ -1,3 +1,4 @@
+/* global process */
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -55,7 +56,7 @@ const authenticate = async (req, res, next) => {
     };
     
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ error: 'Authentication failed' });
   }
 };

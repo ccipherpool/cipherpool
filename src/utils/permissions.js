@@ -85,7 +85,7 @@ export const usePermissions = (user) => {
       can:          (perm) => can(user.role, perm),
       isSuperAdmin: user.role === 'super_admin',
       isAdmin:      ['admin', 'super_admin'].includes(user.role),
-      isFounder:    ['founder', 'fondateur'].includes(user.role),
+      isFounder:    ['founder', 'super_admin'].includes(user.role),
       isDesigner:   user.role === 'designer',
       isUser:       user.role === 'user',
       isBanned:     user.role === 'banned',
@@ -98,7 +98,8 @@ export const usePermissions = (user) => {
 // ── checkPermission (Supabase RPC — for sensitive ops) ───────────
 export const checkPermission = async (userId, permissionName) => {
   try {
-    const { data, error } = await supabase.rpc('check_user_permission', { user_id: userId, permission_name: permissionName });
+    // Note: check_user_permission takes p_user_id and required_role (not permission_name)
+    const { data, error } = await supabase.rpc('check_user_permission', { p_user_id: userId, required_role: permissionName });
     if (error) return false;
     return data || false;
   } catch {

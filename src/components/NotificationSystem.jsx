@@ -20,6 +20,7 @@ import { supabase } from "../lib/supabase";
 
 const NotifCtx = createContext(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useNotify() {
   const ctx = useContext(NotifCtx);
   if (!ctx) return () => {};

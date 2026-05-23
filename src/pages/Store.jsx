@@ -317,14 +317,25 @@ export default function Store() {
   const fetchAll = useCallback(async () => {
     if (!profile?.id) { setLoading(false); return; }
     setLoading(true);
-    const [{ data: storeData }, { data: owned }, { data: daily }] = await Promise.all([
-      supabase.from("store_items").select("*").eq("active", true).eq("approved", true).order("sort_order", { ascending: true }),
-      supabase.from("user_items").select("*, item:store_items(*)").eq("user_id", profile.id),
-      supabase.from("daily_store").select("*, item:store_items(*)").eq("date", new Date().toISOString().split("T")[0]),
-    ]);
-    setItems(storeData || []);
-    setUserItems(owned || []);
-    setDailyItems(daily?.filter(d => d.item) || []);
+    try {
+      const [storeRes, ownedRes] = await Promise.all([
+        supabase.from("store_items").select("*").eq("active", true).order("sort_order", { ascending: true }),
+        supabase.from("user_items").select("*, item:store_items(*)").eq("user_id", profile.id),
+      ]);
+      setItems(storeRes.data || []);
+      setUserItems(ownedRes.data || []);
+      // daily_store is optional — don't fail if it doesn't exist
+      const dailyRes = await supabase
+        .from("daily_store")
+        .select("*, item:store_items(*)")
+        .eq("date", new Date().toISOString().split("T")[0])
+        .maybeSingle();
+      if (!dailyRes.error && dailyRes.data) {
+        setDailyItems([dailyRes.data].filter(d => d?.item));
+      }
+    } catch (err) {
+      console.error("Store fetch error:", err);
+    }
     setLoading(false);
   }, [profile?.id]);
 

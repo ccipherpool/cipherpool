@@ -169,6 +169,10 @@ export default function RoomStatusBar({ tournament, role, onTournamentUpdate }) 
     results_open: "CLÔTURE DANS",
   }[status];
 
+  const liveProgressPct = (status === "live" && tournament?.start_time && tournament?.end_time)
+    ? Math.min(100, ((Date.now() - new Date(tournament.start_time)) / (new Date(tournament.end_time) - new Date(tournament.start_time))) * 100)
+    : 0;
+
   return (
     <div style={{width:"100%",background:"#060f23",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
 
@@ -221,7 +225,7 @@ export default function RoomStatusBar({ tournament, role, onTournamentUpdate }) 
             <div style={{position:"absolute",bottom:0,left:0,right:0,height:2,background:"rgba(255,255,255,.05)"}}>
               <motion.div style={{
                 height:"100%",background:RED,
-                width:`${Math.min(100,((Date.now()-new Date(tournament.start_time))/(new Date(tournament.end_time)-new Date(tournament.start_time)))*100)}%`
+                width:`${liveProgressPct}%`
               }}/>
             </div>
           )}

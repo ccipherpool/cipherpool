@@ -44,6 +44,28 @@ export default {
         'cp-violet': '#a78bfa',
         'cp-red':    '#ef4444',
 
+        /* ── LIGHT / SaaS DESIGN SYSTEM ── */
+        'cp-surface': {
+          DEFAULT: '#FFFFFF',
+          subtle:  '#F8FAFC',
+          muted:   '#F1F5F9',
+          accent:  '#EEF2FF',
+        },
+        'cp-border': {
+          DEFAULT: '#E2E8F0',
+          strong:  '#CBD5E1',
+          subtle:  '#F1F5F9',
+        },
+        'cp-text': {
+          DEFAULT: '#0F172A',
+          mid:     '#334155',
+          muted:   '#64748B',
+          faint:   '#94A3B8',
+        },
+        'cp-sidebar-bg': '#0F172A',
+        'cp-primary':    '#4F46E5',
+        'cp-accent-cyan': '#06B6D4',
+
         /* ── CYBER LUXURY PALETTE (new) ── */
         'cyber': {
           DEFAULT: '#8B5CF6',

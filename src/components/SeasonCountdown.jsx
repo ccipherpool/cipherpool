@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 
 export default function SeasonCountdown({ endDate, compact = false }) {
   const [timeLeft, setTimeLeft] = useState(null);

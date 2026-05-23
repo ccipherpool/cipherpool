@@ -17,7 +17,6 @@ const EMOJIS = ["👍","🔥","💪","🏆","😂","❤️","👏","🎮","⚡",
 const ROLE_BADGES = {
   super_admin: { label: "SUPER",   color: "#ef4444", bg: "rgba(239,68,68,.15)"  },
   founder:     { label: "FOUNDER", color: "#a855f7", bg: "rgba(168,85,247,.15)" },
-  fondateur:   { label: "FOUNDER", color: "#a855f7", bg: "rgba(168,85,247,.15)" },
   admin:       { label: "ADMIN",   color: "#f97316", bg: "rgba(249,115,22,.15)" },
   designer:    { label: "DESIGN",  color: "#10b981", bg: "rgba(16,185,129,.15)" },
 };
@@ -361,7 +360,7 @@ function OnlinePanel({ currentUser, friends, onFriendAction, onSendDM }) {
     if (!data) { setLoading(false); return; }
 
     const friendIds = new Set(friends.map((f) => f.friend_id));
-    const STAFF_ROLES = new Set(["super_admin","admin","founder","fondateur","designer"]);
+    const STAFF_ROLES = new Set(["super_admin","admin","founder","designer"]);
 
     const enriched = data
       .filter((r) => r.profiles && r.user_id !== currentUser?.id)
