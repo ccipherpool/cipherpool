@@ -170,27 +170,31 @@ export function useProfileData(userId) {
           .from("match_results")
           .select(`
             id,
-            position,
+            placement,
             kills,
-            mvp,
-            reward,
+            is_mvp,
+            coins_awarded,
             created_at,
-            matches (
-              id,
-              tournament_id,
-              tournaments (
-                name
-              )
+            tournaments (
+              name
             )
           `)
-          .eq("user_id", userId)
+          .eq("submitter_id", userId)
           .order("created_at", { ascending: false })
           .limit(10);
 
         if (matchesError) {
           console.warn("Matches error:", matchesError);
         } else {
-          setRecentMatches(matchesData || []);
+          // normalize to match what Profile.jsx expects
+          const normalized = (matchesData || []).map(r => ({
+            ...r,
+            position: r.placement,
+            reward: r.coins_awarded,
+            mvp: r.is_mvp,
+            matches: r.tournaments ? { tournaments: r.tournaments } : null,
+          }));
+          setRecentMatches(normalized);
           console.log("✅ Matches loaded:", matchesData?.length || 0);
         }
       } catch (matchErr) {

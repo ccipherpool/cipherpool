@@ -5,6 +5,7 @@ import {
   ShieldAlert, Crown, LogOut, MessageSquare,
   Users2, ShoppingBag, Wallet, Star, Newspaper,
   Zap, Layout, TrendingUp, Gift, Users, ChevronRight,
+  Terminal,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
@@ -131,7 +132,10 @@ export default function Sidebar({ profile }) {
                 <Section label="System">
                   <SidebarLink to="/admin"       icon={ShieldAlert} label="Control Panel" isActive={p.startsWith("/admin") && !p.startsWith("/super")} />
                   {isSuperAdmin && (
-                    <SidebarLink to="/super-admin" icon={Zap}        label="Root Access"   isActive={p.startsWith("/super-admin")} />
+                    <>
+                      <SidebarLink to="/super-admin"    icon={Zap}      label="Root Access"    isActive={p === "/super-admin" || p === "/super-admin/grant"} />
+                      <SidebarLink to="/command-center" icon={Terminal}  label="Command Center" isActive={p === "/command-center"} />
+                    </>
                   )}
                 </Section>
               )}

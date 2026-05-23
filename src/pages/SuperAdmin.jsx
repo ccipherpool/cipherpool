@@ -24,6 +24,7 @@ import SeasonsTab       from "./superadmin/tabs/SeasonsTab";
 import AnnouncementsTab from "./superadmin/tabs/AnnouncementsTab";
 import AnalyticsTab     from "./superadmin/tabs/AnalyticsTab";
 import CommunityTab     from "./superadmin/tabs/CommunityTab";
+import CMSTab           from "./superadmin/tabs/CMSTab";
 
 import RoleModal          from "./superadmin/modals/RoleModal";
 import BanModal           from "./superadmin/modals/BanModal";
@@ -83,6 +84,7 @@ const NAV_GROUPS = [
       { id: "announcements", label: "Announcements",  icon: Megaphone,  badgeKey: null },
       { id: "logs",          label: "Audit Logs",     icon: FileText,   badgeKey: null },
       { id: "system",        label: "System",         icon: Settings,   badgeKey: null },
+      { id: "cms",           label: "CMS",            icon: Globe,      badgeKey: null },
     ],
   },
 ];
@@ -711,6 +713,7 @@ export default function SuperAdmin() {
               {activeTab === "announcements" && <AnnouncementsTab key="announcements" />}
               {activeTab === "logs"          && <LogsTab         key="logs"        logs={logs} users={users} />}
               {activeTab === "system"      && <SystemTab       key="system"      maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode} registrationEnabled={registrationEnabled} setRegistrationEnabled={setRegistrationEnabled} tournamentsEnabled={tournamentsEnabled} setTournamentsEnabled={setTournamentsEnabled} updateSystemConfig={updateSystemConfig} />}
+              {activeTab === "cms"         && <CMSTab          key="cms" />}
             </AnimatePresence>
           </div>
 

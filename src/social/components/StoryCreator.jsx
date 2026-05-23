@@ -45,7 +45,14 @@ export default function StoryCreator({ onClose, onPublish }) {
       await onPublish({ file, caption: caption.trim(), privacy });
       onClose?.();
     } catch (err) {
-      setError(err.message || 'Upload failed. Try again.');
+      const msg = err.message || '';
+      if (msg.includes('Bucket not found') || msg.includes('bucket') || msg.includes('storage')) {
+        setError('Media upload unavailable right now. Please try again later.');
+      } else if (msg.includes('network') || msg.includes('fetch')) {
+        setError('Connection error. Check your internet and try again.');
+      } else {
+        setError(msg || 'Upload failed. Please try again.');
+      }
     } finally {
       setUploading(false);
     }

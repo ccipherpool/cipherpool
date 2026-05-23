@@ -78,8 +78,9 @@ const AdminStorePanel = lazy(() => import("./pages/Adminstorepanel"));
 const DesignerPanel   = lazy(() => import("./pages/Designerpanel"));
 
 // Super Admin
-const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
-const AdminGrant = lazy(() => import("./pages/AdminGrant"));
+const SuperAdmin    = lazy(() => import("./pages/SuperAdmin"));
+const AdminGrant    = lazy(() => import("./pages/AdminGrant"));
+const CommandCenter = lazy(() => import("./pages/CommandCenter"));
 
 // Public
 const PublicTournament = lazy(() => import("./pages/PublicTournament"));
@@ -190,8 +191,9 @@ export default function App() {
 
           {/* ── SUPER ADMIN — standalone, no MainLayout ── */}
           <Route element={<ProtectedRoute allowedRoles={["super_admin"]}><Outlet /></ProtectedRoute>}>
-            <Route path="/super-admin"       element={<SuperAdmin />} />
-            <Route path="/super-admin/grant" element={<AdminGrant />} />
+            <Route path="/super-admin"         element={<SuperAdmin />} />
+            <Route path="/super-admin/grant"   element={<AdminGrant />} />
+            <Route path="/command-center"      element={<CommandCenter />} />
           </Route>
 
           {/* ── 404 ── */}

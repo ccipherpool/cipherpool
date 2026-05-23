@@ -53,7 +53,26 @@
       "Bash(mkdir -p \"C:\\\\cipherpool\\\\src\\\\social\\\\components\")",
       "Bash(Get-Content \"C:\\\\cipherpool\\\\sql\\\\34_production_complete_sync.sql\")",
       "Bash(Measure-Object -Line)",
-      "Bash(Select-Object Lines)"
+      "Bash(Select-Object Lines)",
+      "Bash(Get-ChildItem -Path \"C:\\\\cipherpool\\\\src\" -Recurse -Filter \"*.jsx\")",
+      "Bash(Select-Object FullName)",
+      "Bash(Head -80)",
+      "Bash(Get-ChildItem -Path \"C:\\\\cipherpool\" -MaxDepth 2)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(Format-Table)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\cipherpool\\\\src\\\\components\" -Recurse | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\cipherpool\\\\src\\\\\", \"\"\\) } | Sort-Object)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\cipherpool\\\\sql\" | ForEach-Object { $_.Name } | Sort-Object)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\cipherpool\\\\src\\\\social\" -Recurse | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\cipherpool\\\\src\\\\social\\\\\", \"\"\\) })",
+      "PowerShell(npm list *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\cipherpool\\\\supabase\" -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\cipherpool\\\\supabase\\\\migrations\" | ForEach-Object { $_.Name } | Sort-Object)",
+      "PowerShell(npx supabase --version 2>$null; npx supabase status 2>$null)",
+      "PowerShell(npx supabase help db 2>&1 | Select-Object -First 40)",
+      "PowerShell(npx supabase db --help 2>&1 | Select-Object -First 30)",
+      "PowerShell(npx supabase db push --help 2>&1 | Select-Object -First 30)",
+      "Bash(psql *)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(psql *)"
     ]
   }
 }
