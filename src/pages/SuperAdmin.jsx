@@ -8,7 +8,7 @@ import {
   TrendingUp, Lock, FileText, Settings, RefreshCw,
   ShieldOff, Clock, Gamepad2, Ticket, Flag, Wifi, UserCircle2,
   ArrowUpRight, Activity, Calendar, ChevronDown, LogOut,
-  Zap, BarChart3, Globe, Megaphone, Lightbulb,
+  Zap, BarChart3, Globe, Megaphone, Lightbulb, Bell,
 } from "lucide-react";
 
 import DashboardTab    from "./superadmin/tabs/DashboardTab";
@@ -25,6 +25,7 @@ import AnnouncementsTab from "./superadmin/tabs/AnnouncementsTab";
 import AnalyticsTab     from "./superadmin/tabs/AnalyticsTab";
 import CommunityTab     from "./superadmin/tabs/CommunityTab";
 import CMSTab           from "./superadmin/tabs/CMSTab";
+import NotificationsTab from "./superadmin/tabs/NotificationsTab";
 
 import RoleModal          from "./superadmin/modals/RoleModal";
 import BanModal           from "./superadmin/modals/BanModal";
@@ -81,7 +82,8 @@ const NAV_GROUPS = [
       { id: "economy",       label: "Economy",        icon: TrendingUp, badgeKey: null },
       { id: "security",      label: "Security",       icon: Lock,       badgeKey: null },
       { id: "seasons",       label: "Seasons",        icon: Calendar,   badgeKey: null },
-      { id: "announcements", label: "Announcements",  icon: Megaphone,  badgeKey: null },
+      { id: "announcements",    label: "Announcements",  icon: Megaphone,  badgeKey: null },
+      { id: "notifications",    label: "Notifications",  icon: Bell,       badgeKey: null },
       { id: "logs",          label: "Audit Logs",     icon: FileText,   badgeKey: null },
       { id: "system",        label: "System",         icon: Settings,   badgeKey: null },
       { id: "cms",           label: "CMS",            icon: Globe,      badgeKey: null },
@@ -405,7 +407,7 @@ export default function SuperAdmin() {
 
   // ─── Render ────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.font }} className="cp-scroll-container">
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: T.bg, color: T.text, fontFamily: T.font }}>
       <style>{`
         .sa-nav-item { transition: background 0.18s, color 0.18s, border-color 0.18s; }
         .sa-nav-item:hover { background: rgba(255,255,255,0.04) !important; color: rgba(255,255,255,0.85) !important; }
@@ -717,6 +719,7 @@ export default function SuperAdmin() {
               {activeTab === "security"    && <SecurityTab     key="security" />}
               {activeTab === "seasons"       && <SeasonsTab       key="seasons" />}
               {activeTab === "announcements" && <AnnouncementsTab key="announcements" />}
+              {activeTab === "notifications" && <NotificationsTab key="notifications" />}
               {activeTab === "logs"          && <LogsTab         key="logs"        logs={logs} users={users} />}
               {activeTab === "system"      && <SystemTab       key="system"      maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode} registrationEnabled={registrationEnabled} setRegistrationEnabled={setRegistrationEnabled} tournamentsEnabled={tournamentsEnabled} setTournamentsEnabled={setTournamentsEnabled} updateSystemConfig={updateSystemConfig} />}
               {activeTab === "cms"         && <CMSTab          key="cms" />}

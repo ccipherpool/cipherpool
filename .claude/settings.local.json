@@ -85,7 +85,10 @@
       "Bash(grep -rn \"import.*App\\\\.css\" src/)",
       "Bash(grep -rn \"App\\\\.css\" src/)",
       "Bash(grep -rn \"'App\\\\.css'\" src/)",
-      "Bash(Select-String *)"
+      "Bash(Select-String *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\cipherpool\" -Force)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(grep -E \"\\\\.\\(js|jsx\\)$\")"
     ]
   }
 }

@@ -1,66 +1,56 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../../lib/supabase";
 
-/**
- * Central notification hook — reads from both `notifications` and `admin_messages`.
- * Provides unified list, unread count, mark-read functions, and real-time subscription.
- */
+const PAGE_SIZE = 30;
+
 export function useNotifications(userId) {
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [newNotif, setNewNotif]           = useState(null); // for toast
+  const [notifications, setNotifications]   = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [toastQueue, setToastQueue]         = useState([]);
+  const [preferences, setPreferences]       = useState(null);
+  const [unreadCount, setUnreadCount]       = useState(0);
   const channelRef = useRef(null);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  // ── Normalize a notifications row ───────────────────────────────
+  const normalize = (n) => ({
+    id:         n.id,
+    type:       n.type       || "system",
+    category:   n.category   || "system",
+    priority:   n.priority   || "normal",
+    title:      n.title,
+    content:    n.message,
+    icon:       n.icon       || null,
+    action_url: n.action_url || null,
+    image_url:  n.image_url  || null,
+    metadata:   n.metadata   || n.data || {},
+    read:       n.is_read    || n.read || false,
+    created_by: n.created_by || null,
+    created_at: n.created_at,
+    source:     "notifications",
+  });
 
+  // ── Fetch notifications + preferences ───────────────────────────
   const fetchAll = useCallback(async () => {
     if (!userId) { setLoading(false); return; }
+    setLoading(true);
     try {
-      // Fetch from notifications table
-      const { data: notifs } = await supabase
-        .from("notifications")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(50);
+      const [{ data: notifs }, { data: prefs }] = await Promise.all([
+        supabase
+          .from("notifications")
+          .select("*")
+          .eq("user_id", userId)
+          .or("expires_at.is.null,expires_at.gt." + new Date().toISOString())
+          .order("created_at", { ascending: false })
+          .limit(PAGE_SIZE * 2),
+        supabase
+          .from("notification_preferences")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle(),
+      ]);
 
-      // Fetch from admin_messages (personal + global)
-      const { data: adminMsgs } = await supabase
-        .from("admin_messages")
-        .select("*")
-        .or(`user_id.eq.${userId},is_global.eq.true`)
-        .order("created_at", { ascending: false })
-        .limit(30);
-
-      // Normalize + merge
-      const normalized = [
-        ...(notifs || []).map(n => ({
-          id:         n.id,
-          type:       n.type,
-          title:      n.title,
-          content:    n.message,
-          data:       n.data,
-          action_url: n.data?.action_url || null,
-          read:       n.is_read,
-          is_global:  false,
-          created_at: n.created_at,
-          source:     "notifications",
-        })),
-        ...(adminMsgs || []).map(m => ({
-          id:         m.id,
-          type:       m.type,
-          title:      m.title,
-          content:    m.content,
-          data:       null,
-          action_url: null,
-          read:       m.read,
-          is_global:  m.is_global,
-          created_at: m.created_at,
-          source:     "admin_messages",
-        })),
-      ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-      setNotifications(normalized);
+      setNotifications((notifs || []).map(normalize));
+      setPreferences(prefs || null);
     } catch (err) {
       if (import.meta.env.DEV) console.error("useNotifications fetch:", err);
     } finally {
@@ -68,91 +58,129 @@ export function useNotifications(userId) {
     }
   }, [userId]);
 
-  // Initial fetch + real-time subscription
+  // ── Fast unread count via RPC ───────────────────────────────────
+  const fetchUnreadCount = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const { data } = await supabase.rpc("get_unread_notification_count");
+      setUnreadCount(data ?? 0);
+    } catch {
+      // fallback: count from local state
+    }
+  }, [userId]);
+
+  // ── Realtime subscription ───────────────────────────────────────
   useEffect(() => {
     if (!userId) return;
     fetchAll();
+    fetchUnreadCount();
 
-    // Unsubscribe old channel
     if (channelRef.current) supabase.removeChannel(channelRef.current);
 
-    const ch = supabase.channel("notifs_" + userId)
-      .on("postgres_changes",
+    const ch = supabase
+      .channel(`notifs_v2_${userId}`)
+      .on(
+        "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
         (payload) => {
-          const n = {
-            id:         payload.new.id,
-            type:       payload.new.type,
-            title:      payload.new.title,
-            content:    payload.new.message,
-            data:       payload.new.data,
-            action_url: payload.new.data?.action_url || null,
-            read:       false,
-            is_global:  false,
-            created_at: payload.new.created_at,
-            source:     "notifications",
-          };
+          const n = normalize(payload.new);
           setNotifications(prev => [n, ...prev]);
-          setNewNotif(n); // trigger toast
+          setUnreadCount(c => c + 1);
+          setToastQueue(prev => {
+            const next = [...prev, n];
+            return next.slice(-3); // keep max 3 toasts
+          });
         }
       )
-      .on("postgres_changes",
-        { event: "INSERT", schema: "public", table: "admin_messages" },
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
         (payload) => {
-          const m = payload.new;
-          if (m.user_id !== userId && !m.is_global) return;
-          const n = {
-            id:         m.id,
-            type:       m.type,
-            title:      m.title,
-            content:    m.content,
-            data:       null,
-            action_url: null,
-            read:       false,
-            is_global:  m.is_global,
-            created_at: m.created_at,
-            source:     "admin_messages",
-          };
-          setNotifications(prev => [n, ...prev]);
-          setNewNotif(n);
+          const updated = normalize(payload.new);
+          setNotifications(prev =>
+            prev.map(n => n.id === updated.id ? updated : n)
+          );
+          // Recount unread
+          setNotifications(prev => {
+            const count = prev.map(n => n.id === updated.id ? updated : n).filter(n => !n.read).length;
+            setUnreadCount(count);
+            return prev.map(n => n.id === updated.id ? updated : n);
+          });
         }
       )
       .subscribe();
 
     channelRef.current = ch;
-    return () => supabase.removeChannel(ch);
-  }, [userId, fetchAll]);
+    return () => { supabase.removeChannel(ch); };
+  }, [userId, fetchAll, fetchUnreadCount]);
 
-  const markRead = useCallback(async (id, source) => {
-    if (source === "notifications") {
-      await supabase.from("notifications").update({ is_read: true }).eq("id", id);
-    } else {
-      await supabase.from("admin_messages").update({ read: true }).eq("id", id);
-    }
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  }, []);
-
-  const markAllRead = useCallback(async () => {
-    const unread = notifications.filter(n => !n.read);
-    const notifIds    = unread.filter(n => n.source === "notifications").map(n => n.id);
-    const adminMsgIds = unread.filter(n => n.source === "admin_messages").map(n => n.id);
-
-    if (notifIds.length)    await supabase.from("notifications").update({ is_read: true }).in("id", notifIds);
-    if (adminMsgIds.length) await supabase.from("admin_messages").update({ read: true }).in("id", adminMsgIds);
-
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  // Keep unreadCount in sync with local state
+  useEffect(() => {
+    setUnreadCount(notifications.filter(n => !n.read).length);
   }, [notifications]);
 
-  const clearNewNotif = useCallback(() => setNewNotif(null), []);
+  // ── dismissToast ────────────────────────────────────────────────
+  const dismissToast = useCallback((id) => {
+    setToastQueue(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // ── markRead ────────────────────────────────────────────────────
+  const markRead = useCallback(async (id) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    try {
+      await supabase.rpc("mark_notification_read", { p_notification_id: id });
+    } catch {
+      await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("id", id)
+        .eq("user_id", userId);
+    }
+  }, [userId]);
+
+  // ── markAllRead ─────────────────────────────────────────────────
+  const markAllRead = useCallback(async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+    try {
+      await supabase.rpc("mark_all_notifications_read");
+    } catch {
+      await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("user_id", userId)
+        .eq("is_read", false);
+    }
+  }, [userId]);
+
+  // ── updatePreferences ───────────────────────────────────────────
+  const updatePreferences = useCallback(async (prefs) => {
+    setPreferences(prev => ({ ...prev, ...prefs }));
+    try {
+      await supabase.rpc("upsert_notification_preferences", {
+        p_tournament: prefs.tournament_notifications ?? true,
+        p_social:     prefs.social_notifications ?? true,
+        p_admin:      prefs.admin_notifications ?? true,
+        p_marketing:  prefs.marketing_notifications ?? true,
+        p_system:     prefs.system_notifications ?? true,
+        p_sound:      prefs.sound_enabled ?? true,
+        p_email:      prefs.email_notifications ?? false,
+      });
+    } catch (err) {
+      if (import.meta.env.DEV) console.error("updatePreferences:", err);
+    }
+  }, []);
 
   return {
     notifications,
     unreadCount,
     loading,
-    newNotif,
-    clearNewNotif,
+    toastQueue,
+    dismissToast,
     markRead,
     markAllRead,
     refresh: fetchAll,
+    preferences,
+    updatePreferences,
   };
 }

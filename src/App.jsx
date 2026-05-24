@@ -82,6 +82,9 @@ const SuperAdmin    = lazy(() => import("./pages/SuperAdmin"));
 const AdminGrant    = lazy(() => import("./pages/AdminGrant"));
 const CommandCenter = lazy(() => import("./pages/CommandCenter"));
 
+// Notifications
+const Notifications = lazy(() => import("./pages/Notifications"));
+
 // Public
 const PublicTournament = lazy(() => import("./pages/PublicTournament"));
 
@@ -134,7 +137,8 @@ export default function App() {
             <Route path="/news"          element={<News />} />
             <Route path="/stats"         element={<PlayerStats />} />
             <Route path="/achievements"  element={<Achievements />} />
-            <Route path="/daily-rewards" element={<DailyRewards />} />
+            <Route path="/daily-rewards"  element={<DailyRewards />} />
+            <Route path="/notifications"  element={<Notifications />} />
 
             <Route path="/tournois"      element={<Navigate to="/tournaments" replace />} />
             <Route path="/boutique"      element={<Navigate to="/store" replace />} />
