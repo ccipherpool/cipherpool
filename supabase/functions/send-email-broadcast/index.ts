@@ -17,20 +17,18 @@ const SUPABASE_URL   = Deno.env.get("SUPABASE_URL")              ?? "";
 const SUPABASE_ANON  = Deno.env.get("SUPABASE_ANON_KEY")         ?? "";
 const SUPABASE_SVC   = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
-// Roles allowed to use this function (checked against profiles.role)
 const ALLOWED_ROLES  = ["super_admin", "founder", "admin"];
 
 const BATCH_SIZE    = 50;
 const RATE_DELAY_MS = 400;
 
-/* ── CORS — present on every single response ─────────────────────── */
+/* ── CORS ────────────────────────────────────────────────────────── */
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-/* ── Tiny response helper ────────────────────────────────────────── */
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -109,7 +107,7 @@ async function sendViaResend(
   to: string, subject: string, html: string
 ): Promise<{ ok: boolean; error?: string }> {
   if (!RESEND_API_KEY) {
-    return { ok: false, error: "RESEND_API_KEY secret is not configured in Edge Function secrets" };
+    return { ok: false, error: "RESEND_API_KEY secret is not configured" };
   }
   const res = await fetch("https://api.resend.com/emails", {
     method:  "POST",
@@ -126,27 +124,23 @@ const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 /* ── Main ─────────────────────────────────────────────────────────── */
 serve(async (req) => {
 
-  /* Preflight */
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS });
   }
 
-  /* ── 1. Read Authorization Bearer token ───────────────────────── */
+  /* ── 1. Bearer token ──────────────────────────────────────────── */
   const authHeader = req.headers.get("Authorization") ?? "";
   const token      = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
 
   if (!token) {
     return json({
-      error:                 "Missing Authorization Bearer token",
-      authenticated_user_id: null,
-      profile_email:         null,
-      profile_role:          null,
-      allowed:               false,
-      hint: "The frontend must call supabase.functions.invoke() with headers: { Authorization: 'Bearer ' + session.access_token }",
+      error: "Missing Authorization Bearer token",
+      hint:  "Pass headers: { Authorization: 'Bearer ' + session.access_token }",
+      allowed: false,
     }, 401);
   }
 
-  /* ── 2. Validate JWT — get the Supabase user ─────────────────── */
+  /* ── 2. Validate JWT ─────────────────────────────────────────── */
   const userClient = createClient(SUPABASE_URL, SUPABASE_ANON, {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth:   { autoRefreshToken: false, persistSession: false },
@@ -156,67 +150,77 @@ serve(async (req) => {
 
   if (authErr || !authData?.user) {
     return json({
-      error:                 "JWT validation failed — token may be expired",
-      detail:                authErr?.message ?? "getUser() returned no user",
-      authenticated_user_id: null,
-      profile_email:         null,
-      profile_role:          null,
-      allowed:               false,
-      hint: "Call supabase.auth.getSession() first to get a fresh access_token, then pass it in the Authorization header.",
+      error:   "JWT validation failed — token may be expired",
+      detail:  authErr?.message ?? "getUser() returned no user",
+      allowed: false,
     }, 401);
   }
 
-  const userId     = authData.user.id;
-  const userEmail  = authData.user.email ?? "";   // auth email — only for debug output
+  const userId    = authData.user.id;
+  const userEmail = authData.user.email ?? "";
 
-  /* ── 3. Fetch profile.role from CipherPool profiles table ─────── */
-  //  Uses service-role client so RLS never blocks the lookup.
+  /* ── 3. Fetch profile (service-role, bypasses RLS) ───────────── */
   const svc = createClient(SUPABASE_URL, SUPABASE_SVC, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { data: profile, error: profileErr } = await svc
+  // Primary lookup: by auth user UUID
+  let profile: { id: string; email: string | null; role: string; username?: string | null } | null = null;
+  let profileError: string | null = null;
+
+  const { data: byId, error: errById } = await svc
     .from("profiles")
-    .select("id, role, username, email")
+    .select("id, email, role, username")
     .eq("id", userId)
     .maybeSingle();
 
-  if (profileErr) {
-    return json({
-      error:                 "Database error while fetching profile",
-      detail:                profileErr.message,
-      authenticated_user_id: userId,
-      profile_email:         userEmail,
-      profile_role:          null,
-      allowed:               false,
-    }, 500);
+  if (errById) {
+    profileError = errById.message;
+  } else if (byId) {
+    profile = byId;
+  } else if (userEmail) {
+    // Fallback: look up by email in case the UUID doesn't match
+    const { data: byEmail, error: errByEmail } = await svc
+      .from("profiles")
+      .select("id, email, role, username")
+      .eq("email", userEmail)
+      .maybeSingle();
+
+    if (errByEmail) {
+      profileError = errByEmail.message;
+    } else {
+      profile = byEmail;
+    }
   }
+
+  // Always return full debug info so the caller can see exactly what happened
+  const debugBase = {
+    authenticated_user_id: userId,
+    user_email:            userEmail,
+    profile:               profile,
+    profile_error:         profileError,
+  };
 
   if (!profile) {
     return json({
-      error:                 "No profile found in profiles table for this user",
-      authenticated_user_id: userId,
-      profile_email:         userEmail,
-      profile_role:          null,
-      allowed:               false,
-      hint: `Ensure a row exists in public.profiles where id = '${userId}'`,
-    }, 403);
+      ...debugBase,
+      error:   profileError
+        ? `Database error while fetching profile: ${profileError}`
+        : `No profile found for user id=${userId} email=${userEmail}`,
+      allowed: false,
+    }, profileError ? 500 : 403);
   }
 
-  /* ── 4. Role check — profiles.role only, nothing else ────────── */
-  const profileRole  = profile.role as string;
-  const profileEmail = (profile.email ?? userEmail) as string;
-  const allowed      = ALLOWED_ROLES.includes(profileRole);
+  /* ── 4. Role check ───────────────────────────────────────────── */
+  const profileRole = (profile.role ?? "") as string;
+  const allowed     = ALLOWED_ROLES.includes(profileRole);
 
   if (!allowed) {
     return json({
-      error:                 `Role '${profileRole}' is not permitted to use this function`,
-      authenticated_user_id: userId,
-      profile_email:         profileEmail,
-      profile_role:          profileRole,
-      allowed:               false,
-      allowed_roles:         ALLOWED_ROLES,
-      hint: "Ask a super_admin to update your role in the profiles table.",
+      ...debugBase,
+      error:         `Role '${profileRole}' is not permitted. Allowed: ${ALLOWED_ROLES.join(", ")}`,
+      allowed:       false,
+      allowed_roles: ALLOWED_ROLES,
     }, 403);
   }
 
@@ -226,26 +230,19 @@ serve(async (req) => {
 
   const { broadcast_id, test_email } = body;
 
-  /* ── Debug context attached to every successful response ────── */
-  const dbg = {
-    authenticated_user_id: userId,
-    profile_email:         profileEmail,
-    profile_role:          profileRole,
-    allowed:               true,
-  };
+  const dbg = { ...debugBase, allowed: true, profile_role: profileRole };
 
-  /* ────────────────────────────────────────────────────────────────
-     TEST EMAIL MODE — sends to the caller's own email to verify Resend
-  ──────────────────────────────────────────────────────────────── */
+  /* ── TEST EMAIL MODE ─────────────────────────────────────────── */
   if (test_email) {
-    if (!userEmail) {
-      return json({ ...dbg, success: false, error: "Your Supabase account has no email address on record." }, 400);
+    const sendTo = userEmail || (profile.email ?? "");
+    if (!sendTo) {
+      return json({ ...dbg, success: false, error: "No email address available for test." }, 400);
     }
     if (!RESEND_API_KEY) {
       return json({
         ...dbg, success: false,
         error: "RESEND_API_KEY secret is not set",
-        hint:  "Go to Supabase Dashboard → Edge Functions → send-email-broadcast → Secrets → Add RESEND_API_KEY",
+        hint:  "Supabase Dashboard → Edge Functions → send-email-broadcast → Secrets",
       }, 500);
     }
 
@@ -255,27 +252,24 @@ serve(async (req) => {
       type:      "system",
       priority:  "normal",
       actionUrl: "https://cipherpool.gg",
-      username:  profile.username as string ?? undefined,
+      username:  profile.username ?? undefined,
     });
 
-    const result = await sendViaResend(userEmail, "✅ CipherPool — Email Delivery Test", html);
+    const result = await sendViaResend(sendTo, "✅ CipherPool — Email Delivery Test", html);
 
     return json({
       ...dbg,
       success: result.ok,
-      email:   userEmail,
+      email:   sendTo,
       error:   result.error ?? null,
     });
   }
 
-  /* ────────────────────────────────────────────────────────────────
-     BROADCAST MODE
-  ──────────────────────────────────────────────────────────────── */
+  /* ── BROADCAST MODE ──────────────────────────────────────────── */
   if (!broadcast_id) {
     return json({ ...dbg, error: "broadcast_id is required in request body" }, 400);
   }
 
-  /* Fetch broadcast record */
   const { data: broadcast, error: bcastErr } = await svc
     .from("notification_broadcasts")
     .select("*")
@@ -288,7 +282,6 @@ serve(async (req) => {
     return json({ ...dbg, error: "Broadcast has send_email = false — nothing to send." }, 400);
   }
 
-  /* Get email recipients via RPC (handles targeting + opt-out filtering) */
   const { data: recipients, error: recipErr } = await svc
     .rpc("get_broadcast_email_recipients", { p_broadcast_id: broadcast_id });
 
@@ -303,7 +296,6 @@ serve(async (req) => {
 
   const subject = (broadcast.email_subject || broadcast.title) as string;
 
-  /* Mark as sending */
   await svc.from("notification_broadcasts").update({ email_status: "sending" }).eq("id", broadcast_id);
 
   let sentCount = 0, failedCount = 0;
@@ -326,7 +318,6 @@ serve(async (req) => {
         });
         const result = await sendViaResend(r.email, subject, html);
 
-        // Log per-user result (fire-and-forget, don't await)
         svc.from("notification_email_logs").insert({
           broadcast_id,
           user_id:       r.user_id,
