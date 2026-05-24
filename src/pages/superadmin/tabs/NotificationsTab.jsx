@@ -592,20 +592,36 @@ export default function NotificationsTab() {
     } catch { setEstimatedCount(null); }
   };
 
+  // Extracts the actual JSON error message from a FunctionsHttpError
+  const extractFnError = async (error) => {
+    if (!error) return "Unknown error";
+    // FunctionsHttpError carries the raw Response as .context
+    if (error.context && typeof error.context.json === "function") {
+      try {
+        const body = await error.context.json();
+        return body.error || body.hint || body.message || error.message;
+      } catch {}
+    }
+    return error.message || String(error);
+  };
+
   const handleTestEmail = async () => {
     setTestingSend(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-email-broadcast", {
         body: { test_email: true },
       });
-      if (error) throw new Error(error.message);
+      if (error) {
+        const detail = await extractFnError(error);
+        throw new Error(detail);
+      }
       if (data?.success) {
         showMsg(true, `✓ Test email sent to ${data.email} — check your inbox.`);
       } else {
-        throw new Error(data?.error || "Test email failed");
+        throw new Error(data?.error || data?.hint || "Test email failed — check RESEND_API_KEY secret.");
       }
     } catch (err) {
-      showMsg(false, `Test email failed: ${err.message}`);
+      showMsg(false, `Test email: ${err.message}`);
     } finally {
       setTestingSend(false);
     }
@@ -656,13 +672,14 @@ export default function NotificationsTab() {
       // Trigger email Edge Function if enabled
       let emailQueued = null;
       if (form.sendEmail && broadcastId) {
-        try {
-          const { data: ef } = await supabase.functions.invoke("send-email-broadcast", {
-            body: { broadcast_id: broadcastId },
-          });
+        const { data: efData, error: efErr } = await supabase.functions.invoke("send-email-broadcast", {
+          body: { broadcast_id: broadcastId },
+        });
+        if (efErr) {
+          const detail = await extractFnError(efErr);
+          showMsg(false, `In-app sent OK, but email failed: ${detail}`);
+        } else {
           emailQueued = data?.target_count ?? estimatedCount ?? 0;
-        } catch (efErr) {
-          if (import.meta.env.DEV) console.warn("Edge Function error:", efErr);
         }
       }
 
