@@ -1,10 +1,8 @@
 // CipherPool — Edge Function: send-email-broadcast
 //
-// Required secrets (Supabase Dashboard → Edge Functions → Secrets):
-//   RESEND_API_KEY   — Resend API key (re_...)
-//   FROM_EMAIL       — sender address e.g. "CipherPool <noreply@cipherpool.gg>"
-//
-// Auto-injected by Supabase runtime (do NOT set manually):
+// Secrets needed (Dashboard → Edge Functions → Secrets):
+//   RESEND_API_KEY, FROM_EMAIL
+// Auto-injected by Supabase (do NOT set manually):
 //   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -18,9 +16,8 @@ const SUPABASE_ANON  = Deno.env.get("SUPABASE_ANON_KEY")         ?? "";
 const SUPABASE_SVC   = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 const ALLOWED_ROLES  = ["super_admin", "founder", "admin"];
-
-const BATCH_SIZE    = 50;
-const RATE_DELAY_MS = 400;
+const BATCH_SIZE     = 50;
+const RATE_DELAY_MS  = 400;
 
 /* ── CORS ────────────────────────────────────────────────────────── */
 const CORS = {
@@ -36,6 +33,101 @@ function json(body: Record<string, unknown>, status = 200) {
   });
 }
 
+/* ── Profile lookup via direct PostgREST fetch ───────────────────── */
+// Avoids supabase-js client initialization issues in Deno runtime.
+async function fetchProfile(
+  supabaseUrl: string,
+  svcKey: string,
+  userToken: string,
+  userId: string,
+  userEmail: string,
+): Promise<{
+  profile: { id: string; email: string | null; role: string; username: string | null } | null;
+  attempts: Record<string, string>;
+}> {
+  const attempts: Record<string, string> = {};
+
+  const pgHeaders = (key: string) => ({
+    "apikey":          key,
+    "Authorization":   `Bearer ${key}`,
+    "Accept":          "application/json",
+    "Content-Type":    "application/json",
+  });
+
+  const userHeaders = {
+    "apikey":          SUPABASE_ANON,
+    "Authorization":   `Bearer ${userToken}`,
+    "Accept":          "application/json",
+    "Content-Type":    "application/json",
+  };
+
+  // A — user JWT, by UUID
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/profiles?id=eq.${userId}&select=id,email,role,username&limit=1`,
+      { headers: userHeaders },
+    );
+    const body = await res.json();
+    if (!res.ok) {
+      attempts["A_user_by_id"] = `HTTP ${res.status}: ${JSON.stringify(body)}`;
+    } else if (Array.isArray(body) && body.length > 0) {
+      attempts["A_user_by_id"] = "ok";
+      return { profile: body[0], attempts };
+    } else {
+      attempts["A_user_by_id"] = "empty";
+    }
+  } catch (e) {
+    attempts["A_user_by_id"] = `exception: ${e}`;
+  }
+
+  // B — service-role, by UUID
+  if (svcKey) {
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/profiles?id=eq.${userId}&select=id,email,role,username&limit=1`,
+        { headers: pgHeaders(svcKey) },
+      );
+      const body = await res.json();
+      if (!res.ok) {
+        attempts["B_svc_by_id"] = `HTTP ${res.status}: ${JSON.stringify(body)}`;
+      } else if (Array.isArray(body) && body.length > 0) {
+        attempts["B_svc_by_id"] = "ok";
+        return { profile: body[0], attempts };
+      } else {
+        attempts["B_svc_by_id"] = "empty";
+      }
+    } catch (e) {
+      attempts["B_svc_by_id"] = `exception: ${e}`;
+    }
+  } else {
+    attempts["B_svc_by_id"] = "skipped: SUPABASE_SERVICE_ROLE_KEY not set";
+  }
+
+  // C — service-role, by email
+  if (svcKey && userEmail) {
+    try {
+      const encodedEmail = encodeURIComponent(userEmail);
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/profiles?email=eq.${encodedEmail}&select=id,email,role,username&limit=1`,
+        { headers: pgHeaders(svcKey) },
+      );
+      const body = await res.json();
+      if (!res.ok) {
+        attempts["C_svc_by_email"] = `HTTP ${res.status}: ${JSON.stringify(body)}`;
+      } else if (Array.isArray(body) && body.length > 0) {
+        attempts["C_svc_by_email"] = "ok";
+        return { profile: body[0], attempts };
+      } else {
+        attempts["C_svc_by_email"] = "empty";
+      }
+    } catch (e) {
+      attempts["C_svc_by_email"] = `exception: ${e}`;
+    }
+  }
+
+  return { profile: null, attempts };
+}
+
 /* ── Email HTML template ─────────────────────────────────────────── */
 function buildHtml(p: {
   title: string; message: string; type: string; priority: string;
@@ -48,18 +140,12 @@ function buildHtml(p: {
     season: "#f59e0b", broadcast: "#06b6d4",
   };
   const accent = colors[p.type] ?? "#8b5cf6";
-  const greeting = p.username
-    ? `Hey <strong style="color:#f4f4f5;">${p.username}</strong>,`
-    : "Hey there,";
+  const greeting = p.username ? `Hey <strong style="color:#f4f4f5;">${p.username}</strong>,` : "Hey there,";
   const imgBlock = p.imageUrl
     ? `<img src="${p.imageUrl}" alt="" style="width:100%;border-radius:10px;margin-bottom:20px;display:block;"/>`
     : "";
   const ctaBlock = p.actionUrl
-    ? `<div style="text-align:center;margin-top:28px;">
-         <a href="${p.actionUrl}" style="display:inline-block;padding:13px 32px;background:linear-gradient(135deg,${accent},#6366f1);color:#fff;text-decoration:none;border-radius:10px;font-weight:800;font-size:14px;">
-           Open in CipherPool →
-         </a>
-       </div>`
+    ? `<div style="text-align:center;margin-top:28px;"><a href="${p.actionUrl}" style="display:inline-block;padding:13px 32px;background:linear-gradient(135deg,${accent},#6366f1);color:#fff;text-decoration:none;border-radius:10px;font-weight:800;font-size:14px;">Open in CipherPool →</a></div>`
     : "";
   const badge = p.priority === "urgent"
     ? `<span style="background:#ef444420;color:#ef4444;font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px;letter-spacing:1px;text-transform:uppercase;margin-left:8px;">URGENT</span>`
@@ -102,274 +188,138 @@ function buildHtml(p: {
 </body></html>`;
 }
 
-/* ── Resend sender ────────────────────────────────────────────────── */
-async function sendViaResend(
-  to: string, subject: string, html: string
-): Promise<{ ok: boolean; error?: string }> {
-  if (!RESEND_API_KEY) {
-    return { ok: false, error: "RESEND_API_KEY secret is not configured" };
-  }
+/* ── Resend ───────────────────────────────────────────────────────── */
+async function sendViaResend(to: string, subject: string, html: string): Promise<{ ok: boolean; error?: string }> {
+  if (!RESEND_API_KEY) return { ok: false, error: "RESEND_API_KEY not set" };
   const res = await fetch("https://api.resend.com/emails", {
-    method:  "POST",
+    method: "POST",
     headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body:    JSON.stringify({ from: FROM_EMAIL, to: [to], subject, html }),
+    body: JSON.stringify({ from: FROM_EMAIL, to: [to], subject, html }),
   });
   if (res.ok) return { ok: true };
-  const body = await res.text();
-  return { ok: false, error: `Resend HTTP ${res.status}: ${body}` };
+  return { ok: false, error: `Resend ${res.status}: ${await res.text()}` };
 }
 
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 /* ── Main ─────────────────────────────────────────────────────────── */
 serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: CORS });
-  }
-
-  /* ── 1. Bearer token ──────────────────────────────────────────── */
+  /* 1. Bearer token */
   const authHeader = req.headers.get("Authorization") ?? "";
-  const token      = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  if (!token) return json({ error: "Missing Authorization Bearer token", allowed: false }, 401);
 
-  if (!token) {
-    return json({
-      error: "Missing Authorization Bearer token",
-      hint:  "Pass headers: { Authorization: 'Bearer ' + session.access_token }",
-      allowed: false,
-    }, 401);
-  }
-
-  /* ── 2. Validate JWT ─────────────────────────────────────────── */
+  /* 2. Validate JWT */
   const userClient = createClient(SUPABASE_URL, SUPABASE_ANON, {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth:   { autoRefreshToken: false, persistSession: false },
   });
-
   const { data: authData, error: authErr } = await userClient.auth.getUser();
-
   if (authErr || !authData?.user) {
-    return json({
-      error:   "JWT validation failed — token may be expired",
-      detail:  authErr?.message ?? "getUser() returned no user",
-      allowed: false,
-    }, 401);
+    return json({ error: "JWT validation failed", detail: authErr?.message, allowed: false }, 401);
   }
 
   const userId    = authData.user.id;
   const userEmail = authData.user.email ?? "";
 
-  /* ── 3. Service-role client (for broadcasts, recipients, logs) ── */
-  const svc = createClient(SUPABASE_URL, SUPABASE_SVC, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
-  /* ── 4. Fetch profile — try 3 strategies in order ────────────── */
-  //
-  // Strategy A: user's own JWT client — RLS allows self-read, no svc key needed
-  // Strategy B: service-role client by UUID
-  // Strategy C: service-role client by email (fallback if UUID mismatch)
-
-  type Profile = { id: string; role: string; username: string | null };
-  let profile: Profile | null = null;
-  const lookupAttempts: Record<string, string> = {};
-
-  // A — user client, by id
-  {
-    const { data, error } = await userClient
-      .from("profiles")
-      .select("id, role, username")
-      .eq("id", userId)
-      .maybeSingle();
-    if (error) lookupAttempts["A_by_id"] = error.message;
-    else if (data) { profile = data; lookupAttempts["A_by_id"] = "ok"; }
-    else lookupAttempts["A_by_id"] = "null";
-  }
-
-  // B — service-role client, by id
-  if (!profile) {
-    const { data, error } = await svc
-      .from("profiles")
-      .select("id, role, username")
-      .eq("id", userId)
-      .maybeSingle();
-    if (error) lookupAttempts["B_svc_by_id"] = error.message;
-    else if (data) { profile = data; lookupAttempts["B_svc_by_id"] = "ok"; }
-    else lookupAttempts["B_svc_by_id"] = "null";
-  }
-
-  // C — service-role client, by email
-  if (!profile && userEmail) {
-    const { data, error } = await svc
-      .from("profiles")
-      .select("id, role, username")
-      .eq("email", userEmail)
-      .maybeSingle();
-    if (error) lookupAttempts["C_svc_by_email"] = error.message;
-    else if (data) { profile = data; lookupAttempts["C_svc_by_email"] = "ok"; }
-    else lookupAttempts["C_svc_by_email"] = "null";
-  }
+  /* 3. Fetch profile — 3-strategy direct REST fetch */
+  const { profile, attempts } = await fetchProfile(SUPABASE_URL, SUPABASE_SVC, token, userId, userEmail);
 
   const debugBase = {
     authenticated_user_id: userId,
     user_email:            userEmail,
     profile_found:         profile !== null,
     profile_role:          profile?.role ?? null,
-    lookup_attempts:       lookupAttempts,
-    supabase_url_set:      SUPABASE_URL !== "",
-    svc_key_set:           SUPABASE_SVC !== "",
+    lookup_attempts:       attempts,
+    env: {
+      supabase_url:  SUPABASE_URL !== "" ? "set" : "MISSING",
+      anon_key:      SUPABASE_ANON !== "" ? "set" : "MISSING",
+      svc_key:       SUPABASE_SVC !== "" ? "set" : "MISSING",
+      resend_key:    RESEND_API_KEY !== "" ? "set" : "MISSING",
+    },
   };
 
   if (!profile) {
-    return json({
-      ...debugBase,
-      error:   "Profile not found after 3 lookup strategies — see lookup_attempts for details",
-      allowed: false,
-    }, 403);
+    return json({ ...debugBase, error: "Profile not found — check lookup_attempts", allowed: false }, 403);
   }
 
-  /* ── 5. Role check ───────────────────────────────────────────── */
-  const profileRole = (profile.role ?? "") as string;
-  const allowed     = ALLOWED_ROLES.includes(profileRole);
-
-  if (!allowed) {
-    return json({
-      ...debugBase,
-      error:         `Role '${profileRole}' is not permitted. Allowed: ${ALLOWED_ROLES.join(", ")}`,
-      allowed:       false,
-      allowed_roles: ALLOWED_ROLES,
-    }, 403);
+  /* 4. Role check */
+  const profileRole = profile.role ?? "";
+  if (!ALLOWED_ROLES.includes(profileRole)) {
+    return json({ ...debugBase, error: `Role '${profileRole}' not allowed`, allowed_roles: ALLOWED_ROLES, allowed: false }, 403);
   }
 
-  /* ── 6. Parse request body ───────────────────────────────────── */
+  /* 5. Parse body */
   let body: { broadcast_id?: string; test_email?: boolean } = {};
-  try { body = await req.json(); } catch { /* empty body is fine */ }
-
+  try { body = await req.json(); } catch { /* ok */ }
   const { broadcast_id, test_email } = body;
 
   const dbg = { ...debugBase, allowed: true };
 
-  /* ── TEST EMAIL MODE ─────────────────────────────────────────── */
+  /* 6. Service-role client (broadcasts / recipients / logs) */
+  const svc = createClient(SUPABASE_URL, SUPABASE_SVC, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  /* TEST EMAIL */
   if (test_email) {
-    const sendTo = userEmail || (profile.email ?? "");
-    if (!sendTo) {
-      return json({ ...dbg, success: false, error: "No email address available for test." }, 400);
-    }
-    if (!RESEND_API_KEY) {
-      return json({
-        ...dbg, success: false,
-        error: "RESEND_API_KEY secret is not set",
-        hint:  "Supabase Dashboard → Edge Functions → send-email-broadcast → Secrets",
-      }, 500);
-    }
-
-    const html   = buildHtml({
-      title:     "Test Notification — CipherPool",
-      message:   "This is a test email from your CipherPool admin panel.\n\nIf you received this, Resend is connected and email delivery is working! 🎉",
-      type:      "system",
-      priority:  "normal",
-      actionUrl: "https://cipherpool.gg",
-      username:  profile.username ?? undefined,
-    });
-
-    const result = await sendViaResend(sendTo, "✅ CipherPool — Email Delivery Test", html);
-
-    return json({
-      ...dbg,
-      success: result.ok,
-      email:   sendTo,
-      error:   result.error ?? null,
-    });
+    const sendTo = userEmail;
+    if (!sendTo) return json({ ...dbg, success: false, error: "No email on JWT" }, 400);
+    if (!RESEND_API_KEY) return json({ ...dbg, success: false, error: "RESEND_API_KEY not set" }, 500);
+    const html   = buildHtml({ title: "Test — CipherPool", message: "Email delivery is working! 🎉", type: "system", priority: "normal", actionUrl: "https://cipherpool.gg", username: profile.username ?? undefined });
+    const result = await sendViaResend(sendTo, "✅ CipherPool — Email Test", html);
+    return json({ ...dbg, success: result.ok, email: sendTo, error: result.error ?? null });
   }
 
-  /* ── BROADCAST MODE ──────────────────────────────────────────── */
-  if (!broadcast_id) {
-    return json({ ...dbg, error: "broadcast_id is required in request body" }, 400);
-  }
+  /* BROADCAST */
+  if (!broadcast_id) return json({ ...dbg, error: "broadcast_id required" }, 400);
 
-  const { data: broadcast, error: bcastErr } = await svc
-    .from("notification_broadcasts")
-    .select("*")
-    .eq("id", broadcast_id)
-    .maybeSingle();
-
+  const { data: broadcast, error: bcastErr } = await svc.from("notification_broadcasts").select("*").eq("id", broadcast_id).maybeSingle();
   if (bcastErr) return json({ ...dbg, error: "DB error fetching broadcast", detail: bcastErr.message }, 500);
   if (!broadcast) return json({ ...dbg, error: `Broadcast not found: ${broadcast_id}` }, 404);
-  if (!broadcast.send_email) {
-    return json({ ...dbg, error: "Broadcast has send_email = false — nothing to send." }, 400);
-  }
+  if (!broadcast.send_email) return json({ ...dbg, error: "Broadcast has send_email = false" }, 400);
 
-  const { data: recipients, error: recipErr } = await svc
-    .rpc("get_broadcast_email_recipients", { p_broadcast_id: broadcast_id });
-
+  const { data: recipients, error: recipErr } = await svc.rpc("get_broadcast_email_recipients", { p_broadcast_id: broadcast_id });
   if (recipErr) return json({ ...dbg, error: "Failed to get recipients", detail: recipErr.message }, 500);
 
   if (!recipients || (recipients as unknown[]).length === 0) {
-    await svc.from("notification_broadcasts")
-      .update({ email_status: "sent", email_sent_count: 0 })
-      .eq("id", broadcast_id);
+    await svc.from("notification_broadcasts").update({ email_status: "sent", email_sent_count: 0 }).eq("id", broadcast_id);
     return json({ ...dbg, success: true, sent: 0, failed: 0, total: 0, note: "No eligible recipients." });
   }
 
   const subject = (broadcast.email_subject || broadcast.title) as string;
-
   await svc.from("notification_broadcasts").update({ email_status: "sending" }).eq("id", broadcast_id);
 
   let sentCount = 0, failedCount = 0;
-
   for (let i = 0; i < (recipients as unknown[]).length; i += BATCH_SIZE) {
-    const batch = (recipients as Array<{ user_id: string; email: string; username: string }>)
-      .slice(i, i + BATCH_SIZE);
-
-    const results = await Promise.allSettled(
-      batch.map(async (r) => {
-        const html   = buildHtml({
-          title:     broadcast.title as string,
-          message:   broadcast.message as string,
-          type:      broadcast.type as string,
-          priority:  broadcast.priority as string,
-          actionUrl: broadcast.action_url as string ?? null,
-          imageUrl:  broadcast.image_url  as string ?? null,
-          icon:      broadcast.icon       as string ?? null,
-          username:  r.username,
-        });
-        const result = await sendViaResend(r.email, subject, html);
-
-        svc.from("notification_email_logs").insert({
-          broadcast_id,
-          user_id:       r.user_id,
-          email:         r.email,
-          status:        result.ok ? "sent" : "failed",
-          error_message: result.ok ? null : result.error,
-          sent_at:       result.ok ? new Date().toISOString() : null,
-        }).then(() => {}).catch(() => {});
-
-        return result;
-      })
-    );
-
+    const batch = (recipients as Array<{ user_id: string; email: string; username: string }>).slice(i, i + BATCH_SIZE);
+    const results = await Promise.allSettled(batch.map(async (r) => {
+      const html   = buildHtml({
+        title: broadcast.title as string, message: broadcast.message as string,
+        type: broadcast.type as string, priority: broadcast.priority as string,
+        actionUrl: broadcast.action_url as string ?? null,
+        imageUrl: broadcast.image_url as string ?? null,
+        icon: broadcast.icon as string ?? null,
+        username: r.username,
+      });
+      const result = await sendViaResend(r.email, subject, html);
+      svc.from("notification_email_logs").insert({
+        broadcast_id, user_id: r.user_id, email: r.email,
+        status: result.ok ? "sent" : "failed",
+        error_message: result.ok ? null : result.error,
+        sent_at: result.ok ? new Date().toISOString() : null,
+      }).then(() => {}).catch(() => {});
+      return result;
+    }));
     for (const r of results) {
-      if (r.status === "fulfilled" && r.value.ok) sentCount++;
-      else failedCount++;
+      if (r.status === "fulfilled" && r.value.ok) sentCount++; else failedCount++;
     }
-
     if (i + BATCH_SIZE < (recipients as unknown[]).length) await delay(RATE_DELAY_MS);
   }
 
   const finalStatus = failedCount === 0 ? "sent" : sentCount === 0 ? "failed" : "partial";
-
-  await svc.from("notification_broadcasts").update({
-    email_status:       finalStatus,
-    email_sent_count:   sentCount,
-    email_failed_count: failedCount,
-  }).eq("id", broadcast_id);
-
-  return json({
-    ...dbg,
-    success: sentCount > 0,
-    sent:    sentCount,
-    failed:  failedCount,
-    total:   (recipients as unknown[]).length,
-    status:  finalStatus,
-  });
+  await svc.from("notification_broadcasts").update({ email_status: finalStatus, email_sent_count: sentCount, email_failed_count: failedCount }).eq("id", broadcast_id);
+  return json({ ...dbg, success: sentCount > 0, sent: sentCount, failed: failedCount, total: (recipients as unknown[]).length, status: finalStatus });
 });
