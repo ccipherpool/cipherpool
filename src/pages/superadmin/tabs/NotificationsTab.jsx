@@ -605,20 +605,31 @@ export default function NotificationsTab() {
     return error.message || String(error);
   };
 
+  const getToken = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token ?? null;
+  };
+
   const handleTestEmail = async () => {
     setTestingSend(true);
     try {
+      const token = await getToken();
+      if (!token) throw new Error("Not signed in — please refresh the page and try again.");
+
       const { data, error } = await supabase.functions.invoke("send-email-broadcast", {
-        body: { test_email: true },
+        body:    { test_email: true },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (error) {
         const detail = await extractFnError(error);
         throw new Error(detail);
       }
       if (data?.success) {
-        showMsg(true, `✓ Test email sent to ${data.email} — check your inbox.`);
+        showMsg(true, `✓ Test email sent to ${data.profile_email ?? data.email} — check your inbox.`);
       } else {
-        throw new Error(data?.error || data?.hint || "Test email failed — check RESEND_API_KEY secret.");
+        const errMsg = data?.error || data?.hint || "Test email failed — check RESEND_API_KEY secret.";
+        const roleInfo = data?.profile_role ? ` (your role: ${data.profile_role})` : "";
+        throw new Error(errMsg + roleInfo);
       }
     } catch (err) {
       showMsg(false, `Test email: ${err.message}`);
@@ -672,8 +683,10 @@ export default function NotificationsTab() {
       // Trigger email Edge Function if enabled
       let emailQueued = null;
       if (form.sendEmail && broadcastId) {
+        const token = await getToken();
         const { data: efData, error: efErr } = await supabase.functions.invoke("send-email-broadcast", {
-          body: { broadcast_id: broadcastId },
+          body:    { broadcast_id: broadcastId },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (efErr) {
           const detail = await extractFnError(efErr);

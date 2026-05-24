@@ -253,7 +253,7 @@ export default function SuperAdmin() {
         const { error: directErr } = await supabase.from("profiles").update({ role }).eq("id", userId);
         if (directErr) throw directErr;
       } else if (rpcData && !rpcData.success) throw new Error(rpcData.error || "Role change error");
-      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "change_role", details: { target_user: userId, new_role: role } }]);
+      await supabase.from("admin_logs").insert([{ admin_id: profile.id, action: "change_role", details: { target_user: userId, new_role: role } }]);
       showMsg("success", "Role updated successfully");
       if (userId === profile?.id) await refreshCurrentUser?.(userId);
       await fetchUsers(); await fetchAdmins();
@@ -270,7 +270,7 @@ export default function SuperAdmin() {
     try {
       const { error } = await supabase.rpc("ban_user", { target_user: userId, banned_until: banUntil.toISOString(), banned_by: profile.id });
       if (error) throw error;
-      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "ban_user", details: { target_user: userId, duration } }]);
+      await supabase.from("admin_logs").insert([{ admin_id: profile.id, action: "ban_user", details: { target_user: userId, duration } }]);
       showMsg("success", "User banned successfully");
       await fetchUsers(); setShowBanModal(false);
     } catch (err) { showMsg("error", err.message || "Ban failed"); }
@@ -280,7 +280,7 @@ export default function SuperAdmin() {
     try {
       const { error } = await supabase.rpc("unban_user", { target_user: userId });
       if (error) throw error;
-      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "unban_user", details: { target_user: userId } }]);
+      await supabase.from("admin_logs").insert([{ admin_id: profile.id, action: "unban_user", details: { target_user: userId } }]);
       showMsg("success", "User unbanned");
       await fetchUsers();
     } catch (err) { showMsg("error", err.message || "Unban failed"); }
@@ -291,7 +291,7 @@ export default function SuperAdmin() {
     try {
       const { error } = await supabase.rpc("delete_user_complete", { target_user: userId });
       if (error) throw error;
-      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "delete_user", details: { target_user: userId } }]);
+      await supabase.from("admin_logs").insert([{ admin_id: profile.id, action: "delete_user", details: { target_user: userId } }]);
       showMsg("success", "User permanently deleted");
       await fetchUsers();
     } catch (err) { showMsg("error", err.message || "Delete failed"); }
@@ -317,7 +317,7 @@ export default function SuperAdmin() {
     try {
       const { error } = await supabase.rpc("delete_tournament_complete", { tournament_id: tournamentId });
       if (error) throw error;
-      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "delete_tournament", details: { tournament_id: tournamentId } }]);
+      await supabase.from("admin_logs").insert([{ admin_id: profile.id, action: "delete_tournament", details: { tournament_id: tournamentId } }]);
       showMsg("success", "Tournament deleted");
       await fetchTournaments();
     } catch (err) { showMsg("error", err.message || "Delete failed"); }
@@ -327,7 +327,7 @@ export default function SuperAdmin() {
     try {
       const { error } = await supabase.from("tournaments").update({ status }).eq("id", tournamentId);
       if (error) throw error;
-      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "update_tournament_status", details: { tournament_id: tournamentId, status } }]);
+      await supabase.from("admin_logs").insert([{ admin_id: profile.id, action: "update_tournament_status", details: { tournament_id: tournamentId, status } }]);
       showMsg("success", "Tournament status updated");
       setShowTournamentModal(false); await fetchTournaments();
     } catch (err) { showMsg("error", err.message || "Update failed"); }
@@ -337,7 +337,7 @@ export default function SuperAdmin() {
     try {
       const { error } = await supabase.from("reports").update({ status: "resolved", resolved_by: profile.id, resolved_action: action, resolved_at: new Date().toISOString() }).eq("id", reportId);
       if (error) throw error;
-      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "resolve_report", details: { report_id: reportId, action } }]);
+      await supabase.from("admin_logs").insert([{ admin_id: profile.id, action: "resolve_report", details: { report_id: reportId, action } }]);
       showMsg("success", "Report resolved");
       await fetchReports();
     } catch (err) { showMsg("error", err.message || "Failed to resolve"); }
@@ -347,7 +347,7 @@ export default function SuperAdmin() {
     try {
       const { error } = await supabase.from("system_config").upsert({ maintenance_mode: maintenanceMode, registration_enabled: registrationEnabled, tournaments_enabled: tournamentsEnabled, updated_by: profile.id, updated_at: new Date().toISOString() });
       if (error) throw error;
-      await supabase.from("admin_logs").insert([{ user_id: profile.id, action: "update_system_config", details: { maintenanceMode, registrationEnabled, tournamentsEnabled } }]);
+      await supabase.from("admin_logs").insert([{ admin_id: profile.id, action: "update_system_config", details: { maintenanceMode, registrationEnabled, tournamentsEnabled } }]);
       showMsg("success", "System config updated");
     } catch (err) { showMsg("error", err.message || "Error"); }
   };
@@ -576,7 +576,7 @@ export default function SuperAdmin() {
                     </button>
                   ))}
                   <div style={{ height: 1, background: T.border, margin: "4px 0" }} />
-                  <button onClick={() => { supabase.auth.signOut(); navigate("/login"); }} style={{
+                  <button onClick={async () => { try { await supabase.auth.signOut({ scope: "local" }); } catch (_) {} window.location.replace("/login"); }} style={{
                     width: "100%", padding: "8px 10px", borderRadius: 7, border: "none",
                     background: "transparent", color: T.red, fontSize: 12, cursor: "pointer",
                     display: "flex", alignItems: "center", gap: 9, textAlign: "left", outline: "none",

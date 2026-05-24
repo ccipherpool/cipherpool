@@ -62,8 +62,8 @@ export default function Sidebar({ profile }) {
   const p = location.pathname;
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
+    try { await supabase.auth.signOut({ scope: "local" }); } catch (_) {}
+    window.location.replace("/login");
   };
 
   const isFounder    = ["founder", "super_admin"].includes(profile?.role);

@@ -129,7 +129,8 @@ function MobileDrawer({ open, onClose, profile }) {
 
   const handleLogout = async () => {
     onClose();
-    await supabase.auth.signOut();
+    try { await supabase.auth.signOut({ scope: "local" }); } catch (_) {}
+    window.location.replace("/login");
   };
 
   return (

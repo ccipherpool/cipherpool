@@ -24,8 +24,8 @@ export default function Navbar({ profile, onMenuOpen }) {
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
+    try { await supabase.auth.signOut({ scope: "local" }); } catch (_) {}
+    window.location.replace("/login");
   };
 
   return (

@@ -32,8 +32,8 @@ export default function TopNav({ profile }) {
   const p = location.pathname;
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
+    try { await supabase.auth.signOut({ scope: "local" }); } catch (_) {}
+    window.location.replace("/login");
   };
 
   const isAdmin      = ["admin", "super_admin", "founder"].includes(profile?.role);
