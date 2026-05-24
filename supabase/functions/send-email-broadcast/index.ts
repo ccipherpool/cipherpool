@@ -159,59 +159,76 @@ serve(async (req) => {
   const userId    = authData.user.id;
   const userEmail = authData.user.email ?? "";
 
-  /* ── 3. Fetch profile (service-role, bypasses RLS) ───────────── */
+  /* ── 3. Service-role client (for broadcasts, recipients, logs) ── */
   const svc = createClient(SUPABASE_URL, SUPABASE_SVC, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // Primary lookup: by auth user UUID
-  let profile: { id: string; email: string | null; role: string; username?: string | null } | null = null;
-  let profileError: string | null = null;
+  /* ── 4. Fetch profile — try 3 strategies in order ────────────── */
+  //
+  // Strategy A: user's own JWT client — RLS allows self-read, no svc key needed
+  // Strategy B: service-role client by UUID
+  // Strategy C: service-role client by email (fallback if UUID mismatch)
 
-  const { data: byId, error: errById } = await svc
-    .from("profiles")
-    .select("id, email, role, username")
-    .eq("id", userId)
-    .maybeSingle();
+  type Profile = { id: string; role: string; username: string | null };
+  let profile: Profile | null = null;
+  const lookupAttempts: Record<string, string> = {};
 
-  if (errById) {
-    profileError = errById.message;
-  } else if (byId) {
-    profile = byId;
-  } else if (userEmail) {
-    // Fallback: look up by email in case the UUID doesn't match
-    const { data: byEmail, error: errByEmail } = await svc
+  // A — user client, by id
+  {
+    const { data, error } = await userClient
       .from("profiles")
-      .select("id, email, role, username")
-      .eq("email", userEmail)
+      .select("id, role, username")
+      .eq("id", userId)
       .maybeSingle();
-
-    if (errByEmail) {
-      profileError = errByEmail.message;
-    } else {
-      profile = byEmail;
-    }
+    if (error) lookupAttempts["A_by_id"] = error.message;
+    else if (data) { profile = data; lookupAttempts["A_by_id"] = "ok"; }
+    else lookupAttempts["A_by_id"] = "null";
   }
 
-  // Always return full debug info so the caller can see exactly what happened
+  // B — service-role client, by id
+  if (!profile) {
+    const { data, error } = await svc
+      .from("profiles")
+      .select("id, role, username")
+      .eq("id", userId)
+      .maybeSingle();
+    if (error) lookupAttempts["B_svc_by_id"] = error.message;
+    else if (data) { profile = data; lookupAttempts["B_svc_by_id"] = "ok"; }
+    else lookupAttempts["B_svc_by_id"] = "null";
+  }
+
+  // C — service-role client, by email
+  if (!profile && userEmail) {
+    const { data, error } = await svc
+      .from("profiles")
+      .select("id, role, username")
+      .eq("email", userEmail)
+      .maybeSingle();
+    if (error) lookupAttempts["C_svc_by_email"] = error.message;
+    else if (data) { profile = data; lookupAttempts["C_svc_by_email"] = "ok"; }
+    else lookupAttempts["C_svc_by_email"] = "null";
+  }
+
   const debugBase = {
     authenticated_user_id: userId,
     user_email:            userEmail,
-    profile:               profile,
-    profile_error:         profileError,
+    profile_found:         profile !== null,
+    profile_role:          profile?.role ?? null,
+    lookup_attempts:       lookupAttempts,
+    supabase_url_set:      SUPABASE_URL !== "",
+    svc_key_set:           SUPABASE_SVC !== "",
   };
 
   if (!profile) {
     return json({
       ...debugBase,
-      error:   profileError
-        ? `Database error while fetching profile: ${profileError}`
-        : `No profile found for user id=${userId} email=${userEmail}`,
+      error:   "Profile not found after 3 lookup strategies — see lookup_attempts for details",
       allowed: false,
-    }, profileError ? 500 : 403);
+    }, 403);
   }
 
-  /* ── 4. Role check ───────────────────────────────────────────── */
+  /* ── 5. Role check ───────────────────────────────────────────── */
   const profileRole = (profile.role ?? "") as string;
   const allowed     = ALLOWED_ROLES.includes(profileRole);
 
@@ -224,13 +241,13 @@ serve(async (req) => {
     }, 403);
   }
 
-  /* ── 5. Parse request body ───────────────────────────────────── */
+  /* ── 6. Parse request body ───────────────────────────────────── */
   let body: { broadcast_id?: string; test_email?: boolean } = {};
   try { body = await req.json(); } catch { /* empty body is fine */ }
 
   const { broadcast_id, test_email } = body;
 
-  const dbg = { ...debugBase, allowed: true, profile_role: profileRole };
+  const dbg = { ...debugBase, allowed: true };
 
   /* ── TEST EMAIL MODE ─────────────────────────────────────────── */
   if (test_email) {
