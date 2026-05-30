@@ -253,33 +253,36 @@ export default function Leaderboard() {
       setError(null);
       try {
         // Step 1: Load profiles — always available source of truth
+        // Note: coins live in wallets table, not profiles
         const { data: profiles, error: profErr } = await supabase
           .from("profiles")
-          .select("id, username, avatar_url, level, xp, coins, fair_play_score, is_verified, last_seen_at")
+          .select("id, username, avatar_url, level, xp, fair_play_score, is_verified, last_seen_at")
           .order("xp", { ascending: false })
           .limit(150);
 
         if (profErr) throw profErr;
         if (!profiles?.length) { setRawPlayers([]); setLoading(false); return; }
 
-        // Step 2: Try player_stats to enrich (may not exist or may be empty)
+        const profileIds = profiles.map(p => p.id);
+
+        // Step 2: Fetch player_stats and wallet balances in parallel
+        const [statsRes, walletsRes] = await Promise.all([
+          supabase.from("player_stats").select("user_id, total_points, kills, wins, tournaments_played").in("user_id", profileIds),
+          supabase.from("wallets").select("user_id, balance").in("user_id", profileIds),
+        ]);
+
         let statsMap = {};
-        try {
-          const { data: stats } = await supabase
-            .from("player_stats")
-            .select("user_id, total_points, kills, wins, tournaments_played");
-          if (stats?.length) {
-            statsMap = Object.fromEntries(stats.map(s => [s.user_id, s]));
-          }
-        } catch (_) {} // silent — player_stats may not exist
+        let walletMap = {};
+        if (statsRes.data?.length) statsMap = Object.fromEntries(statsRes.data.map(s => [s.user_id, s]));
+        if (walletsRes.data?.length) walletMap = Object.fromEntries(walletsRes.data.map(w => [w.user_id, w.balance]));
 
         // Step 3: Merge and rank
         const enriched = profiles.map(p => {
           const st = statsMap[p.id] || {};
-          const wins   = st.wins  ?? p.wins  ?? 0;
-          const kills  = st.kills ?? p.kills ?? 0;
+          const wins   = st.wins  ?? 0;
+          const kills  = st.kills ?? 0;
           const xp     = p.xp    ?? 0;
-          const coins  = p.coins ?? 0;
+          const coins  = walletMap[p.id] ?? 0;
           const level  = p.level ?? 1;
           // Primary score: total_points from player_stats if available, else derive from xp
           const display_score = st.total_points ?? xp;

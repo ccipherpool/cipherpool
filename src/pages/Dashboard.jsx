@@ -229,7 +229,7 @@ export default function Dashboard() {
     (async () => {
       const [tourRes, statsRes, seasonRes] = await Promise.all([
         supabase.from("tournaments").select("id, name, status, banner_url, prize_coins, max_players, current_players, start_date").in("status", ["registration_open", "published", "live"]).order("created_at", { ascending: false }).limit(6),
-        supabase.from("player_stats").select("wins, tournaments_played, win_streak, kills, kd_ratio, best_position").eq("user_id", profile.id).maybeSingle(),
+        supabase.from("player_stats").select("wins, tournaments_played, kills, kd_ratio, best_position, total_points").eq("user_id", profile.id).maybeSingle(),
         supabase.from("seasons").select("id, name, status, end_date").eq("status", "active").maybeSingle(),
       ]);
       setTournaments(tourRes.data || []);
