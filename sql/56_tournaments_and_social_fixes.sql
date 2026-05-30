@@ -15,6 +15,15 @@ ALTER TABLE public.tournaments
   ADD COLUMN IF NOT EXISTS room_status      text DEFAULT 'pending',
   ADD COLUMN IF NOT EXISTS current_players  integer NOT NULL DEFAULT 0;
 
+-- Expand mode CHECK — CS formats must be stored as 'squad' in mode column;
+-- cs_format column holds the actual format ("1v1","2v2","4v4")
+ALTER TABLE public.tournaments
+  DROP CONSTRAINT IF EXISTS tournaments_mode_check;
+
+ALTER TABLE public.tournaments
+  ADD CONSTRAINT tournaments_mode_check
+  CHECK (mode IN ('solo','duo','squad'));
+
 -- Ensure status CHECK allows 'draft'
 ALTER TABLE public.tournaments
   DROP CONSTRAINT IF EXISTS tournaments_status_check;

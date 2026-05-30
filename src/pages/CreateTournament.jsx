@@ -71,7 +71,7 @@ export default function CreateTournament() {
     }
     const data = {
       name: formData.name.trim(), description: formData.description?.trim() || null,
-      game_type: formData.game_type, mode: formData.game_type === "cs" ? formData.cs_format : formData.mode,
+      game_type: formData.game_type, mode: formData.game_type === "cs" ? "squad" : formData.mode,
       cs_format: formData.game_type === "cs" ? formData.cs_format : null,
       team_size: formData.game_type === "cs" ? CS_FORMATS[formData.cs_format]?.per_team : null,
       max_players: formData.game_type === "cs" ? CS_FORMATS[formData.cs_format]?.players : parseInt(formData.max_players) || 50,
@@ -82,9 +82,23 @@ export default function CreateTournament() {
     };
     try {
       const { error } = await supabase.from("tournaments").insert([data]);
-      if (error) alert("Erreur: " + error.message);
-      else { alert("✅ Tournoi créé avec succès !"); navigate("/tournaments"); }
-    } catch { alert("Erreur inattendue"); }
+      if (error) {
+        console.error("Tournament insert error:", {
+          message: error.message,
+          code:    error.code,
+          details: error.details,
+          hint:    error.hint,
+          data,
+        });
+        alert("Erreur: " + (error.details || error.hint || error.message));
+      } else {
+        alert("✅ Tournoi créé avec succès !");
+        navigate("/tournaments");
+      }
+    } catch (err) {
+      console.error("Tournament insert exception:", err);
+      alert("Erreur inattendue: " + String(err));
+    }
     finally { setLoading(false); }
   };
 
