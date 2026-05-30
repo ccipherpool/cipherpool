@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Link, Outlet } from "react-router-dom";
 import { Button } from "./components/ui/Button";
+import { NotificationProvider } from "./components/NotificationSystem";
 
 // Layouts (not lazy — needed immediately)
 import AuthLayout  from "./layouts/AuthLayout";
@@ -100,6 +101,7 @@ function PageLoader() {
 export default function App() {
   return (
     <BrowserRouter>
+      <NotificationProvider>
       <Suspense fallback={<PageLoader />}>
         <Routes>
 
@@ -224,6 +226,7 @@ export default function App() {
 
         </Routes>
       </Suspense>
+      </NotificationProvider>
     </BrowserRouter>
   );
 }
