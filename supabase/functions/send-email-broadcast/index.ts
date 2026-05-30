@@ -70,10 +70,13 @@ async function fetchProfile(
         { headers: pgHeaders(SUPABASE_SVC) },
       );
       const body = await res.json();
+      console.log("PROFILE ERROR (svc_by_id):", res.status, JSON.stringify(body));
       if (res.ok && Array.isArray(body) && body.length > 0) {
         return { profile: body[0], strategy: "svc_by_id" };
       }
-    } catch { /* fall through */ }
+    } catch (e) {
+      console.error("PROFILE ERROR (svc_by_id exception):", String(e));
+    }
   }
 
   // Strategy 2: User JWT by UUID — may be blocked by RLS
@@ -194,6 +197,7 @@ serve(async (req) => {
     /* 2. Extract user ID from JWT (local decode — no network round-trip) */
     const payload = decodeJwtPayload(token);
     const userId  = (payload?.sub as string) ?? "";
+    console.log("USER ID:", userId);
     if (!userId) {
       return json({ error: "Invalid token — cannot extract user ID. Please sign out and sign in again.", allowed: false }, 401);
     }
@@ -214,6 +218,7 @@ serve(async (req) => {
 
     /* 4. Fetch profile — service role first, JWT fallback ──────────── */
     const { profile, strategy } = await fetchProfile(userId, token);
+    console.log("PROFILE RESULT:", JSON.stringify({ found: profile !== null, strategy, role: profile?.role ?? null, email: profile?.email ?? null }));
 
     const debugBase = {
       user_id:          userId,
