@@ -66,9 +66,9 @@ export default function Sidebar({ profile }) {
     window.location.replace("/login");
   };
 
-  const isFounder    = ["founder", "super_admin"].includes(profile?.role);
+  const isFounder    = profile?.role === "founder";
   const isDesigner   = ["designer", "admin", "super_admin"].includes(profile?.role);
-  const isAdmin      = ["admin", "super_admin", "founder"].includes(profile?.role);
+  const isAdmin      = ["admin", "super_admin"].includes(profile?.role);
   const isSuperAdmin = profile?.role === "super_admin";
 
   return (

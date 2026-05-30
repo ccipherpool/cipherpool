@@ -124,7 +124,8 @@ function LoadingScreen() {
 
 /* ── MOBILE DRAWER ─────────────────────────────────────────────────── */
 function MobileDrawer({ open, onClose, profile }) {
-  const isAdmin      = ["admin", "super_admin", "founder"].includes(profile?.role);
+  const isAdmin      = ["admin", "super_admin"].includes(profile?.role);
+  const isFounder    = profile?.role === "founder";
   const isSuperAdmin = profile?.role === "super_admin";
 
   const handleLogout = async () => {
@@ -223,6 +224,29 @@ function MobileDrawer({ open, onClose, profile }) {
                   ))}
                 </div>
               ))}
+
+              {/* Founder section */}
+              {isFounder && (
+                <div className="space-y-0.5 pt-3 border-t border-white/[0.05]">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25 px-3 mb-1.5">
+                    Founder
+                  </p>
+                  <NavLink
+                    to="/founder"
+                    onClick={onClose}
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-white/45 hover:text-purple-300 hover:bg-purple-400/[0.06] transition-all min-h-[44px]"
+                  >
+                    <Crown size={16} /> Founder Hub
+                  </NavLink>
+                  <NavLink
+                    to="/create-tournament"
+                    onClick={onClose}
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-white/45 hover:text-cyan-300 hover:bg-cyan-400/[0.06] transition-all min-h-[44px]"
+                  >
+                    <Trophy size={16} /> Create Tournament
+                  </NavLink>
+                </div>
+              )}
 
               {/* Admin section */}
               {isAdmin && (

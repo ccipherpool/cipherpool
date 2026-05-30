@@ -78,10 +78,14 @@ export default function CreateTournament() {
       entry_fee: parseInt(formData.entry_fee) || 0, prize_coins: parseInt(formData.prize_coins) || 500,
       start_date: startDate, banner_url: formData.banner_url || null,
       background_color: formData.background_color || "#06b6d4",
-      created_by: user.id, status: "draft", room_status: "pending", current_players: 0,
+      created_by: user.id, status: "draft", room_status: "registration", current_players: 0,
     };
     try {
-      const { error } = await supabase.from("tournaments").insert([data]);
+      const { data: createdTournament, error } = await supabase
+        .from("tournaments")
+        .insert([data])
+        .select("id")
+        .single();
       if (error) {
         console.error("Tournament insert error:", {
           message: error.message,
@@ -93,7 +97,7 @@ export default function CreateTournament() {
         alert("Erreur: " + (error.details || error.hint || error.message));
       } else {
         alert("✅ Tournoi créé avec succès !");
-        navigate("/tournaments");
+        navigate(createdTournament?.id ? `/tournaments/${createdTournament.id}/manage` : "/tournaments");
       }
     } catch (err) {
       console.error("Tournament insert exception:", err);

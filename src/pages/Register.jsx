@@ -28,24 +28,36 @@ export default function Register() {
             if (authError) throw authError;
 
             if (authData.user) {
-                // Upsert handles both: trigger already created profile, or no trigger
-                await supabase.from('profiles').upsert({
-                    id: authData.user.id,
-                    username,
-                    email,
-                    role: 'user',
-                }, { onConflict: 'id' });
+                // identities is empty when email already exists in Supabase (no error returned)
+                if (authData.user.identities?.length === 0) {
+                    throw new Error("Un compte avec cet email existe déjà.");
+                }
 
-                // Create wallet if not exists
-                await supabase.from('wallets').upsert({
-                    user_id: authData.user.id,
-                    balance: 50,
-                }, { onConflict: 'user_id' });
+                // session is null when email confirmation is required (user not yet confirmed).
+                // Profile/wallet are created by the DB trigger on auth.users insert.
+                // Only run client-side upsert if we have an active session (confirmation disabled).
+                if (authData.session) {
+                    try {
+                        await supabase.from('profiles').upsert({
+                            id: authData.user.id,
+                            username,
+                            email,
+                            role: 'user',
+                        }, { onConflict: 'id' });
 
-                await refreshCurrentUser?.(authData.user.id);
+                        await supabase.from('wallets').upsert({
+                            user_id: authData.user.id,
+                            balance: 50,
+                        }, { onConflict: 'user_id' });
+
+                        await refreshCurrentUser?.(authData.user.id);
+                    } catch (profileErr) {
+                        console.warn('Profile setup after signup:', profileErr.message);
+                    }
+                }
             }
 
-            // Always redirect to verify-email — even if email confirmation is off
+            // Always redirect to verify-email after successful signUp
             navigate("/verify-email", { state: { email } });
         } catch (err) {
             setError(err.message);

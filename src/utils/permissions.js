@@ -85,7 +85,7 @@ export const usePermissions = (user) => {
       can:          (perm) => can(user.role, perm),
       isSuperAdmin: user.role === 'super_admin',
       isAdmin:      ['admin', 'super_admin'].includes(user.role),
-      isFounder:    ['founder', 'super_admin'].includes(user.role),
+      isFounder:    user.role === 'founder',
       isDesigner:   user.role === 'designer',
       isUser:       user.role === 'user',
       isBanned:     user.role === 'banned',

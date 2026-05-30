@@ -121,8 +121,15 @@ export default function FounderDashboard() {
       .from("tournaments")
       .insert([{
         ...newTournament,
+        name: newTournament.name.trim(),
+        description: newTournament.description?.trim() || null,
+        max_players: parseInt(newTournament.max_players, 10) || 50,
+        entry_fee: parseInt(newTournament.entry_fee, 10) || 0,
+        prize_coins: parseInt(newTournament.prize_coins, 10) || 500,
+        start_date: newTournament.start_date ? new Date(newTournament.start_date).toISOString() : null,
         created_by: user.id,
         status: "draft",
+        room_status: "registration",
         current_players: 0
       }]);
 
@@ -256,7 +263,7 @@ export default function FounderDashboard() {
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 flex items-center gap-3">
                 {isSuperAdmin
-                  ? <><Crown size={28} className="text-yellow-400 flex-shrink-0" /> SUPER ADMIN / FOUNDER</>
+                  ? <><Crown size={28} className="text-yellow-400 flex-shrink-0" /> SUPER ADMIN TOURNAMENTS</>
                   : <><Gamepad2 size={28} className="text-purple-400 flex-shrink-0" /> FOUNDER DASHBOARD</>
                 }
               </h1>

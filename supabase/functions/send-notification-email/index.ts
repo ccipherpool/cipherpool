@@ -29,6 +29,41 @@ function json(body: Record<string, unknown>, status = 200) {
 }
 
 /* ── Email HTML builder ─────────────────────────────────────────── */
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function lineBreaks(value: unknown): string {
+  return escapeHtml(value).replace(/\r?\n/g, "<br/>");
+}
+
+function safeUrl(value?: string | null): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value, "https://cipherpool.gg");
+    if (!["https:", "http:"].includes(url.protocol)) return null;
+    return escapeHtml(url.toString());
+  } catch {
+    return null;
+  }
+}
+
+function notificationVisual(type?: string | null) {
+  const key = String(type ?? "info").toLowerCase();
+  if (key.includes("tournament")) return { icon: "T", label: "Tournament Intel", accent: "#00e5ff", glow: "#00e5ff33", state: "Arena update" };
+  if (key.includes("announcement") || key.includes("broadcast")) return { icon: "A", label: "Announcement", accent: "#8b5cf6", glow: "#8b5cf633", state: "Global broadcast" };
+  if (key.includes("admin") || key.includes("system")) return { icon: "S", label: "Admin Update", accent: "#60a5fa", glow: "#60a5fa33", state: "System signal" };
+  if (key.includes("success") || key.includes("achievement")) return { icon: "V", label: "Victory Status", accent: "#22c55e", glow: "#22c55e33", state: "Success" };
+  if (key.includes("error") || key.includes("warning")) return { icon: "!", label: "Action Required", accent: "#f59e0b", glow: "#f59e0b33", state: "Needs review" };
+  if (key.includes("gift") || key.includes("reward") || key.includes("coins")) return { icon: "R", label: "Reward Drop", accent: "#ec4899", glow: "#ec489933", state: "Reward unlocked" };
+  return { icon: "C", label: "CipherPool Signal", accent: "#00e5ff", glow: "#00e5ff33", state: "Notification" };
+}
+
 function buildHtml(opts: {
   username?: string;
   title: string;
@@ -37,7 +72,136 @@ function buildHtml(opts: {
   actionUrl?: string | null;
 }): string {
   const { username, title, message, type, actionUrl } = opts;
+  const visual = notificationVisual(type);
+  const safeTitle = escapeHtml(title || "Nouvelle notification");
+  const safeType = escapeHtml(type || "info");
+  const safeMessage = lineBreaks(message || "");
+  const safeUsername = username ? escapeHtml(username) : "";
+  const safeActionUrl = safeUrl(actionUrl);
+  const preheader = escapeHtml(`${visual.label}: ${title}`.slice(0, 140));
+  const cta = safeActionUrl ? `
+                    <tr>
+                      <td align="center" style="padding:28px 0 6px 0;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td bgcolor="${visual.accent}" style="border-radius:14px;box-shadow:0 16px 42px ${visual.glow};">
+                              <a href="${safeActionUrl}" target="_blank" style="display:inline-block;padding:15px 30px;border:1px solid rgba(255,255,255,0.34);border-radius:14px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:800;letter-spacing:0.6px;text-decoration:none;text-transform:uppercase;background:${visual.accent};">
+                                Open Command Link
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>` : "";
 
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta name="color-scheme" content="dark light">
+    <title>${safeTitle}</title>
+    <style>
+      @media only screen and (max-width: 640px) {
+        .cp-container { width: 100% !important; }
+        .cp-pad { padding-left: 22px !important; padding-right: 22px !important; }
+        .cp-title { font-size: 27px !important; line-height: 33px !important; }
+      }
+    </style>
+  </head>
+  <body style="margin:0;padding:0;background:#050712;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${preheader}</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#050712" style="background:#050712;">
+      <tr>
+        <td align="center" style="padding:34px 14px;">
+          <table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" class="cp-container" style="width:640px;max-width:640px;">
+            <tr>
+              <td align="center" style="padding:0 0 18px 0;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td align="center" width="46" height="46" bgcolor="#0c1328" style="border-radius:14px;border:1px solid #24314d;color:${visual.accent};font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:900;">CP</td>
+                    <td style="padding-left:12px;text-align:left;">
+                      <div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:900;letter-spacing:1.4px;color:#f8fbff;">CIPHERPOOL</div>
+                      <div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:800;letter-spacing:2.6px;color:#7dd3fc;text-transform:uppercase;">Esports Command Network</div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td bgcolor="#0a1020" style="border-radius:26px;overflow:hidden;background:#0a1020;border:1px solid #1e2b45;box-shadow:0 28px 80px rgba(0,0,0,0.48);">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr><td height="4" bgcolor="${visual.accent}" style="height:4px;background:${visual.accent};font-size:0;line-height:0;">&nbsp;</td></tr>
+                  <tr>
+                    <td class="cp-pad" style="padding:34px 40px 18px 40px;background:#0b1224;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td>
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                              <tr>
+                                <td width="68" valign="top">
+                                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                    <tr>
+                                      <td align="center" width="58" height="58" bgcolor="#111b33" style="width:58px;height:58px;border-radius:18px;background:#111b33;border:1px solid #2d3d63;color:${visual.accent};font-family:Arial,Helvetica,sans-serif;font-size:26px;font-weight:900;box-shadow:0 0 34px ${visual.glow};">${visual.icon}</td>
+                                    </tr>
+                                  </table>
+                                </td>
+                                <td valign="top">
+                                  <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:16px;color:${visual.accent};font-weight:900;letter-spacing:2px;text-transform:uppercase;">${escapeHtml(visual.label)} / ${safeType}</div>
+                                  <h1 class="cp-title" style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:32px;line-height:38px;font-weight:900;color:#ffffff;letter-spacing:-0.2px;">${safeTitle}</h1>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="cp-pad" style="padding:14px 40px 38px 40px;background:#0b1224;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#10182d" style="background:#10182d;border:1px solid #25324e;border-radius:20px;">
+                        <tr>
+                          <td style="padding:24px 26px 0 26px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                              <tr>
+                                <td bgcolor="#0b1224" style="border-radius:999px;border:1px solid #263550;padding:7px 12px;color:#b9c6e4;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">${escapeHtml(visual.state)}</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:18px 26px 8px 26px;">
+                            <p style="margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:22px;color:#aab6d3;">${safeUsername ? `Hey <strong style="color:#ffffff;">${safeUsername}</strong>,` : "Hey there,"}</p>
+                            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:27px;color:#e6ecff;">${safeMessage}</p>
+                          </td>
+                        </tr>
+                        ${cta}
+                        <tr><td height="24" style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:22px 18px 0 18px;">
+                <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:18px;color:#76829e;">You received this because your CipherPool email notifications are enabled.</p>
+                <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:18px;color:#6b7280;">
+                  <a href="https://cipherpool.gg/notifications" style="color:#93c5fd;text-decoration:none;">Manage preferences</a>
+                  &nbsp;|&nbsp;
+                  <a href="https://cipherpool.gg" style="color:#93c5fd;text-decoration:none;">cipherpool.gg</a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  /*
   const typeColors: Record<string, string> = {
     tournament:     "#7C3AED",
     achievement:    "#F59E0B",
@@ -126,6 +290,7 @@ function buildHtml(opts: {
   </table>
 </body>
 </html>`;
+  */
 }
 
 /* ── Send via Resend ─────────────────────────────────────────────── */
