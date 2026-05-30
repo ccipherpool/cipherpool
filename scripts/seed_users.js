@@ -4,8 +4,11 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const SUPABASE_URL = 'https://mbaldfltjcjlsrhntteh.supabase.co';
-// Using the service role key to bypass RLS for seeding
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1iYWxkZmx0amNqbHNyaG50dGVoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxNDY0NjQwMCwiZXhwIjoyMDMwMjIyNDAwfQ.xxx'; // Placeholder, I will use the real one if available or ask
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('❌ SUPABASE_SERVICE_ROLE_KEY env var is required. Set it in your .env file.');
+  process.exit(1);
+}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 

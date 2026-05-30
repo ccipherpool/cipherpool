@@ -1,134 +1,181 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 import {
   Trophy, TrendingUp, Wallet, Crown, Swords,
   ChevronRight, ArrowUpRight, Flame, Star, Medal,
-  Activity, Sparkles, Users2, Radio,
+  Activity, Sparkles, Radio, Target, Zap, Shield,
+  Users, BarChart3, Gift, Clock,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
 import StoriesRow from "../social/components/StoriesRow";
 
-// ── Stat card ──────────────────────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, suffix = "", prefix = "", color, delay }) {
+/* ── Animated number counter ─────────────────────────────────────────── */
+function AnimatedNum({ value, duration = 1.2 }) {
+  const [display, setDisplay] = useState(0);
+  const start = useRef(0);
+  const startTime = useRef(null);
+  useEffect(() => {
+    const target = Number(value) || 0;
+    const from   = start.current;
+    startTime.current = null;
+    const step = (ts) => {
+      if (!startTime.current) startTime.current = ts;
+      const progress = Math.min((ts - startTime.current) / (duration * 1000), 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(from + (target - from) * ease));
+      if (progress < 1) requestAnimationFrame(step);
+      else start.current = target;
+    };
+    requestAnimationFrame(step);
+  }, [value, duration]);
+  return display;
+}
+
+/* ── Stat card — 2026 Pro ────────────────────────────────────────────── */
+function StatCard({ icon: Icon, label, value, suffix = "", prefix = "", color, delay, sub }) {
+  const [hov, setHov] = useState(false);
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      className="cp-card p-4 hover:border-white/12 transition-all"
+      initial={{ opacity: 0, y: 18, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      className="relative rounded-2xl overflow-hidden transition-all duration-300 cursor-default select-none"
+      style={{
+        background: "var(--cp-surface-2)",
+        border: `1px solid ${hov ? color + "40" : "var(--cp-border)"}`,
+        boxShadow: hov ? `0 8px 32px ${color}18, 0 0 0 1px ${color}20` : "none",
+        padding: "18px",
+      }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center"
-          style={{ background: `${color}18` }}
-        >
-          <Icon size={15} style={{ color }} />
+      {/* Glow orb */}
+      <div
+        className="absolute -top-8 -right-8 w-20 h-20 rounded-full blur-2xl pointer-events-none transition-opacity duration-300"
+        style={{ background: color, opacity: hov ? 0.12 : 0.06 }}
+      />
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: `${color}15`, border: `1px solid ${color}25` }}
+          >
+            <Icon size={16} style={{ color }} />
+          </div>
+          {sub && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${color}15`, color }}>
+              {sub}
+            </span>
+          )}
         </div>
+        <p className="text-2xl font-black leading-none mb-1.5 tabular-nums" style={{ color: "var(--cp-text-1)" }}>
+          {prefix}<AnimatedNum value={typeof value === "number" ? value : 0} />{suffix}
+        </p>
+        <p className="text-xs font-medium" style={{ color: "var(--cp-text-4)" }}>{label}</p>
       </div>
-      <p className="text-xl font-bold leading-none mb-1" style={{ color: "var(--cp-text-1)" }}>
-        {prefix}{typeof value === "number" ? value.toLocaleString() : value}{suffix}
-      </p>
-      <p className="text-xs" style={{ color: "var(--cp-text-4)" }}>{label}</p>
     </motion.div>
   );
 }
 
-// ── Tournament row ─────────────────────────────────────────────────────
+/* ── Tournament row ─────────────────────────────────────────────────── */
 function TournamentItem({ t, idx }) {
+  const isLive = t.status === "live";
   return (
     <motion.div
-      initial={{ opacity: 0, x: 8 }}
+      initial={{ opacity: 0, x: 10 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.05 * idx, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ delay: 0.04 * idx, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
     >
       <Link
         to={`/tournaments/${t.id}`}
-        className="group flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors"
+        className="group flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200"
+        style={{ background: "transparent" }}
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
       >
         <div
-          className="w-9 h-9 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center"
-          style={{ background: "var(--cp-surface-3)", border: "1px solid var(--cp-border)" }}
+          className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center relative"
+          style={{ background: "var(--cp-surface-3)", border: `1px solid ${isLive ? "rgba(239,68,68,.35)" : "var(--cp-border)"}` }}
         >
           {t.banner_url
             ? <img src={t.banner_url} alt="" className="w-full h-full object-cover" />
             : <Swords size={14} style={{ color: "var(--cp-text-4)" }} />
           }
+          {isLive && <div className="absolute inset-0 bg-red-500/10 animate-pulse" />}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <p
-              className="text-sm font-medium truncate transition-colors group-hover:text-violet-400"
-              style={{ color: "var(--cp-text-1)" }}
-            >
+          <div className="flex items-center gap-2 mb-0.5">
+            <p className="text-sm font-semibold truncate transition-colors group-hover:text-violet-400" style={{ color: "var(--cp-text-1)" }}>
               {t.name}
             </p>
-            {t.status === "live" && (
-              <span
-                className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-md border"
-                style={{ background: "rgba(239,68,68,.1)", borderColor: "rgba(239,68,68,.25)" }}
-              >
+            {isLive && (
+              <span className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-md" style={{ background: "rgba(239,68,68,.12)", border: "1px solid rgba(239,68,68,.25)" }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-[10px] font-semibold text-red-400">Live</span>
+                <span className="text-[9px] font-bold text-red-400 tracking-wide">LIVE</span>
               </span>
             )}
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs font-medium" style={{ color: "var(--cp-gold)" }}>
+            <span className="text-xs font-bold" style={{ color: "var(--cp-gold)" }}>
               {(t.prize_coins || 0).toLocaleString()} CP
             </span>
-            <span className="text-xs" style={{ color: "var(--cp-text-4)" }}>
-              {t.current_players ?? 0}/{t.max_players ?? "∞"} players
+            <span className="text-xs flex items-center gap-1" style={{ color: "var(--cp-text-4)" }}>
+              <Users size={10} />
+              {t.current_players ?? 0}/{t.max_players ?? "∞"}
             </span>
           </div>
         </div>
-        <ChevronRight size={13} className="flex-shrink-0 transition-colors group-hover:text-violet-400" style={{ color: "var(--cp-text-4)" }} />
+        <ChevronRight size={13} className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all -translate-x-1 group-hover:translate-x-0" style={{ color: "var(--cp-accent)" }} />
       </Link>
     </motion.div>
   );
 }
 
-// ── Chart tooltip ──────────────────────────────────────────────────────
+/* ── Chart tooltip ──────────────────────────────────────────────────── */
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div
-      className="px-3 py-2 rounded-xl border text-sm"
-      style={{ background: "var(--cp-surface-4)", borderColor: "var(--cp-border-hover)" }}
-    >
+    <div className="px-3 py-2 rounded-xl border text-sm backdrop-blur-md" style={{ background: "var(--cp-surface-4)", borderColor: "var(--cp-border-hover)" }}>
       <p className="text-[10px] mb-0.5" style={{ color: "var(--cp-text-4)" }}>{label}</p>
-      <p className="font-semibold" style={{ color: "var(--cp-text-1)" }}>
-        {payload[0].value} <span className="text-xs" style={{ color: "var(--cp-accent)" }}>pts</span>
+      <p className="font-bold" style={{ color: "var(--cp-text-1)" }}>
+        {payload[0].value} <span className="text-xs font-normal" style={{ color: "var(--cp-accent)" }}>pts</span>
       </p>
     </div>
   );
 };
 
-// ── Quick action ───────────────────────────────────────────────────────
+/* ── Quick action card ──────────────────────────────────────────────── */
 function QuickCard({ to, icon: Icon, label, color, delay }) {
+  const [hov, setHov] = useState(false);
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
     >
       <Link
         to={to}
-        className="group flex flex-col items-center gap-2.5 py-5 px-3 rounded-2xl border transition-all duration-200 text-center hover:-translate-y-0.5"
-        style={{ background: "var(--cp-surface-2)", borderColor: "var(--cp-border)" }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = `${color}44`; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--cp-border)"; }}
+        className="group flex flex-col items-center gap-3 py-5 px-3 rounded-2xl border transition-all duration-200 text-center"
+        style={{
+          background: hov ? `${color}08` : "var(--cp-surface-2)",
+          borderColor: hov ? `${color}45` : "var(--cp-border)",
+          transform: hov ? "translateY(-2px)" : "none",
+          boxShadow: hov ? `0 8px 24px ${color}15` : "none",
+        }}
       >
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200"
-          style={{ background: `${color}18` }}
+          className="w-11 h-11 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+          style={{ background: `${color}18`, border: `1px solid ${color}25` }}
         >
-          <Icon size={17} style={{ color }} />
+          <Icon size={18} style={{ color }} />
         </div>
-        <span className="text-xs font-medium transition-colors" style={{ color: "var(--cp-text-3)" }}>
+        <span className="text-xs font-semibold" style={{ color: hov ? color : "var(--cp-text-3)" }}>
           {label}
         </span>
       </Link>
@@ -136,7 +183,40 @@ function QuickCard({ to, icon: Icon, label, color, delay }) {
   );
 }
 
-// ── MAIN DASHBOARD ─────────────────────────────────────────────────────
+/* ── Season ring ────────────────────────────────────────────────────── */
+function SeasonRing({ xp = 0, level = 1 }) {
+  const max  = 1000;
+  const pct  = Math.min((xp / max) * 100, 100);
+  const r    = 38;
+  const circ = 2 * Math.PI * r;
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: 92, height: 92 }}>
+      <svg width="92" height="92" viewBox="0 0 92 92" style={{ transform: "rotate(-90deg)", position: "absolute" }}>
+        <circle cx="46" cy="46" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="4" />
+        <motion.circle
+          cx="46" cy="46" r={r} fill="none"
+          stroke="url(#xpGrad)" strokeWidth="4" strokeLinecap="round"
+          strokeDasharray={circ}
+          initial={{ strokeDashoffset: circ }}
+          animate={{ strokeDashoffset: circ * (1 - pct / 100) }}
+          transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
+        />
+        <defs>
+          <linearGradient id="xpGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#7C3AED" />
+            <stop offset="100%" stopColor="#06B6D4" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="relative z-10 text-center">
+        <p className="text-lg font-black leading-none" style={{ color: "var(--cp-text-1)" }}>{level}</p>
+        <p className="text-[9px] font-semibold mt-0.5" style={{ color: "var(--cp-text-4)" }}>LEVEL</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── MAIN DASHBOARD ─────────────────────────────────────────────────── */
 export default function Dashboard() {
   const { profile } = useOutletContext() || {};
   const [tournaments, setTournaments] = useState([]);
@@ -148,9 +228,9 @@ export default function Dashboard() {
     if (!profile?.id) { setLoading(false); return; }
     (async () => {
       const [tourRes, statsRes, seasonRes] = await Promise.all([
-        supabase.from("tournaments").select("*").in("status", ["registration_open", "published", "live"]).order("created_at", { ascending: false }).limit(5),
-        supabase.from("player_stats").select("*").eq("user_id", profile.id).maybeSingle(),
-        supabase.from("seasons").select("*").eq("status", "active").maybeSingle(),
+        supabase.from("tournaments").select("id, name, status, banner_url, prize_coins, max_players, current_players, starts_at").in("status", ["registration_open", "published", "live"]).order("created_at", { ascending: false }).limit(6),
+        supabase.from("player_stats").select("rank, wins, tournaments_played, streak, kills, kd_ratio, xp").eq("user_id", profile.id).maybeSingle(),
+        supabase.from("seasons").select("id, name, status, ends_at").eq("status", "active").maybeSingle(),
       ]);
       setTournaments(tourRes.data || []);
       setStats(statsRes.data || null);
@@ -159,10 +239,10 @@ export default function Dashboard() {
     })();
   }, [profile?.id]);
 
-  const winRate    = stats?.tournaments_played > 0
-    ? Math.round((stats.wins / stats.tournaments_played) * 100) : 0;
+  const winRate    = stats?.tournaments_played > 0 ? Math.round((stats.wins / stats.tournaments_played) * 100) : 0;
   const xpProgress = Math.min(((profile?.xp || 0) / 1000) * 100, 100);
   const balance    = profile?.balance ?? 0;
+  const level      = profile?.level ?? 1;
 
   const chartData = [
     { d: "Mon", v: 420 }, { d: "Tue", v: 750 }, { d: "Wed", v: 580 },
@@ -176,115 +256,151 @@ export default function Dashboard() {
     return "Good evening";
   })();
 
+  const liveCount = tournaments.filter(t => t.status === "live").length;
+
   return (
-    <div className="space-y-6 pb-10">
+    <div className="pb-12" style={{ gap: 0 }}>
 
-      {/* ── Page header ── */}
+      {/* ── HERO BANNER ───────────────────────────────────────────── */}
       <motion.div
-        initial={{ opacity: 0, y: -8 }}
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-        className="flex items-end justify-between gap-4"
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative overflow-hidden rounded-3xl mb-6"
+        style={{
+          background: "linear-gradient(140deg, #0e0529 0%, #1a0a45 35%, #0d2240 70%, #091828 100%)",
+          border: "1px solid rgba(124,58,237,0.2)",
+          minHeight: 200,
+        }}
       >
-        <div>
-          {season && (
-            <div className="flex items-center gap-2 mb-2">
-              <span
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border"
-                style={{ background: "var(--cp-gold-dim)", color: "var(--cp-gold)", borderColor: "rgba(245,158,11,.25)" }}
-              >
-                <Trophy size={11} />
-                {season.name}
-              </span>
-            </div>
-          )}
-          <h1 className="text-3xl font-bold tracking-tight" style={{ color: "var(--cp-text-1)" }}>
-            {greeting},{" "}
-            <span style={{ color: "var(--cp-accent)" }}>{profile?.username || "Player"}</span>
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--cp-text-4)" }}>
-            Here's what's happening on CipherPool today.
-          </p>
-        </div>
+        {/* Grid */}
+        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+        {/* Glow orbs */}
+        <div className="absolute -top-16 -right-16 w-72 h-72 rounded-full blur-3xl pointer-events-none" style={{ background: "rgba(124,58,237,0.25)" }} />
+        <div className="absolute -bottom-12 left-1/3 w-56 h-56 rounded-full blur-3xl pointer-events-none" style={{ background: "rgba(6,182,212,0.18)" }} />
+        <div className="absolute top-1/2 -translate-y-1/2 right-1/4 w-32 h-32 rounded-full blur-2xl pointer-events-none" style={{ background: "rgba(245,158,11,0.12)" }} />
 
-        <div className="hidden md:flex items-center gap-2">
-          <Link
-            to="/wallet"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all hover:border-white/15"
-            style={{ background: "var(--cp-surface-2)", borderColor: "var(--cp-border)", color: "var(--cp-text-2)" }}
+        <div className="relative z-10 p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div>
+            {/* Season pill */}
+            {season && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15, duration: 0.4 }}
+                className="flex items-center gap-2 mb-3"
+              >
+                <span
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold backdrop-blur-sm"
+                  style={{ background: "rgba(245,158,11,0.15)", color: "#F59E0B", border: "1px solid rgba(245,158,11,0.3)" }}
+                >
+                  <Trophy size={10} />
+                  {season.name} — ACTIVE
+                </span>
+                {liveCount > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold"
+                    style={{ background: "rgba(239,68,68,0.15)", color: "#EF4444", border: "1px solid rgba(239,68,68,0.3)" }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                    {liveCount} LIVE
+                  </span>
+                )}
+              </motion.div>
+            )}
+
+            <motion.h1
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="font-black tracking-tight leading-tight mb-1"
+              style={{ fontSize: "clamp(22px,4vw,36px)", color: "#F8FAFC" }}
+            >
+              {greeting},{" "}
+              <span style={{ background: "linear-gradient(90deg,#A78BFA,#67E8F9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                {profile?.username || "Player"}
+              </span>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+              className="text-sm"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
+              Your arena awaits. Deploy. Dominate. Win.
+            </motion.p>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.25, duration: 0.5 }}
+            className="flex items-center gap-3 flex-shrink-0"
           >
-            <Wallet size={14} style={{ color: "var(--cp-gold)" }} />
-            {balance.toLocaleString()} CP
-          </Link>
-          <Link
-            to="/tournaments"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-semibold transition-colors"
-            style={{ background: "var(--cp-accent)", boxShadow: "0 4px 20px var(--cp-accent-glow)" }}
-          >
-            <Swords size={13} />
-            Enter Arena
-          </Link>
+            <Link
+              to="/wallet"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold backdrop-blur-md transition-all hover:scale-[1.02]"
+              style={{ background: "rgba(245,158,11,0.15)", color: "#F59E0B", border: "1px solid rgba(245,158,11,0.3)" }}
+            >
+              <Wallet size={14} />
+              {balance.toLocaleString()} CP
+            </Link>
+            <Link
+              to="/tournaments"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02] hover:brightness-110"
+              style={{ background: "linear-gradient(135deg,#7C3AED,#4F46E5)", boxShadow: "0 4px 20px rgba(124,58,237,0.4)" }}
+            >
+              <Swords size={14} />
+              Enter Arena
+            </Link>
+          </motion.div>
         </div>
       </motion.div>
 
-      {/* ── Stories ── */}
-      <div className="overflow-visible">
+      {/* ── STORIES ─────────────────────────────────────────────── */}
+      <div className="mb-6 overflow-visible">
         <StoriesRow profile={profile} />
       </div>
 
-      {/* ── Stat cards ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard icon={Wallet}     label="Balance"   value={balance}              suffix=" CP"   color="#f59e0b" delay={0.05} />
-        <StatCard icon={Trophy}     label="Rank"      value={stats?.rank ?? 0}     prefix="#"     color="#7c3aed" delay={0.10} />
-        <StatCard icon={TrendingUp} label="Win Rate"  value={winRate}              suffix="%"     color="#10b981" delay={0.15} />
-        <StatCard icon={Flame}      label="Streak"    value={stats?.streak ?? 0}   suffix=" days" color="#f97316" delay={0.20} />
+      {/* ── STAT CARDS ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <StatCard icon={Wallet}     label="Balance"    value={balance}                suffix=" CP"   color="#F59E0B" delay={0.05} sub={balance > 0 ? "CP" : null} />
+        <StatCard icon={Trophy}     label="Global Rank" value={stats?.rank ?? 0}      prefix="#"     color="#7C3AED" delay={0.10} />
+        <StatCard icon={TrendingUp} label="Win Rate"   value={winRate}               suffix="%"     color="#10B981" delay={0.15} />
+        <StatCard icon={Flame}      label="Streak"     value={stats?.streak ?? 0}    suffix="d"     color="#F97316" delay={0.20} sub={stats?.streak > 2 ? "HOT" : null} />
       </div>
 
-      {/* ── Main grid ── */}
+      {/* ── MAIN GRID ────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
-        {/* LEFT — profile + tournaments */}
+        {/* ── LEFT COLUMN ─────────────────────────────────────── */}
         <div className="lg:col-span-4 space-y-4">
 
           {/* Profile card */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="cp-card overflow-hidden"
+            transition={{ delay: 0.12, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-2xl overflow-hidden"
+            style={{ background: "var(--cp-surface-2)", border: "1px solid var(--cp-border)" }}
           >
-            {/* Banner gradient */}
-            <div
-              className="h-16 relative overflow-hidden"
-              style={{ background: "linear-gradient(135deg, var(--cp-accent) 0%, var(--cp-cyan) 100%)" }}
-            >
-              <div
-                className="absolute inset-0 opacity-20"
-                style={{ backgroundImage: "radial-gradient(circle at 30% 50%, white 1px, transparent 1px)", backgroundSize: "20px 20px" }}
-              />
+            {/* Banner */}
+            <div className="h-20 relative overflow-hidden" style={{ background: "linear-gradient(135deg,#1e0a3c 0%,#7C3AED 60%,#06B6D4 100%)" }}>
+              <div className="absolute inset-0 opacity-15" style={{ backgroundImage: "radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 80%, white 1px, transparent 1px)", backgroundSize: "18px 18px" }} />
+              <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full blur-2xl" style={{ background: "rgba(6,182,212,0.4)" }} />
             </div>
 
-            <div className="px-5 pb-5 -mt-8">
-              <div className="flex items-end gap-4 mb-4">
-                {/* Avatar with XP progress ring */}
+            <div className="px-5 pb-5 -mt-10">
+              <div className="flex items-end gap-4 mb-5">
+                {/* Avatar */}
                 <div className="relative flex-shrink-0">
-                  <svg width="72" height="72" viewBox="0 0 72 72" className="-rotate-90 absolute inset-0">
-                    <circle cx="36" cy="36" r="32" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
-                    <motion.circle
-                      cx="36" cy="36" r="32" fill="none"
-                      stroke="#7c3aed" strokeWidth="3" strokeLinecap="round"
-                      strokeDasharray={2 * Math.PI * 32}
-                      initial={{ strokeDashoffset: 2 * Math.PI * 32 }}
-                      animate={{ strokeDashoffset: 2 * Math.PI * 32 * (1 - xpProgress / 100) }}
-                      transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
-                    />
-                  </svg>
                   <div
-                    className="w-[72px] h-[72px] rounded-2xl overflow-hidden flex items-center justify-center text-white font-black text-xl border-2"
+                    className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-white font-black text-2xl"
                     style={{
-                      background: "linear-gradient(135deg, var(--cp-accent), var(--cp-cyan))",
-                      borderColor: "var(--cp-surface-2)",
-                      boxShadow: "0 4px 20px rgba(0,0,0,.4)",
+                      background: "linear-gradient(135deg,#7C3AED,#06B6D4)",
+                      border: "3px solid var(--cp-surface-2)",
+                      boxShadow: "0 4px 24px rgba(0,0,0,.5), 0 0 0 1px rgba(124,58,237,0.3)",
                     }}
                   >
                     {profile?.avatar_url
@@ -292,32 +408,44 @@ export default function Dashboard() {
                       : profile?.username?.[0]?.toUpperCase() || "P"
                     }
                   </div>
+                  {/* Online dot */}
+                  <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-green-500 border-2 border-[var(--cp-surface-2)]" />
                 </div>
 
                 <div className="flex-1 pb-1">
-                  <h3 className="text-sm font-semibold truncate" style={{ color: "var(--cp-text-1)" }}>
+                  <h3 className="font-bold truncate text-base" style={{ color: "var(--cp-text-1)" }}>
                     {profile?.username || "Player"}
                   </h3>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-xs font-medium" style={{ color: "var(--cp-accent)" }}>
-                      Level {profile?.level || 1}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(124,58,237,0.15)", color: "var(--cp-accent)", border: "1px solid rgba(124,58,237,0.25)" }}>
+                      Level {level}
                     </span>
+                    {profile?.is_verified && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1" style={{ background: "rgba(6,182,212,0.12)", color: "var(--cp-cyan)", border: "1px solid rgba(6,182,212,0.25)" }}>
+                        <Shield size={9} /> Verified
+                      </span>
+                    )}
                   </div>
-                  <div className="mt-2">
-                    <div className="flex justify-between text-[10px] font-medium mb-1" style={{ color: "var(--cp-text-4)" }}>
-                      <span>XP Progress</span>
-                      <span>{profile?.xp || 0} / 1000</span>
-                    </div>
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--cp-surface-3)" }}>
-                      <motion.div
-                        className="h-full rounded-full"
-                        style={{ background: "linear-gradient(90deg, var(--cp-accent), var(--cp-cyan))" }}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${xpProgress}%` }}
-                        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
-                      />
-                    </div>
-                  </div>
+                </div>
+
+                {/* XP ring */}
+                <SeasonRing xp={profile?.xp || 0} level={level} />
+              </div>
+
+              {/* XP bar */}
+              <div className="mb-4">
+                <div className="flex justify-between text-[10px] font-semibold mb-1.5" style={{ color: "var(--cp-text-4)" }}>
+                  <span>Season XP</span>
+                  <span style={{ color: "var(--cp-accent)" }}>{profile?.xp || 0} / 1000</span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--cp-surface-3)" }}>
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: "linear-gradient(90deg,#7C3AED,#06B6D4)" }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${xpProgress}%` }}
+                    transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
+                  />
                 </div>
               </div>
 
@@ -328,180 +456,244 @@ export default function Dashboard() {
                   { label: "Wins",    value: stats?.wins ?? 0 },
                   { label: "Win%",    value: `${winRate}%` },
                 ].map(s => (
-                  <div
-                    key={s.label}
-                    className="text-center py-3 rounded-xl border"
-                    style={{ background: "var(--cp-surface-2)", borderColor: "var(--cp-border)" }}
-                  >
-                    <p className="text-base font-bold leading-none" style={{ color: "var(--cp-text-1)" }}>{s.value}</p>
-                    <p className="text-[10px] mt-1" style={{ color: "var(--cp-text-4)" }}>{s.label}</p>
+                  <div key={s.label} className="text-center py-3 rounded-xl" style={{ background: "var(--cp-surface-3)", border: "1px solid var(--cp-border)" }}>
+                    <p className="text-base font-black leading-none" style={{ color: "var(--cp-text-1)" }}>{s.value}</p>
+                    <p className="text-[10px] mt-1 font-medium" style={{ color: "var(--cp-text-4)" }}>{s.label}</p>
                   </div>
                 ))}
               </div>
 
               <Link
                 to="/profile"
-                className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl border text-sm font-medium transition-all hover:bg-white/5"
-                style={{ borderColor: "var(--cp-border)", color: "var(--cp-text-3)" }}
+                className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-sm font-semibold transition-all hover:bg-white/5"
+                style={{ border: "1px solid var(--cp-border)", color: "var(--cp-text-3)" }}
               >
-                View Profile <ArrowUpRight size={12} />
+                View Full Profile <ArrowUpRight size={12} />
               </Link>
             </div>
           </motion.div>
 
-          {/* Active tournaments */}
+          {/* KD / Kills stat mini cards */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.18, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="cp-card p-4"
+            transition={{ delay: 0.18, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className="grid grid-cols-2 gap-3"
           >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Swords size={13} style={{ color: "var(--cp-accent)" }} />
-                <span className="text-sm font-semibold" style={{ color: "var(--cp-text-2)" }}>
-                  Active Tournaments
-                </span>
-              </div>
-              <Link
-                to="/tournaments"
-                className="text-xs font-medium transition-colors hover:text-violet-400"
-                style={{ color: "var(--cp-accent)" }}
+            {[
+              { label: "Total Kills", value: stats?.kills ?? 0, icon: Target, color: "#EF4444" },
+              { label: "K/D Ratio",   value: stats?.kd_ratio != null ? stats.kd_ratio.toFixed(2) : "—", icon: BarChart3, color: "#10B981" },
+            ].map(({ label, value, icon: Icon, color }) => (
+              <div
+                key={label}
+                className="rounded-2xl p-4"
+                style={{ background: "var(--cp-surface-2)", border: "1px solid var(--cp-border)" }}
               >
-                View all →
-              </Link>
-            </div>
-
-            {loading ? (
-              <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-14 rounded-xl cp-skeleton" />
-                ))}
-              </div>
-            ) : tournaments.length > 0 ? (
-              <div className="space-y-0.5">
-                {tournaments.map((t, i) => <TournamentItem key={t.id} t={t} idx={i} />)}
-              </div>
-            ) : (
-              <div className="py-8 text-center">
-                <Radio size={22} className="mx-auto mb-2" style={{ color: "var(--cp-text-4)" }} />
-                <p className="text-sm" style={{ color: "var(--cp-text-4)" }}>No active tournaments</p>
-                <Link
-                  to="/tournaments"
-                  className="text-xs mt-1 inline-block hover:underline"
-                  style={{ color: "var(--cp-accent)" }}
-                >
-                  Browse all →
-                </Link>
-              </div>
-            )}
-          </motion.div>
-        </div>
-
-        {/* RIGHT — hero + chart + quick access */}
-        <div className="lg:col-span-8 space-y-4">
-
-          {/* Hero CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="relative overflow-hidden rounded-2xl h-[200px] md:h-[220px]"
-            style={{ background: "linear-gradient(135deg, #1e0a3c 0%, var(--cp-accent) 55%, var(--cp-cyan) 100%)" }}
-          >
-            {/* Grid overlay */}
-            <div
-              className="absolute inset-0 opacity-10"
-              style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)", backgroundSize: "32px 32px" }}
-            />
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl" style={{ background: "var(--cp-cyan-glow)" }} />
-            <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full blur-2xl" style={{ background: "var(--cp-accent-glow)" }} />
-
-            <div className="relative z-10 p-6 md:p-8 h-full flex flex-col justify-between">
-              {season && (
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/10 text-white/90 border border-white/15 backdrop-blur-sm">
-                    <Trophy size={10} />
-                    {season.name}
-                  </span>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center mb-3" style={{ background: `${color}15` }}>
+                  <Icon size={14} style={{ color }} />
                 </div>
-              )}
-
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight mb-4">
-                  Deploy Your Squad. <br />
-                  <span className="text-cyan-300">Dominate the Arena.</span>
-                </h2>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Link
-                    to="/tournaments"
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-violet-700 text-sm font-semibold hover:bg-violet-50 transition-colors shadow-sm"
-                  >
-                    Browse Tournaments <ChevronRight size={13} />
-                  </Link>
-                  <Link
-                    to="/leaderboard"
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 text-white text-sm font-medium border border-white/20 hover:bg-white/15 transition-colors backdrop-blur-sm"
-                  >
-                    Global Rankings
-                  </Link>
-                </div>
+                <p className="text-xl font-black leading-none mb-1" style={{ color: "var(--cp-text-1)" }}>{value}</p>
+                <p className="text-[11px] font-medium" style={{ color: "var(--cp-text-4)" }}>{label}</p>
               </div>
-            </div>
+            ))}
           </motion.div>
 
-          {/* Performance chart */}
+          {/* Tournaments */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.22, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="cp-card p-5"
+            className="rounded-2xl overflow-hidden"
+            style={{ background: "var(--cp-surface-2)", border: "1px solid var(--cp-border)" }}
           >
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
               <div className="flex items-center gap-2">
-                <Activity size={14} style={{ color: "var(--cp-accent)" }} />
-                <span className="text-sm font-semibold" style={{ color: "var(--cp-text-2)" }}>Performance</span>
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "var(--cp-accent-dim)" }}>
+                  <Swords size={12} style={{ color: "var(--cp-accent)" }} />
+                </div>
+                <span className="text-sm font-semibold" style={{ color: "var(--cp-text-2)" }}>Tournaments</span>
               </div>
-              <span
-                className="text-xs px-2.5 py-1 rounded-lg border"
-                style={{ background: "var(--cp-surface-2)", borderColor: "var(--cp-border)", color: "var(--cp-text-4)" }}
-              >
-                7-day view
-              </span>
+              <Link to="/tournaments" className="text-[11px] font-semibold transition-colors hover:text-violet-400" style={{ color: "var(--cp-accent)" }}>
+                View all →
+              </Link>
             </div>
 
-            <ResponsiveContainer width="100%" height={140}>
-              <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+            <div className="px-1 pb-2">
+              {loading ? (
+                <div className="space-y-2 px-3 py-2">
+                  {[...Array(4)].map((_, i) => <div key={i} className="h-14 rounded-xl cp-skeleton" />)}
+                </div>
+              ) : tournaments.length > 0 ? (
+                <div>
+                  {tournaments.map((t, i) => <TournamentItem key={t.id} t={t} idx={i} />)}
+                </div>
+              ) : (
+                <div className="py-10 text-center">
+                  <Radio size={24} className="mx-auto mb-2 opacity-30" style={{ color: "var(--cp-text-4)" }} />
+                  <p className="text-sm" style={{ color: "var(--cp-text-4)" }}>No active tournaments</p>
+                  <Link to="/tournaments" className="text-xs mt-1 inline-block hover:underline" style={{ color: "var(--cp-accent)" }}>Browse all →</Link>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+
+        {/* ── RIGHT COLUMN ────────────────────────────────────── */}
+        <div className="lg:col-span-8 space-y-4">
+
+          {/* Performance chart */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-2xl p-5"
+            style={{ background: "var(--cp-surface-2)", border: "1px solid var(--cp-border)" }}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <Activity size={14} style={{ color: "var(--cp-accent)" }} />
+                  <span className="text-sm font-bold" style={{ color: "var(--cp-text-1)" }}>Performance</span>
+                </div>
+                <p className="text-xs" style={{ color: "var(--cp-text-4)" }}>Weekly XP activity</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-3 py-1.5 rounded-lg font-medium" style={{ background: "var(--cp-surface-3)", border: "1px solid var(--cp-border)", color: "var(--cp-text-4)" }}>
+                  7 days
+                </span>
+              </div>
+            </div>
+
+            <ResponsiveContainer width="100%" height={160}>
+              <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="violetGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"  stopColor="#7c3aed" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"  stopColor="#7C3AED" stopOpacity={0.3} />
+                    <stop offset="90%" stopColor="#7C3AED" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis
-                  dataKey="d"
-                  axisLine={false} tickLine={false}
-                  tick={{ fill: "#64748b", fontSize: 11, fontWeight: 500 }}
-                  dy={8}
-                />
-                <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(124,58,237,0.2)", strokeWidth: 1 }} />
-                <Area
-                  type="monotone" dataKey="v"
-                  stroke="#7c3aed" strokeWidth={2}
-                  fill="url(#violetGrad)"
-                  dot={false}
-                />
+                <XAxis dataKey="d" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }} dy={8} />
+                <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(124,58,237,0.25)", strokeWidth: 1, strokeDasharray: "4 4" }} />
+                <Area type="monotone" dataKey="v" stroke="#7C3AED" strokeWidth={2.5} fill="url(#areaGrad)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </motion.div>
 
-          {/* Quick access */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <QuickCard to="/store"         icon={Sparkles} label="Store"         color="#f59e0b" delay={0.30} />
-            <QuickCard to="/daily-rewards" icon={Star}     label="Daily Rewards" color="#10b981" delay={0.35} />
-            <QuickCard to="/achievements"  icon={Medal}    label="Achievements"  color="#7c3aed" delay={0.40} />
-            <QuickCard to="/leaderboard"   icon={Crown}    label="Rankings"      color="#06b6d4" delay={0.45} />
-          </div>
+          {/* Stats trio */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.16, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="grid grid-cols-3 gap-3"
+          >
+            {[
+              { label: "Matches Played", value: stats?.tournaments_played ?? 0, icon: Swords,    color: "#7C3AED", suffix: "" },
+              { label: "Total Wins",     value: stats?.wins ?? 0,               icon: Trophy,    color: "#F59E0B", suffix: "" },
+              { label: "KD Ratio",       value: stats?.kd_ratio != null ? parseFloat(stats.kd_ratio.toFixed(2)) : 0, icon: Target, color: "#10B981", suffix: "" },
+            ].map(({ label, value, icon: Icon, color, suffix }) => (
+              <div key={label} className="rounded-2xl p-4 flex flex-col gap-3" style={{ background: "var(--cp-surface-2)", border: "1px solid var(--cp-border)" }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${color}15`, border: `1px solid ${color}20` }}>
+                  <Icon size={15} style={{ color }} />
+                </div>
+                <div>
+                  <p className="text-2xl font-black leading-none tabular-nums" style={{ color: "var(--cp-text-1)" }}>
+                    <AnimatedNum value={value} />{suffix}
+                  </p>
+                  <p className="text-[11px] font-medium mt-1" style={{ color: "var(--cp-text-4)" }}>{label}</p>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Season card */}
+          {season && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.22, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="relative overflow-hidden rounded-2xl p-5"
+              style={{ background: "linear-gradient(135deg,#0e0529,#1a0a45)", border: "1px solid rgba(124,58,237,0.25)" }}
+            >
+              <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full blur-3xl pointer-events-none" style={{ background: "rgba(245,158,11,0.12)" }} />
+              <div className="relative z-10 flex items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Star size={14} style={{ color: "var(--cp-gold)" }} />
+                    <span className="text-[11px] font-bold tracking-widest uppercase" style={{ color: "var(--cp-gold)" }}>Active Season</span>
+                  </div>
+                  <h3 className="text-xl font-black mb-1" style={{ color: "var(--cp-text-1)" }}>{season.name}</h3>
+                  {season.ends_at && (
+                    <p className="text-xs flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+                      <Clock size={10} />
+                      Ends {new Date(season.ends_at).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                    </p>
+                  )}
+                </div>
+                <Link
+                  to="/leaderboard"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold flex-shrink-0 transition-all hover:brightness-110"
+                  style={{ background: "rgba(245,158,11,0.15)", color: "#F59E0B", border: "1px solid rgba(245,158,11,0.3)" }}
+                >
+                  <Crown size={13} /> Rankings
+                </Link>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Quick actions */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.28, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <p className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: "var(--cp-text-4)" }}>Quick Access</p>
+            <div className="grid grid-cols-4 gap-3">
+              <QuickCard to="/store"         icon={Sparkles} label="Store"        color="#F59E0B" delay={0.30} />
+              <QuickCard to="/daily-rewards" icon={Gift}     label="Daily Reward" color="#10B981" delay={0.34} />
+              <QuickCard to="/achievements"  icon={Medal}    label="Achievements" color="#7C3AED" delay={0.38} />
+              <QuickCard to="/leaderboard"   icon={Crown}    label="Rankings"     color="#06B6D4" delay={0.42} />
+            </div>
+          </motion.div>
+
+          {/* XP / Level progress full card */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.34, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-2xl p-5"
+            style={{ background: "var(--cp-surface-2)", border: "1px solid var(--cp-border)" }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Zap size={14} style={{ color: "var(--cp-cyan)" }} />
+                <span className="text-sm font-bold" style={{ color: "var(--cp-text-2)" }}>Season Progress</span>
+              </div>
+              <span className="text-xs font-semibold" style={{ color: "var(--cp-text-4)" }}>
+                {profile?.xp || 0} / 1000 XP
+              </span>
+            </div>
+
+            <div className="h-3 rounded-full overflow-hidden mb-3" style={{ background: "var(--cp-surface-3)" }}>
+              <motion.div
+                className="h-full rounded-full relative overflow-hidden"
+                style={{ background: "linear-gradient(90deg,#7C3AED,#06B6D4)" }}
+                initial={{ width: 0 }}
+                animate={{ width: `${xpProgress}%` }}
+                transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
+              >
+                <div className="absolute inset-0 bg-white/20" style={{ backgroundImage: "repeating-linear-gradient(-45deg,transparent,transparent 8px,rgba(255,255,255,0.08) 8px,rgba(255,255,255,0.08) 16px)" }} />
+              </motion.div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              {[25, 50, 75, 100].map(pct => (
+                <div key={pct} className="text-center">
+                  <div className={`w-full h-1 rounded-full mb-1.5 ${xpProgress >= pct ? "" : "opacity-25"}`} style={{ background: xpProgress >= pct ? "var(--cp-accent)" : "var(--cp-surface-3)" }} />
+                  <p className="text-[10px] font-semibold" style={{ color: xpProgress >= pct ? "var(--cp-text-3)" : "var(--cp-text-4)" }}>{pct}%</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>

@@ -48,7 +48,7 @@ export default function PublicTournament() {
     try {
       const { data: t, error: tErr } = await supabase
         .from("tournaments")
-        .select("*")
+        .select("id, name, status, banner_url, game, game_mode, max_players, current_players, prize_coins, entry_fee, starts_at, ends_at, description, rules, type, region, platform, is_verified, created_by, created_at")
         .eq("id", id)
         .single();
       if (tErr || !t) throw new Error("Tournament not found");

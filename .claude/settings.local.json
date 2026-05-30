@@ -88,7 +88,10 @@
       "Bash(Select-String *)",
       "Bash(Get-ChildItem -Path \"C:\\\\cipherpool\" -Force)",
       "Bash(Format-Table -AutoSize)",
-      "Bash(grep -E \"\\\\.\\(js|jsx\\)$\")"
+      "Bash(grep -E \"\\\\.\\(js|jsx\\)$\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\cipherpool\" -Recurse -Force)",
+      "Bash(Select-Object -First 50)",
+      "Bash(Format-List FullName)"
     ]
   }
 }
