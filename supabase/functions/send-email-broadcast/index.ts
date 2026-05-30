@@ -65,12 +65,13 @@ async function fetchProfile(
   // Strategy 1: Service role by UUID — bypasses all RLS (preferred)
   if (SUPABASE_URL && SUPABASE_SVC) {
     try {
+      console.log("QUERYING:", "profiles (svc_by_id)", userId);
       const res  = await fetch(
         `${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=id,email,role,username&limit=1`,
         { headers: pgHeaders(SUPABASE_SVC) },
       );
       const body = await res.json();
-      console.log("PROFILE ERROR (svc_by_id):", res.status, JSON.stringify(body));
+      console.log("FULL ERROR (svc_by_id response):", res.status, JSON.stringify(body));
       if (res.ok && Array.isArray(body) && body.length > 0) {
         return { profile: body[0], strategy: "svc_by_id" };
       }
@@ -82,6 +83,7 @@ async function fetchProfile(
   // Strategy 2: User JWT by UUID — may be blocked by RLS
   if (SUPABASE_URL && userToken) {
     try {
+      console.log("QUERYING:", "profiles (jwt_by_id fallback)");
       const res  = await fetch(
         `${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=id,email,role,username&limit=1`,
         {
@@ -286,6 +288,7 @@ serve(async (req) => {
       return json({ ...dbg, error: "broadcast_id is required in the request body" }, 400);
     }
 
+    console.log("QUERYING:", "notification_broadcasts (select broadcast)");
     const { data: broadcast, error: bcastErr } = await svc
       .from("notification_broadcasts")
       .select("*")
@@ -293,6 +296,8 @@ serve(async (req) => {
       .maybeSingle();
 
     if (bcastErr) {
+      console.error("FULL ERROR:", JSON.stringify(bcastErr, null, 2));
+      console.error(bcastErr);
       return json({ ...dbg, error: `Failed to load broadcast: ${bcastErr.message}`, success: false }, 500);
     }
     if (!broadcast) {
@@ -302,17 +307,22 @@ serve(async (req) => {
       return json({ ...dbg, error: "This broadcast has email disabled (send_email = false)" }, 400);
     }
 
+    console.log("QUERYING:", "RPC get_broadcast_email_recipients");
     const { data: recipients, error: recipErr } = await svc.rpc("get_broadcast_email_recipients", { p_broadcast_id: broadcast_id });
     if (recipErr) {
+      console.error("FULL ERROR:", JSON.stringify(recipErr, null, 2));
+      console.error(recipErr);
       return json({ ...dbg, error: `Failed to fetch email recipients: ${recipErr.message}`, success: false }, 500);
     }
 
     if (!recipients || (recipients as unknown[]).length === 0) {
+      console.log("QUERYING:", "notification_broadcasts (update email_status=sent, 0 recipients)");
       await svc.from("notification_broadcasts").update({ email_status: "sent", email_sent_count: 0 }).eq("id", broadcast_id);
       return json({ ...dbg, success: true, sent: 0, failed: 0, total: 0, note: "No eligible recipients with email notifications enabled." });
     }
 
     const subject = (broadcast.email_subject || broadcast.title) as string;
+    console.log("QUERYING:", "notification_broadcasts (update email_status=sending)");
     await svc.from("notification_broadcasts").update({ email_status: "sending" }).eq("id", broadcast_id);
 
     let sentCount = 0, failedCount = 0;
@@ -330,6 +340,7 @@ serve(async (req) => {
           username:  r.username,
         });
         const result = await sendViaResend(r.email, subject, html);
+        console.log("QUERYING:", "notification_email_logs (insert log for", r.email, ")");
         svc.from("notification_email_logs").insert({
           broadcast_id,
           user_id:       r.user_id,
@@ -348,6 +359,7 @@ serve(async (req) => {
     }
 
     const finalStatus = failedCount === 0 ? "sent" : sentCount === 0 ? "failed" : "partial";
+    console.log("QUERYING:", "notification_broadcasts (update final status:", finalStatus, ")");
     await svc.from("notification_broadcasts")
       .update({ email_status: finalStatus, email_sent_count: sentCount, email_failed_count: failedCount })
       .eq("id", broadcast_id);
@@ -355,7 +367,8 @@ serve(async (req) => {
     return json({ ...dbg, success: sentCount > 0, sent: sentCount, failed: failedCount, total: (recipients as unknown[]).length, status: finalStatus });
 
   } catch (err) {
-    // Last-resort handler — should never reach here but prevents raw 500
+    console.error("FULL ERROR:", JSON.stringify(err, Object.getOwnPropertyNames(err instanceof Error ? err : {}), 2));
+    console.error(err);
     return json({ error: `Unexpected error: ${err instanceof Error ? err.message : String(err)}`, success: false }, 500);
   }
 });
