@@ -259,18 +259,18 @@ export default function Dashboard() {
   const liveCount = tournaments.filter(t => t.status === "live").length;
 
   return (
-    <div className="pb-12" style={{ gap: 0 }}>
+    <div className="cp-dashboard-cinema pb-12" style={{ gap: 0 }}>
 
       {/* ── HERO BANNER ───────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative overflow-hidden rounded-3xl mb-6"
+        className="cp-hero-cinema relative overflow-hidden rounded-3xl mb-6"
         style={{
-          background: "linear-gradient(140deg, #0e0529 0%, #1a0a45 35%, #0d2240 70%, #091828 100%)",
-          border: "1px solid rgba(124,58,237,0.2)",
-          minHeight: 200,
+          background: "linear-gradient(135deg, rgba(8,10,28,0.96), rgba(15,8,48,0.92) 42%, rgba(4,28,48,0.94) 100%)",
+          border: "1px solid rgba(122,226,255,0.18)",
+          minHeight: 230,
         }}
       >
         {/* Grid */}
@@ -279,9 +279,19 @@ export default function Dashboard() {
         <div className="absolute -top-16 -right-16 w-72 h-72 rounded-full blur-3xl pointer-events-none" style={{ background: "rgba(124,58,237,0.25)" }} />
         <div className="absolute -bottom-12 left-1/3 w-56 h-56 rounded-full blur-3xl pointer-events-none" style={{ background: "rgba(6,182,212,0.18)" }} />
         <div className="absolute top-1/2 -translate-y-1/2 right-1/4 w-32 h-32 rounded-full blur-2xl pointer-events-none" style={{ background: "rgba(245,158,11,0.12)" }} />
+        <div className="cp-hero-horizon" />
+        <div className="cp-hero-reticle" />
 
         <div className="relative z-10 p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08, duration: 0.45 }}
+              className="cp-command-kicker"
+            >
+              <span /> Esports Control Room
+            </motion.div>
             {/* Season pill */}
             {season && (
               <motion.div
@@ -328,7 +338,7 @@ export default function Dashboard() {
               className="text-sm"
               style={{ color: "rgba(255,255,255,0.4)" }}
             >
-              Your arena awaits. Deploy. Dominate. Win.
+              Live tournament intelligence, wallet systems, and player progression synced in one command scene.
             </motion.p>
           </div>
 
@@ -336,7 +346,7 @@ export default function Dashboard() {
             initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.25, duration: 0.5 }}
-            className="flex items-center gap-3 flex-shrink-0"
+            className="cp-hero-actions flex items-center gap-3 flex-shrink-0"
           >
             <Link
               to="/wallet"

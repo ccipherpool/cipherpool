@@ -41,8 +41,8 @@ export default function TopNav({ profile }) {
 
   return (
     <nav
-      className="hidden md:flex items-center justify-between flex-shrink-0 px-5 border-b border-slate-200 relative z-40"
-      style={{ height: "52px", background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)" }}
+      className="cp-topnav hidden md:flex items-center justify-between flex-shrink-0 px-5 relative z-40"
+      style={{ height: "58px" }}
     >
       {/* Main nav */}
       <div className="flex items-center gap-0.5">
@@ -55,8 +55,8 @@ export default function TopNav({ profile }) {
               className={[
                 "relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all duration-200",
                 active
-                  ? "text-indigo-600 bg-indigo-50"
-                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-100",
+                  ? "text-cyan-100 bg-cyan-300/10"
+                  : "text-white/46 hover:text-white hover:bg-white/[0.07]",
               ].join(" ")}
             >
               <item.icon size={13} strokeWidth={active ? 2.5 : 2} />
@@ -64,7 +64,8 @@ export default function TopNav({ profile }) {
               {active && (
                 <motion.div
                   layoutId="topnav-active"
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-indigo-500"
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-cyan-300"
+                  style={{ boxShadow: "0 0 10px rgba(34,211,238,0.9)" }}
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
@@ -72,7 +73,7 @@ export default function TopNav({ profile }) {
           );
         })}
 
-        <div className="w-px h-5 bg-slate-200 mx-2" />
+        <div className="w-px h-5 bg-white/10 mx-2" />
 
         <div className="flex items-center gap-0.5">
           {NAV_ICONS.map(item => {
@@ -86,8 +87,8 @@ export default function TopNav({ profile }) {
                 className={[
                   "p-2 rounded-xl transition-all duration-200",
                   active
-                    ? "text-indigo-600 bg-indigo-50"
-                    : "text-slate-400 hover:text-slate-700 hover:bg-slate-100",
+                    ? "text-cyan-200 bg-cyan-300/10"
+                    : "text-white/38 hover:text-white hover:bg-white/[0.07]",
                 ].join(" ")}
               >
                 <item.icon size={15} />
@@ -109,7 +110,7 @@ export default function TopNav({ profile }) {
         <div className="relative group">
           <motion.button
             whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-2xl hover:border-slate-300 hover:bg-white transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
+            className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 cp-profile-trigger rounded-2xl transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/40"
             aria-label="Profile menu"
           >
             <div
@@ -123,10 +124,10 @@ export default function TopNav({ profile }) {
               )}
             </div>
             <div className="hidden lg:flex flex-col items-start">
-              <span className="text-sm font-medium text-slate-800 leading-none">
+                <span className="text-sm font-medium text-white/90 leading-none">
                 {profile?.username || "Player"}
               </span>
-              <span className="text-xs text-slate-400 mt-0.5">
+                <span className="text-xs text-white/38 mt-0.5">
                 Level {profile?.level || 1}
               </span>
             </div>
@@ -134,12 +135,12 @@ export default function TopNav({ profile }) {
 
           {/* Dropdown panel — stays dark for contrast */}
           <div className="absolute right-0 top-full pt-2 opacity-0 translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-[110]">
-            <div className="w-56 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
-                <p className="text-xs text-slate-400 mb-0.5">Signed in as</p>
-                <p className="text-sm font-medium text-slate-800 truncate">{profile?.email}</p>
+            <div className="w-56 cp-dropdown-panel rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/10 bg-white/[0.03]">
+                <p className="text-xs text-white/35 mb-0.5">Signed in as</p>
+                <p className="text-sm font-medium text-white/85 truncate">{profile?.email}</p>
                 {profile?.role && (
-                  <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-600 border border-indigo-100 capitalize">
+                  <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-300/10 text-cyan-200 border border-cyan-300/15 capitalize">
                     {profile.role.replace("_", " ")}
                   </span>
                 )}
@@ -147,34 +148,34 @@ export default function TopNav({ profile }) {
 
               <div className="p-1.5">
                 <NavLink to="/profile"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all">
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-white hover:bg-white/[0.06] transition-all">
                   <User size={14} /> Profile
                 </NavLink>
                 <NavLink to="/wallet"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all">
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-white hover:bg-white/[0.06] transition-all">
                   <Wallet size={14} /> Wallet
                 </NavLink>
 
                 {isAdmin && (
                   <>
-                    <div className="my-1 h-px bg-slate-100" />
+                    <div className="my-1 h-px bg-white/10" />
                     <NavLink to="/admin"
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:text-orange-600 hover:bg-orange-50 transition-all">
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-orange-300 hover:bg-orange-400/10 transition-all">
                       <ShieldAlert size={14} /> Admin Panel
                     </NavLink>
                     {isSuperAdmin && (
                       <NavLink to="/super-admin"
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:text-red-600 hover:bg-red-50 transition-all">
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-red-300 hover:bg-red-400/10 transition-all">
                         <Zap size={14} /> Root Access
                       </NavLink>
                     )}
                   </>
                 )}
 
-                <div className="my-1 h-px bg-slate-100" />
+                <div className="my-1 h-px bg-white/10" />
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/45 hover:text-red-300 hover:bg-red-400/10 transition-all"
                 >
                   <LogOut size={14} /> Sign Out
                 </button>

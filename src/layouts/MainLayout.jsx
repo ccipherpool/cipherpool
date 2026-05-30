@@ -72,7 +72,7 @@ const PAGE_VARIANTS = {
 /* ── LOADING SCREEN ────────────────────────────────────────────────── */
 function LoadingScreen() {
   return (
-    <div className="fixed inset-0 bg-[#09090f] flex items-center justify-center z-[9999]">
+    <div className="fixed inset-0 cp-cinema-shell flex items-center justify-center z-[9999]">
       {/* Ambient orbs */}
       <div className="absolute w-[400px] h-[400px] rounded-full bg-[rgba(139,92,246,0.06)] blur-[100px] pointer-events-none" />
       <div className="absolute w-[300px] h-[300px] rounded-full bg-[rgba(16,185,129,0.04)] blur-[80px] pointer-events-none translate-x-32 translate-y-16" />
@@ -285,19 +285,26 @@ export default function MainLayout() {
   const isChatPage = location.pathname === "/chat";
 
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden" style={{ background: "var(--cp-base)" }}>
+    <div className="cp-cinema-shell flex flex-col h-[100dvh] overflow-hidden">
+      <div className="cp-cinema-atmosphere" aria-hidden="true">
+        <span className="cp-ambient cp-ambient-a" />
+        <span className="cp-ambient cp-ambient-b" />
+        <span className="cp-ambient cp-ambient-c" />
+        <span className="cp-grid-floor" />
+        <span className="cp-scanline" />
+      </div>
 
       {/* ── MOBILE HEADER ────────────────────────────────────────────── */}
       <header className="md:hidden flex-shrink-0 z-50 relative">
         {/* Gradient accent top */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-border to-transparent" />
 
-        <div className="h-14 flex items-center px-4 bg-white/95 backdrop-blur-[24px] border-b border-slate-200">
+        <div className="h-14 flex items-center px-4 cp-mobile-header">
           {/* Menu button */}
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setDrawerOpen(true)}
-            className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all -ml-1"
+            className="w-10 h-10 flex items-center justify-center rounded-xl text-white/55 hover:text-white hover:bg-white/10 transition-all -ml-1"
             aria-label="Open menu"
           >
             <Menu size={20} />
@@ -340,11 +347,11 @@ export default function MainLayout() {
           {/* Page content */}
           <main
             className={`flex-1 overflow-x-hidden cp-scroll-container ${isChatPage ? "overflow-hidden" : "overflow-y-auto"}`}
-            style={{ background: "var(--cp-base)" }}
+            style={{ background: "transparent" }}
           >
             <div className={isChatPage
               ? "h-full flex flex-col"
-              : "max-w-7xl w-full mx-auto px-4 md:px-7 py-5 md:py-7 min-w-0 pb-[calc(env(safe-area-inset-bottom)+80px)] md:pb-7"
+              : "cp-page-frame max-w-7xl w-full mx-auto px-4 md:px-7 py-5 md:py-7 min-w-0 pb-[calc(env(safe-area-inset-bottom)+80px)] md:pb-7"
             }>
               <AnimatePresence mode="wait">
                 <motion.div
@@ -376,10 +383,10 @@ export default function MainLayout() {
       <nav
         className="md:hidden flex-shrink-0 z-50 relative"
         style={{
-          background: "rgba(255,255,255,0.97)",
+          background: "rgba(5,8,22,0.88)",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          borderTop: "1px solid rgba(15,23,42,0.08)",
+          borderTop: "1px solid rgba(255,255,255,0.09)",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
@@ -403,13 +410,13 @@ export default function MainLayout() {
                   <item.icon
                     size={20}
                     strokeWidth={isActive ? 2.5 : 1.8}
-                    className={isActive ? "text-indigo-600" : "text-slate-400"}
+                    className={isActive ? "text-cyan-300" : "text-white/38"}
                   />
                 </motion.div>
                 <span
                   className={[
                     "text-[7px] font-black uppercase tracking-[0.1em] leading-none",
-                    isActive ? "text-indigo-600" : "text-slate-400",
+                    isActive ? "text-cyan-200" : "text-white/35",
                   ].join(" ")}
                 >
                   {item.label}
@@ -418,8 +425,8 @@ export default function MainLayout() {
                 {isActive && (
                   <motion.div
                     layoutId="mobile-nav-dot"
-                    className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-indigo-500"
-                    style={{ boxShadow: "0 0 6px rgba(99,102,241,0.6)" }}
+                    className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-cyan-300"
+                    style={{ boxShadow: "0 0 10px rgba(34,211,238,0.9)" }}
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}

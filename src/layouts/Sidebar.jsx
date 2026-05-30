@@ -12,7 +12,7 @@ import { supabase } from "../lib/supabase";
 /* ── Section label ─────────────────────────────────────────────────── */
 const Section = ({ label, children }) => (
   <div className="space-y-0.5">
-    <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25 px-3 mb-1.5">{label}</p>
+    <p className="cp-sidebar-section text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">{label}</p>
     {children}
   </div>
 );
@@ -24,9 +24,9 @@ const SidebarLink = ({ to, icon: Icon, label, isActive, badge }) => (
     className={[
       "group relative flex items-center gap-2.5 px-3 py-2 rounded-xl",
       "text-sm font-medium",
-      "transition-all duration-200",
+      "cp-sidebar-link transition-all duration-200",
       isActive
-        ? "bg-indigo-500/10 text-white"
+        ? "is-active text-white"
         : "text-white/45 hover:text-white/80 hover:bg-white/[0.05]",
     ].join(" ")}
   >
@@ -34,8 +34,8 @@ const SidebarLink = ({ to, icon: Icon, label, isActive, badge }) => (
     {isActive && (
       <motion.div
         layoutId="sidebar-active-bar"
-        className="absolute left-0 top-[18%] w-[2px] h-[64%] rounded-r-full bg-indigo-400"
-        style={{ boxShadow: "0 0 6px rgba(99,102,241,0.6)" }}
+        className="absolute left-0 top-[18%] w-[2px] h-[64%] rounded-r-full bg-cyan-300"
+        style={{ boxShadow: "0 0 14px rgba(34,211,238,0.9)" }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
       />
     )}
@@ -43,12 +43,12 @@ const SidebarLink = ({ to, icon: Icon, label, isActive, badge }) => (
     <Icon
       size={15}
       strokeWidth={isActive ? 2 : 1.75}
-      className={isActive ? "text-indigo-400 flex-shrink-0" : "flex-shrink-0"}
+      className={isActive ? "text-cyan-300 flex-shrink-0" : "flex-shrink-0"}
     />
     <span className="flex-1 truncate">{label}</span>
 
     {badge != null && badge > 0 && (
-      <span className="flex-shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full bg-indigo-500/10 text-indigo-400 text-[10px] font-semibold flex items-center justify-center">
+      <span className="flex-shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full bg-cyan-400/10 text-cyan-200 text-[10px] font-semibold flex items-center justify-center">
         {badge > 99 ? "99+" : badge}
       </span>
     )}
@@ -72,13 +72,13 @@ export default function Sidebar({ profile }) {
   const isSuperAdmin = profile?.role === "super_admin";
 
   return (
-    <aside className="hidden md:flex w-[220px] flex-shrink-0 flex-col h-full overflow-hidden relative" style={{ background: "#0f172a" }}>
+    <aside className="cp-sidebar hidden md:flex w-[236px] flex-shrink-0 flex-col h-full overflow-hidden relative">
       {/* Right border — single pixel, subtle */}
-      <div className="absolute right-0 top-0 bottom-0 w-px bg-white/[0.06]" />
+      <div className="absolute right-0 top-0 bottom-0 w-px bg-white/[0.08]" />
 
       <div className="relative flex flex-col h-full z-10">
         {/* Logo */}
-        <div className="px-5 py-4 border-b border-white/[0.04] flex-shrink-0">
+        <div className="px-5 py-4 border-b border-white/[0.06] flex-shrink-0">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -144,10 +144,10 @@ export default function Sidebar({ profile }) {
         </div>
 
         {/* User footer */}
-        <div className="p-3 border-t border-white/[0.04] flex-shrink-0">
+        <div className="p-3 border-t border-white/[0.06] flex-shrink-0">
           <motion.div
             whileHover={{ scale: 1.01 }}
-            className="group flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:border-cyber-border transition-all duration-[220ms] cursor-default"
+            className="group cp-user-chip flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-[220ms] cursor-default"
           >
             <div
               className="w-8 h-8 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-semibold text-sm"
