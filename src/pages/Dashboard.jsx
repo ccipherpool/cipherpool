@@ -228,9 +228,9 @@ export default function Dashboard() {
     if (!profile?.id) { setLoading(false); return; }
     (async () => {
       const [tourRes, statsRes, seasonRes] = await Promise.all([
-        supabase.from("tournaments").select("id, name, status, banner_url, prize_coins, max_players, current_players, starts_at").in("status", ["registration_open", "published", "live"]).order("created_at", { ascending: false }).limit(6),
-        supabase.from("player_stats").select("rank, wins, tournaments_played, streak, kills, kd_ratio, xp").eq("user_id", profile.id).maybeSingle(),
-        supabase.from("seasons").select("id, name, status, ends_at").eq("status", "active").maybeSingle(),
+        supabase.from("tournaments").select("id, name, status, banner_url, prize_coins, max_players, current_players, start_date").in("status", ["registration_open", "published", "live"]).order("created_at", { ascending: false }).limit(6),
+        supabase.from("player_stats").select("wins, tournaments_played, win_streak, kills, kd_ratio, best_position").eq("user_id", profile.id).maybeSingle(),
+        supabase.from("seasons").select("id, name, status, end_date").eq("status", "active").maybeSingle(),
       ]);
       setTournaments(tourRes.data || []);
       setStats(statsRes.data || null);
@@ -241,7 +241,7 @@ export default function Dashboard() {
 
   const winRate    = stats?.tournaments_played > 0 ? Math.round((stats.wins / stats.tournaments_played) * 100) : 0;
   const xpProgress = Math.min(((profile?.xp || 0) / 1000) * 100, 100);
-  const balance    = profile?.balance ?? 0;
+  const balance    = profile?.coins ?? profile?.balance ?? 0;
   const level      = profile?.level ?? 1;
 
   const chartData = [
@@ -375,10 +375,10 @@ export default function Dashboard() {
 
       {/* ── STAT CARDS ──────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatCard icon={Wallet}     label="Balance"    value={balance}                suffix=" CP"   color="#F59E0B" delay={0.05} sub={balance > 0 ? "CP" : null} />
-        <StatCard icon={Trophy}     label="Global Rank" value={stats?.rank ?? 0}      prefix="#"     color="#7C3AED" delay={0.10} />
-        <StatCard icon={TrendingUp} label="Win Rate"   value={winRate}               suffix="%"     color="#10B981" delay={0.15} />
-        <StatCard icon={Flame}      label="Streak"     value={stats?.streak ?? 0}    suffix="d"     color="#F97316" delay={0.20} sub={stats?.streak > 2 ? "HOT" : null} />
+        <StatCard icon={Wallet}     label="Balance"    value={balance}                        suffix=" CP"   color="#F59E0B" delay={0.05} sub={balance > 0 ? "CP" : null} />
+        <StatCard icon={Trophy}     label="Global Rank" value={stats?.best_position ?? 0}   prefix="#"     color="#7C3AED" delay={0.10} />
+        <StatCard icon={TrendingUp} label="Win Rate"   value={winRate}                       suffix="%"     color="#10B981" delay={0.15} />
+        <StatCard icon={Flame}      label="Win Streak" value={stats?.win_streak ?? 0}        suffix="W"     color="#F97316" delay={0.20} sub={stats?.win_streak > 2 ? "HOT" : null} />
       </div>
 
       {/* ── MAIN GRID ────────────────────────────────────────────── */}
@@ -492,7 +492,7 @@ export default function Dashboard() {
           >
             {[
               { label: "Total Kills", value: stats?.kills ?? 0, icon: Target, color: "#EF4444" },
-              { label: "K/D Ratio",   value: stats?.kd_ratio != null ? stats.kd_ratio.toFixed(2) : "—", icon: BarChart3, color: "#10B981" },
+              { label: "K/D Ratio",   value: stats?.kd_ratio != null ? Number(stats.kd_ratio).toFixed(2) : "—", icon: BarChart3, color: "#10B981" },
             ].map(({ label, value, icon: Icon, color }) => (
               <div
                 key={label}
@@ -599,7 +599,7 @@ export default function Dashboard() {
             {[
               { label: "Matches Played", value: stats?.tournaments_played ?? 0, icon: Swords,    color: "#7C3AED", suffix: "" },
               { label: "Total Wins",     value: stats?.wins ?? 0,               icon: Trophy,    color: "#F59E0B", suffix: "" },
-              { label: "KD Ratio",       value: stats?.kd_ratio != null ? parseFloat(stats.kd_ratio.toFixed(2)) : 0, icon: Target, color: "#10B981", suffix: "" },
+              { label: "KD Ratio",       value: stats?.kd_ratio != null ? parseFloat(Number(stats.kd_ratio).toFixed(2)) : 0, icon: Target, color: "#10B981", suffix: "" },
             ].map(({ label, value, icon: Icon, color, suffix }) => (
               <div key={label} className="rounded-2xl p-4 flex flex-col gap-3" style={{ background: "var(--cp-surface-2)", border: "1px solid var(--cp-border)" }}>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${color}15`, border: `1px solid ${color}20` }}>
@@ -632,10 +632,10 @@ export default function Dashboard() {
                     <span className="text-[11px] font-bold tracking-widest uppercase" style={{ color: "var(--cp-gold)" }}>Active Season</span>
                   </div>
                   <h3 className="text-xl font-black mb-1" style={{ color: "var(--cp-text-1)" }}>{season.name}</h3>
-                  {season.ends_at && (
+                  {season.end_date && (
                     <p className="text-xs flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>
                       <Clock size={10} />
-                      Ends {new Date(season.ends_at).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                      Ends {new Date(season.end_date).toLocaleDateString("en", { month: "short", day: "numeric" })}
                     </p>
                   )}
                 </div>

@@ -204,7 +204,7 @@ function PlayerRow({ player, idx, isMe, sortKey }) {
         </div>
         <p className="text-[10px] mt-0.5" style={{ color: "var(--cp-text-4)" }}>
           Level {player.level || 1}
-          {player.last_seen && <span className="ml-2">{timeSince(player.last_seen)}</span>}
+          {player.last_seen_at && <span className="ml-2">{timeSince(player.last_seen_at)}</span>}
         </p>
       </div>
 
@@ -255,7 +255,7 @@ export default function Leaderboard() {
         // Step 1: Load profiles — always available source of truth
         const { data: profiles, error: profErr } = await supabase
           .from("profiles")
-          .select("id, username, avatar_url, level, xp, coins, wins, kills, deaths, fair_play_score, last_seen")
+          .select("id, username, avatar_url, level, xp, coins, fair_play_score, is_verified, last_seen_at")
           .order("xp", { ascending: false })
           .limit(150);
 

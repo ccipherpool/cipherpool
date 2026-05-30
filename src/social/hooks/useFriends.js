@@ -12,27 +12,31 @@ export function useFriends() {
   const fetchAll = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
+
     const [friendsRes, receivedRes, sentRes] = await Promise.all([
-      supabase
-        .from('friends')
-        .select('*, profile:profiles!friends_friend_id_fkey(id,username,avatar_url,level)')
-        .eq('user_id', user.id)
-        .order('is_favorite', { ascending: false }),
-      supabase
-        .from('friend_requests')
-        .select('*, sender:profiles!friend_requests_sender_id_fkey(id,username,avatar_url)')
-        .eq('receiver_id', user.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('friend_requests')
-        .select('*, receiver:profiles!friend_requests_receiver_id_fkey(id,username,avatar_url)')
-        .eq('sender_id', user.id)
-        .eq('status', 'pending'),
+      supabase.from('friends').select('id, user_id, friend_id, is_favorite, created_at').eq('user_id', user.id).order('is_favorite', { ascending: false }),
+      supabase.from('friend_requests').select('id, sender_id, receiver_id, status, created_at').eq('receiver_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }),
+      supabase.from('friend_requests').select('id, sender_id, receiver_id, status, created_at').eq('sender_id', user.id).eq('status', 'pending'),
     ]);
-    setFriends(friendsRes.data || []);
-    setPending(receivedRes.data || []);
-    setSent(sentRes.data || []);
+
+    // Collect all profile IDs to fetch in one round-trip
+    const ids = new Set([
+      ...(friendsRes.data  || []).map((r) => r.friend_id),
+      ...(receivedRes.data || []).map((r) => r.sender_id),
+      ...(sentRes.data     || []).map((r) => r.receiver_id),
+    ]);
+    const profileMap = {};
+    if (ids.size > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url, level')
+        .in('id', [...ids]);
+      (profiles || []).forEach((p) => { profileMap[p.id] = p; });
+    }
+
+    setFriends((friendsRes.data || []).map((r) => ({ ...r, profile: profileMap[r.friend_id] ?? null })));
+    setPending((receivedRes.data || []).map((r) => ({ ...r, sender: profileMap[r.sender_id] ?? null })));
+    setSent((sentRes.data || []).map((r) => ({ ...r, receiver: profileMap[r.receiver_id] ?? null })));
     setLoading(false);
   }, [user?.id]);
 

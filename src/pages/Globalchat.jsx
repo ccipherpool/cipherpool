@@ -454,26 +454,33 @@ function OnlinePanelContent({ currentUser, friends, onFriendAction, onSendDM }) 
   const selectedRef = useRef(null);
 
   const fetchOnline = useCallback(async () => {
-    const { data } = await supabase
+    const { data: presenceData } = await supabase
       .from("user_presence")
-      .select("user_id, status, last_seen, profiles:profiles!user_presence_user_id_fkey(id,username,avatar_url,role,level)")
+      .select("user_id, status, last_seen")
       .neq("status", "offline")
       .order("updated_at", { ascending: false })
       .limit(50);
 
-    if (!data) { setLoading(false); return; }
+    if (!presenceData) { setLoading(false); return; }
+
+    const userIds = presenceData.map((r) => r.user_id).filter(Boolean);
+    const { data: profileData } = userIds.length
+      ? await supabase.from("profiles").select("id, username, avatar_url, role, level").in("id", userIds)
+      : { data: [] };
+
+    const profileMap = Object.fromEntries((profileData || []).map((p) => [p.id, p]));
 
     const friendIds  = new Set(friends.map((f) => f.friend_id));
     const STAFF      = new Set(["super_admin","admin","founder","designer"]);
 
-    const enriched = data
-      .filter((r) => r.profiles && r.user_id !== currentUser?.id)
+    const enriched = presenceData
+      .filter((r) => profileMap[r.user_id] && r.user_id !== currentUser?.id)
       .map((r) => ({
-        ...r.profiles,
+        ...profileMap[r.user_id],
         status:    r.status,
         last_seen: r.last_seen,
-        _isFriend: friendIds.has(r.profiles.id),
-        _isStaff:  STAFF.has(r.profiles.role),
+        _isFriend: friendIds.has(profileMap[r.user_id]?.id),
+        _isStaff:  STAFF.has(profileMap[r.user_id]?.role),
       }))
       .sort((a, b) => {
         const score = (u) => (u._isFriend ? 3 : u._isStaff ? 2 : 1);
