@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useRoomEngine } from "../hooks/useRoomEngine";
 import TeamLayout from "../components/room/TeamLayout";
 import RoomSidebar from "../components/room/RoomSidebar";
@@ -83,15 +83,24 @@ export default function TournamentRoom() {
       
       // Check access: organizer / participant / admin / fondateur / super_admin
       if (session.user) {
-        const [{ data: tournamentData }, { data: memberData }, { data: profileData }] = await Promise.all([
+        const [{ data: tournamentData }, { data: memberData }, { data: participantData }, { data: profileData }] = await Promise.all([
           supabase.from("tournaments").select("created_by").eq("id", id).single(),
           supabase.from("room_members").select("id").eq("tournament_id", id).eq("user_id", session.user.id).maybeSingle(),
+          supabase.from("tournament_participants").select("id").eq("tournament_id", id).eq("user_id", session.user.id).eq("status", "approved").maybeSingle(),
           supabase.from("profiles").select("role").eq("id", session.user.id).maybeSingle(),
         ]);
 
         const isOrganizer  = tournamentData?.created_by === session.user.id;
-        const isMember     = !!memberData;
-        const isPrivileged = ["admin","super_admin","founder"].includes(profileData?.role);
+        const isMember     = !!memberData || !!participantData;
+        const isPrivileged = ["admin","super_admin","founder","fondateur","super_admin"].includes(profileData?.role);
+
+        // If approved participant but not in room_members yet, auto-add them
+        if (participantData && !memberData) {
+          await supabase.from("room_members").upsert(
+            { tournament_id: id, user_id: session.user.id },
+            { onConflict: "tournament_id,user_id", ignoreDuplicates: true }
+          );
+        }
 
         if (!isOrganizer && !isMember && !isPrivileged) {
           console.log("⚠️ User not authorized for this room");

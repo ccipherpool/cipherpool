@@ -131,22 +131,23 @@ export default function ManageTournament() {
 
     if (status === "approved") {
       const newPlayerCount = tournament.current_players + 1;
-      
+
       const { error: tournamentError } = await supabase
         .from("tournaments")
-        .update({ 
-          current_players: newPlayerCount 
-        })
+        .update({ current_players: newPlayerCount })
         .eq("id", id);
 
       if (tournamentError) {
         alert("Error updating player count: " + tournamentError.message);
       } else {
-        setTournament({
-          ...tournament,
-          current_players: newPlayerCount
-        });
+        setTournament({ ...tournament, current_players: newPlayerCount });
       }
+
+      // Add to room_members so the player can access the room
+      await supabase.from("room_members").upsert(
+        { tournament_id: id, user_id: userId },
+        { onConflict: "tournament_id,user_id", ignoreDuplicates: true }
+      );
     }
 
     setProcessingId(null);
