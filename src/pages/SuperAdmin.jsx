@@ -8,7 +8,7 @@ import {
   TrendingUp, Lock, FileText, Settings, RefreshCw,
   ShieldOff, Clock, Gamepad2, Ticket, Flag, Wifi, UserCircle2,
   ArrowUpRight, Activity, Calendar, ChevronDown, LogOut,
-  Zap, BarChart3, Globe, Megaphone, Lightbulb, Bell,
+  Zap, BarChart3, Globe, Megaphone, Lightbulb, Bell, Trash2,
 } from "lucide-react";
 
 import DashboardTab    from "./superadmin/tabs/DashboardTab";
@@ -24,8 +24,9 @@ import SeasonsTab       from "./superadmin/tabs/SeasonsTab";
 import AnnouncementsTab from "./superadmin/tabs/AnnouncementsTab";
 import AnalyticsTab     from "./superadmin/tabs/AnalyticsTab";
 import CommunityTab     from "./superadmin/tabs/CommunityTab";
-import CMSTab           from "./superadmin/tabs/CMSTab";
-import NotificationsTab from "./superadmin/tabs/NotificationsTab";
+import CMSTab              from "./superadmin/tabs/CMSTab";
+import NotificationsTab    from "./superadmin/tabs/NotificationsTab";
+import DeletedAccountsTab  from "./superadmin/tabs/DeletedAccountsTab";
 
 import RoleModal          from "./superadmin/modals/RoleModal";
 import BanModal           from "./superadmin/modals/BanModal";
@@ -33,6 +34,7 @@ import WalletModal        from "./superadmin/modals/WalletModal";
 import TournamentModal    from "./superadmin/modals/TournamentModal";
 import DeleteConfirmModal from "./superadmin/modals/DeleteConfirmModal";
 import ProfileModal       from "./superadmin/modals/ProfileModal";
+import DeleteUserModal    from "./superadmin/modals/DeleteUserModal";
 
 const T = {
   bg:        "#020617",
@@ -72,6 +74,7 @@ const NAV_GROUPS = [
       { id: "staff",       label: "Staff",          icon: ShieldCheck,    badgeKey: "admins",       urgent: false },
       { id: "tournaments", label: "Tournaments",    icon: Trophy,         badgeKey: "tournaments",  urgent: false },
       { id: "reports",     label: "Reports",        icon: AlertTriangle,  badgeKey: "reports",      urgent: true  },
+      { id: "deleted",     label: "Deleted Accounts", icon: Trash2,         badgeKey: "deleted",      urgent: true  },
     ],
   },
   {
@@ -129,6 +132,10 @@ export default function SuperAdmin() {
   const [tournamentsEnabled, setTournamentsEnabled] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
+  const [deleteUserTarget, setDeleteUserTarget] = useState(null);
+  const [deleteUserLoading, setDeleteUserLoading] = useState(false);
+  const [pendingReapprovals, setPendingReapprovals] = useState(0);
 
   useEffect(() => {
     checkSuperAdmin();
@@ -161,8 +168,18 @@ export default function SuperAdmin() {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      await Promise.all([fetchUsers(), fetchTournaments(), fetchReports(), fetchLogs(), fetchAdmins(), fetchStats(), fetchSystemConfig()]);
+      await Promise.all([fetchUsers(), fetchTournaments(), fetchReports(), fetchLogs(), fetchAdmins(), fetchStats(), fetchSystemConfig(), fetchPendingReapprovals()]);
     } finally { setLoading(false); }
+  };
+
+  const fetchPendingReapprovals = async () => {
+    try {
+      const { count } = await supabase
+        .from("reapproval_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending");
+      setPendingReapprovals(count || 0);
+    } catch {}
   };
 
   const fetchUsers = async () => {
@@ -286,15 +303,36 @@ export default function SuperAdmin() {
     } catch (err) { showMsg("error", err.message || "Unban failed"); }
   };
 
-  const deleteUser = async (userId) => {
-    if (!window.confirm("Permanently delete this user?")) return;
+  const deleteUser = (userId) => {
+    const target = users.find(u => u.id === userId);
+    setDeleteUserTarget(target || { id: userId });
+    setShowDeleteUserModal(true);
+  };
+
+  const confirmDeleteUser = async (reason) => {
+    if (!deleteUserTarget) return;
+    setDeleteUserLoading(true);
     try {
-      const { error } = await supabase.rpc("delete_user_complete", { target_user: userId });
-      if (error) throw error;
-      await supabase.from("admin_logs").insert([{ admin_id: profile.id, action: "delete_user", details: { target_user: userId } }]);
-      showMsg("success", "User permanently deleted");
-      await fetchUsers();
-    } catch (err) { showMsg("error", err.message || "Delete failed"); }
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ userId: deleteUserTarget.id, reason: reason || null }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || "Delete failed");
+      showMsg("success", `Account deleted — ${json.email || deleteUserTarget.email}`);
+      setShowDeleteUserModal(false);
+      setDeleteUserTarget(null);
+      await Promise.all([fetchUsers(), fetchPendingReapprovals()]);
+    } catch (err) {
+      showMsg("error", err.message || "Delete failed");
+    } finally {
+      setDeleteUserLoading(false);
+    }
   };
 
   const grantCoins = async () => {
@@ -370,6 +408,7 @@ export default function SuperAdmin() {
     if (key === "admins")      return admins.length;
     if (key === "tournaments") return tournaments.length;
     if (key === "reports")     return pendingReportsCount;
+    if (key === "deleted")     return pendingReapprovals;
     return null;
   };
 
@@ -723,6 +762,7 @@ export default function SuperAdmin() {
               {activeTab === "logs"          && <LogsTab         key="logs"        logs={logs} users={users} />}
               {activeTab === "system"      && <SystemTab       key="system"      maintenanceMode={maintenanceMode} setMaintenanceMode={setMaintenanceMode} registrationEnabled={registrationEnabled} setRegistrationEnabled={setRegistrationEnabled} tournamentsEnabled={tournamentsEnabled} setTournamentsEnabled={setTournamentsEnabled} updateSystemConfig={updateSystemConfig} />}
               {activeTab === "cms"         && <CMSTab          key="cms" />}
+              {activeTab === "deleted"     && <DeletedAccountsTab key="deleted" />}
             </AnimatePresence>
           </div>
 
@@ -745,6 +785,14 @@ export default function SuperAdmin() {
         )}
         {showTournamentModal && selectedTournament && (
           <TournamentModal selectedTournament={selectedTournament} tournamentStatus={tournamentStatus} setTournamentStatus={setTournamentStatus} updateTournamentStatus={updateTournamentStatus} onClose={() => setShowTournamentModal(false)} />
+        )}
+        {showDeleteUserModal && deleteUserTarget && (
+          <DeleteUserModal
+            user={deleteUserTarget}
+            loading={deleteUserLoading}
+            onClose={() => { setShowDeleteUserModal(false); setDeleteUserTarget(null); }}
+            onConfirm={confirmDeleteUser}
+          />
         )}
         {showDeleteConfirm && tournamentToDelete && (
           <DeleteConfirmModal

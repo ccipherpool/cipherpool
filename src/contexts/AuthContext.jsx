@@ -13,6 +13,7 @@ export function AuthProvider({ children }) {
   const [equippedItems, setEquippedItems] = useState({});
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [accountStatus, setAccountStatus] = useState("active");
 
   const clearUserData = useCallback(() => {
     setProfile(null);
@@ -21,6 +22,7 @@ export function AuthProvider({ children }) {
     setBalance(0);
     setUserItems([]);
     setEquippedItems({});
+    setAccountStatus("active");
   }, []);
 
   const refreshCurrentUser = useCallback(async (userIdArg) => {
@@ -71,6 +73,21 @@ export function AuthProvider({ children }) {
       setBalance(walletData.balance || 0);
       setUserItems(itemRows);
       setEquippedItems(equipped);
+
+      // Enforce account_status guard
+      const status = nextProfile?.account_status || "active";
+      setAccountStatus(status);
+      if (status === "banned" || status === "pending_reapproval") {
+        const currentPath = window.location.pathname;
+        if (!currentPath.startsWith("/account-restricted")) {
+          // Sign out banned accounts immediately; keep session for pending_reapproval so they can see their info
+          if (status === "banned") {
+            await supabase.auth.signOut();
+          }
+          window.location.replace(`/account-restricted?status=${status}`);
+          return null;
+        }
+      }
 
       return {
         profile: nextProfile,
@@ -168,6 +185,7 @@ export function AuthProvider({ children }) {
       balance,
       userItems,
       equippedItems,
+      accountStatus,
       loading: loading || (!!user && !profile && profileLoading),
       authLoading: loading,
       profileLoading,

@@ -79,9 +79,10 @@ const AdminStorePanel = lazy(() => import("./pages/Adminstorepanel"));
 const DesignerPanel   = lazy(() => import("./pages/Designerpanel"));
 
 // Super Admin
-const SuperAdmin    = lazy(() => import("./pages/SuperAdmin"));
-const AdminGrant    = lazy(() => import("./pages/AdminGrant"));
-const CommandCenter = lazy(() => import("./pages/CommandCenter"));
+const SuperAdmin         = lazy(() => import("./pages/SuperAdmin"));
+const AdminGrant         = lazy(() => import("./pages/AdminGrant"));
+const CommandCenter      = lazy(() => import("./pages/CommandCenter"));
+const AccountRestricted  = lazy(() => import("./pages/AccountRestricted"));
 
 // Notifications
 const Notifications = lazy(() => import("./pages/Notifications"));
@@ -121,8 +122,9 @@ export default function App() {
             {/* Public tournament page — shareable without login */}
             <Route path="/t/:id" element={<PublicTournament />} />
 
-            <Route path="/connexion"   element={<Navigate to="/login" replace />} />
-            <Route path="/inscription" element={<Navigate to="/register" replace />} />
+            <Route path="/connexion"            element={<Navigate to="/login" replace />} />
+            <Route path="/inscription"          element={<Navigate to="/register" replace />} />
+            <Route path="/account-restricted"   element={<AccountRestricted />} />
           </Route>
 
           {/* ── USER ── */}
