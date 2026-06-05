@@ -137,21 +137,23 @@ BEGIN
       'Season ' || v_new_number || ' reset'
     FROM public.wallets WHERE balance > 0;
 
-    UPDATE public.wallets SET balance = 0, updated_at = now();
+    -- WHERE true satisfies pg_safeupdate (Supabase default extension)
+    UPDATE public.wallets SET balance = 0, updated_at = now() WHERE true;
   END IF;
 
   IF p_reset_xp THEN
-    UPDATE public.profiles SET xp = 0, level = 1, updated_at = now();
+    UPDATE public.profiles SET xp = 0, level = 1, updated_at = now() WHERE true;
   END IF;
 
   IF v_do_stats THEN
     UPDATE public.player_stats SET
       kills = 0, wins = 0, losses = 0, tournaments_played = 0,
       top3_finishes = 0, total_points = 0, kd_ratio = 0, mvp_count = 0,
-      updated_at = now();
+      updated_at = now()
+    WHERE true;
   END IF;
 
-  IF p_reset_chat THEN DELETE FROM public.chat_messages; END IF;
+  IF p_reset_chat THEN DELETE FROM public.chat_messages WHERE true; END IF;
 
   IF p_reset_tournaments THEN
     UPDATE public.tournaments SET status = 'cancelled', updated_at = now()
@@ -163,7 +165,7 @@ BEGIN
   END IF;
 
   IF p_reset_clans THEN
-    UPDATE public.clans SET points = 0, updated_at = now();
+    UPDATE public.clans SET points = 0, updated_at = now() WHERE true;
   END IF;
 
   INSERT INTO public.seasons (
