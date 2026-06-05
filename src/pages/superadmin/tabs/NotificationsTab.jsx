@@ -512,9 +512,34 @@ export default function NotificationsTab() {
   const [showPreview, setShowPreview] = useState(true);
   const [estimatedCount, setEstimatedCount] = useState(null);
   const [deliveryReport, setDeliveryReport] = useState(null);
+  const [activeView, setActiveView]   = useState("broadcast"); // "broadcast" | "templates" | "logs"
+  const [templates, setTemplates]     = useState([]);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [emailLogs, setEmailLogs]     = useState([]);
+  const [logsLoading, setLogsLoading] = useState(false);
 
-  useEffect(() => { fetchHistory(); fetchDropdownData(); }, []);
+  useEffect(() => { fetchHistory(); fetchDropdownData(); fetchTemplates(); }, []);
   useEffect(() => { estimateAudience(); }, [form.targetType, form.targetRole, form.tournamentId, form.clanId, form.teamId, selectedUsers]);
+
+  const fetchTemplates = async () => {
+    const { data } = await supabase.from("email_templates").select("*").order("slug");
+    setTemplates(data || []);
+  };
+
+  const fetchEmailLogs = async () => {
+    setLogsLoading(true);
+    const { data } = await supabase.from("email_logs").select("*").order("sent_at", { ascending: false }).limit(100);
+    setEmailLogs(data || []);
+    setLogsLoading(false);
+  };
+
+  const saveTemplate = async (tpl) => {
+    const { error } = await supabase.from("email_templates")
+      .update({ subject: tpl.subject, title: tpl.title, content: tpl.content, cta_label: tpl.cta_label, cta_url: tpl.cta_url, updated_at: new Date().toISOString() })
+      .eq("id", tpl.id);
+    if (!error) { setEditingTemplate(null); fetchTemplates(); showMsg(true, "Template saved."); }
+    else showMsg(false, error.message);
+  };
 
   const showMsg = (ok, text) => { setMsg({ ok, text }); setTimeout(() => setMsg(null), 6000); };
   const set     = (k, v) => setForm(p => ({ ...p, [k]: v }));
@@ -794,6 +819,31 @@ export default function NotificationsTab() {
     >
       <style>{`@keyframes nt-spin { to { transform: rotate(360deg) } }`}</style>
 
+      {/* ── View tabs ───────────────────────────────────── */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 20, padding: "4px", background: C.s2, borderRadius: 10, width: "fit-content" }}>
+        {[
+          { id: "broadcast", label: "Broadcast", icon: <Bell size={12} /> },
+          { id: "templates", label: "Email Templates", icon: <Mail size={12} /> },
+          { id: "logs",      label: "Email Logs",      icon: <MailCheck size={12} /> },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => { setActiveView(tab.id); if (tab.id === "logs") fetchEmailLogs(); }}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "7px 14px", borderRadius: 8, border: "none", cursor: "pointer",
+              background: activeView === tab.id ? C.surface : "transparent",
+              color: activeView === tab.id ? C.text : C.text3,
+              fontSize: 11, fontWeight: activeView === tab.id ? 700 : 500,
+              transition: "all 0.15s",
+            }}
+          >
+            {tab.icon} {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeView === "broadcast" && <>
       {/* ── Header ─────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1323,6 +1373,135 @@ export default function NotificationsTab() {
           </div>
         </div>
       </div>
+      </>}
+
+      {/* ── Email Templates view ─────────────────────────── */}
+      {activeView === "templates" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(6,182,212,0.12)", border: "1px solid rgba(6,182,212,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Mail size={16} color={C.cyan} />
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>Email Templates</div>
+              <div style={{ fontSize: 11, color: C.text3 }}>Edit automated email content — changes apply to future sends</div>
+            </div>
+          </div>
+
+          {templates.length === 0 ? (
+            <div style={{ padding: 32, textAlign: "center", color: C.text3, fontSize: 12, background: C.surface, borderRadius: 14, border: `1px solid ${C.border}` }}>
+              No templates found — run sql/63_welcome_email.sql first.
+            </div>
+          ) : templates.map(tpl => (
+            <div key={tpl.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: editingTemplate?.id === tpl.id ? `1px solid ${C.b2}` : "none" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 7, background: "rgba(99,102,241,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Mail size={12} color={C.indigo} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{tpl.name}</div>
+                    <div style={{ fontSize: 10, color: C.text3, fontFamily: "monospace" }}>{tpl.slug}</div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 9, padding: "2px 7px", borderRadius: 6, background: tpl.is_active ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)", color: tpl.is_active ? C.green : C.red, fontWeight: 700 }}>
+                    {tpl.is_active ? "ACTIVE" : "INACTIVE"}
+                  </span>
+                  <button
+                    onClick={() => setEditingTemplate(editingTemplate?.id === tpl.id ? null : { ...tpl })}
+                    style={{ padding: "5px 12px", borderRadius: 7, border: `1px solid ${C.border}`, background: "transparent", color: C.text2, fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                  >
+                    {editingTemplate?.id === tpl.id ? "Cancel" : "Edit"}
+                  </button>
+                </div>
+              </div>
+
+              {editingTemplate?.id === tpl.id && (
+                <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                  {[
+                    { key: "subject",   label: "Email Subject" },
+                    { key: "title",     label: "Email Title (H1)" },
+                    { key: "cta_label", label: "CTA Button Label" },
+                    { key: "cta_url",   label: "CTA Button URL" },
+                  ].map(({ key, label }) => (
+                    <div key={key}>
+                      <label style={{ fontSize: 10, color: C.text3, display: "block", marginBottom: 4 }}>{label}</label>
+                      <input
+                        value={editingTemplate[key] || ""}
+                        onChange={e => setEditingTemplate(p => ({ ...p, [key]: e.target.value }))}
+                        style={{ width: "100%", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 7, padding: "8px 10px", color: C.text, fontSize: 12, outline: "none", fontFamily: "Inter, sans-serif" }}
+                      />
+                    </div>
+                  ))}
+                  <div>
+                    <label style={{ fontSize: 10, color: C.text3, display: "block", marginBottom: 4 }}>Main Content</label>
+                    <textarea
+                      value={editingTemplate.content || ""}
+                      onChange={e => setEditingTemplate(p => ({ ...p, content: e.target.value }))}
+                      rows={4}
+                      style={{ width: "100%", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 7, padding: "8px 10px", color: C.text, fontSize: 12, outline: "none", resize: "vertical", fontFamily: "Inter, sans-serif" }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    <button
+                      onClick={() => saveTemplate(editingTemplate)}
+                      style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: `linear-gradient(135deg, ${C.indigo}, ${C.accent})`, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+                    >
+                      Save Template
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Email Logs view ──────────────────────────────── */}
+      {activeView === "logs" && (
+        <div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <MailCheck size={16} color={C.green} />
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>Email Delivery Logs</div>
+                <div style={{ fontSize: 11, color: C.text3 }}>Last 100 email delivery attempts</div>
+              </div>
+            </div>
+            <button onClick={fetchEmailLogs} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.border}`, background: "transparent", color: C.text3, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <RefreshCw size={13} />
+            </button>
+          </div>
+
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, overflow: "hidden" }}>
+            {logsLoading ? (
+              <div style={{ display: "flex", justifyContent: "center", padding: 32 }}>
+                <div style={{ width: 20, height: 20, border: `2px solid ${C.accent}30`, borderTop: `2px solid ${C.accent}`, borderRadius: "50%", animation: "nt-spin 0.8s linear infinite" }} />
+              </div>
+            ) : emailLogs.length === 0 ? (
+              <div style={{ padding: 32, textAlign: "center", color: C.text3, fontSize: 12 }}>No email logs yet.</div>
+            ) : emailLogs.map(log => (
+              <div key={log.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderBottom: `1px solid ${C.border}` }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
+                  background: log.status === "sent" ? C.green : log.status === "failed" ? C.red : C.amber }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.email}</div>
+                  <div style={{ fontSize: 10, color: C.text3 }}>{log.template} · {new Date(log.sent_at).toLocaleString()}</div>
+                </div>
+                <span style={{ fontSize: 9, padding: "2px 7px", borderRadius: 6, fontWeight: 700, flexShrink: 0,
+                  background: log.status === "sent" ? "rgba(16,185,129,0.12)" : log.status === "failed" ? "rgba(239,68,68,0.12)" : "rgba(245,158,11,0.12)",
+                  color: log.status === "sent" ? C.green : log.status === "failed" ? C.red : C.amber,
+                }}>
+                  {log.status.toUpperCase()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

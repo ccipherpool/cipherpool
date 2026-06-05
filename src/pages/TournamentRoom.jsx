@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { Menu, X } from "lucide-react";
 import { useRoomEngine } from "../hooks/useRoomEngine";
-import TeamLayout from "../components/room/TeamLayout";
+import CompactPlayerGrid from "../components/room/CompactPlayerGrid";
 import RoomSidebar from "../components/room/RoomSidebar";
-import RoomChat from "../components/room/RoomChat";
 import PlayerProfilePanel from "../components/room/PlayerProfilePanel";
 import { AnimatePresence, motion } from "framer-motion";
 import SubmitResultPanel from "../components/room/SubmitResultPanel";
@@ -16,307 +15,418 @@ import StartMatchModal from "../components/room/Startmatchmodal";
 export default function TournamentRoom() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [accessChecked, setAccessChecked] = useState(false);
-  const [redirectAttempted, setRedirectAttempted] = useState(false);
+
+  const [user, setUser]                     = useState(null);
+  const [authLoading, setAuthLoading]       = useState(true);
+  const [accessChecked, setAccessChecked]   = useState(false);
+  const [redirected, setRedirected]         = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [showSubmit, setShowSubmit] = useState(false);
+  const [showSubmit, setShowSubmit]         = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
-  const [prevStatus, setPrevStatus] = useState(null);
-  const [retryNonce, setRetryNonce] = useState(0);
-  // tournamentState removed — useRoomEngine's tournament is single source of truth
+  const [prevStatus, setPrevStatus]         = useState(null);
+  const [retryNonce, setRetryNonce]         = useState(0);
   const [showStartModal, setShowStartModal] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [mobileSidebar, setMobileSidebar]   = useState(false);
 
   const {
-    tournament,
-    setTournament,
-    members,
-    teams,
+    tournament, setTournament,
+    members, teams,
+    pendingRequests,
     messages,
     role,
-    loading: roomLoading,
-    error,
-    readyCount,
-    countdown,
-    changeSeat,
-    toggleReady,
+    loading: roomLoading, error,
+    readyCount, countdown,
+    swapRequest, incomingSwap,
+    approvePlayer, rejectPlayer, movePlayer, forceReady,
+    updateTournamentStatus,
+    changeSeat, toggleReady,
     sendMessage,
-    lockRoom,
-    startMatch,
-    kickPlayer,
-    swapRequest,
-    incomingSwap,
-    requestSwap,
-    cancelSwapRequest,
-    respondToSwap,
+    lockRoom, startMatch, kickPlayer,
+    requestSwap, cancelSwapRequest, respondToSwap,
   } = useRoomEngine(id, user, authLoading);
 
-  const effectiveTournament = tournament; // always from useRoomEngine
-
-  // Detect match start → show instructions (watch room_status)
+  // ── Auth + access check ──────────────────────────────────────────
   useEffect(() => {
-    const st = effectiveTournament?.room_status || effectiveTournament?.status;
-    if (st === "live" && prevStatus !== "live" && prevStatus !== null) {
-      setShowInstructions(true);
-    }
-    if (st) setPrevStatus(st);
-  }, [effectiveTournament?.room_status, effectiveTournament?.status]);
-
-  // التحقق من session أولاً
-  useEffect(() => {
-    const checkSession = async () => {
+    let mounted = true;
+    const check = async () => {
       setAuthLoading(true);
-      console.log("🔍 Checking session...");
-      
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error || !session) {
-        console.log("❌ No session, redirecting to login");
-        navigate("/login");
+      const { data: { session }, error: sessErr } = await supabase.auth.getSession();
+      if (!mounted) return;
+      if (sessErr || !session) { navigate("/login"); return; }
+      setUser(session.user);
+
+      const [{ data: td }, { data: rm }, { data: tp }, { data: pd }] = await Promise.all([
+        supabase.from("tournaments").select("created_by").eq("id", id).single(),
+        supabase.from("room_members").select("id").eq("tournament_id", id).eq("user_id", session.user.id).maybeSingle(),
+        supabase.from("tournament_participants").select("id").eq("tournament_id", id).eq("user_id", session.user.id).eq("status", "approved").maybeSingle(),
+        supabase.from("profiles").select("role").eq("id", session.user.id).maybeSingle(),
+      ]);
+
+      const isOrg  = td?.created_by === session.user.id;
+      const isPriv = ["admin","super_admin","founder"].includes(pd?.role);
+      const isMem  = !!rm || !!tp;
+
+      // Auto-add approved participant to room_members
+      if (tp && !rm) {
+        await supabase.from("room_members").upsert(
+          { tournament_id: id, user_id: session.user.id },
+          { onConflict: "tournament_id,user_id", ignoreDuplicates: true }
+        );
+      }
+
+      if (!isOrg && !isMem && !isPriv && !redirected) {
+        setRedirected(true);
+        navigate(`/tournaments/${id}`);
         return;
       }
-      
-      console.log("✅ Session found for user:", session.user.id);
-      setUser(session.user);
-      
-      // Check access: organizer / participant / admin / fondateur / super_admin
-      if (session.user) {
-        const [{ data: tournamentData }, { data: memberData }, { data: participantData }, { data: profileData }] = await Promise.all([
-          supabase.from("tournaments").select("created_by").eq("id", id).single(),
-          supabase.from("room_members").select("id").eq("tournament_id", id).eq("user_id", session.user.id).maybeSingle(),
-          supabase.from("tournament_participants").select("id").eq("tournament_id", id).eq("user_id", session.user.id).eq("status", "approved").maybeSingle(),
-          supabase.from("profiles").select("role").eq("id", session.user.id).maybeSingle(),
-        ]);
 
-        const isOrganizer  = tournamentData?.created_by === session.user.id;
-        const isMember     = !!memberData || !!participantData;
-        const isPrivileged = ["admin","super_admin","founder","fondateur","super_admin"].includes(profileData?.role);
-
-        // If approved participant but not in room_members yet, auto-add them
-        if (participantData && !memberData) {
-          await supabase.from("room_members").upsert(
-            { tournament_id: id, user_id: session.user.id },
-            { onConflict: "tournament_id,user_id", ignoreDuplicates: true }
-          );
-        }
-
-        if (!isOrganizer && !isMember && !isPrivileged) {
-          console.log("⚠️ User not authorized for this room");
-          if (!redirectAttempted) {
-            setRedirectAttempted(true);
-            navigate(`/tournaments/${id}`);
-          }
-        }
-      }
-      
-      setAccessChecked(true);
-      setAuthLoading(false);
-      console.log("✅ Auth loading complete");
+      if (mounted) { setAccessChecked(true); setAuthLoading(false); }
     };
-    
-    checkSession();
-  }, [id, navigate, redirectAttempted, retryNonce]);
+    check();
+    return () => { mounted = false; };
+  }, [id, navigate, redirected, retryNonce]);
 
-  // اشتراك في تغييرات auth
+  // Auth state listener
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("🔄 Auth state changed:", event);
-        if (event === 'SIGNED_IN' && session) {
-          setUser(session.user);
-        } else if (event === 'SIGNED_OUT') {
-          navigate('/login');
-        }
-      }
-    );
-
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) setUser(session.user);
+      else if (event === "SIGNED_OUT") navigate("/login");
+    });
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // البحث عن حالة المستخدم الحالي
-  const currentMember = members.find(m => m.user_id === user?.id);
-  const currentUserReady = currentMember?.is_ready || false;
-  
-  // Console logs للتحقق
-  console.log("🎮 Room state:", { 
-    role, 
-    membersCount: members.length, 
-    messagesCount: messages.length, 
-    userMember: currentMember ? "Yes" : "No",
-    tournamentStatus: tournament?.status,
-    readyCount
-  });
+  // Match start instruction overlay
+  useEffect(() => {
+    const st = tournament?.room_status || tournament?.status;
+    if (st === "live" && prevStatus !== "live" && prevStatus !== null) setShowInstructions(true);
+    if (st) setPrevStatus(st);
+  }, [tournament?.room_status, tournament?.status]);
 
-  // إذا كان loading عام
+  const currentMember   = members.find(m => m.user_id === user?.id);
+  const currentUserReady = currentMember?.is_ready || false;
+
+  const tStatus   = tournament?.room_status || tournament?.status || "";
+  const isLive    = tStatus === "live";
+  const isResults = ["results_open","results_pending","finished"].includes(tStatus) || tournament?.status === "finished";
+
+  // ── Loading state ────────────────────────────────────────────────
   if (authLoading || roomLoading || !accessChecked) {
-    console.log("⏳ Loading state:", { authLoading, roomLoading, accessChecked });
     return (
-      <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white/40">Chargement de la salle de tournoi...</p>
-        </div>
+      <div style={{
+        minHeight: "100vh", background: "#06080f",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        flexDirection: "column", gap: 16,
+      }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: "50%",
+          border: "3px solid rgba(99,102,241,0.15)",
+          borderTopColor: "#6366f1",
+          animation: "spin 0.8s linear infinite",
+        }} />
+        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 13, fontFamily: "monospace" }}>
+          Loading tournament room…
+        </p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     );
   }
 
   if (error) {
-    console.error("❌ Room error:", error);
     return (
-      <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-400 mb-4">Error: {error}</p>
-          <button
-            onClick={() => {
-              setAccessChecked(false);
-              setAuthLoading(true);
-              setRetryNonce(n => n + 1);
-            }}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition"
-          >
-            Retry
-          </button>
-        </div>
+      <div style={{
+        minHeight: "100vh", background: "#06080f",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        flexDirection: "column", gap: 12,
+      }}>
+        <p style={{ color: "#ef4444", fontSize: 14 }}>⚠ {error}</p>
+        <button
+          onClick={() => { setAccessChecked(false); setAuthLoading(true); setRetryNonce(n => n + 1); }}
+          style={{
+            padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer",
+            background: "#6366f1", color: "#fff", fontSize: 12, fontWeight: 700,
+          }}
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
-  console.log("🎮 Rendering room with role:", role);
-  return (
-    <div className="h-full min-h-[600px] bg-[#0B0F19] text-white flex flex-col overflow-hidden rounded-3xl border border-white/5 relative">
-      
-      {/* Header */}
-      <div 
-        className="border-b border-white/5 py-4 px-6 flex-shrink-0"
-        style={{
-          background: `linear-gradient(135deg, ${tournament?.background_color || '#6D28D9'}20, #0B0F19)`,
-          borderBottom: `1px solid ${tournament?.background_color || '#6D28D9'}30`
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg md:text-xl font-bold text-white truncate">{tournament?.name}</h1>
-            <div className="flex items-center gap-3 md:gap-4 mt-1 text-[10px] md:text-sm">
-              <span className="text-white/40">
-                {members.length}/{tournament?.max_players} <span className="hidden sm:inline">Players</span>
-              </span>
-              <span className="text-green-400">
-                ✓ {readyCount} <span className="hidden sm:inline">Ready</span>
-              </span>
-              <span className="text-purple-400 font-bold uppercase tracking-widest text-[9px]">
-                {role}
-              </span>
-            </div>
-          </div>
+  const accentColor = tournament?.background_color || "#6366f1";
 
-          <div className="flex items-center gap-3">
-            {/* Countdown Display */}
-            {countdown > 0 && (
-              <div className="text-xl md:text-2xl font-black text-purple-400 animate-pulse font-mono">
-                {countdown}s
-              </div>
-            )}
-            
-            {/* Mobile Sidebar Toggle */}
-            <button 
-              onClick={() => setMobileSidebarOpen(true)}
-              className="md:hidden p-2 rounded-xl bg-white/5 text-slate-400"
-            >
-              <Menu size={20} />
-            </button>
+  return (
+    <div style={{
+      height: "100vh", background: "#06080f", color: "#f4f4f5",
+      display: "flex", flexDirection: "column", overflow: "hidden",
+      fontFamily: "Inter, system-ui, sans-serif",
+    }}>
+
+      {/* ── Header ────────────────────────────────────────────── */}
+      <div style={{
+        height: 52, flexShrink: 0,
+        background: `linear-gradient(135deg, ${accentColor}18, #06080f)`,
+        borderBottom: `1px solid ${accentColor}25`,
+        display: "flex", alignItems: "center",
+        padding: "0 20px", gap: 16,
+      }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1 style={{ fontSize: 15, fontWeight: 800, color: "#f4f4f5", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {tournament?.name}
+          </h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 1 }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+              {members.length}/{tournament?.max_players} players
+            </span>
+            <span style={{ fontSize: 11, color: "#10b981" }}>
+              {readyCount} ready
+            </span>
+            <span style={{
+              fontSize: 9, fontWeight: 800, padding: "1px 7px", borderRadius: 10,
+              background: accentColor + "25", color: accentColor,
+              letterSpacing: 0.8, textTransform: "uppercase",
+            }}>
+              {role}
+            </span>
           </div>
         </div>
+
+        {/* Live countdown in header */}
+        {countdown !== null && countdown > 0 && isLive && (
+          <div style={{
+            fontFamily: "monospace", fontSize: 18, fontWeight: 900,
+            color: "#ef4444", letterSpacing: 2,
+            animation: countdown <= 60 ? "pulse 1s infinite" : "none",
+          }}>
+            {String(Math.floor(countdown / 60)).padStart(2, "0")}:{String(countdown % 60).padStart(2, "0")}
+          </div>
+        )}
+
+        {/* Pending badge for organizer */}
+        {role === "organizer" && pendingRequests.length > 0 && (
+          <div style={{
+            width: 22, height: 22, borderRadius: "50%",
+            background: "#f59e0b", display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 10, fontWeight: 800, color: "#000", flexShrink: 0,
+            animation: "bounce 1s infinite",
+          }}>
+            {pendingRequests.length}
+          </div>
+        )}
+
+        <button
+          onClick={() => setMobileSidebar(true)}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 36, height: 36, borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)",
+            background: "transparent", cursor: "pointer", color: "rgba(255,255,255,0.5)",
+          }}
+          className="lg:hidden"
+        >
+          <Menu size={18} />
+        </button>
       </div>
 
-      {/* Room Status Bar */}
-      <div className="flex-shrink-0">
+      {/* ── Status bar ────────────────────────────────────────── */}
+      <div style={{ flexShrink: 0 }}>
         <RoomStatusBar
-          tournament={effectiveTournament}
+          tournament={tournament}
           role={role}
-          onTournamentUpdate={(t) => setTournament(t)}
+          onTournamentUpdate={t => setTournament(t)}
         />
       </div>
 
-      {/* Main Content - Teams + Sidebar */}
-      <div className="flex flex-1 overflow-hidden relative">
-        
-        {/* Teams Area - Full on mobile, 70% on desktop */}
-        <div className="flex-1 overflow-hidden p-2 md:p-4">
-          <div className="h-full overflow-y-auto pr-1 md:pr-2 scrollbar-thin scrollbar-thumb-purple-500/20 scrollbar-track-transparent">
-            {teams.length > 0 ? (
-              <TeamLayout 
-                teams={teams}
-                tournament={tournament}
-                role={role}
-                currentUserId={user?.id}
-                onSelectPlayer={setSelectedPlayer}
-                onKickPlayer={kickPlayer}
-                onChangeSeat={changeSeat}
-                onSwapRequest={requestSwap}
-              />
-            ) : (
-              <div className="text-center py-20 bg-[#11151C] border border-white/5 rounded-xl">
-                <p className="text-white/40">No teams structure available</p>
-              </div>
+      {/* ── Main layout ───────────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+
+        {/* Left: compact player grid */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+
+          {/* Grid header */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 14,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.4)", letterSpacing: 1, textTransform: "uppercase" }}>
+                Player Grid
+              </span>
+              <span style={{
+                fontSize: 9, fontWeight: 700, padding: "1px 7px", borderRadius: 10,
+                background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.35)",
+              }}>
+                {members.length} / {tournament?.max_players}
+              </span>
+            </div>
+            {readyCount > 0 && (
+              <span style={{ fontSize: 11, color: "#10b981", fontWeight: 700 }}>
+                {readyCount} ready ✓
+              </span>
             )}
           </div>
+
+          <CompactPlayerGrid
+            teams={teams}
+            tournament={tournament}
+            role={role}
+            currentUserId={user?.id}
+            onSelectPlayer={setSelectedPlayer}
+            onKickPlayer={kickPlayer}
+            onMovePlayer={movePlayer}
+            onChangeSeat={changeSeat}
+          />
         </div>
 
-        {/* Right Sidebar - Desktop Fixed, Mobile Drawer */}
-        <div className={`
-          fixed inset-0 z-[100] md:relative md:inset-auto md:z-0
-          md:w-72 lg:w-80 border-l border-white/5 flex-shrink-0
-          transition-transform duration-300 transform
-          ${mobileSidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
-        `}>
-          {/* Mobile Overlay */}
-          <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm md:hidden" 
-            onClick={() => setMobileSidebarOpen(false)}
-          />
-          
-          <div className="absolute right-0 top-0 bottom-0 w-[280px] md:w-full bg-[#0B0F19] md:bg-transparent flex flex-col shadow-2xl md:shadow-none">
-            <div className="md:hidden flex items-center justify-between p-4 border-b border-white/5">
-               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Room Info</span>
-               <button onClick={() => setMobileSidebarOpen(false)} className="p-2 text-slate-400"><X size={18}/></button>
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <RoomSidebar
-                tournament={tournament}
-                players={members}
-                readyCount={readyCount}
-                role={role}
-                roomLocked={tournament?.status !== "registration_open"}
-                countdown={countdown}
-                onLockRoom={lockRoom}
-                onStartMatch={() => setShowStartModal(true)}
-                onToggleReady={toggleReady}
-                currentUserReady={currentUserReady}
-              />
-            </div>
+        {/* Right: sidebar — fixed on desktop, drawer on mobile */}
+        <>
+          {/* Desktop sidebar */}
+          <div style={{
+            width: 300, flexShrink: 0,
+            display: "flex", flexDirection: "column",
+          }} className="hidden lg:flex">
+            <RoomSidebar
+              tournament={tournament}
+              members={members}
+              readyCount={readyCount}
+              role={role}
+              currentUserReady={currentUserReady}
+              onToggleReady={toggleReady}
+              countdown={countdown}
+              pendingRequests={pendingRequests}
+              onApprove={approvePlayer}
+              onReject={rejectPlayer}
+              onKick={kickPlayer}
+              onMovePlayer={movePlayer}
+              onForceReady={forceReady}
+              onStatusChange={updateTournamentStatus}
+              onStartMatch={() => setShowStartModal(true)}
+              messages={messages}
+              onSendMessage={sendMessage}
+              currentUser={user}
+            />
           </div>
-        </div>
+
+          {/* Mobile sidebar drawer */}
+          <AnimatePresence>
+            {mobileSidebar && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setMobileSidebar(false)}
+                  style={{
+                    position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
+                    zIndex: 90, backdropFilter: "blur(4px)",
+                  }}
+                />
+                <motion.div
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                  style={{
+                    position: "fixed", right: 0, top: 0, bottom: 0,
+                    width: 300, zIndex: 100, display: "flex", flexDirection: "column",
+                  }}
+                >
+                  <div style={{
+                    padding: "12px 16px", display: "flex", alignItems: "center",
+                    justifyContent: "space-between", background: "#0a0e1a",
+                    borderBottom: "1px solid rgba(255,255,255,0.07)",
+                  }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1 }}>ROOM INFO</span>
+                    <button onClick={() => setMobileSidebar(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)" }}>
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div style={{ flex: 1, overflow: "hidden" }}>
+                    <RoomSidebar
+                      tournament={tournament}
+                      members={members}
+                      readyCount={readyCount}
+                      role={role}
+                      currentUserReady={currentUserReady}
+                      onToggleReady={toggleReady}
+                      countdown={countdown}
+                      pendingRequests={pendingRequests}
+                      onApprove={approvePlayer}
+                      onReject={rejectPlayer}
+                      onKick={kickPlayer}
+                      onMovePlayer={movePlayer}
+                      onForceReady={forceReady}
+                      onStatusChange={updateTournamentStatus}
+                      onStartMatch={() => { setMobileSidebar(false); setShowStartModal(true); }}
+                      messages={messages}
+                      onSendMessage={sendMessage}
+                      currentUser={user}
+                    />
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </>
       </div>
 
-      {/* ── START MATCH MODAL (admin sets duration) ── */}
+      {/* ── Organizer: End match FAB (when live) ────────────────── */}
+      {role === "organizer" && isLive && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          style={{ position: "fixed", bottom: 24, right: 24, zIndex: 50 }}
+        >
+          <motion.button
+            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+            onClick={async () => {
+              if (!window.confirm("End match and open result submission?")) return;
+              const { error } = await supabase.from("tournaments")
+                .update({ status: "results_pending", room_status: "results_open", match_end_time: new Date().toISOString() })
+                .eq("id", id);
+              if (error) alert("Error: " + error.message);
+            }}
+            style={{
+              padding: "13px 22px", borderRadius: 12, border: "none", cursor: "pointer",
+              background: "linear-gradient(135deg, #ef4444, #7c3aed)",
+              color: "#fff", fontSize: 12, fontWeight: 800, letterSpacing: 1,
+              boxShadow: "0 8px 24px rgba(239,68,68,0.4)",
+            }}
+          >
+            🏁 END MATCH
+          </motion.button>
+        </motion.div>
+      )}
+
+      {/* ── Player: submit result FAB ───────────────────────────── */}
+      {role !== "organizer" && isResults && !showSubmit && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          style={{ position: "fixed", bottom: 24, right: 24, zIndex: 50 }}
+        >
+          <motion.button
+            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+            onClick={() => setShowSubmit(true)}
+            style={{
+              padding: "13px 22px", borderRadius: 12, border: "none", cursor: "pointer",
+              background: "linear-gradient(135deg, #06b6d4, #6366f1)",
+              color: "#fff", fontSize: 12, fontWeight: 800, letterSpacing: 1,
+              boxShadow: "0 8px 24px rgba(6,182,212,0.4)",
+            }}
+          >
+            📊 SUBMIT RESULT
+          </motion.button>
+        </motion.div>
+      )}
+
+      {/* ── Modals & overlays ────────────────────────────────────── */}
       <AnimatePresence>
         {showStartModal && (
           <StartMatchModal
             totalPlayers={members.length}
             onCancel={() => setShowStartModal(false)}
-            onConfirm={(duration) => {
-              setShowStartModal(false);
-              startMatch(duration);
-            }}
+            onConfirm={dur => { setShowStartModal(false); startMatch(dur); }}
           />
         )}
       </AnimatePresence>
 
-      {/* ── MATCH START INSTRUCTIONS ── */}
       <AnimatePresence>
         {showInstructions && role !== "organizer" && (
           <MatchStartOverlay
@@ -326,119 +436,10 @@ export default function TournamentRoom() {
         )}
       </AnimatePresence>
 
-      {/* ── SUBMIT REMINDER when finished ── */}
-      {(effectiveTournament?.room_status === "results_open") && role !== "organizer" && !showSubmit && (
+      {isResults && role !== "organizer" && !showSubmit && (
         <SubmitReminder onSubmit={() => setShowSubmit(true)} />
       )}
 
-      {/* ── INCOMING SWAP REQUEST MODAL ── */}
-      {incomingSwap && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",backdropFilter:"blur(8px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#0a1628",borderRadius:20,border:"1px solid rgba(251,191,36,.3)",padding:32,maxWidth:360,width:"100%",textAlign:"center",boxShadow:"0 0 60px rgba(251,191,36,.15)"}}>
-            <p style={{fontSize:40,marginBottom:12}}>🔄</p>
-            <p style={{fontFamily:"Bebas Neue,cursive",fontSize:24,color:"#fff",letterSpacing:2,marginBottom:8}}>
-              DEMANDE D'ÉCHANGE
-            </p>
-            <p style={{fontFamily:"Space Grotesk,sans-serif",fontSize:14,color:"rgba(255,255,255,.5)",marginBottom:8}}>
-              <strong style={{color:"#fbbf24"}}>{incomingSwap.fromName}</strong> veut échanger sa place avec toi.
-            </p>
-            <p style={{fontFamily:"JetBrains Mono,monospace",fontSize:10,color:"rgba(255,255,255,.3)",marginBottom:24,letterSpacing:1}}>
-              Leur siège: Équipe {incomingSwap.fromTeam} · Place {incomingSwap.fromSeat}
-            </p>
-            <div style={{display:"flex",gap:12}}>
-              <button onClick={() => respondToSwap(false)}
-                style={{flex:1,padding:"12px 0",borderRadius:11,background:"rgba(244,63,94,.1)",border:"1px solid rgba(244,63,94,.3)",color:"#f43f5e",fontFamily:"JetBrains Mono,monospace",fontSize:11,letterSpacing:2,cursor:"pointer",fontWeight:700}}>
-                ❌ REFUSER
-              </button>
-              <button onClick={() => respondToSwap(true)}
-                style={{flex:1,padding:"12px 0",borderRadius:11,background:"linear-gradient(135deg,#10b981,#00d4ff)",border:"none",color:"#000",fontFamily:"JetBrains Mono,monospace",fontSize:11,letterSpacing:2,cursor:"pointer",fontWeight:700}}>
-                ✅ ACCEPTER
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── OUTGOING SWAP REQUEST TOAST ── */}
-      {swapRequest && (
-        <div style={{position:"fixed",bottom:90,left:"50%",transform:"translateX(-50%)",zIndex:200,background:"#0a1628",border:"1px solid rgba(0,212,255,.3)",borderRadius:14,padding:"14px 20px",display:"flex",alignItems:"center",gap:14,boxShadow:"0 8px 32px rgba(0,212,255,.2)"}}>
-          <div style={{fontSize:24,animation:"spin 1s linear infinite"}}>🔄</div>
-          <div>
-            <p style={{fontFamily:"JetBrains Mono,monospace",fontSize:10,color:"#00d4ff",letterSpacing:1,marginBottom:2}}>EN ATTENTE DE RÉPONSE...</p>
-            <p style={{fontFamily:"Space Grotesk,sans-serif",fontSize:12,color:"rgba(255,255,255,.4)"}}>
-              Échange demandé avec <strong style={{color:"#fff"}}>{swapRequest.toPlayer?.full_name}</strong>
-            </p>
-          </div>
-          <button onClick={cancelSwapRequest}
-            style={{background:"rgba(244,63,94,.15)",border:"1px solid rgba(244,63,94,.3)",borderRadius:8,padding:"6px 12px",color:"#f43f5e",fontFamily:"JetBrains Mono,monospace",fontSize:9,cursor:"pointer",letterSpacing:1}}>
-            ANNULER
-          </button>
-        </div>
-      )}
-
-      {/* Chat Area - Bottom */}
-      <div className="h-64 border-t border-white/10 flex-shrink-0">
-        <RoomChat
-          messages={messages}
-          onSendMessage={sendMessage}
-          currentUser={user}
-          role={role}
-          roomLocked={tournament?.status !== "registration_open"}
-          onSelectPlayer={setSelectedPlayer}
-          accentColor={tournament?.background_color}
-        />
-      </div>
-
-      {/* Player Profile Panel */}
-      <AnimatePresence>
-        {selectedPlayer && (
-          <PlayerProfilePanel
-            player={selectedPlayer}
-            onClose={() => setSelectedPlayer(null)}
-            accentColor={tournament?.background_color}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* END MATCH button (organizer only) - shows only when countdown reached 0 */}
-      {role === "organizer" && tournament?.status === "live" && 
-       (countdown === 0 || (countdown === null && tournament?.end_time && new Date(tournament.end_time) <= new Date())) && (
-        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}}
-          style={{position:"fixed",bottom:24,right:24,zIndex:50,display:"flex",gap:10}}>
-          <motion.button whileHover={{scale:1.04}} whileTap={{scale:.96}}
-            onClick={async () => {
-              if(!window.confirm("Terminer le match et ouvrir la soumission des résultats ?")) return;
-              const { error } = await supabase.from("tournaments")
-                .update({ 
-                  status: "finished", 
-                  room_status: "results_open",
-                  match_end_time: new Date().toISOString()
-                })
-                .eq("id", id);
-              if (error) alert("Erreur: " + error.message);
-            }}
-            style={{padding:"14px 24px",borderRadius:14,background:"linear-gradient(135deg,#f43f5e,#7c3aed)",border:"none",color:"#fff",fontFamily:"JetBrains Mono,monospace",fontSize:11,letterSpacing:2,fontWeight:700,cursor:"pointer",boxShadow:"0 8px 32px rgba(244,63,94,.4)"}}>
-            🏁 TERMINER LE MATCH
-          </motion.button>
-        </motion.div>
-      )}
-
-      {/* SUBMIT RESULT button (players) - shows when finished */}
-      {role !== "organizer" && (
-        ["results_open","results_closed","finished"].includes(effectiveTournament?.room_status) ||
-        effectiveTournament?.status === "finished"
-      ) && (
-        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}}
-          style={{position:"fixed",bottom:24,right:24,zIndex:50}}>
-          <motion.button whileHover={{scale:1.04}} whileTap={{scale:.96}}
-            onClick={() => setShowSubmit(true)}
-            style={{padding:"14px 28px",borderRadius:14,background:"linear-gradient(135deg,#00d4ff,#818cf8)",border:"none",color:"#000",fontFamily:"JetBrains Mono,monospace",fontSize:12,letterSpacing:2,fontWeight:700,cursor:"pointer",boxShadow:"0 8px 32px rgba(0,212,255,.4)"}}>
-            📊 SOUMETTRE MON RÉSULTAT
-          </motion.button>
-        </motion.div>
-      )}
-
-      {/* Submit Result Panel */}
       <AnimatePresence>
         {showSubmit && (
           <SubmitResultPanel
@@ -448,6 +449,90 @@ export default function TournamentRoom() {
           />
         )}
       </AnimatePresence>
+
+      {/* Player profile panel */}
+      <AnimatePresence>
+        {selectedPlayer && (
+          <PlayerProfilePanel
+            player={selectedPlayer}
+            onClose={() => setSelectedPlayer(null)}
+            accentColor={accentColor}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Swap modals ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {incomingSwap && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{
+              position: "fixed", inset: 0, zIndex: 300,
+              background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)",
+              display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 16 }} animate={{ scale: 1, y: 0 }}
+              style={{
+                background: "#0a0e1a", borderRadius: 20,
+                border: "1px solid rgba(251,191,36,0.3)",
+                padding: 32, maxWidth: 360, width: "100%", textAlign: "center",
+                boxShadow: "0 0 60px rgba(251,191,36,0.15)",
+              }}
+            >
+              <p style={{ fontSize: 36, marginBottom: 10 }}>🔄</p>
+              <p style={{ fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: 1, marginBottom: 6 }}>SWAP REQUEST</p>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>
+                <strong style={{ color: "#fbbf24" }}>{incomingSwap.fromName}</strong> wants to swap seats with you.
+              </p>
+              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginBottom: 20, fontFamily: "monospace" }}>
+                Their seat: Team {incomingSwap.fromTeam} · Slot {incomingSwap.fromSeat}
+              </p>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => respondToSwap(false)}
+                  style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontWeight: 700, cursor: "pointer" }}>
+                  ✕ Decline
+                </button>
+                <button onClick={() => respondToSwap(true)}
+                  style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #10b981, #06b6d4)", color: "#000", fontWeight: 700, cursor: "pointer" }}>
+                  ✓ Accept
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {swapRequest && (
+        <div style={{
+          position: "fixed", bottom: 80, left: "50%", transform: "translateX(-50%)",
+          zIndex: 200, background: "#0a0e1a",
+          border: "1px solid rgba(99,102,241,0.3)", borderRadius: 12,
+          padding: "12px 18px", display: "flex", alignItems: "center", gap: 12,
+          boxShadow: "0 8px 32px rgba(99,102,241,0.2)",
+        }}>
+          <span style={{ fontSize: 18, animation: "spin 1.5s linear infinite" }}>🔄</span>
+          <div>
+            <p style={{ fontSize: 10, color: "#6366f1", fontWeight: 700, marginBottom: 2 }}>WAITING FOR RESPONSE…</p>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+              Swap requested with <strong style={{ color: "#fff" }}>{swapRequest.toPlayer?.profiles?.full_name || "Player"}</strong>
+            </p>
+          </div>
+          <button onClick={cancelSwapRequest}
+            style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
+            CANCEL
+          </button>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+        @keyframes spin   { to{transform:rotate(360deg)} }
+        .hidden { display: none !important; }
+        @media(min-width:1024px) { .hidden { display: flex !important; } .lg\\:flex { display: flex !important; } .lg\\:hidden { display: none !important; } }
+      `}</style>
     </div>
   );
 }

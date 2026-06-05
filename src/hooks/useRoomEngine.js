@@ -1,686 +1,467 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabase";
 
-export function useRoomEngine(id, user, authLoading) {
-  const [tournament, setTournament] = useState(null);
-  const [members, setMembers] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [role, setRole] = useState("spectator");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [readyCount, setReadyCount] = useState(0);
-  const [countdown, setCountdown] = useState(null);
-  const [playerStats, setPlayerStats] = useState(null);
-
-  useEffect(() => {
-    if (authLoading || !id || !user) {
-      return;
+// ── helpers ─────────────────────────────────────────────────────────
+function findNextSlot(tournament, members) {
+  if (!tournament) return { team: 1, seat: 1 };
+  const { mode, game_type, cs_format, max_players } = tournament;
+  let teamSize, numTeams;
+  if (game_type === "cs") {
+    numTeams = 2;
+    teamSize = cs_format === "1v1" ? 1 : cs_format === "2v2" ? 2 : 4;
+  } else {
+    teamSize = mode === "squad" ? 4 : mode === "duo" ? 2 : 1;
+    numTeams = Math.ceil((max_players || 16) / teamSize);
+  }
+  for (let t = 1; t <= numTeams; t++) {
+    for (let s = 1; s <= teamSize; s++) {
+      if (!members.some(m => m.team_number === t && m.seat_number === s)) {
+        return { team: t, seat: s };
+      }
     }
+  }
+  return { team: 1, seat: members.length + 1 };
+}
 
-    const loadRoomData = async () => {
+export function useRoomEngine(id, user, authLoading) {
+  const [tournament, setTournament]       = useState(null);
+  const [members, setMembers]             = useState([]);
+  const [pendingRequests, setPending]     = useState([]);
+  const [messages, setMessages]           = useState([]);
+  const [role, setRole]                   = useState("spectator");
+  const [loading, setLoading]             = useState(true);
+  const [error, setError]                 = useState(null);
+  const [readyCount, setReadyCount]       = useState(0);
+  const [countdown, setCountdown]         = useState(null);
+  const [swapRequest, setSwapRequest]     = useState(null);
+  const [incomingSwap, setIncomingSwap]   = useState(null);
+  const retryRef                          = useRef(0);
+
+  // ── member query ──────────────────────────────────────────────────
+  const MEMBER_SELECT = `
+    id, user_id, team_number, seat_number, is_ready, created_at,
+    profiles!room_members_user_id_fkey (
+      full_name, username, free_fire_id, avatar_url
+    )
+  `;
+
+  const refreshMembers = useCallback(async () => {
+    const { data } = await supabase
+      .from("room_members")
+      .select(MEMBER_SELECT)
+      .eq("tournament_id", id)
+      .order("team_number", { ascending: true })
+      .order("seat_number",  { ascending: true });
+    setMembers(data || []);
+    setReadyCount((data || []).filter(m => m.is_ready).length);
+  }, [id]);
+
+  const refreshPending = useCallback(async () => {
+    const { data } = await supabase
+      .from("tournament_participants")
+      .select(`
+        id, user_id, status, created_at,
+        profiles!tournament_participants_user_id_fkey (
+          full_name, username, free_fire_id, avatar_url
+        )
+      `)
+      .eq("tournament_id", id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+    setPending(data || []);
+  }, [id]);
+
+  // ── initial load ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (authLoading || !id || !user) return;
+
+    const load = async () => {
       try {
         setLoading(true);
         setError(null);
-        console.log("🔄 Loading room data for user:", user.id);
 
-        const { data: tournamentData, error: tournamentError } = await supabase
+        const { data: t, error: tErr } = await supabase
           .from("tournaments")
           .select("*")
           .eq("id", id)
           .single();
+        if (tErr) throw tErr;
+        setTournament(t);
 
-        if (tournamentError) throw tournamentError;
-        setTournament(tournamentData);
-        console.log("✅ Tournament loaded:", tournamentData.name);
-
-        // Restore countdown from DB end_time if match is live
-        if (tournamentData.status === "live" && tournamentData.end_time) {
-          const remaining = Math.max(0, Math.floor(
-            (new Date(tournamentData.end_time) - new Date()) / 1000
-          ));
-          setCountdown(remaining);
-          if (remaining > 0) {
-            let secs = remaining;
-            const restoreInterval = setInterval(() => {
+        // Restore countdown when live
+        if (t.status === "live" && t.end_time) {
+          const rem = Math.max(0, Math.floor((new Date(t.end_time) - new Date()) / 1000));
+          setCountdown(rem);
+          if (rem > 0) {
+            let secs = rem;
+            const iv = setInterval(() => {
               secs -= 1;
               setCountdown(secs);
-              if (secs <= 0) {
-                clearInterval(restoreInterval);
-                setCountdown(0);
-                // ⏹ Countdown done — organizer must click TERMINER manually
-              }
+              if (secs <= 0) clearInterval(iv);
             }, 1000);
           }
         }
 
-        const { data: membersData, error: membersError } = await supabase
+        const { data: ms, error: msErr } = await supabase
           .from("room_members")
-          .select(`
-            id,
-            user_id,
-            team_number,
-            seat_number,
-            is_ready,
-            created_at,
-            profiles!room_members_user_id_fkey (
-              full_name,
-              free_fire_id,
-              avatar_url
-            )
-          `)
+          .select(MEMBER_SELECT)
           .eq("tournament_id", id)
           .order("team_number", { ascending: true })
-          .order("seat_number", { ascending: true });
+          .order("seat_number",  { ascending: true });
+        if (msErr) throw msErr;
+        setMembers(ms || []);
+        setReadyCount((ms || []).filter(m => m.is_ready).length);
 
-        if (membersError) throw membersError;
-
-        setMembers(membersData || []);
-        setReadyCount(membersData?.filter(m => m.is_ready).length || 0);
-        console.log("✅ Members loaded:", membersData?.length || 0);
-
-        if (user?.id) {
-          const { data: statsData, error: statsError } = await supabase
-            .from("player_stats")
-            .select("*")
-            .eq("user_id", user.id);
-
-          if (statsError) {
-            console.warn("⚠️ Error loading player stats:", statsError);
-          } else {
-            setPlayerStats(statsData?.[0] || null);
-            console.log("✅ Player stats loaded:", statsData?.[0] ? "found" : "not found");
-          }
-        }
-
-        if (user?.id) {
-          if (tournamentData.created_by === user.id) {
-            setRole("organizer");
-            console.log("👑 User is organizer");
-          } else {
-            // Check if admin/super_admin/founder → organizer access
-            const { data: profileData } = await supabase
-              .from("profiles").select("role").eq("id", user.id).maybeSingle();
-            const isPrivileged = ["admin","super_admin","founder"]
-              .includes(profileData?.role);
-
-            if (isPrivileged) {
-              setRole("organizer");
-              console.log("🛡️ Privileged user — organizer access");
-            } else {
-              const isMember = membersData?.some(m => m.user_id === user.id);
-              if (isMember) {
-                setRole("participant");
-                console.log("🎮 User is participant");
-              } else {
-                setRole("spectator");
-                console.log("👀 User is spectator");
-              }
-            }
-          }
+        // Determine role
+        if (t.created_by === user.id) {
+          setRole("organizer");
         } else {
-          setRole("spectator");
-          console.log("👀 No user, spectator mode");
+          const { data: p } = await supabase
+            .from("profiles").select("role").eq("id", user.id).maybeSingle();
+          if (["admin","super_admin","founder"].includes(p?.role)) {
+            setRole("organizer");
+          } else if ((ms || []).some(m => m.user_id === user.id)) {
+            setRole("participant");
+          } else {
+            setRole("spectator");
+          }
         }
-
-        const userMember = membersData?.find(m => m.user_id === user.id);
-        console.log("🔍 User in room_members:", userMember ? "Yes" : "No", userMember);
 
       } catch (err) {
-        console.error("❌ Error loading room:", err);
         setError(err.message);
       } finally {
         setLoading(false);
-        console.log("✅ Room loading complete, loading:", false);
       }
     };
 
-    loadRoomData();
+    load();
   }, [id, user, authLoading]);
 
+  // Load pending requests once role is known
   useEffect(() => {
-    if (loading || !id) return;
-    if (role === "spectator") {
-      console.log("👀 Spectator mode, messages disabled");
-      return;
-    }
+    if (role === "organizer") refreshPending();
+  }, [role, refreshPending]);
 
-    console.log("💬 Loading messages for role:", role);
+  // ── messages ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (loading || !id || role === "spectator") return;
+    supabase
+      .from("room_messages")
+      .select(`id, message, created_at, user_id,
+        profiles!room_messages_user_id_fkey (full_name, username, avatar_url)
+      `)
+      .eq("tournament_id", id)
+      .order("created_at", { ascending: true })
+      .limit(60)
+      .then(({ data }) => setMessages(data || []));
+  }, [id, role, loading]);
 
-    const loadMessages = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("room_messages")
-          .select(`
-            id,
-            message,
-            created_at,
-            user_id,
-            profiles!room_messages_user_id_fkey (
-              full_name,
-              free_fire_id,
-              avatar_url
-            )
-          `)
-          .eq("tournament_id", id)
-          .order("created_at", { ascending: true })
-          .limit(50);
-
-        if (error) throw error;
-        setMessages(data || []);
-        console.log("✅ Messages loaded:", data?.length || 0);
-      } catch (err) {
-        console.warn("⚠️ Error loading messages:", err);
-        if (retryCount < 3) {
-          setTimeout(() => setRetryCount(prev => prev + 1), 3000);
-        }
-      }
-    };
-
-    loadMessages();
-  }, [id, role, retryCount, loading]);
-
+  // ── realtime subscriptions ────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
-
-    const channel = supabase
-      .channel(`room-${id}`)
-      // ── room_members changes ──────────────────────────────────
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'room_members', filter: `tournament_id=eq.${id}` },
-        async () => {
-          console.log("🔄 Members changed, refreshing...");
-          const { data: membersData } = await supabase
-            .from("room_members")
-            .select(`
-              id, user_id, team_number, seat_number, is_ready, created_at,
-              profiles!room_members_user_id_fkey ( full_name, free_fire_id, avatar_url )
-            `)
-            .eq("tournament_id", id)
-            .order("team_number", { ascending: true })
-            .order("seat_number", { ascending: true });
-          setMembers(membersData || []);
-          setReadyCount(membersData?.filter(m => m.is_ready).length || 0);
-        }
+    const ch = supabase
+      .channel(`room-core-${id}`)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "room_members", filter: `tournament_id=eq.${id}` },
+        () => refreshMembers()
       )
-      // ── tournament status changes (live → results_open → finished) ──
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'tournaments', filter: `id=eq.${id}` },
-        async (payload) => {
-          console.log("🏆 Tournament updated:", payload.new?.room_status, payload.new?.status);
-          const { data: tData } = await supabase
-            .from("tournaments")
-            .select("*")
-            .eq("id", id)
-            .maybeSingle();
-          if (tData) setTournament(tData);
+      .on("postgres_changes",
+        { event: "UPDATE", schema: "public", table: "tournaments", filter: `id=eq.${id}` },
+        async () => {
+          const { data } = await supabase.from("tournaments").select("*").eq("id", id).maybeSingle();
+          if (data) setTournament(data);
         }
       )
       .subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [id, refreshMembers]);
 
-    return () => supabase.removeChannel(channel);
-  }, [id]);
-
+  // Organizer: watch tournament_participants for new pending requests
   useEffect(() => {
-    if (!id || (role !== "participant" && role !== "organizer")) return;
+    if (!id || role !== "organizer") return;
+    const ch = supabase
+      .channel(`room-participants-${id}`)
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "tournament_participants", filter: `tournament_id=eq.${id}` },
+        () => refreshPending()
+      )
+      .subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [id, role, refreshPending]);
 
-    console.log("🔌 Subscribing to realtime messages...");
-
-    const channel = supabase
+  // Messages realtime
+  useEffect(() => {
+    if (!id || role === "spectator") return;
+    const ch = supabase
       .channel(`room-messages-${id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'room_messages',
-          filter: `tournament_id=eq.${id}`
-        },
+      .on("postgres_changes",
+        { event: "INSERT", schema: "public", table: "room_messages", filter: `tournament_id=eq.${id}` },
         async (payload) => {
-          console.log("📩 New message received via realtime");
-
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name, free_fire_id, avatar_url")
-            .eq("id", payload.new.user_id)
-            .single();
-
+          const { data: p } = await supabase
+            .from("profiles").select("full_name, username, avatar_url").eq("id", payload.new.user_id).single();
           setMessages(prev => {
-            const exists = prev.some(m => m.id === payload.new.id);
-            if (exists) return prev;
-            return [...prev, { ...payload.new, profiles: profile }];
+            if (prev.some(m => m.id === payload.new.id)) return prev;
+            return [...prev, { ...payload.new, profiles: p }];
           });
         }
       )
       .subscribe();
-
-    return () => {
-      console.log("❌ Removing realtime channel");
-      supabase.removeChannel(channel);
-    };
+    return () => supabase.removeChannel(ch);
   }, [id, role]);
 
-  const generateTeamStructure = () => {
-    if (!tournament) return [];
-
-    const { mode, max_players, game_type, cs_format } = tournament;
-
-    let teamSize, numTeams;
-
-    if (game_type === "cs") {
-      // Clash Squad: ALWAYS 2 teams
-      numTeams = 2;
-      // team_size from cs_format: "1v1"→1, "2v2"→2, "4v4"→4
-      const fmt = cs_format || mode || "4v4";
-      teamSize = fmt === "1v1" ? 1 : fmt === "2v2" ? 2 : 4;
-    } else {
-      // Battle Royale: calculate from mode
-      teamSize = mode === "squad" ? 4 : mode === "duo" ? 2 : 1;
-      numTeams = Math.ceil(max_players / teamSize);
-    }
-
-    const teams = [];
-
-    for (let team = 1; team <= numTeams; team++) {
-      const teamSeats = [];
-      for (let seat = 1; seat <= teamSize; seat++) {
-        const member = members.find(m => m.team_number === team && m.seat_number === seat);
-        teamSeats.push({
-          seatNumber: seat,
-          player: member ? {
-            id: member.user_id,
-            full_name: member.profiles?.full_name || "Unknown",
-            free_fire_id: member.profiles?.free_fire_id || "",
-            avatar_url: member.profiles?.avatar_url || null,
-            isReady: member.is_ready || false
-          } : null
-        });
-      }
-      teams.push({ teamNumber: team, seats: teamSeats });
-    }
-
-    return teams;
-  };
-
-  // ── Swap request state ──────────────────────────────────────────
-  const [swapRequest, setSwapRequest] = useState(null);
-  // swapRequest = { toTeam, toSeat, toPlayer } — I want to go there
-
-  const [incomingSwap, setIncomingSwap] = useState(null);
-  // incomingSwap = { fromUserId, fromTeam, fromSeat, fromName } — they want my seat
-
-  // Listen for swap requests via realtime (room_members changes or a dedicated channel)
+  // ── swap broadcast ────────────────────────────────────────────────
   useEffect(() => {
     if (!id || !user) return;
-    const swapChannel = supabase
+    const ch = supabase
       .channel(`swap-${id}`)
       .on("broadcast", { event: "swap_request" }, ({ payload }) => {
-        // Someone wants to swap with me
-        const myMember = members.find(m => m.user_id === user.id);
-        if (myMember && 
-            payload.toTeam === myMember.team_number && 
-            payload.toSeat === myMember.seat_number &&
-            payload.fromUserId !== user.id) {
+        const me = members.find(m => m.user_id === user.id);
+        if (me && payload.toTeam === me.team_number && payload.toSeat === me.seat_number && payload.fromUserId !== user.id) {
           setIncomingSwap(payload);
         }
       })
       .on("broadcast", { event: "swap_cancelled" }, ({ payload }) => {
-        if (incomingSwap?.fromUserId === payload.fromUserId) {
-          setIncomingSwap(null);
-        }
+        setIncomingSwap(prev => prev?.fromUserId === payload.fromUserId ? null : prev);
       })
       .on("broadcast", { event: "swap_response" }, ({ payload }) => {
-        // Response to MY request
-        if (payload.toUserId === user.id) {
-          if (payload.accepted) {
-            // Execute the swap
-            doSwapExecution(payload.fromTeam, payload.fromSeat, payload.toTeam, payload.toSeat);
-          } else {
-            setSwapRequest(null);
-            alert("❌ Swap refusé.");
-          }
+        if (payload.toUserId !== user.id) return;
+        if (payload.accepted) {
+          doSwapExecution(payload.fromTeam, payload.fromSeat, payload.toTeam, payload.toSeat);
+        } else {
+          setSwapRequest(null);
         }
       })
       .subscribe();
-    return () => supabase.removeChannel(swapChannel);
+    return () => supabase.removeChannel(ch);
   }, [id, user, members, incomingSwap]);
 
-  // Send swap request to another player
-  const requestSwap = async (toTeam, toSeat, toPlayer) => {
-    if (role !== "participant" || tournament?.status !== "open") return;
-    const myMember = members.find(m => m.user_id === user.id);
-    if (!myMember) return;
-
-    setSwapRequest({ toTeam, toSeat, toPlayer });
-
-    await supabase.channel(`swap-${id}`).send({
-      type: "broadcast",
-      event: "swap_request",
-      payload: {
-        fromUserId: user.id,
-        fromName: myMember.profiles?.full_name || "Someone",
-        fromTeam: myMember.team_number,
-        fromSeat: myMember.seat_number,
-        toTeam, toSeat,
-      }
-    });
-  };
-
-  // Cancel my outgoing request
-  const cancelSwapRequest = async () => {
-    if (!swapRequest) return;
-    const myMember = members.find(m => m.user_id === user.id);
-    await supabase.channel(`swap-${id}`).send({
-      type: "broadcast", event: "swap_cancelled",
-      payload: { fromUserId: user.id }
-    });
-    setSwapRequest(null);
-  };
-
-  // Respond to incoming swap request
-  const respondToSwap = async (accepted) => {
-    if (!incomingSwap) return;
-    const myMember = members.find(m => m.user_id === user.id);
-    if (!myMember) return;
-
-    await supabase.channel(`swap-${id}`).send({
-      type: "broadcast", event: "swap_response",
-      payload: {
-        accepted,
-        toUserId: incomingSwap.fromUserId,
-        fromTeam: myMember.team_number,
-        fromSeat: myMember.seat_number,
-        toTeam: incomingSwap.fromTeam,
-        toSeat: incomingSwap.fromSeat,
-      }
-    });
-
-    if (accepted) {
-      doSwapExecution(myMember.team_number, myMember.seat_number, incomingSwap.fromTeam, incomingSwap.fromSeat);
+  // ── team structure ────────────────────────────────────────────────
+  const generateTeamStructure = () => {
+    if (!tournament) return [];
+    const { mode, max_players, game_type, cs_format } = tournament;
+    let teamSize, numTeams;
+    if (game_type === "cs") {
+      numTeams = 2;
+      teamSize = cs_format === "1v1" ? 1 : cs_format === "2v2" ? 2 : 4;
+    } else {
+      teamSize = mode === "squad" ? 4 : mode === "duo" ? 2 : 1;
+      numTeams = Math.ceil((max_players || 16) / teamSize);
     }
-    setIncomingSwap(null);
+    return Array.from({ length: numTeams }, (_, ti) => ({
+      teamNumber: ti + 1,
+      seats: Array.from({ length: teamSize }, (_, si) => {
+        const m = members.find(m => m.team_number === ti + 1 && m.seat_number === si + 1);
+        return {
+          seatNumber: si + 1,
+          player: m ? {
+            id:          m.user_id,
+            full_name:   m.profiles?.full_name || m.profiles?.username || "Player",
+            free_fire_id: m.profiles?.free_fire_id || "",
+            avatar_url:  m.profiles?.avatar_url || null,
+            isReady:     m.is_ready || false,
+          } : null,
+        };
+      }),
+    }));
   };
 
-  // Execute the actual seat swap in DB
-  const doSwapExecution = async (teamA, seatA, teamB, seatB) => {
-    const memberA = members.find(m => m.team_number === teamA && m.seat_number === seatA);
-    const memberB = members.find(m => m.team_number === teamB && m.seat_number === seatB);
-    if (!memberA || !memberB) return;
-
-    // Temp seat to avoid unique conflict
-    await supabase.from("room_members")
-      .update({ team_number: teamA, seat_number: 99 })
-      .eq("tournament_id", id).eq("user_id", memberA.user_id);
-    await supabase.from("room_members")
-      .update({ team_number: teamB, seat_number: seatB })
-      .eq("tournament_id", id).eq("user_id", memberA.user_id);
-    await supabase.from("room_members")
-      .update({ team_number: teamA, seat_number: seatA })
-      .eq("tournament_id", id).eq("user_id", memberB.user_id);
-
-    setSwapRequest(null);
+  // ── actions ───────────────────────────────────────────────────────
+  const approvePlayer = async (userId) => {
+    if (role !== "organizer") return;
+    const { data, error } = await supabase.rpc("approve_tournament_participant", {
+      p_tournament_id: id,
+      p_user_id: userId,
+    });
+    if (error || !data?.success) {
+      // Fallback: do it client-side
+      const { team, seat } = findNextSlot(tournament, members);
+      await supabase.from("tournament_participants")
+        .update({ status: "approved", approved_by: user.id, approved_at: new Date().toISOString() })
+        .eq("tournament_id", id).eq("user_id", userId);
+      await supabase.from("room_members").upsert(
+        { tournament_id: id, user_id: userId, team_number: team, seat_number: seat, is_ready: false },
+        { onConflict: "tournament_id,user_id", ignoreDuplicates: true }
+      );
+    }
+    await Promise.all([refreshMembers(), refreshPending()]);
   };
-  // ── End swap logic ───────────────────────────────────────────────
+
+  const rejectPlayer = async (userId) => {
+    if (role !== "organizer") return;
+    const { data, error } = await supabase.rpc("reject_tournament_participant", {
+      p_tournament_id: id,
+      p_user_id: userId,
+    });
+    if (error || !data?.success) {
+      await supabase.from("tournament_participants")
+        .update({ status: "rejected" })
+        .eq("tournament_id", id).eq("user_id", userId);
+    }
+    refreshPending();
+  };
+
+  const movePlayer = async (userId, teamNumber, seatNumber) => {
+    if (role !== "organizer") return;
+    const occupied = members.find(m => m.team_number === teamNumber && m.seat_number === seatNumber && m.user_id !== userId);
+    if (occupied) {
+      alert("That slot is already taken.");
+      return;
+    }
+    const { error } = await supabase.from("room_members")
+      .update({ team_number: teamNumber, seat_number: seatNumber })
+      .eq("tournament_id", id).eq("user_id", userId);
+    if (error) alert("Move failed: " + error.message);
+    else refreshMembers();
+  };
+
+  const forceReady = async (userId, ready = true) => {
+    if (role !== "organizer") return;
+    const { error } = await supabase.from("room_members")
+      .update({ is_ready: ready })
+      .eq("tournament_id", id).eq("user_id", userId);
+    if (!error) refreshMembers();
+  };
+
+  const updateTournamentStatus = async (newStatus) => {
+    if (role !== "organizer") return;
+    const { error } = await supabase.from("tournaments")
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) alert("Status update failed: " + error.message);
+    else setTournament(prev => ({ ...prev, status: newStatus }));
+  };
 
   const changeSeat = async (teamNumber, seatNumber) => {
-    if (role !== "participant") {
-      alert("Only participants can change seats");
-      return;
-    }
-
-    if (tournament?.status !== "open") {
-      alert("Tournament is not open for seat changes");
-      return;
-    }
-
-    const existingMember = members.find(
-      m => m.team_number === teamNumber && m.seat_number === seatNumber
-    );
-
-    if (existingMember) {
-      // Seat is taken → request swap instead
-      requestSwap(teamNumber, seatNumber, existingMember);
-      return;
-    }
-
-    const currentMember = members.find(m => m.user_id === user.id);
-    if (!currentMember) return;
-
-    setMembers(prev =>
-      prev.map(m =>
-        m.user_id === user.id
-          ? { ...m, team_number: teamNumber, seat_number: seatNumber }
-          : m
-      )
-    );
-
-    try {
-      const { error } = await supabase
-        .from("room_members")
-        .update({
-          team_number: teamNumber,
-          seat_number: seatNumber
-        })
-        .eq("tournament_id", id)
-        .eq("user_id", user.id);
-
-      if (error) {
-        console.error("Error changing seat:", error);
-        setMembers(prev =>
-          prev.map(m =>
-            m.user_id === user.id
-              ? { ...currentMember }
-              : m
-          )
-        );
-        alert("Failed to change seat: " + error.message);
-      }
-    } catch (err) {
-      console.error("Error changing seat:", err);
-      setMembers(prev =>
-        prev.map(m =>
-          m.user_id === user.id
-            ? { ...currentMember }
-            : m
-        )
-      );
-      alert("Failed to change seat: " + err.message);
+    if (role !== "participant") return;
+    const existing = members.find(m => m.team_number === teamNumber && m.seat_number === seatNumber);
+    if (existing) { requestSwap(teamNumber, seatNumber, existing); return; }
+    const cur = members.find(m => m.user_id === user.id);
+    if (!cur) return;
+    setMembers(prev => prev.map(m => m.user_id === user.id ? { ...m, team_number: teamNumber, seat_number: seatNumber } : m));
+    const { error } = await supabase.from("room_members")
+      .update({ team_number: teamNumber, seat_number: seatNumber })
+      .eq("tournament_id", id).eq("user_id", user.id);
+    if (error) {
+      setMembers(prev => prev.map(m => m.user_id === user.id ? cur : m));
+      alert("Seat change failed: " + error.message);
     }
   };
 
   const toggleReady = async () => {
     if (role !== "participant") return;
-
-    const currentMember = members.find(m => m.user_id === user.id);
-    if (!currentMember) return;
-
-    const newReadyState = !currentMember.is_ready;
-
-    setMembers(prev =>
-      prev.map(m =>
-        m.user_id === user.id
-          ? { ...m, is_ready: newReadyState }
-          : m
-      )
-    );
-    setReadyCount(prev => newReadyState ? prev + 1 : prev - 1);
-
-    try {
-      const { error } = await supabase
-        .from("room_members")
-        .update({ is_ready: newReadyState })
-        .eq("tournament_id", id)
-        .eq("user_id", user.id);
-
-      if (error) {
-        console.error("Error toggling ready:", error);
-        setMembers(prev =>
-          prev.map(m =>
-            m.user_id === user.id
-              ? { ...m, is_ready: currentMember.is_ready }
-              : m
-          )
-        );
-        setReadyCount(prev => currentMember.is_ready ? prev + 1 : prev - 1);
-      }
-    } catch (err) {
-      console.error("Error toggling ready:", err);
-      setMembers(prev =>
-        prev.map(m =>
-          m.user_id === user.id
-            ? { ...m, is_ready: currentMember.is_ready }
-            : m
-        )
-      );
-      setReadyCount(prev => currentMember.is_ready ? prev + 1 : prev - 1);
+    const cur = members.find(m => m.user_id === user.id);
+    if (!cur) return;
+    const next = !cur.is_ready;
+    setMembers(prev => prev.map(m => m.user_id === user.id ? { ...m, is_ready: next } : m));
+    setReadyCount(prev => next ? prev + 1 : prev - 1);
+    const { error } = await supabase.from("room_members")
+      .update({ is_ready: next })
+      .eq("tournament_id", id).eq("user_id", user.id);
+    if (error) {
+      setMembers(prev => prev.map(m => m.user_id === user.id ? cur : m));
+      setReadyCount(prev => cur.is_ready ? prev + 1 : prev - 1);
     }
   };
 
   const sendMessage = async (message) => {
-    if (role === "spectator") {
-      alert("Spectators cannot send messages");
-      return;
-    }
-
-    if (!message.trim()) return;
-
-    const tempMessage = {
-      id: Date.now(),
-      message: message.trim(),
+    if (role === "spectator" || !message.trim()) return;
+    const temp = {
+      id: Date.now(), message: message.trim(),
       created_at: new Date().toISOString(),
       user_id: user.id,
-      profiles: {
-        full_name: user.user_metadata?.full_name || "You",
-        free_fire_id: "",
-        avatar_url: null
-      }
+      profiles: { full_name: user.user_metadata?.full_name || "You", avatar_url: null },
     };
-
-    setMessages(prev => [...prev, tempMessage]);
-    console.log("📤 Optimistic message added:", tempMessage);
-
-    try {
-      const { error } = await supabase
-        .from("room_messages")
-        .insert([{
-          tournament_id: id,
-          user_id: user.id,
-          message: message.trim()
-        }]);
-
-      if (error) {
-        console.error("Error sending message:", error);
-        setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
-      }
-    } catch (err) {
-      console.error("Error sending message:", err);
-      setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
-    }
+    setMessages(prev => [...prev, temp]);
+    const { error } = await supabase.from("room_messages")
+      .insert([{ tournament_id: id, user_id: user.id, message: message.trim() }]);
+    if (error) setMessages(prev => prev.filter(m => m.id !== temp.id));
   };
 
   const lockRoom = async () => {
     if (role !== "organizer") return;
-
-    try {
-      const { error } = await supabase
-        .from("tournaments")
-        .update({ status: "locked" })
-        .eq("id", id);
-
-      if (error) throw error;
-      setTournament(prev => ({ ...prev, status: "locked" }));
-
-    } catch (err) {
-      console.error("Error locking room:", err);
-    }
+    const { error } = await supabase.from("tournaments").update({ status: "locked" }).eq("id", id);
+    if (!error) setTournament(prev => ({ ...prev, status: "locked" }));
   };
 
   const startMatch = async (durationMinutes = 20) => {
     if (role !== "organizer") return;
-    // Admin can force start even if not all ready
-
-    const now       = new Date();
-    const endTime   = new Date(now.getTime() + durationMinutes * 60000);
-    const deadline  = new Date(endTime.getTime() + 10 * 60000); // +10min results window
-
-    // Update DB
+    const now      = new Date();
+    const endTime  = new Date(now.getTime() + durationMinutes * 60000);
+    const deadline = new Date(endTime.getTime() + 10 * 60000);
     await supabase.from("tournaments").update({
-      status:          "live",
-      room_status:     "live",
+      status:          "live", room_status: "live",
       start_time:      now.toISOString(),
       match_duration:  durationMinutes,
       end_time:        endTime.toISOString(),
       result_deadline: deadline.toISOString(),
     }).eq("id", id);
-
-    setTournament(prev => ({
-      ...prev,
-      status: "live",
-      room_status: "live",
-      start_time: now.toISOString(),
-      end_time: endTime.toISOString(),
-      result_deadline: deadline.toISOString(),
-      match_duration: durationMinutes,
-    }));
-
-    // Local countdown (seconds)
+    setTournament(prev => ({ ...prev, status: "live", room_status: "live", start_time: now.toISOString(), end_time: endTime.toISOString(), result_deadline: deadline.toISOString(), match_duration: durationMinutes }));
     let secs = durationMinutes * 60;
     setCountdown(secs);
-    const interval = setInterval(() => {
-      secs -= 1;
-      setCountdown(secs);
-      if (secs <= 0) {
-        clearInterval(interval);
-        setCountdown(0);
-        // ⏹ Countdown done — organizer must click TERMINER manually
-      }
-    }, 1000);
+    const iv = setInterval(() => { secs--; setCountdown(secs); if (secs <= 0) clearInterval(iv); }, 1000);
   };
 
   const kickPlayer = async (userId) => {
     if (role !== "organizer") return;
+    await supabase.from("room_members").delete().eq("tournament_id", id).eq("user_id", userId);
+  };
 
-    try {
-      const { error } = await supabase
-        .from("room_members")
-        .delete()
-        .eq("tournament_id", id)
-        .eq("user_id", userId);
+  // ── swap helpers ──────────────────────────────────────────────────
+  const requestSwap = async (toTeam, toSeat, toPlayer) => {
+    if (role !== "participant") return;
+    const me = members.find(m => m.user_id === user.id);
+    if (!me) return;
+    setSwapRequest({ toTeam, toSeat, toPlayer });
+    await supabase.channel(`swap-${id}`).send({
+      type: "broadcast", event: "swap_request",
+      payload: { fromUserId: user.id, fromName: me.profiles?.full_name || "Player", fromTeam: me.team_number, fromSeat: me.seat_number, toTeam, toSeat },
+    });
+  };
 
-      if (error) throw error;
+  const cancelSwapRequest = async () => {
+    await supabase.channel(`swap-${id}`).send({ type: "broadcast", event: "swap_cancelled", payload: { fromUserId: user.id } });
+    setSwapRequest(null);
+  };
 
-    } catch (err) {
-      console.error("Error kicking player:", err);
-    }
+  const respondToSwap = async (accepted) => {
+    if (!incomingSwap) return;
+    const me = members.find(m => m.user_id === user.id);
+    if (!me) return;
+    await supabase.channel(`swap-${id}`).send({
+      type: "broadcast", event: "swap_response",
+      payload: { accepted, toUserId: incomingSwap.fromUserId, fromTeam: me.team_number, fromSeat: me.seat_number, toTeam: incomingSwap.fromTeam, toSeat: incomingSwap.fromSeat },
+    });
+    if (accepted) doSwapExecution(me.team_number, me.seat_number, incomingSwap.fromTeam, incomingSwap.fromSeat);
+    setIncomingSwap(null);
+  };
+
+  const doSwapExecution = async (teamA, seatA, teamB, seatB) => {
+    const mA = members.find(m => m.team_number === teamA && m.seat_number === seatA);
+    const mB = members.find(m => m.team_number === teamB && m.seat_number === seatB);
+    if (!mA || !mB) return;
+    await supabase.from("room_members").update({ seat_number: 99 }).eq("tournament_id", id).eq("user_id", mA.user_id);
+    await supabase.from("room_members").update({ team_number: teamB, seat_number: seatB }).eq("tournament_id", id).eq("user_id", mA.user_id);
+    await supabase.from("room_members").update({ team_number: teamA, seat_number: seatA }).eq("tournament_id", id).eq("user_id", mB.user_id);
+    setSwapRequest(null);
   };
 
   const teams = generateTeamStructure();
 
   return {
-    tournament,
-    members,
-    teams,
+    tournament, setTournament,
+    members, teams,
+    pendingRequests,
     messages,
     role,
-    loading,
-    error,
-    readyCount,
-    countdown,
-    playerStats,
-    selectedPlayer,
-    setSelectedPlayer,
-    changeSeat,
-    swapRequest,
-    incomingSwap,
-    requestSwap,
-    cancelSwapRequest,
-    respondToSwap,
-    toggleReady,
+    loading, error,
+    readyCount, countdown,
+    swapRequest, incomingSwap,
+    // actions
+    approvePlayer, rejectPlayer, movePlayer, forceReady,
+    updateTournamentStatus,
+    changeSeat, toggleReady,
     sendMessage,
-    lockRoom,
-    startMatch,
-    kickPlayer,
-    setTournament
+    lockRoom, startMatch, kickPlayer,
+    requestSwap, cancelSwapRequest, respondToSwap,
   };
 }
