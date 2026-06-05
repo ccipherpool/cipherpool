@@ -153,6 +153,19 @@ export default function ManageTournament() {
     await fetchAllData();
   };
 
+  const updateTournamentStatus = async (newStatus) => {
+    const { error } = await supabase
+      .from("tournaments")
+      .update({ status: newStatus })
+      .eq("id", id);
+
+    if (error) {
+      alert("Erreur: " + error.message);
+    } else {
+      setTournament({ ...tournament, status: newStatus });
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch(status) {
       case "pending":
@@ -184,12 +197,38 @@ export default function ManageTournament() {
               <h1 className="text-3xl font-bold text-white mb-2">Manage Tournament</h1>
               <p className="text-white/40">{tournament?.name}</p>
             </div>
-            <Link
-              to={`/tournaments/${id}`}
-              className="px-4 py-2 border border-white/10 hover:border-white/30 rounded-lg text-sm transition"
-            >
-              ← Back to Tournament
-            </Link>
+            <div className="flex items-center gap-3">
+              {/* Status control */}
+              {tournament?.status === 'draft' && (
+                <button
+                  onClick={() => updateTournamentStatus('registration_open')}
+                  className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-400 rounded-lg text-sm font-bold transition"
+                >
+                  🟢 Ouvrir les inscriptions
+                </button>
+              )}
+              {tournament?.status === 'registration_open' && (
+                <button
+                  onClick={() => updateTournamentStatus('draft')}
+                  className="px-4 py-2 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 text-orange-400 rounded-lg text-sm font-bold transition"
+                >
+                  🔒 Fermer les inscriptions
+                </button>
+              )}
+              <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                tournament?.status === 'registration_open' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                tournament?.status === 'draft' ? 'bg-white/5 text-white/40 border-white/10' :
+                'bg-orange-500/10 text-orange-400 border-orange-500/20'
+              }`}>
+                {tournament?.status}
+              </span>
+              <Link
+                to={`/tournaments/${id}`}
+                className="px-4 py-2 border border-white/10 hover:border-white/30 rounded-lg text-sm transition"
+              >
+                ← Back to Tournament
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-5 gap-4 mt-6">

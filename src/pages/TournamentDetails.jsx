@@ -99,6 +99,9 @@ export default function TournamentDetails() {
   const full = tournament.current_players >= tournament.max_players;
   const s    = STATUS_MAP[tournament.status] || STATUS_MAP.published;
   const free = (tournament.entry_fee || 0) === 0;
+  const canRegister    = tournament.status === 'registration_open' && !full;
+  const notOpenYet     = ['draft', 'published'].includes(tournament.status);
+  const alreadyStarted = ['ready', 'live', 'results_pending', 'completed', 'archived', 'cancelled'].includes(tournament.status);
 
   const RULES = [
     "Pas de triche ni d'émulateurs autorisés.",
@@ -269,18 +272,26 @@ export default function TournamentDetails() {
                 style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 13, fontFamily: "Orbitron,sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: 2, color: "#000", textDecoration: "none", background: `linear-gradient(135deg,${GREEN},#059669)`, boxShadow: `0 6px 24px rgba(16,185,129,0.35)` }}>
                 ⚡ ACCÉDER À LA SALLE
               </Link>
+            ) : alreadyStarted ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 13, fontFamily: "Orbitron,sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: 2, color: "rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                🏁 TOURNOI TERMINÉ
+              </div>
+            ) : notOpenYet ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 13, fontFamily: "Orbitron,sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: 2, color: ORANGE, background: "rgba(249,115,22,0.07)", border: `1px solid rgba(249,115,22,0.2)` }}>
+                🔒 INSCRIPTIONS PAS ENCORE OUVERTES
+              </div>
             ) : userRequest?.status === "pending" ? (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", borderRadius: 13, fontFamily: "Orbitron,sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: 2, color: ORANGE, background: "rgba(249,115,22,0.1)", border: `1px solid rgba(249,115,22,0.25)` }}>
                 ⏳ DEMANDE EN ATTENTE
               </div>
             ) : (
-              <button onClick={requestToJoin} disabled={requesting || full}
+              <button onClick={requestToJoin} disabled={requesting || !canRegister}
                 style={{
-                  width: "100%", padding: "14px", borderRadius: 13, border: "none", cursor: (requesting || full) ? "not-allowed" : "pointer",
+                  width: "100%", padding: "14px", borderRadius: 13, border: "none", cursor: (requesting || !canRegister) ? "not-allowed" : "pointer",
                   fontFamily: "Orbitron,sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: 2,
-                  background: full ? "rgba(255,255,255,0.04)" : `linear-gradient(135deg,${CYAN},${VIOLET})`,
-                  color: full ? "rgba(255,255,255,0.2)" : "#fff",
-                  boxShadow: full ? "none" : `0 6px 24px rgba(0,212,255,0.3)`,
+                  background: !canRegister ? "rgba(255,255,255,0.04)" : `linear-gradient(135deg,${CYAN},${VIOLET})`,
+                  color: !canRegister ? "rgba(255,255,255,0.2)" : "#fff",
+                  boxShadow: !canRegister ? "none" : `0 6px 24px rgba(0,212,255,0.3)`,
                   opacity: requesting ? 0.7 : 1, transition: "all 0.2s",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}>

@@ -89,8 +89,19 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (!mounted) return;
+
+      // Invalid/expired refresh token — clear it and treat as logged out
+      if (error) {
+        console.warn("Session restore failed, signing out:", error.message);
+        await supabase.auth.signOut();
+        setUser(null);
+        clearUserData();
+        setLoading(false);
+        return;
+      }
+
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
