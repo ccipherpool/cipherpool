@@ -1,32 +1,46 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Users, CheckCircle, Grid, List } from "lucide-react";
 import { useRoomEngine } from "../hooks/useRoomEngine";
 import CompactPlayerGrid from "../components/room/CompactPlayerGrid";
 import RoomSidebar from "../components/room/RoomSidebar";
+import RosterManager from "../components/room/RosterManager";
 import PlayerProfilePanel from "../components/room/PlayerProfilePanel";
 import { AnimatePresence, motion } from "framer-motion";
 import SubmitResultPanel from "../components/room/SubmitResultPanel";
-import { MatchStartOverlay, SubmitReminder } from "../components/room/MatchInstructions";
-import RoomStatusBar from "../components/room/RoomStatusBar";
+import { MatchStartOverlay } from "../components/room/MatchInstructions";
 import StartMatchModal from "../components/room/Startmatchmodal";
 
+const STATUS_META = {
+  draft:               { label: "Draft",               color: "#64748b" },
+  registration_open:   { label: "Open",                color: "#10b981" },
+  registration_closed: { label: "Registration Closed", color: "#f59e0b" },
+  ready_check:         { label: "Ready Check",         color: "#06b6d4" },
+  lobby_created:       { label: "Lobby Ready",         color: "#6366f1" },
+  in_progress:         { label: "In Progress",         color: "#ef4444" },
+  live:                { label: "Live",                color: "#ef4444" },
+  results:             { label: "Results",             color: "#f59e0b" },
+  results_pending:     { label: "Results Pending",     color: "#f59e0b" },
+  finished:            { label: "Finished",            color: "#10b981" },
+  completed:           { label: "Completed",           color: "#10b981" },
+};
+
 export default function TournamentRoom() {
-  const { id } = useParams();
+  const { id }   = useParams();
   const navigate = useNavigate();
 
-  const [user, setUser]                     = useState(null);
-  const [authLoading, setAuthLoading]       = useState(true);
-  const [accessChecked, setAccessChecked]   = useState(false);
-  const [redirected, setRedirected]         = useState(false);
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [showSubmit, setShowSubmit]         = useState(false);
+  const [user, setUser]                       = useState(null);
+  const [authLoading, setAuthLoading]         = useState(true);
+  const [accessChecked, setAccessChecked]     = useState(false);
+  const [redirected, setRedirected]           = useState(false);
+  const [selectedPlayer, setSelectedPlayer]   = useState(null);
+  const [showSubmit, setShowSubmit]           = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
-  const [prevStatus, setPrevStatus]         = useState(null);
-  const [retryNonce, setRetryNonce]         = useState(0);
-  const [showStartModal, setShowStartModal] = useState(false);
-  const [mobileSidebar, setMobileSidebar]   = useState(false);
+  const [prevStatus, setPrevStatus]           = useState(null);
+  const [showStartModal, setShowStartModal]   = useState(false);
+  const [mobileSidebar, setMobileSidebar]     = useState(false);
+  const [leftTab, setLeftTab]                 = useState("grid");
 
   const {
     tournament, setTournament,
@@ -41,18 +55,20 @@ export default function TournamentRoom() {
     updateTournamentStatus,
     changeSeat, toggleReady,
     sendMessage,
-    lockRoom, startMatch, kickPlayer,
+    startMatch, kickPlayer,
+    closeRegistration, generateSlots, lockParticipants,
+    startReadyCheck, removeNotReady,
     requestSwap, cancelSwapRequest, respondToSwap,
   } = useRoomEngine(id, user, authLoading);
 
-  // ── Auth + access check ──────────────────────────────────────────
+  // ── Auth + access ────────────────────────────────────────────────
   useEffect(() => {
     let mounted = true;
     const check = async () => {
       setAuthLoading(true);
-      const { data: { session }, error: sessErr } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (!mounted) return;
-      if (sessErr || !session) { navigate("/login"); return; }
+      if (!session) { navigate("/login"); return; }
       setUser(session.user);
 
       const [{ data: td }, { data: rm }, { data: tp }, { data: pd }] = await Promise.all([
@@ -66,7 +82,6 @@ export default function TournamentRoom() {
       const isPriv = ["admin","super_admin","founder"].includes(pd?.role);
       const isMem  = !!rm || !!tp;
 
-      // Auto-add approved participant to room_members
       if (tp && !rm) {
         await supabase.from("room_members").upsert(
           { tournament_id: id, user_id: session.user.id },
@@ -84,48 +99,37 @@ export default function TournamentRoom() {
     };
     check();
     return () => { mounted = false; };
-  }, [id, navigate, redirected, retryNonce]);
+  }, [id, navigate, redirected]);
 
-  // Auth state listener
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) setUser(session.user);
-      else if (event === "SIGNED_OUT") navigate("/login");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((e, s) => {
+      if (e === "SIGNED_IN" && s) setUser(s.user);
+      else if (e === "SIGNED_OUT") navigate("/login");
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Match start instruction overlay
   useEffect(() => {
-    const st = tournament?.room_status || tournament?.status;
-    if (st === "live" && prevStatus !== "live" && prevStatus !== null) setShowInstructions(true);
+    const st = tournament?.status;
+    if ((st === "in_progress" || st === "live") && prevStatus !== st && prevStatus !== null)
+      setShowInstructions(true);
     if (st) setPrevStatus(st);
-  }, [tournament?.room_status, tournament?.status]);
+  }, [tournament?.status]);
 
-  const currentMember   = members.find(m => m.user_id === user?.id);
+  const currentMember    = members.find(m => m.user_id === user?.id);
   const currentUserReady = currentMember?.is_ready || false;
+  const tStatus          = tournament?.status || "draft";
+  const statusMeta       = STATUS_META[tStatus] || STATUS_META.draft;
+  const isLive           = tStatus === "in_progress" || tStatus === "live";
+  const isResults        = ["results","results_pending","finished","completed"].includes(tStatus);
+  const accentColor      = tournament?.background_color || "#6366f1";
 
-  const tStatus   = tournament?.room_status || tournament?.status || "";
-  const isLive    = tStatus === "live";
-  const isResults = ["results_open","results_pending","finished"].includes(tStatus) || tournament?.status === "finished";
-
-  // ── Loading state ────────────────────────────────────────────────
+  // ── Loading ──────────────────────────────────────────────────────
   if (authLoading || roomLoading || !accessChecked) {
     return (
-      <div style={{
-        minHeight: "100vh", background: "#06080f",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        flexDirection: "column", gap: 16,
-      }}>
-        <div style={{
-          width: 48, height: 48, borderRadius: "50%",
-          border: "3px solid rgba(99,102,241,0.15)",
-          borderTopColor: "#6366f1",
-          animation: "spin 0.8s linear infinite",
-        }} />
-        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 13, fontFamily: "monospace" }}>
-          Loading tournament room…
-        </p>
+      <div style={{ height: "100vh", background: "#06080f", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14 }}>
+        <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(99,102,241,0.15)", borderTopColor: "#6366f1", animation: "spin 0.8s linear infinite" }} />
+        <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 12, fontFamily: "monospace" }}>Loading room…</p>
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     );
@@ -133,290 +137,230 @@ export default function TournamentRoom() {
 
   if (error) {
     return (
-      <div style={{
-        minHeight: "100vh", background: "#06080f",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        flexDirection: "column", gap: 12,
-      }}>
-        <p style={{ color: "#ef4444", fontSize: 14 }}>⚠ {error}</p>
-        <button
-          onClick={() => { setAccessChecked(false); setAuthLoading(true); setRetryNonce(n => n + 1); }}
-          style={{
-            padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer",
-            background: "#6366f1", color: "#fff", fontSize: 12, fontWeight: 700,
-          }}
-        >
-          Retry
-        </button>
+      <div style={{ height: "100vh", background: "#06080f", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 10 }}>
+        <p style={{ color: "#ef4444", fontSize: 13 }}>⚠ {error}</p>
+        <button onClick={() => window.location.reload()} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "#6366f1", color: "#fff", cursor: "pointer", fontSize: 12 }}>Retry</button>
       </div>
     );
   }
 
-  const accentColor = tournament?.background_color || "#6366f1";
+  const sidebarProps = {
+    tournament, members, readyCount, role,
+    currentUserReady, onToggleReady: toggleReady,
+    countdown, pendingRequests,
+    onApprove: approvePlayer, onReject: rejectPlayer,
+    onKick: kickPlayer, onMovePlayer: movePlayer,
+    onForceReady: forceReady,
+    onStatusChange: updateTournamentStatus,
+    onStartMatch: () => setShowStartModal(true),
+    onRemoveNotReady: removeNotReady,
+    onCloseRegistration: closeRegistration,
+    onGenerateSlots: generateSlots,
+    onLockParticipants: lockParticipants,
+    onStartReadyCheck: startReadyCheck,
+    messages, onSendMessage: sendMessage, currentUser: user,
+  };
 
   return (
     <div style={{
-      height: "100vh", background: "#06080f", color: "#f4f4f5",
+      height: "100vh", background: "#06080f", color: "#f1f5f9",
       display: "flex", flexDirection: "column", overflow: "hidden",
       fontFamily: "Inter, system-ui, sans-serif",
     }}>
 
-      {/* ── Header ────────────────────────────────────────────── */}
+      {/* ── Header (48px) ─────────────────────────────────────── */}
       <div style={{
-        height: 52, flexShrink: 0,
-        background: `linear-gradient(135deg, ${accentColor}18, #06080f)`,
-        borderBottom: `1px solid ${accentColor}25`,
+        height: 48, flexShrink: 0,
+        background: "#06080f",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
         display: "flex", alignItems: "center",
-        padding: "0 20px", gap: 16,
+        padding: "0 16px", gap: 14, zIndex: 10,
       }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 style={{ fontSize: 15, fontWeight: 800, color: "#f4f4f5", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, flex: "0 0 auto" }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: statusMeta.color, boxShadow: `0 0 6px ${statusMeta.color}` }} />
+          <h1 style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9", margin: 0, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {tournament?.name}
           </h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 1 }}>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-              {members.length}/{tournament?.max_players} players
-            </span>
-            <span style={{ fontSize: 11, color: "#10b981" }}>
-              {readyCount} ready
-            </span>
-            <span style={{
-              fontSize: 9, fontWeight: 800, padding: "1px 7px", borderRadius: 10,
-              background: accentColor + "25", color: accentColor,
-              letterSpacing: 0.8, textTransform: "uppercase",
-            }}>
-              {role}
-            </span>
-          </div>
+          <span style={{ fontSize: 8, fontWeight: 800, padding: "2px 7px", borderRadius: 8, background: statusMeta.color + "18", color: statusMeta.color, letterSpacing: 0.8, textTransform: "uppercase", flexShrink: 0 }}>
+            {statusMeta.label}
+          </span>
         </div>
 
-        {/* Live countdown in header */}
-        {countdown !== null && countdown > 0 && isLive && (
-          <div style={{
-            fontFamily: "monospace", fontSize: 18, fontWeight: 900,
-            color: "#ef4444", letterSpacing: 2,
-            animation: countdown <= 60 ? "pulse 1s infinite" : "none",
-          }}>
-            {String(Math.floor(countdown / 60)).padStart(2, "0")}:{String(countdown % 60).padStart(2, "0")}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11 }}>
+            <Users size={11} color="rgba(255,255,255,0.3)" />
+            <span style={{ color: "#6366f1", fontWeight: 700 }}>{members.length}</span>
+            <span style={{ color: "rgba(255,255,255,0.25)" }}>/ {tournament?.max_players || "?"}</span>
           </div>
-        )}
-
-        {/* Pending badge for organizer */}
-        {role === "organizer" && pendingRequests.length > 0 && (
-          <div style={{
-            width: 22, height: 22, borderRadius: "50%",
-            background: "#f59e0b", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 10, fontWeight: 800, color: "#000", flexShrink: 0,
-            animation: "bounce 1s infinite",
-          }}>
-            {pendingRequests.length}
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11 }}>
+            <CheckCircle size={11} color="rgba(255,255,255,0.3)" />
+            <span style={{ color: readyCount === members.length && members.length > 0 ? "#10b981" : "#f59e0b", fontWeight: 700 }}>{readyCount}</span>
+            <span style={{ color: "rgba(255,255,255,0.25)" }}>ready</span>
           </div>
-        )}
+          {countdown !== null && countdown > 0 && isLive && (
+            <span style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 900, letterSpacing: 2, color: countdown <= 60 ? "#ef4444" : "#f1f5f9" }}>
+              {String(Math.floor(countdown / 60)).padStart(2, "0")}:{String(countdown % 60).padStart(2, "0")}
+            </span>
+          )}
+          {role === "organizer" && pendingRequests.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#f59e0b", fontWeight: 700 }}>
+              <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#f59e0b", color: "#000", fontSize: 9, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", animation: "pulse 1s infinite" }}>
+                {pendingRequests.length}
+              </span>
+              pending
+            </div>
+          )}
+        </div>
 
-        <button
-          onClick={() => setMobileSidebar(true)}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 36, height: 36, borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)",
-            background: "transparent", cursor: "pointer", color: "rgba(255,255,255,0.5)",
-          }}
-          className="lg:hidden"
-        >
-          <Menu size={18} />
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <span style={{ fontSize: 8, fontWeight: 800, padding: "2px 7px", borderRadius: 6, background: role === "organizer" ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.05)", color: role === "organizer" ? "#6366f1" : "rgba(255,255,255,0.3)", letterSpacing: 0.8, textTransform: "uppercase" }}>
+            {role}
+          </span>
+          <button id="mob-menu" onClick={() => setMobileSidebar(true)}
+            style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid rgba(255,255,255,0.08)", background: "transparent", cursor: "pointer", color: "rgba(255,255,255,0.4)", display: "none", alignItems: "center", justifyContent: "center" }}>
+            <Menu size={16} />
+          </button>
+        </div>
       </div>
 
-      {/* ── Status bar ────────────────────────────────────────── */}
-      <div style={{ flexShrink: 0 }}>
-        <RoomStatusBar
-          tournament={tournament}
-          role={role}
-          onTournamentUpdate={t => setTournament(t)}
-        />
-      </div>
-
-      {/* ── Main layout ───────────────────────────────────────── */}
+      {/* ── Main body (75 / 25) ─────────────────────────────────── */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
-        {/* Left: compact player grid */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+        {/* LEFT: grid / roster */}
+        <div style={{ flex: "0 0 75%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-          {/* Grid header */}
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            marginBottom: 14,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.4)", letterSpacing: 1, textTransform: "uppercase" }}>
-                Player Grid
-              </span>
-              <span style={{
-                fontSize: 9, fontWeight: 700, padding: "1px 7px", borderRadius: 10,
-                background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.35)",
-              }}>
-                {members.length} / {tournament?.max_players}
-              </span>
+          {/* Tab bar — organizer only */}
+          {role === "organizer" ? (
+            <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              {[
+                { key: "grid",   label: "Player Grid", icon: <Grid size={10} /> },
+                { key: "roster", label: "Roster Manager", icon: <List size={10} /> },
+              ].map(t => (
+                <button key={t.key} onClick={() => setLeftTab(t.key)} style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  padding: "5px 12px", borderRadius: 7, border: "none", cursor: "pointer",
+                  background: leftTab === t.key ? "rgba(99,102,241,0.15)" : "transparent",
+                  color: leftTab === t.key ? "#6366f1" : "rgba(255,255,255,0.3)",
+                  fontSize: 10, fontWeight: 700,
+                }}>
+                  {t.icon} {t.label}
+                </button>
+              ))}
+              {/* Right-aligned contextual hint */}
+              <div style={{ marginLeft: "auto" }}>
+                {tStatus === "registration_closed" && leftTab === "grid" && (
+                  <span style={{ fontSize: 9, color: "#f59e0b", fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}>
+                    ⚡ Use organizer panel to generate slots →
+                  </span>
+                )}
+                {tStatus === "ready_check" && leftTab === "grid" && (
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: readyCount >= members.length && members.length > 0 ? "#10b981" : "#06b6d4", background: readyCount >= members.length && members.length > 0 ? "rgba(16,185,129,0.1)" : "rgba(6,182,212,0.1)" }}>
+                    {readyCount >= members.length && members.length > 0 ? "✓ All ready" : `${readyCount}/${members.length} ready`}
+                  </span>
+                )}
+              </div>
             </div>
-            {readyCount > 0 && (
-              <span style={{ fontSize: 11, color: "#10b981", fontWeight: 700 }}>
-                {readyCount} ready ✓
+          ) : (
+            /* Non-organizer: simple header */
+            <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 7, padding: "8px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.25)", letterSpacing: 1, textTransform: "uppercase" }}>Players</span>
+              <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 6, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.2)" }}>
+                {members.length}/{tournament?.max_players || "?"}
               </span>
-            )}
-          </div>
+              {tStatus === "ready_check" && (
+                <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 6, color: readyCount >= members.length && members.length > 0 ? "#10b981" : "#06b6d4", background: readyCount >= members.length && members.length > 0 ? "rgba(16,185,129,0.1)" : "rgba(6,182,212,0.1)" }}>
+                  {readyCount >= members.length && members.length > 0 ? "✓ All ready" : `${readyCount}/${members.length} ready`}
+                </span>
+              )}
+            </div>
+          )}
 
-          <CompactPlayerGrid
-            teams={teams}
-            tournament={tournament}
-            role={role}
-            currentUserId={user?.id}
-            onSelectPlayer={setSelectedPlayer}
-            onKickPlayer={kickPlayer}
-            onMovePlayer={movePlayer}
-            onChangeSeat={changeSeat}
-          />
+          {/* Panel content */}
+          {leftTab === "roster" && role === "organizer" ? (
+            <div style={{ flex: 1, overflow: "hidden", padding: "12px 16px" }}>
+              <RosterManager
+                tournament={tournament}
+                members={members}
+                readyCount={readyCount}
+                onKick={kickPlayer}
+                onForceReady={forceReady}
+                onProfile={setSelectedPlayer}
+                onMessage={() => {}}
+                onStartMatch={() => setShowStartModal(true)}
+              />
+            </div>
+          ) : (
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
+              <CompactPlayerGrid
+                teams={teams}
+                tournament={tournament}
+                role={role}
+                currentUserId={user?.id}
+                onSelectPlayer={setSelectedPlayer}
+                onKickPlayer={kickPlayer}
+                onMovePlayer={movePlayer}
+                onChangeSeat={changeSeat}
+              />
+
+              {/* In-grid action buttons */}
+              {isResults && role !== "organizer" && !showSubmit && (
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 18, textAlign: "center" }}>
+                  <button onClick={() => setShowSubmit(true)}
+                    style={{ padding: "12px 28px", borderRadius: 10, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #06b6d4, #6366f1)", color: "#fff", fontSize: 13, fontWeight: 800, boxShadow: "0 6px 20px rgba(6,182,212,0.3)" }}>
+                    📊 SUBMIT RESULT
+                  </button>
+                </motion.div>
+              )}
+              {role === "organizer" && isLive && (
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 18, textAlign: "center" }}>
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm("End match and open result submission?")) return;
+                      await supabase.from("tournaments").update({ status: "results", room_status: "results_open", match_end_time: new Date().toISOString() }).eq("id", id);
+                    }}
+                    style={{ padding: "12px 24px", borderRadius: 10, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #ef4444, #7c3aed)", color: "#fff", fontSize: 13, fontWeight: 800, boxShadow: "0 6px 20px rgba(239,68,68,0.3)" }}>
+                    🏁 END MATCH
+                  </button>
+                </motion.div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Right: sidebar — fixed on desktop, drawer on mobile */}
-        <>
-          {/* Desktop sidebar */}
-          <div style={{
-            width: 300, flexShrink: 0,
-            display: "flex", flexDirection: "column",
-          }} className="hidden lg:flex">
-            <RoomSidebar
-              tournament={tournament}
-              members={members}
-              readyCount={readyCount}
-              role={role}
-              currentUserReady={currentUserReady}
-              onToggleReady={toggleReady}
-              countdown={countdown}
-              pendingRequests={pendingRequests}
-              onApprove={approvePlayer}
-              onReject={rejectPlayer}
-              onKick={kickPlayer}
-              onMovePlayer={movePlayer}
-              onForceReady={forceReady}
-              onStatusChange={updateTournamentStatus}
-              onStartMatch={() => setShowStartModal(true)}
-              messages={messages}
-              onSendMessage={sendMessage}
-              currentUser={user}
-            />
-          </div>
+        {/* RIGHT: sidebar desktop */}
+        <div id="desk-sidebar" style={{ flex: "0 0 25%", minWidth: 260, maxWidth: 340, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <RoomSidebar {...sidebarProps} />
+        </div>
 
-          {/* Mobile sidebar drawer */}
-          <AnimatePresence>
-            {mobileSidebar && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setMobileSidebar(false)}
-                  style={{
-                    position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)",
-                    zIndex: 90, backdropFilter: "blur(4px)",
-                  }}
-                />
-                <motion.div
-                  initial={{ x: "100%" }}
-                  animate={{ x: 0 }}
-                  exit={{ x: "100%" }}
-                  transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                  style={{
-                    position: "fixed", right: 0, top: 0, bottom: 0,
-                    width: 300, zIndex: 100, display: "flex", flexDirection: "column",
-                  }}
-                >
-                  <div style={{
-                    padding: "12px 16px", display: "flex", alignItems: "center",
-                    justifyContent: "space-between", background: "#0a0e1a",
-                    borderBottom: "1px solid rgba(255,255,255,0.07)",
-                  }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1 }}>ROOM INFO</span>
-                    <button onClick={() => setMobileSidebar(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)" }}>
-                      <X size={18} />
-                    </button>
-                  </div>
-                  <div style={{ flex: 1, overflow: "hidden" }}>
-                    <RoomSidebar
-                      tournament={tournament}
-                      members={members}
-                      readyCount={readyCount}
-                      role={role}
-                      currentUserReady={currentUserReady}
-                      onToggleReady={toggleReady}
-                      countdown={countdown}
-                      pendingRequests={pendingRequests}
-                      onApprove={approvePlayer}
-                      onReject={rejectPlayer}
-                      onKick={kickPlayer}
-                      onMovePlayer={movePlayer}
-                      onForceReady={forceReady}
-                      onStatusChange={updateTournamentStatus}
-                      onStartMatch={() => { setMobileSidebar(false); setShowStartModal(true); }}
-                      messages={messages}
-                      onSendMessage={sendMessage}
-                      currentUser={user}
-                    />
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-        </>
+        {/* Mobile drawer */}
+        <AnimatePresence>
+          {mobileSidebar && (
+            <>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setMobileSidebar(false)}
+                style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 90, backdropFilter: "blur(4px)" }}
+              />
+              <motion.div
+                initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                style={{ position: "fixed", right: 0, top: 0, bottom: 0, width: 300, zIndex: 100, display: "flex", flexDirection: "column" }}
+              >
+                <div style={{ padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#0a0e1a", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 1 }}>ROOM PANEL</span>
+                  <button onClick={() => setMobileSidebar(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)" }}>
+                    <X size={16} />
+                  </button>
+                </div>
+                <div style={{ flex: 1, overflow: "hidden" }}>
+                  <RoomSidebar {...{ ...sidebarProps, onStartMatch: () => { setMobileSidebar(false); setShowStartModal(true); } }} />
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* ── Organizer: End match FAB (when live) ────────────────── */}
-      {role === "organizer" && isLive && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position: "fixed", bottom: 24, right: 24, zIndex: 50 }}
-        >
-          <motion.button
-            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-            onClick={async () => {
-              if (!window.confirm("End match and open result submission?")) return;
-              const { error } = await supabase.from("tournaments")
-                .update({ status: "results_pending", room_status: "results_open", match_end_time: new Date().toISOString() })
-                .eq("id", id);
-              if (error) alert("Error: " + error.message);
-            }}
-            style={{
-              padding: "13px 22px", borderRadius: 12, border: "none", cursor: "pointer",
-              background: "linear-gradient(135deg, #ef4444, #7c3aed)",
-              color: "#fff", fontSize: 12, fontWeight: 800, letterSpacing: 1,
-              boxShadow: "0 8px 24px rgba(239,68,68,0.4)",
-            }}
-          >
-            🏁 END MATCH
-          </motion.button>
-        </motion.div>
-      )}
-
-      {/* ── Player: submit result FAB ───────────────────────────── */}
-      {role !== "organizer" && isResults && !showSubmit && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          style={{ position: "fixed", bottom: 24, right: 24, zIndex: 50 }}
-        >
-          <motion.button
-            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-            onClick={() => setShowSubmit(true)}
-            style={{
-              padding: "13px 22px", borderRadius: 12, border: "none", cursor: "pointer",
-              background: "linear-gradient(135deg, #06b6d4, #6366f1)",
-              color: "#fff", fontSize: 12, fontWeight: 800, letterSpacing: 1,
-              boxShadow: "0 8px 24px rgba(6,182,212,0.4)",
-            }}
-          >
-            📊 SUBMIT RESULT
-          </motion.button>
-        </motion.div>
-      )}
-
-      {/* ── Modals & overlays ────────────────────────────────────── */}
+      {/* ── Modals ──────────────────────────────────────────────── */}
       <AnimatePresence>
         {showStartModal && (
           <StartMatchModal
@@ -429,75 +373,37 @@ export default function TournamentRoom() {
 
       <AnimatePresence>
         {showInstructions && role !== "organizer" && (
-          <MatchStartOverlay
-            tournament={tournament}
-            onDismiss={() => setShowInstructions(false)}
-          />
+          <MatchStartOverlay tournament={tournament} onDismiss={() => setShowInstructions(false)} />
         )}
       </AnimatePresence>
-
-      {isResults && role !== "organizer" && !showSubmit && (
-        <SubmitReminder onSubmit={() => setShowSubmit(true)} />
-      )}
 
       <AnimatePresence>
         {showSubmit && (
-          <SubmitResultPanel
-            tournamentId={id}
-            userId={user?.id}
-            onClose={() => setShowSubmit(false)}
-          />
+          <SubmitResultPanel tournamentId={id} userId={user?.id} onClose={() => setShowSubmit(false)} />
         )}
       </AnimatePresence>
 
-      {/* Player profile panel */}
       <AnimatePresence>
         {selectedPlayer && (
-          <PlayerProfilePanel
-            player={selectedPlayer}
-            onClose={() => setSelectedPlayer(null)}
-            accentColor={accentColor}
-          />
+          <PlayerProfilePanel player={selectedPlayer} onClose={() => setSelectedPlayer(null)} accentColor={accentColor} />
         )}
       </AnimatePresence>
 
-      {/* ── Swap modals ─────────────────────────────────────────── */}
+      {/* Incoming swap */}
       <AnimatePresence>
         {incomingSwap && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{
-              position: "fixed", inset: 0, zIndex: 300,
-              background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)",
-              display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 16 }} animate={{ scale: 1, y: 0 }}
-              style={{
-                background: "#0a0e1a", borderRadius: 20,
-                border: "1px solid rgba(251,191,36,0.3)",
-                padding: 32, maxWidth: 360, width: "100%", textAlign: "center",
-                boxShadow: "0 0 60px rgba(251,191,36,0.15)",
-              }}
-            >
-              <p style={{ fontSize: 36, marginBottom: 10 }}>🔄</p>
-              <p style={{ fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: 1, marginBottom: 6 }}>SWAP REQUEST</p>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>
-                <strong style={{ color: "#fbbf24" }}>{incomingSwap.fromName}</strong> wants to swap seats with you.
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}
+              style={{ background: "#0a0e1a", borderRadius: 16, border: "1px solid rgba(251,191,36,0.3)", padding: 28, maxWidth: 320, width: "100%", textAlign: "center" }}>
+              <p style={{ fontSize: 32, marginBottom: 8 }}>🔄</p>
+              <p style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 5 }}>SWAP REQUEST</p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginBottom: 18 }}>
+                <strong style={{ color: "#fbbf24" }}>{incomingSwap.fromName}</strong> wants to swap seats.
               </p>
-              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginBottom: 20, fontFamily: "monospace" }}>
-                Their seat: Team {incomingSwap.fromTeam} · Slot {incomingSwap.fromSeat}
-              </p>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => respondToSwap(false)}
-                  style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontWeight: 700, cursor: "pointer" }}>
-                  ✕ Decline
-                </button>
-                <button onClick={() => respondToSwap(true)}
-                  style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #10b981, #06b6d4)", color: "#000", fontWeight: 700, cursor: "pointer" }}>
-                  ✓ Accept
-                </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => respondToSwap(false)} style={{ flex: 1, padding: "10px", borderRadius: 8, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>Decline</button>
+                <button onClick={() => respondToSwap(true)} style={{ flex: 1, padding: "10px", borderRadius: 8, border: "none", background: "linear-gradient(135deg, #10b981, #06b6d4)", color: "#000", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>Accept</button>
               </div>
             </motion.div>
           </motion.div>
@@ -505,33 +411,20 @@ export default function TournamentRoom() {
       </AnimatePresence>
 
       {swapRequest && (
-        <div style={{
-          position: "fixed", bottom: 80, left: "50%", transform: "translateX(-50%)",
-          zIndex: 200, background: "#0a0e1a",
-          border: "1px solid rgba(99,102,241,0.3)", borderRadius: 12,
-          padding: "12px 18px", display: "flex", alignItems: "center", gap: 12,
-          boxShadow: "0 8px 32px rgba(99,102,241,0.2)",
-        }}>
-          <span style={{ fontSize: 18, animation: "spin 1.5s linear infinite" }}>🔄</span>
-          <div>
-            <p style={{ fontSize: 10, color: "#6366f1", fontWeight: 700, marginBottom: 2 }}>WAITING FOR RESPONSE…</p>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-              Swap requested with <strong style={{ color: "#fff" }}>{swapRequest.toPlayer?.profiles?.full_name || "Player"}</strong>
-            </p>
-          </div>
-          <button onClick={cancelSwapRequest}
-            style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#ef4444", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
-            CANCEL
-          </button>
+        <div style={{ position: "fixed", bottom: 18, left: "50%", transform: "translateX(-50%)", zIndex: 200, background: "#0a0e1a", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 10, padding: "9px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 16, animation: "spin 1.5s linear infinite" }}>🔄</span>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Waiting for <strong style={{ color: "#fff" }}>{swapRequest.toPlayer?.profiles?.full_name || "Player"}</strong>…</span>
+          <button onClick={cancelSwapRequest} style={{ fontSize: 9, padding: "3px 8px", borderRadius: 5, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#ef4444", cursor: "pointer", fontWeight: 700 }}>CANCEL</button>
         </div>
       )}
 
       <style>{`
-        @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-        @keyframes spin   { to{transform:rotate(360deg)} }
-        .hidden { display: none !important; }
-        @media(min-width:1024px) { .hidden { display: flex !important; } .lg\\:flex { display: flex !important; } .lg\\:hidden { display: none !important; } }
+        @keyframes spin  { to { transform: rotate(360deg) } }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        @media (max-width: 900px) {
+          #desk-sidebar { display: none !important; }
+          #mob-menu { display: flex !important; }
+        }
       `}</style>
     </div>
   );

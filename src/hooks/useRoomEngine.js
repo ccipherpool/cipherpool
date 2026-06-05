@@ -406,6 +406,65 @@ export function useRoomEngine(id, user, authLoading) {
     await supabase.from("room_members").delete().eq("tournament_id", id).eq("user_id", userId);
   };
 
+  const closeRegistration = async () => {
+    await updateTournamentStatus("registration_closed");
+  };
+
+  const generateSlots = async () => {
+    if (role !== "organizer" || !tournament) return;
+    const { mode, game_type, cs_format, max_players } = tournament;
+    let teamSize, numTeams;
+    if (game_type === "cs") {
+      numTeams = 2;
+      teamSize = cs_format === "1v1" ? 1 : cs_format === "2v2" ? 2 : 4;
+    } else {
+      teamSize = mode === "squad" ? 4 : mode === "duo" ? 2 : 1;
+      numTeams = Math.ceil((max_players || 16) / teamSize);
+    }
+    let slot = 1;
+    const updates = [];
+    for (const m of members) {
+      const teamNum = Math.ceil(slot / teamSize);
+      const seatNum = ((slot - 1) % teamSize) + 1;
+      updates.push(
+        supabase.from("room_members")
+          .update({ team_number: teamNum, seat_number: seatNum })
+          .eq("tournament_id", id).eq("user_id", m.user_id)
+      );
+      slot++;
+    }
+    await Promise.all(updates);
+    refreshMembers();
+  };
+
+  const lockParticipants = async () => {
+    if (role !== "organizer") return;
+    await supabase.from("tournament_participants")
+      .update({ status: "locked" })
+      .eq("tournament_id", id).eq("status", "pending");
+    refreshPending();
+  };
+
+  const startReadyCheck = async () => {
+    if (role !== "organizer") return;
+    await supabase.from("room_members")
+      .update({ is_ready: false })
+      .eq("tournament_id", id);
+    await updateTournamentStatus("ready_check");
+    refreshMembers();
+  };
+
+  const removeNotReady = async () => {
+    if (role !== "organizer") return;
+    const notReady = members.filter(m => !m.is_ready);
+    await Promise.all(
+      notReady.map(m =>
+        supabase.from("room_members").delete().eq("tournament_id", id).eq("user_id", m.user_id)
+      )
+    );
+    refreshMembers();
+  };
+
   // ── swap helpers ──────────────────────────────────────────────────
   const requestSwap = async (toTeam, toSeat, toPlayer) => {
     if (role !== "participant") return;
@@ -462,6 +521,8 @@ export function useRoomEngine(id, user, authLoading) {
     changeSeat, toggleReady,
     sendMessage,
     lockRoom, startMatch, kickPlayer,
+    closeRegistration, generateSlots, lockParticipants,
+    startReadyCheck, removeNotReady,
     requestSwap, cancelSwapRequest, respondToSwap,
   };
 }

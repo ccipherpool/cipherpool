@@ -1,24 +1,27 @@
-import React, { useState, memo } from "react";
+import React, { useState, memo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle, XCircle, UserMinus, ChevronDown, ChevronUp,
-  Users, Clock, Zap, Shield, Play, Square,
+  Users, Clock, Zap, Shield, Play, Square, AlertTriangle,
+  RefreshCw, Lock, Unlock, Loader2, SkipForward,
 } from "lucide-react";
 
 const C = {
-  surface:  "#0d1117",
-  border:   "rgba(255,255,255,0.07)",
-  accent:   "#6366f1",
-  green:    "#10b981",
-  red:      "#ef4444",
-  amber:    "#f59e0b",
-  text:     "#f4f4f5",
-  text2:    "rgba(255,255,255,0.5)",
-  text3:    "rgba(255,255,255,0.25)",
+  bg:     "#090d16",
+  card:   "#0d1320",
+  border: "rgba(255,255,255,0.07)",
+  accent: "#6366f1",
+  green:  "#10b981",
+  red:    "#ef4444",
+  amber:  "#f59e0b",
+  cyan:   "#06b6d4",
+  text:   "#f1f5f9",
+  text2:  "rgba(255,255,255,0.5)",
+  text3:  "rgba(255,255,255,0.22)",
 };
 
-// ── Section wrapper ────────────────────────────────────────────────
-function Section({ icon, title, badge, badgeColor, children, defaultOpen = true }) {
+// ── Reusable accordion section ───────────────────────────────────────
+function Section({ icon, title, badge, badgeColor = C.accent, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div style={{ borderBottom: `1px solid ${C.border}` }}>
@@ -32,15 +35,12 @@ function Section({ icon, title, badge, badgeColor, children, defaultOpen = true 
       >
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           {icon}
-          <span style={{ fontSize: 11, fontWeight: 700, color: C.text, letterSpacing: 0.3 }}>{title}</span>
-          {badge !== undefined && badge > 0 && (
+          <span style={{ fontSize: 10, fontWeight: 800, color: C.text, letterSpacing: 0.5 }}>{title}</span>
+          {badge > 0 && (
             <span style={{
-              fontSize: 9, fontWeight: 800, padding: "1px 6px", borderRadius: 10,
-              background: (badgeColor || C.accent) + "22",
-              color: badgeColor || C.accent,
-            }}>
-              {badge}
-            </span>
+              fontSize: 9, fontWeight: 900, padding: "1px 6px", borderRadius: 10,
+              background: badgeColor + "22", color: badgeColor, letterSpacing: 0.3,
+            }}>{badge}</span>
           )}
         </div>
         {open ? <ChevronUp size={11} color={C.text3} /> : <ChevronDown size={11} color={C.text3} />}
@@ -51,7 +51,7 @@ function Section({ icon, title, badge, badgeColor, children, defaultOpen = true 
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18 }}
+            transition={{ duration: 0.15 }}
             style={{ overflow: "hidden" }}
           >
             {children}
@@ -62,304 +62,400 @@ function Section({ icon, title, badge, badgeColor, children, defaultOpen = true 
   );
 }
 
-// ── Pending request row ────────────────────────────────────────────
-const PendingRow = memo(function PendingRow({ req, onApprove, onReject, busy }) {
-  const name    = req.profiles?.full_name || req.profiles?.username || "Player";
-  const ffid    = req.profiles?.free_fire_id || "—";
-  const initial = name[0]?.toUpperCase() || "?";
-  const [localBusy, setLocalBusy] = useState(false);
+// ── Big action button ────────────────────────────────────────────────
+function ActionBtn({ label, sublabel, color, icon, onClick, disabled, glow }) {
+  const [loading, setLoading] = useState(false);
+  const handle = async () => {
+    if (disabled || loading) return;
+    setLoading(true);
+    await onClick?.();
+    setLoading(false);
+  };
+  return (
+    <button
+      onClick={handle}
+      disabled={disabled || loading}
+      style={{
+        width: "100%", padding: "11px 14px",
+        borderRadius: 9, border: `1px solid ${color}30`,
+        background: disabled ? "rgba(255,255,255,0.03)" : color + "12",
+        color: disabled ? C.text3 : color,
+        cursor: disabled ? "not-allowed" : "pointer",
+        display: "flex", alignItems: "center", gap: 8,
+        transition: "all 0.15s",
+        boxShadow: glow && !disabled ? `0 0 20px ${color}20` : "none",
+        marginBottom: 5,
+      }}
+      onMouseEnter={e => { if (!disabled && !loading) e.currentTarget.style.background = color + "22"; }}
+      onMouseLeave={e => { if (!disabled && !loading) e.currentTarget.style.background = color + "12"; }}
+    >
+      <div style={{ flexShrink: 0 }}>
+        {loading ? <Loader2 size={13} style={{ animation: "spin 0.7s linear infinite" }} /> : icon}
+      </div>
+      <div style={{ textAlign: "left" }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.3 }}>{label}</div>
+        {sublabel && <div style={{ fontSize: 9, color: C.text3, marginTop: 1 }}>{sublabel}</div>}
+      </div>
+    </button>
+  );
+}
+
+// ── Pending request row ──────────────────────────────────────────────
+const PendingRow = memo(function PendingRow({ req, onApprove, onReject }) {
+  const name  = req.profiles?.full_name || req.profiles?.username || "Player";
+  const ffid  = req.profiles?.free_fire_id || "—";
+  const init  = name[0]?.toUpperCase() || "?";
+  const [busy, setBusy] = useState(false);
 
   const handle = async (fn) => {
-    setLocalBusy(true);
+    setBusy(true);
     await fn();
-    setLocalBusy(false);
+    setBusy(false);
   };
 
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 10,
-      padding: "9px 14px",
-      borderBottom: `1px solid ${C.border}`,
-      opacity: localBusy ? 0.5 : 1,
-      transition: "opacity 0.15s",
+      display: "flex", alignItems: "center", gap: 8,
+      padding: "8px 14px", borderBottom: `1px solid ${C.border}`,
+      opacity: busy ? 0.5 : 1, transition: "opacity 0.15s",
     }}>
-      {/* Avatar */}
       <div style={{
-        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+        width: 30, height: 30, borderRadius: 7, flexShrink: 0,
         background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 13, fontWeight: 700, color: "#fff", overflow: "hidden",
+        fontSize: 12, fontWeight: 700, color: "#fff", overflow: "hidden",
       }}>
-        {req.profiles?.avatar_url ? (
-          <img src={req.profiles.avatar_url} alt={name}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            onError={e => { e.currentTarget.style.display = "none"; }}
-          />
-        ) : initial}
+        {req.profiles?.avatar_url
+          ? <img src={req.profiles.avatar_url} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.currentTarget.style.display = "none"; }} />
+          : init}
       </div>
-
-      {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {name}
-        </div>
-        <div style={{ fontSize: 10, color: C.text3, fontFamily: "monospace" }}>{ffid}</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+        <div style={{ fontSize: 9, color: C.text3, fontFamily: "monospace" }}>{ffid}</div>
       </div>
-
-      {/* Actions */}
-      <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-        <button
-          onClick={() => handle(() => onApprove(req.user_id))}
-          disabled={localBusy}
-          title="Accept"
-          style={{
-            width: 28, height: 28, borderRadius: 7, border: "none", cursor: "pointer",
-            background: C.green + "20", color: C.green,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "background 0.15s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.green + "35"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.green + "20"; }}
-        >
-          <CheckCircle size={13} />
+      <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+        <button onClick={() => handle(() => onApprove(req.user_id))} disabled={busy}
+          style={iconBtn(C.green)} title="Accept">
+          <CheckCircle size={12} />
         </button>
-        <button
-          onClick={() => handle(() => onReject(req.user_id))}
-          disabled={localBusy}
-          title="Reject"
-          style={{
-            width: 28, height: 28, borderRadius: 7, border: "none", cursor: "pointer",
-            background: C.red + "20", color: C.red,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "background 0.15s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.red + "35"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.red + "20"; }}
-        >
-          <XCircle size={13} />
+        <button onClick={() => handle(() => onReject(req.user_id))} disabled={busy}
+          style={iconBtn(C.red)} title="Reject">
+          <XCircle size={12} />
         </button>
       </div>
     </div>
   );
 });
 
-// ── Player management row ──────────────────────────────────────────
-const PlayerRow = memo(function PlayerRow({ member, onKick, onForceReady }) {
+// ── Active participant row ───────────────────────────────────────────
+const ParticipantRow = memo(function ParticipantRow({ member, onKick, onForceReady, isReadyCheck }) {
   const name = member.profiles?.full_name || member.profiles?.username || "Player";
-  const [confirm, setConfirm] = useState(false);
+  const [confirmKick, setConfirmKick] = useState(false);
 
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 8,
-      padding: "8px 14px", borderBottom: `1px solid ${C.border}`,
+      display: "flex", alignItems: "center", gap: 7,
+      padding: "7px 14px", borderBottom: `1px solid ${C.border}`,
     }}>
-      {/* Ready dot */}
       <div style={{
         width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-        background: member.is_ready ? C.green : "rgba(255,255,255,0.15)",
+        background: member.is_ready ? C.green : "rgba(255,255,255,0.12)",
         boxShadow: member.is_ready ? `0 0 5px ${C.green}` : "none",
-        transition: "all 0.2s",
       }} />
-
-      {/* Name */}
-      <span style={{
-        flex: 1, fontSize: 11, color: C.text,
-        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-      }}>
+      <span style={{ flex: 1, fontSize: 10, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {name}
       </span>
-
-      {/* Slot */}
-      <span style={{ fontSize: 9, color: C.text3, fontFamily: "monospace", flexShrink: 0 }}>
-        T{member.team_number}·{member.seat_number}
+      <span style={{ fontSize: 8, color: C.text3, fontFamily: "monospace", flexShrink: 0 }}>
+        T{member.team_number}·S{member.seat_number}
       </span>
 
-      {/* Force ready toggle */}
-      <button
-        onClick={() => onForceReady?.(member.user_id, !member.is_ready)}
-        title={member.is_ready ? "Unready" : "Force ready"}
-        style={{
-          width: 22, height: 22, borderRadius: 5, border: "none", cursor: "pointer",
-          background: member.is_ready ? C.green + "20" : "rgba(255,255,255,0.06)",
-          color: member.is_ready ? C.green : C.text3,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 10, flexShrink: 0,
-        }}
-      >
-        {member.is_ready ? "✓" : "○"}
-      </button>
+      {isReadyCheck && !member.is_ready && (
+        <button onClick={() => onForceReady?.(member.user_id, true)}
+          style={{ ...iconBtn(C.amber), width: 22, height: 22 }} title="Force ready">
+          <Zap size={9} />
+        </button>
+      )}
 
-      {/* Kick */}
-      {confirm ? (
-        <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
-          <button onClick={() => { onKick?.(member.user_id); setConfirm(false); }}
-            style={{ fontSize: 9, padding: "2px 7px", borderRadius: 4, border: "none", background: C.red, color: "#fff", cursor: "pointer", fontWeight: 700 }}>
+      {confirmKick ? (
+        <div style={{ display: "flex", gap: 3 }}>
+          <button onClick={() => { onKick?.(member.user_id); setConfirmKick(false); }}
+            style={{ fontSize: 8, padding: "2px 6px", borderRadius: 4, border: "none", background: C.red, color: "#fff", cursor: "pointer", fontWeight: 800 }}>
             Kick
           </button>
-          <button onClick={() => setConfirm(false)}
-            style={{ fontSize: 9, padding: "2px 7px", borderRadius: 4, border: `1px solid ${C.border}`, background: "transparent", color: C.text2, cursor: "pointer" }}>
-            No
+          <button onClick={() => setConfirmKick(false)}
+            style={{ fontSize: 8, padding: "2px 5px", borderRadius: 4, border: `1px solid ${C.border}`, background: "transparent", color: C.text3, cursor: "pointer" }}>
+            ✕
           </button>
         </div>
       ) : (
-        <button
-          onClick={() => setConfirm(true)}
-          title="Kick player"
-          style={{
-            width: 22, height: 22, borderRadius: 5, border: "none", cursor: "pointer",
-            background: C.red + "15", color: C.red,
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-          }}
-        >
-          <UserMinus size={10} />
+        <button onClick={() => setConfirmKick(true)} style={{ ...iconBtn(C.red), width: 22, height: 22 }} title="Kick">
+          <UserMinus size={9} />
         </button>
       )}
     </div>
   );
 });
 
-// ── Status control buttons ─────────────────────────────────────────
-const STATUS_TRANSITIONS = {
-  draft:             [{ label: "Open Registration", next: "registration_open", color: "#6366f1", icon: "🔓" }],
-  published:         [{ label: "Open Registration", next: "registration_open", color: "#6366f1", icon: "🔓" }],
-  registration_open: [
-    { label: "Close Registration", next: "published",          color: "#f59e0b", icon: "🔒" },
-    { label: "Start Tournament",   next: "live",               color: "#10b981", icon: "▶" },
-  ],
-  ready:             [{ label: "Start Tournament",   next: "live",               color: "#10b981", icon: "▶" }],
-  live:              [{ label: "End Tournament",     next: "results_pending",    color: "#ef4444", icon: "🏁" }],
-  results_pending:   [{ label: "Mark Completed",    next: "completed",          color: "#10b981", icon: "✓" }],
-};
+function iconBtn(color) {
+  return {
+    width: 26, height: 26, borderRadius: 6, border: "none", cursor: "pointer",
+    background: color + "18", color,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    transition: "background 0.12s",
+  };
+}
 
-// ── Main export ────────────────────────────────────────────────────
+// ── Ready progress bar ───────────────────────────────────────────────
+function ReadyBar({ readyCount, total }) {
+  const pct = total > 0 ? (readyCount / total) * 100 : 0;
+  const allReady = readyCount >= total && total > 0;
+  return (
+    <div style={{ padding: "10px 14px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+        <span style={{ fontSize: 9, color: allReady ? C.green : C.text2, fontWeight: 700, letterSpacing: 0.5 }}>
+          {allReady ? "✓ ALL READY" : "READY CHECK"}
+        </span>
+        <span style={{ fontSize: 9, color: allReady ? C.green : C.amber, fontWeight: 800 }}>
+          {readyCount}/{total}
+        </span>
+      </div>
+      <div style={{ height: 4, borderRadius: 4, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+        <motion.div
+          animate={{ width: `${pct}%` }}
+          style={{ height: "100%", borderRadius: 4, background: allReady ? C.green : C.amber }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ── State-aware action definitions ───────────────────────────────────
+function getActions(status, members, readyCount, { onStatus, onStartMatch, onRemoveNotReady, onCloseRegistration, onGenerateSlots, onLockParticipants, onStartReadyCheck }) {
+  const total     = members.length;
+  const allReady  = total > 0 && readyCount >= total;
+
+  switch (status) {
+    case "registration_open":
+      return [
+        {
+          label: "Close Registration",
+          sublabel: `${total} player${total !== 1 ? "s" : ""} enrolled`,
+          color: C.amber,
+          icon: <Lock size={13} />,
+          fn: onCloseRegistration ?? (() => onStatus("registration_closed")),
+        },
+      ];
+
+    case "registration_closed":
+      return [
+        {
+          label: "Generate Slots",
+          sublabel: "Auto-assign team & seat numbers",
+          color: C.accent,
+          icon: <RefreshCw size={13} />,
+          fn: onGenerateSlots,
+        },
+        {
+          label: "Lock Participants",
+          sublabel: "Finalise roster, no more changes",
+          color: C.cyan,
+          icon: <Lock size={13} />,
+          fn: onLockParticipants,
+        },
+        {
+          label: "Start Ready Check",
+          sublabel: "Ask all players to confirm ready",
+          color: C.green,
+          icon: <Play size={13} />,
+          fn: onStartReadyCheck ?? (() => onStatus("ready_check")),
+          glow: true,
+        },
+      ];
+
+    case "ready_check":
+      return [
+        !allReady && {
+          label: "Remove Not Ready",
+          sublabel: `${total - readyCount} player${total - readyCount !== 1 ? "s" : ""} not ready`,
+          color: C.red,
+          icon: <UserMinus size={13} />,
+          fn: onRemoveNotReady,
+        },
+        {
+          label: "Start Tournament",
+          sublabel: allReady ? "All players ready!" : `Waiting for ${total - readyCount} players`,
+          color: allReady ? C.green : "rgba(255,255,255,0.2)",
+          icon: <Play size={13} />,
+          fn: onStartMatch,
+          glow: allReady,
+          disabled: !allReady,
+        },
+      ].filter(Boolean);
+
+    case "lobby_created":
+      return [
+        {
+          label: "Start Tournament",
+          sublabel: "Lobby is configured and ready",
+          color: C.green,
+          icon: <Play size={13} />,
+          fn: onStartMatch,
+          glow: true,
+        },
+      ];
+
+    case "in_progress":
+      return [
+        {
+          label: "End Match",
+          sublabel: "Open result submission for players",
+          color: C.red,
+          icon: <Square size={13} />,
+          fn: () => onStatus("results"),
+        },
+        {
+          label: "Advance Round",
+          sublabel: "Move to next bracket round",
+          color: C.amber,
+          icon: <SkipForward size={13} />,
+          fn: () => onStatus("in_progress"),
+        },
+      ];
+
+    case "results":
+      return [
+        {
+          label: "Mark Finished",
+          sublabel: "Finalise tournament & distribute rewards",
+          color: C.green,
+          icon: <CheckCircle size={13} />,
+          fn: () => onStatus("finished"),
+        },
+      ];
+
+    default:
+      return [];
+  }
+}
+
+// ── Main export ──────────────────────────────────────────────────────
 export default function OrganizerPanel({
-  pendingRequests, onApprove, onReject,
-  members, onKick, onForceReady,
-  tournament, onStatusChange, onStartMatch,
+  tournament, members, readyCount,
+  pendingRequests = [],
+  onApprove, onReject, onKick, onForceReady,
+  onStatusChange, onStartMatch,
+  onRemoveNotReady, onCloseRegistration, onGenerateSlots, onLockParticipants, onStartReadyCheck,
 }) {
-  const tStatus  = tournament?.status || "draft";
-  const controls = STATUS_TRANSITIONS[tStatus] || [];
+  const tStatus = tournament?.status || "draft";
+  const actions = getActions(tStatus, members, readyCount, {
+    onStatus:            onStatusChange,
+    onStartMatch:        () => onStartMatch?.(),
+    onRemoveNotReady,
+    onCloseRegistration,
+    onGenerateSlots,
+    onLockParticipants,
+    onStartReadyCheck,
+  });
+
+  const isReadyCheck = tStatus === "ready_check";
 
   return (
     <div style={{
-      background: "#090d16",
-      border: `1px solid rgba(99,102,241,0.18)`,
+      background: C.bg,
+      border: `1px solid rgba(99,102,241,0.2)`,
       borderRadius: 12, overflow: "hidden",
     }}>
-      {/* Header */}
+      {/* Panel header */}
       <div style={{
-        padding: "10px 14px",
-        background: "rgba(99,102,241,0.1)",
-        borderBottom: `1px solid rgba(99,102,241,0.18)`,
+        padding: "9px 14px",
+        background: "rgba(99,102,241,0.08)",
+        borderBottom: `1px solid rgba(99,102,241,0.15)`,
         display: "flex", alignItems: "center", gap: 7,
       }}>
-        <Shield size={12} color={C.accent} />
-        <span style={{ fontSize: 11, fontWeight: 800, color: C.accent, letterSpacing: 1, textTransform: "uppercase" }}>
+        <Shield size={11} color={C.accent} />
+        <span style={{ fontSize: 10, fontWeight: 900, color: C.accent, letterSpacing: 1, textTransform: "uppercase" }}>
           Organizer Panel
+        </span>
+        <span style={{
+          marginLeft: "auto", fontSize: 8, fontWeight: 700,
+          padding: "2px 6px", borderRadius: 4,
+          background: "rgba(255,255,255,0.05)", color: C.text3,
+          letterSpacing: 0.5, textTransform: "uppercase",
+        }}>
+          {tStatus.replace(/_/g, " ")}
         </span>
       </div>
 
+      {/* State-aware action buttons */}
+      {actions.length > 0 && (
+        <div style={{ padding: "10px 14px 6px", borderBottom: `1px solid ${C.border}` }}>
+          {actions.map((a, i) => (
+            <ActionBtn
+              key={i}
+              label={a.label}
+              sublabel={a.sublabel}
+              color={a.color}
+              icon={a.icon}
+              onClick={a.fn}
+              disabled={a.disabled}
+              glow={a.glow}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Ready bar (ready_check only) */}
+      {isReadyCheck && (
+        <ReadyBar readyCount={readyCount} total={members.length} />
+      )}
+
       {/* Pending requests */}
-      <Section
-        icon={<Clock size={12} color={pendingRequests.length > 0 ? C.amber : C.text3} />}
-        title="Pending Requests"
-        badge={pendingRequests.length}
-        badgeColor={C.amber}
-        defaultOpen={pendingRequests.length > 0}
-      >
-        {pendingRequests.length === 0 ? (
-          <div style={{ padding: "14px", textAlign: "center", color: C.text3, fontSize: 11 }}>
-            No pending requests
-          </div>
-        ) : (
-          pendingRequests.map(req => (
+      {["registration_open", "registration_closed"].includes(tStatus) && (
+        <Section
+          icon={<Clock size={11} color={pendingRequests.length > 0 ? C.amber : C.text3} />}
+          title="Pending Requests"
+          badge={pendingRequests.length}
+          badgeColor={C.amber}
+          defaultOpen={pendingRequests.length > 0}
+        >
+          {pendingRequests.length === 0 ? (
+            <div style={{ padding: "12px 14px", fontSize: 10, color: C.text3, textAlign: "center" }}>
+              No pending requests
+            </div>
+          ) : pendingRequests.map(req => (
             <PendingRow
               key={req.id}
               req={req}
               onApprove={onApprove}
               onReject={onReject}
             />
-          ))
-        )}
-      </Section>
+          ))}
+        </Section>
+      )}
 
-      {/* Players management */}
+      {/* Participants management */}
       <Section
-        icon={<Users size={12} color={C.text2} />}
+        icon={<Users size={11} color={C.text2} />}
         title={`Players (${members.length})`}
-        defaultOpen={false}
+        defaultOpen={isReadyCheck}
       >
         {members.length === 0 ? (
-          <div style={{ padding: "14px", textAlign: "center", color: C.text3, fontSize: 11 }}>
+          <div style={{ padding: "12px 14px", fontSize: 10, color: C.text3, textAlign: "center" }}>
             No players in room
           </div>
-        ) : (
-          members.map(m => (
-            <PlayerRow
-              key={m.user_id}
-              member={m}
-              onKick={onKick}
-              onForceReady={onForceReady}
-            />
-          ))
-        )}
+        ) : members.map(m => (
+          <ParticipantRow
+            key={m.user_id}
+            member={m}
+            onKick={onKick}
+            onForceReady={onForceReady}
+            isReadyCheck={isReadyCheck}
+          />
+        ))}
       </Section>
 
-      {/* Tournament controls */}
-      <Section
-        icon={<Zap size={12} color={C.green} />}
-        title="Controls"
-        defaultOpen
-      >
-        <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 7 }}>
-          {/* Dynamic status transitions */}
-          {controls.map(ctrl => (
-            <button
-              key={ctrl.next}
-              onClick={() => {
-                if (ctrl.next === "live") {
-                  onStartMatch?.();
-                } else {
-                  onStatusChange?.(ctrl.next);
-                }
-              }}
-              style={{
-                padding: "9px 14px", borderRadius: 8, border: "none", cursor: "pointer",
-                background: ctrl.color + "18",
-                color: ctrl.color, fontSize: 11, fontWeight: 700, letterSpacing: 0.3,
-                textAlign: "left", display: "flex", alignItems: "center", gap: 7,
-                transition: "background 0.15s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = ctrl.color + "30"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = ctrl.color + "18"; }}
-            >
-              <span>{ctrl.icon}</span>
-              {ctrl.label}
-            </button>
-          ))}
-
-          {/* Always show start match button for organizer when live */}
-          {tStatus === "live" && (
-            <button
-              onClick={() => onStatusChange?.("completed")}
-              style={{
-                padding: "9px 14px", borderRadius: 8, border: "none", cursor: "pointer",
-                background: C.red + "18", color: C.red,
-                fontSize: 11, fontWeight: 700, textAlign: "left",
-                display: "flex", alignItems: "center", gap: 7,
-              }}
-            >
-              <Square size={11} /> End Match
-            </button>
-          )}
-
-          {controls.length === 0 && tStatus !== "live" && (
-            <p style={{ fontSize: 11, color: C.text3, textAlign: "center" }}>
-              No actions available
-            </p>
-          )}
-        </div>
-      </Section>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   );
 }

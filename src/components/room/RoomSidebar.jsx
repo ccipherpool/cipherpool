@@ -1,387 +1,305 @@
-import { useState, useEffect, memo } from "react";
-import { motion } from "framer-motion";
-import { Copy, Check, Eye, EyeOff, Users, Zap, Trophy } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Copy, Check, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import OrganizerPanel from "./OrganizerPanel";
 import RoomChat from "./RoomChat";
 
 const C = {
   bg:      "#06080f",
-  surface: "#0d1117",
+  surface: "#0a0e1a",
+  card:    "#0d1320",
   border:  "rgba(255,255,255,0.07)",
   accent:  "#6366f1",
   green:   "#10b981",
-  red:     "#ef4444",
   amber:   "#f59e0b",
-  text:    "#f4f4f5",
+  red:     "#ef4444",
+  text:    "#f1f5f9",
   text2:   "rgba(255,255,255,0.5)",
-  text3:   "rgba(255,255,255,0.25)",
+  text3:   "rgba(255,255,255,0.22)",
 };
 
-// ── Stat chip ──────────────────────────────────────────────────────
-function StatChip({ label, value, color }) {
-  return (
-    <div style={{
-      flex: 1, padding: "10px 12px", borderRadius: 10,
-      background: color + "10",
-      border: `1px solid ${color}20`,
-      textAlign: "center",
-    }}>
-      <div style={{ fontSize: 18, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 9, color: C.text3, fontWeight: 700, letterSpacing: 0.5, marginTop: 3, textTransform: "uppercase" }}>{label}</div>
-    </div>
-  );
-}
-
-// ── Copy field ────────────────────────────────────────────────────
+// ── Copy field ───────────────────────────────────────────────────────
 function CopyField({ label, value, secret }) {
   const [copied, setCopied] = useState(false);
-  const [show, setShow] = useState(!secret);
-
+  const [show, setShow]     = useState(false);
   const copy = () => {
-    navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+    navigator.clipboard.writeText(value || "").then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
   };
-
+  const display = secret && !show ? "••••••••" : (value || "—");
   return (
-    <div>
-      <div style={{ fontSize: 9, fontWeight: 700, color: C.text3, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 5 }}>{label}</div>
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 9, color: C.text3, letterSpacing: 0.5, marginBottom: 3 }}>{label}</div>
       <div style={{
-        display: "flex", alignItems: "center", gap: 6,
-        background: "rgba(0,0,0,0.3)", borderRadius: 8, padding: "7px 10px",
-        border: `1px solid rgba(255,255,255,0.08)`,
+        display: "flex", alignItems: "center",
+        background: C.card, borderRadius: 7,
+        border: `1px solid ${C.border}`, overflow: "hidden",
       }}>
         <span style={{
-          flex: 1, fontSize: 13, fontWeight: 700, color: C.accent, fontFamily: "monospace", letterSpacing: 2,
+          flex: 1, fontSize: 11, color: value ? C.text : C.text3,
+          padding: "6px 9px", fontFamily: "monospace",
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         }}>
-          {show ? value : "•".repeat(value.length)}
+          {display}
         </span>
         {secret && (
-          <button onClick={() => setShow(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", color: C.text3, display: "flex" }}>
-            {show ? <EyeOff size={13} /> : <Eye size={13} />}
+          <button onClick={() => setShow(v => !v)}
+            style={{ padding: "6px 7px", background: "transparent", border: "none", cursor: "pointer", color: C.text3 }}>
+            {show ? <EyeOff size={11} /> : <Eye size={11} />}
           </button>
         )}
-        <button onClick={copy} style={{
-          background: copied ? C.green + "20" : "rgba(99,102,241,0.12)",
-          border: `1px solid ${copied ? C.green + "30" : "rgba(99,102,241,0.2)"}`,
-          borderRadius: 6, padding: "4px 8px", cursor: "pointer",
-          color: copied ? C.green : C.accent,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          transition: "all 0.15s",
-        }}>
-          {copied ? <Check size={12} /> : <Copy size={12} />}
+        <button onClick={copy}
+          style={{ padding: "6px 9px", background: "transparent", border: "none", cursor: "pointer", color: copied ? C.green : C.text3 }}>
+          {copied ? <Check size={11} /> : <Copy size={11} />}
         </button>
       </div>
     </div>
   );
 }
 
-// ── Editable room code form (organizer only) ───────────────────────
-function RoomCodeEditor({ tournament }) {
-  const [code, setCode] = useState(tournament?.room_code || "");
-  const [pass, setPass] = useState(tournament?.room_password || "");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+// ── Status pill ──────────────────────────────────────────────────────
+const STATUS_COLORS = {
+  draft:                { bg: "rgba(255,255,255,0.06)", fg: "rgba(255,255,255,0.4)" },
+  registration_open:    { bg: "rgba(16,185,129,0.12)",  fg: "#10b981" },
+  registration_closed:  { bg: "rgba(245,158,11,0.12)",  fg: "#f59e0b" },
+  ready_check:          { bg: "rgba(6,182,212,0.12)",   fg: "#06b6d4" },
+  lobby_created:        { bg: "rgba(99,102,241,0.12)",  fg: "#6366f1" },
+  in_progress:          { bg: "rgba(239,68,68,0.12)",   fg: "#ef4444" },
+  live:                 { bg: "rgba(239,68,68,0.12)",   fg: "#ef4444" },
+  results:              { bg: "rgba(245,158,11,0.12)",  fg: "#f59e0b" },
+  results_pending:      { bg: "rgba(245,158,11,0.12)",  fg: "#f59e0b" },
+  finished:             { bg: "rgba(16,185,129,0.12)",  fg: "#10b981" },
+  completed:            { bg: "rgba(16,185,129,0.12)",  fg: "#10b981" },
+};
 
-  useEffect(() => {
-    if (tournament?.room_code)     setCode(tournament.room_code);
-    if (tournament?.room_password) setPass(tournament.room_password);
-  }, [tournament?.room_code, tournament?.room_password]);
+function StatusPill({ status }) {
+  const s = STATUS_COLORS[status] || STATUS_COLORS.draft;
+  return (
+    <span style={{
+      fontSize: 8, fontWeight: 800, padding: "2px 7px", borderRadius: 10,
+      background: s.bg, color: s.fg, letterSpacing: 0.8, textTransform: "uppercase",
+    }}>
+      {(status || "draft").replace(/_/g, " ")}
+    </span>
+  );
+}
+
+// ── Stat row ─────────────────────────────────────────────────────────
+function StatRow({ label, value, color }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+      <span style={{ fontSize: 10, color: C.text2 }}>{label}</span>
+      <span style={{ fontSize: 11, fontWeight: 800, color: color || C.text }}>{value}</span>
+    </div>
+  );
+}
+
+// ── Room credentials editor (organizer) ──────────────────────────────
+function RoomCodeEditor({ tournament, onSave }) {
+  const [code, setCode]     = useState(tournament?.room_code || "");
+  const [pass, setPass]     = useState(tournament?.room_password || "");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved]   = useState(false);
 
   const save = async () => {
     setSaving(true);
     await supabase.from("tournaments")
-      .update({ room_code: code.trim(), room_password: pass.trim() || null })
+      .update({ room_code: code.trim() || null, room_password: pass.trim() || null })
       .eq("id", tournament.id);
     setSaving(false);
     setSaved(true);
+    onSave?.();
     setTimeout(() => setSaved(false), 2000);
   };
 
   const inp = {
-    width: "100%", padding: "8px 10px", borderRadius: 8,
-    background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.08)",
-    color: C.text, fontSize: 13, outline: "none", boxSizing: "border-box",
-    fontFamily: "monospace",
+    width: "100%", background: C.card, border: `1px solid ${C.border}`,
+    borderRadius: 7, color: C.text, fontSize: 11, padding: "6px 9px",
+    outline: "none", fontFamily: "monospace",
+    boxSizing: "border-box",
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div>
-        <div style={{ fontSize: 9, fontWeight: 700, color: C.text3, letterSpacing: 0.8, marginBottom: 5, textTransform: "uppercase" }}>Room ID</div>
-        <input value={code} onChange={e => setCode(e.target.value)} placeholder="e.g. 123456789" style={inp} />
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ marginBottom: 6 }}>
+        <div style={{ fontSize: 9, color: C.text3, marginBottom: 3 }}>ROOM CODE</div>
+        <input type="text" value={code} onChange={e => setCode(e.target.value)} placeholder="e.g. CIPHER123" style={inp} />
       </div>
-      <div>
-        <div style={{ fontSize: 9, fontWeight: 700, color: C.text3, letterSpacing: 0.8, marginBottom: 5, textTransform: "uppercase" }}>Password</div>
-        <input value={pass} onChange={e => setPass(e.target.value)} placeholder="Optional" style={inp} />
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ fontSize: 9, color: C.text3, marginBottom: 3 }}>ROOM PASSWORD</div>
+        <input type="text" value={pass} onChange={e => setPass(e.target.value)} placeholder="Optional" style={inp} />
       </div>
-      <button onClick={save} disabled={saving || !code.trim()} style={{
-        padding: "8px", borderRadius: 8, border: "none", cursor: saving || !code.trim() ? "not-allowed" : "pointer",
-        background: saved ? C.green + "20" : "rgba(99,102,241,0.2)",
-        color: saved ? C.green : C.accent,
-        fontSize: 11, fontWeight: 700, transition: "all 0.15s",
-      }}>
-        {saving ? "Saving…" : saved ? "✓ Saved" : "Save Room Code"}
+      <button onClick={save} disabled={saving}
+        style={{
+          width: "100%", padding: "7px", borderRadius: 7, border: "none", cursor: "pointer",
+          background: saved ? C.green + "20" : C.accent + "20",
+          color: saved ? C.green : C.accent,
+          fontSize: 10, fontWeight: 700, transition: "all 0.15s",
+        }}>
+        {saved ? "✓ Saved" : saving ? "Saving…" : "Save Credentials"}
       </button>
     </div>
   );
 }
 
-// ── Status pill ────────────────────────────────────────────────────
-function StatusPill({ status }) {
-  const map = {
-    draft:             { label: "Draft",            color: "#64748b" },
-    published:         { label: "Published",        color: "#6366f1" },
-    registration_open: { label: "Registration Open",color: "#10b981" },
-    locked:            { label: "Locked",           color: "#f59e0b" },
-    live:              { label: "Live",             color: "#ef4444" },
-    results_pending:   { label: "Results",          color: "#06b6d4" },
-    completed:         { label: "Completed",        color: "#10b981" },
-    cancelled:         { label: "Cancelled",        color: "#6b7280" },
-  };
-  const s = map[status] || { label: status, color: "#6b7280" };
+// ── Collapsible section wrapper ──────────────────────────────────────
+function Collapse({ title, children, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <span style={{
-      fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 12,
-      background: s.color + "20", color: s.color,
-      border: `1px solid ${s.color}30`,
-      letterSpacing: 0.8, textTransform: "uppercase",
-    }}>
-      {status === "live" && <span style={{ marginRight: 4 }}>●</span>}
-      {s.label}
-    </span>
+    <div style={{ borderBottom: `1px solid ${C.border}` }}>
+      <button onClick={() => setOpen(v => !v)} style={{
+        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "9px 12px", background: "transparent", border: "none", cursor: "pointer",
+      }}>
+        <span style={{ fontSize: 9, fontWeight: 800, color: C.text3, letterSpacing: 0.8, textTransform: "uppercase" }}>{title}</span>
+        {open ? <ChevronUp size={10} color={C.text3} /> : <ChevronDown size={10} color={C.text3} />}
+      </button>
+      {open && <div style={{ padding: "2px 12px 12px" }}>{children}</div>}
+    </div>
   );
 }
 
-// ── Main Sidebar ───────────────────────────────────────────────────
+// ── Main sidebar ─────────────────────────────────────────────────────
 export default function RoomSidebar({
-  tournament, members = [],
-  readyCount, role,
-  currentUserReady, onToggleReady,
-  countdown,
-  pendingRequests, onApprove, onReject,
-  onKick, onMovePlayer, onForceReady,
-  onStatusChange, onStartMatch,
+  tournament, members = [], readyCount, role,
+  currentUserReady, onToggleReady, countdown,
+  pendingRequests = [], onApprove, onReject,
+  onKick, onMovePlayer, onForceReady, onStatusChange, onStartMatch,
+  onRemoveNotReady, onCloseRegistration, onGenerateSlots, onLockParticipants, onStartReadyCheck,
   messages, onSendMessage, currentUser,
 }) {
-  const [toggling, setToggling] = useState(false);
+  const tStatus = tournament?.status || "draft";
+  const isOrg   = role === "organizer";
+  const isPart  = role === "participant";
 
-  const totalCount = members.length;
-  const maxPlayers = tournament?.max_players || 0;
-  const allReady   = totalCount > 0 && readyCount >= totalCount;
-  const fillPct    = maxPlayers > 0 ? Math.min(100, (totalCount / maxPlayers) * 100) : 0;
-  const readyPct   = totalCount > 0 ? (readyCount / totalCount) * 100 : 0;
+  const allReady = members.length > 0 && readyCount >= members.length;
 
-  const isOrg      = role === "organizer";
-  const tStatus    = tournament?.room_status || tournament?.status || "draft";
-  const isLive     = tStatus === "live";
-  const hasRoomCode = tournament?.room_code;
-
-  const handleReady = async () => {
-    if (toggling) return;
-    setToggling(true);
-    try { await onToggleReady?.(); } catch (_) {}
-    setToggling(false);
-  };
+  const readyPct = members.length > 0 ? (readyCount / members.length) * 100 : 0;
 
   return (
     <div style={{
-      width: "100%", height: "100%",
-      display: "flex", flexDirection: "column",
-      background: C.bg,
+      height: "100%", background: C.bg,
       borderLeft: `1px solid ${C.border}`,
+      display: "flex", flexDirection: "column",
+      overflow: "hidden",
     }}>
+      {/* Scrollable top section */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
 
-      {/* ── Tournament info ─────────────────────────────────────── */}
-      <div style={{
-        padding: "14px 16px",
-        borderBottom: `1px solid ${C.border}`,
-        background: "#0a0e1a",
-        flexShrink: 0,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, marginRight: 8 }}>
-            {tournament?.name || "Tournament Room"}
-          </span>
-          <StatusPill status={tournament?.status} />
-        </div>
+        {/* Tournament info */}
+        <Collapse title="Tournament Info" defaultOpen>
+          <StatRow label="Status"   value={<StatusPill status={tStatus} />} />
+          <StatRow label="Mode"     value={`${tournament?.mode || "—"} · ${tournament?.game_type || "—"}`} />
+          <StatRow label="Players"  value={`${members.length} / ${tournament?.max_players || "?"}`} color={C.accent} />
+          <StatRow label="Ready"    value={`${readyCount} / ${members.length}`}  color={allReady ? C.green : C.amber} />
+          {tournament?.prize && (
+            <StatRow label="Prize"  value={tournament.prize} color={C.amber} />
+          )}
 
-        {/* Mode / map */}
-        {(tournament?.mode || tournament?.cs_format || tournament?.game_type) && (
-          <div style={{ fontSize: 11, color: C.text3, marginBottom: 10, fontFamily: "monospace" }}>
-            {[
-              tournament.game_type === "cs" ? "Clash Squad" : "Battle Royale",
-              tournament.mode || tournament.cs_format,
-              tournament.map_name,
-            ].filter(Boolean).join(" · ")}
+          {/* Fill progress */}
+          <div style={{ marginTop: 8 }}>
+            <div style={{ height: 3, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 4 }}>
+              <div style={{ height: "100%", borderRadius: 2, width: `${(members.length / (tournament?.max_players || 1)) * 100}%`, background: C.accent, transition: "width 0.4s" }} />
+            </div>
+            <div style={{ height: 3, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+              <div style={{ height: "100%", borderRadius: 2, width: `${readyPct}%`, background: allReady ? C.green : C.amber, transition: "width 0.4s" }} />
+            </div>
+          </div>
+        </Collapse>
+
+        {/* Room credentials */}
+        <Collapse title="Room Credentials">
+          {isOrg ? (
+            <RoomCodeEditor tournament={tournament} />
+          ) : (
+            <>
+              <CopyField label="ROOM CODE"     value={tournament?.room_code}     />
+              <CopyField label="ROOM PASSWORD" value={tournament?.room_password} secret />
+            </>
+          )}
+        </Collapse>
+
+        {/* Participant ready button */}
+        {isPart && tStatus === "ready_check" && (
+          <div style={{ padding: 12, borderBottom: `1px solid ${C.border}` }}>
+            <button
+              onClick={onToggleReady}
+              style={{
+                width: "100%", padding: "11px", borderRadius: 9, border: "none", cursor: "pointer",
+                background: currentUserReady
+                  ? "linear-gradient(135deg, #10b981, #06b6d4)"
+                  : "rgba(99,102,241,0.15)",
+                color: currentUserReady ? "#000" : C.accent,
+                fontSize: 12, fontWeight: 900, letterSpacing: 0.5,
+                boxShadow: currentUserReady ? "0 0 20px rgba(16,185,129,0.3)" : "none",
+                transition: "all 0.2s",
+              }}
+            >
+              {currentUserReady ? "✓ READY" : "CLICK TO READY UP"}
+            </button>
           </div>
         )}
 
-        {/* Stats row */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-          <StatChip label="Players" value={`${totalCount}/${maxPlayers || "?"}`} color={C.accent} />
-          <StatChip label="Ready" value={readyCount} color={allReady ? C.green : totalCount > 0 ? C.amber : C.text3} />
-          {tournament?.prize_pool && (
-            <StatChip label="Prize" value={`${tournament.prize_pool}CP`} color="#fbbf24" />
-          )}
-        </div>
-
-        {/* Fill progress */}
-        <div style={{ marginBottom: 6 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-            <span style={{ fontSize: 9, color: C.text3, fontWeight: 700, letterSpacing: 0.5 }}>REGISTRATION</span>
-            <span style={{ fontSize: 9, color: C.text3, fontFamily: "monospace" }}>{Math.round(fillPct)}%</span>
-          </div>
-          <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-            <motion.div
-              style={{ height: "100%", background: `linear-gradient(90deg, ${C.accent}, #818cf8)`, borderRadius: 2 }}
-              animate={{ width: `${fillPct}%` }}
-              transition={{ duration: 0.4 }}
+        {/* Organizer control panel */}
+        {isOrg && (
+          <div style={{ padding: 10, borderBottom: `1px solid ${C.border}` }}>
+            <OrganizerPanel
+              tournament={tournament}
+              members={members}
+              readyCount={readyCount}
+              pendingRequests={pendingRequests}
+              onApprove={onApprove}
+              onReject={onReject}
+              onKick={onKick}
+              onForceReady={onForceReady}
+              onStatusChange={onStatusChange}
+              onStartMatch={onStartMatch}
+              onRemoveNotReady={onRemoveNotReady}
+              onCloseRegistration={onCloseRegistration}
+              onGenerateSlots={onGenerateSlots}
+              onLockParticipants={onLockParticipants}
+              onStartReadyCheck={onStartReadyCheck}
             />
           </div>
-        </div>
+        )}
 
-        {/* Ready progress */}
-        {totalCount > 0 && (
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-              <span style={{ fontSize: 9, color: C.text3, fontWeight: 700, letterSpacing: 0.5 }}>READY</span>
-              <span style={{ fontSize: 9, color: allReady ? C.green : C.text3, fontFamily: "monospace" }}>{readyCount}/{totalCount}</span>
-            </div>
-            <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-              <motion.div
-                style={{ height: "100%", background: allReady ? `linear-gradient(90deg, ${C.green}, #34d399)` : `linear-gradient(90deg, #f59e0b, #fbbf24)`, borderRadius: 2 }}
-                animate={{ width: `${readyPct}%` }}
-                transition={{ duration: 0.4 }}
-              />
+        {/* All-ready banner */}
+        {allReady && tStatus === "ready_check" && (
+          <div style={{
+            margin: "10px 12px", padding: "10px 14px", borderRadius: 9,
+            background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)",
+            textAlign: "center",
+          }}>
+            <div style={{ fontSize: 16, marginBottom: 2 }}>🎮</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: C.green }}>ALL PLAYERS READY!</div>
+            {isOrg && <div style={{ fontSize: 9, color: C.text3, marginTop: 2 }}>Start the tournament above</div>}
+          </div>
+        )}
+
+        {/* Countdown */}
+        {countdown !== null && countdown > 0 && (
+          <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: 9, color: C.text3, marginBottom: 4, letterSpacing: 0.5 }}>MATCH TIMER</div>
+            <div style={{
+              fontSize: 28, fontWeight: 900, fontFamily: "monospace",
+              color: countdown <= 60 ? C.red : C.text, letterSpacing: 2,
+            }}>
+              {String(Math.floor(countdown / 60)).padStart(2, "0")}:{String(countdown % 60).padStart(2, "0")}
             </div>
           </div>
         )}
       </div>
 
-      {/* ── Scrollable body ─────────────────────────────────────── */}
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-
-        {/* Room code widget */}
-        {(hasRoomCode || isOrg) && (
-          <div style={{
-            padding: "12px 16px",
-            borderBottom: `1px solid ${C.border}`,
-            background: "rgba(0,212,255,0.03)",
-            flexShrink: 0,
-          }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: "#06b6d4", letterSpacing: 0.8, marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
-              <span>⚡</span> ROOM CREDENTIALS
-            </div>
-            {isOrg ? (
-              <RoomCodeEditor tournament={tournament} />
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {tournament?.room_code && (
-                  <CopyField label="Room ID" value={tournament.room_code} secret={false} />
-                )}
-                {tournament?.room_password && (
-                  <CopyField label="Password" value={tournament.room_password} secret />
-                )}
-                {!tournament?.room_code && !tournament?.room_password && (
-                  <p style={{ fontSize: 11, color: C.text3, textAlign: "center" }}>
-                    Room credentials will appear here once set.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Participant: ready button */}
-        {role === "participant" && !isLive && (
-          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-            <button
-              onClick={handleReady}
-              disabled={toggling}
-              style={{
-                width: "100%", padding: "12px", borderRadius: 10, border: "none",
-                cursor: toggling ? "wait" : "pointer",
-                background: currentUserReady
-                  ? `linear-gradient(135deg, ${C.green}, #059669)`
-                  : `linear-gradient(135deg, ${C.accent}, #4f46e5)`,
-                color: "#fff", fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
-                opacity: toggling ? 0.7 : 1,
-                boxShadow: currentUserReady ? `0 4px 16px ${C.green}40` : `0 4px 16px ${C.accent}40`,
-                transition: "all 0.2s",
-              }}
-            >
-              {toggling ? "…" : currentUserReady ? "✓ READY — Click to Unready" : "⚡ MARK READY"}
-            </button>
-          </div>
-        )}
-
-        {/* Organizer: control panel */}
-        {isOrg && (
-          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-            <OrganizerPanel
-              pendingRequests={pendingRequests || []}
-              onApprove={onApprove}
-              onReject={onReject}
-              members={members}
-              onKick={onKick}
-              onForceReady={onForceReady}
-              tournament={tournament}
-              onStatusChange={onStatusChange}
-              onStartMatch={onStartMatch}
-            />
-          </div>
-        )}
-
-        {/* Countdown display */}
-        {countdown !== null && countdown > 0 && isLive && (
-          <div style={{
-            margin: "12px 16px",
-            padding: "12px",
-            borderRadius: 10,
-            background: "#ef444410",
-            border: "1px solid #ef444430",
-            textAlign: "center",
-            flexShrink: 0,
-          }}>
-            <div style={{ fontSize: 9, color: "#ef4444", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>MATCH ENDS IN</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: "#ef4444", fontFamily: "monospace", letterSpacing: 2 }}>
-              {String(Math.floor(countdown / 60)).padStart(2, "0")}:{String(countdown % 60).padStart(2, "0")}
-            </div>
-          </div>
-        )}
-
-        {/* All-ready banner */}
-        {allReady && !isLive && (
-          <div style={{
-            margin: "12px 16px",
-            padding: "10px 12px",
-            borderRadius: 10,
-            background: C.green + "12",
-            border: `1px solid ${C.green}25`,
-            textAlign: "center",
-            flexShrink: 0,
-          }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: C.green }}>
-              ✓ All players ready
-              {isOrg ? " — Start match when ready!" : ""}
-            </span>
-          </div>
-        )}
-
-        {/* Chat — fills remaining space */}
-        <div style={{ flex: 1, minHeight: 200, display: "flex", flexDirection: "column" }}>
-          <RoomChat
-            messages={messages || []}
-            onSendMessage={onSendMessage}
-            currentUser={currentUser}
-            role={role}
-            roomLocked={false}
-            onSelectPlayer={() => {}}
-            accentColor={tournament?.background_color}
-          />
-        </div>
+      {/* Chat — fixed 350px at bottom */}
+      <div style={{ height: 350, flexShrink: 0, borderTop: `1px solid ${C.border}`, overflow: "hidden" }}>
+        <RoomChat
+          messages={messages}
+          onSendMessage={onSendMessage}
+          currentUser={currentUser}
+          tournamentId={tournament?.id}
+        />
       </div>
     </div>
   );

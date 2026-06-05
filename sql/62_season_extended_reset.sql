@@ -102,11 +102,11 @@ BEGIN
      WHERE true;
 
     UPDATE public.player_stats
-       SET kills         = 0,
-           wins          = 0,
-           losses        = 0,
-           matches_played = 0,
-           updated_at    = now()
+       SET kills              = 0,
+           wins               = 0,
+           losses             = 0,
+           tournaments_played = 0,
+           updated_at         = now()
      WHERE true;
   END IF;
 
