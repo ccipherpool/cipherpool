@@ -176,14 +176,19 @@ export default function SeasonResetManager({ onClose, onSuccess }) {
     let cancelled = false;
     const fetch = async () => {
       setLoadingPreview(true);
-      const [{ count: users }, { count: clans }, { count: teams }, { count: tournaments }] = await Promise.all([
+      const [profilesRes, clansRes, teamsRes, tournamentsRes] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("clans").select("id", { count: "exact", head: true }),
-        supabase.from("teams").select("id", { count: "exact", head: true }).catch(() => ({ count: 0 })),
+        supabase.from("teams").select("id", { count: "exact", head: true }).then(r => r).catch(() => ({ count: 0 })),
         supabase.from("tournaments").select("id", { count: "exact", head: true }).in("status", ["registration_open", "live", "ready"]),
       ]);
       if (!cancelled) {
-        setPreview({ users: users || 0, clans: clans || 0, teams: teams || 0, tournaments: tournaments || 0 });
+        setPreview({
+          users:       profilesRes.count    ?? 0,
+          clans:       clansRes.count       ?? 0,
+          teams:       teamsRes.count       ?? 0,
+          tournaments: tournamentsRes.count ?? 0,
+        });
         setLoadingPreview(false);
       }
     };
