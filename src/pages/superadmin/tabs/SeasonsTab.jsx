@@ -62,32 +62,48 @@ export default function SeasonsTab() {
     setSubmitting(true);
     setResult(null);
     try {
-      // Canonical call — matches the single start_new_season(text,integer,text,bool×8) function.
-      // All 11 params are named explicitly so PostgREST never hits an ambiguity.
-      const { data, error } = await supabase.rpc("start_new_season", {
+      const params = {
         p_name:              form.name.trim(),
-        p_number:            null,                        // auto-computed by the function
+        p_number:            null,
         p_description:       form.description.trim() || null,
         p_reset_coins:       form.reset_coins,
         p_reset_xp:          form.reset_xp,
-        p_reset_stats:       form.reset_wins,             // UI label "Wins & Points" maps here
-        p_reset_wins:        form.reset_wins,             // merged with p_reset_stats inside SQL
+        p_reset_stats:       form.reset_wins,
+        p_reset_wins:        form.reset_wins,
         p_reset_avatars:     form.reset_avatars,
         p_reset_chat:        form.reset_chat,
         p_reset_tournaments: form.reset_tournaments,
         p_reset_clans:       form.reset_clans,
-      });
+      };
+
+      console.log("[SeasonLaunch] calling start_new_season with params:", params);
+
+      const { data, error } = await supabase.rpc("start_new_season", params);
+
+      console.log("[SeasonLaunch] RPC response — data:", data, "| error:", error);
 
       if (error) throw new Error(error.message);
       if (data?.success === false) throw new Error(data?.error || "Unknown error");
 
-      setResult({ ok: true, msg: `Season ${data?.season_number} launched successfully` });
+      const log   = Array.isArray(data?.log)    ? data.log    : [];
+      const errs  = typeof data?.errors === "number" ? data.errors : 0;
+      const resets = typeof data?.resets_applied === "number" ? data.resets_applied : null;
+
+      console.log("[SeasonLaunch] reset log:", log);
+
+      setResult({
+        ok:      true,
+        msg:     `Season ${data?.season_number} launched — ${resets !== null ? `${resets} reset${resets !== 1 ? "s" : ""} applied` : ""}${errs > 0 ? ` (${errs} error${errs !== 1 ? "s" : ""})` : ""}`,
+        log,
+        hasErrors: errs > 0,
+      });
       setShowModal(false);
       setConfirmText("");
       setForm(f => ({ ...f, name: "", description: "" }));
       fetchData();
     } catch (err) {
-      setResult({ ok: false, msg: err.message || "Season creation failed" });
+      console.error("[SeasonLaunch] caught error:", err);
+      setResult({ ok: false, msg: err.message || "Season creation failed", log: [] });
     } finally {
       setSubmitting(false);
     }
@@ -146,11 +162,22 @@ export default function SeasonsTab() {
       <AnimatePresence>
         {result && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            style={{ marginBottom: 16, padding: "10px 16px", borderRadius: 10, display: "flex", alignItems: "center", gap: 10, background: result.ok ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.08)", border: `1px solid ${result.ok ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`, color: result.ok ? "#34d399" : "#f87171", fontSize: 13, fontWeight: 600 }}
+            style={{ marginBottom: 16, borderRadius: 10, overflow: "hidden", border: `1px solid ${result.ok && !result.hasErrors ? "rgba(16,185,129,0.25)" : result.ok && result.hasErrors ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.25)"}` }}
           >
-            {result.ok ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
-            {result.msg}
-            <button onClick={() => setResult(null)} style={{ marginLeft: "auto", background: "none", border: "none", color: "inherit", cursor: "pointer" }}><X size={14} /></button>
+            <div style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, background: result.ok && !result.hasErrors ? "rgba(16,185,129,0.08)" : result.ok && result.hasErrors ? "rgba(245,158,11,0.08)" : "rgba(239,68,68,0.08)", color: result.ok && !result.hasErrors ? "#34d399" : result.ok && result.hasErrors ? "#fbbf24" : "#f87171", fontSize: 13, fontWeight: 600 }}>
+              {result.ok && !result.hasErrors ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
+              {result.msg}
+              <button onClick={() => setResult(null)} style={{ marginLeft: "auto", background: "none", border: "none", color: "inherit", cursor: "pointer" }}><X size={14} /></button>
+            </div>
+            {result.log && result.log.length > 0 && (
+              <div style={{ padding: "8px 16px 10px", background: "rgba(0,0,0,0.3)", maxHeight: 140, overflowY: "auto" }}>
+                {result.log.map((line, i) => (
+                  <div key={i} style={{ fontSize: 10, color: line.includes("FAILED") ? "#f87171" : line.includes("✓") ? "#34d399" : "rgba(255,255,255,0.35)", lineHeight: 1.8, fontFamily: "monospace" }}>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
