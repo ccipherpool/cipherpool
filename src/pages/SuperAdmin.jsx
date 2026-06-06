@@ -392,10 +392,16 @@ export default function SuperAdmin() {
 
   const filteredUsers = users.filter(u => {
     const q = search.toLowerCase();
-    const matchSearch = u.display_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.free_fire_id?.includes(search);
+    const matchSearch = !q
+      || u.display_name?.toLowerCase().includes(q)
+      || u.email?.toLowerCase().includes(q)
+      || u.free_fire_id?.includes(search)
+      || u.free_fire_uid?.includes(search)
+      || u.city?.toLowerCase().includes(q)
+      || u.country?.toLowerCase().includes(q);
     if (filter === "all")      return matchSearch;
     if (filter === "admins")   return matchSearch && u.role === "admin";
-    if (filter === "founders") return matchSearch && u.role === "founder";
+    if (filter === "founders") return matchSearch && (u.role === "founder" || u.role === "fondateur");
     if (filter === "banned")   return matchSearch && u.role === "banned";
     if (filter === "pending")  return matchSearch && u.verification_status === "pending";
     return matchSearch;

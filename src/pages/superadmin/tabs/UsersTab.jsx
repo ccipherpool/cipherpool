@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import {
   ShieldAlert, Wallet, Ban, Trash2, CheckCircle2,
-  Search, Filter, User, Crown, Zap, Layout, Activity,
+  Search, User, Crown, Hash, MapPin, Calendar,
 } from "lucide-react";
 
 const C = {
@@ -15,7 +15,7 @@ const C = {
   amber:    "#F59E0B",
   blue:     "#3B82F6",
   orange:   "#F97316",
-  pink:     "#EC4899",
+  cyan:     "#06B6D4",
   text:     "#FFFFFF",
   text2:    "#A1A1AA",
   text3:    "#52525B",
@@ -31,8 +31,13 @@ const ROLE_STYLE = {
   banned:      { color: C.text3,  bg: "rgba(82,82,91,0.2)", label: "Banni" },
 };
 
+const countryFlag = (code) => {
+  if (!code || code.length !== 2) return null;
+  return code.toUpperCase().split("").map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join("");
+};
+
 function RoleBadge({ role }) {
-  const s = ROLE_STYLE[role] || { color: C.text3, bg: "rgba(82,82,91,0.15)", label: "Utilisateur" };
+  const s = ROLE_STYLE[role] || { color: C.text3, bg: "rgba(82,82,91,0.15)", label: "User" };
   return (
     <span style={{
       display: "inline-flex", alignItems: "center",
@@ -47,50 +52,49 @@ function RoleBadge({ role }) {
 }
 
 const btnStyle = (color) => ({
-  width: 34, height: 34,
-  borderRadius: 10, border: `1px solid ${C.border}`,
+  width: 32, height: 32,
+  borderRadius: 9, border: `1px solid ${C.border}`,
   background: C.surface3, color: C.text2, cursor: "pointer",
   display: "flex", alignItems: "center", justifyContent: "center",
-  transition: "all 0.15s",
-  flexShrink: 0,
+  transition: "all 0.15s", flexShrink: 0,
 });
 
 function ActionButtons({ user, setSelectedUser, setShowRoleModal, setShowBanModal, setShowWalletModal, unbanUser, deleteUser }) {
   return (
-    <div style={{ display: "flex", gap: 6 }}>
-      <button style={btnStyle(C.orange)} title="Modifier rôle"
+    <div style={{ display: "flex", gap: 5 }}>
+      <button style={btnStyle(C.orange)} title="Change role"
         onMouseEnter={e => { e.currentTarget.style.background = `${C.orange}18`; e.currentTarget.style.color = C.orange; e.currentTarget.style.borderColor = `${C.orange}40`; }}
         onMouseLeave={e => { e.currentTarget.style.background = C.surface3; e.currentTarget.style.color = C.text2; e.currentTarget.style.borderColor = C.border; }}
         onClick={() => { setSelectedUser(user); setShowRoleModal(true); }}>
-        <Crown size={15} />
+        <Crown size={13} />
       </button>
-      <button style={btnStyle(C.green)} title="Gérer wallet"
+      <button style={btnStyle(C.green)} title="Manage wallet"
         onMouseEnter={e => { e.currentTarget.style.background = `${C.green}18`; e.currentTarget.style.color = C.green; e.currentTarget.style.borderColor = `${C.green}40`; }}
         onMouseLeave={e => { e.currentTarget.style.background = C.surface3; e.currentTarget.style.color = C.text2; e.currentTarget.style.borderColor = C.border; }}
         onClick={() => { setSelectedUser(user); setShowWalletModal(true); }}>
-        <Wallet size={15} />
+        <Wallet size={13} />
       </button>
       {user.role !== "banned" ? (
-        <button style={btnStyle(C.red)} title="Bannir"
+        <button style={btnStyle(C.red)} title="Ban"
           onMouseEnter={e => { e.currentTarget.style.background = `${C.red}18`; e.currentTarget.style.color = C.red; e.currentTarget.style.borderColor = `${C.red}40`; }}
           onMouseLeave={e => { e.currentTarget.style.background = C.surface3; e.currentTarget.style.color = C.text2; e.currentTarget.style.borderColor = C.border; }}
           onClick={() => { setSelectedUser(user); setShowBanModal(true); }}>
-          <Ban size={15} />
+          <Ban size={13} />
         </button>
       ) : (
-        <button style={btnStyle(C.green)} title="Débannir"
+        <button style={btnStyle(C.green)} title="Unban"
           onMouseEnter={e => { e.currentTarget.style.background = `${C.green}18`; e.currentTarget.style.color = C.green; e.currentTarget.style.borderColor = `${C.green}40`; }}
           onMouseLeave={e => { e.currentTarget.style.background = C.surface3; e.currentTarget.style.color = C.text2; e.currentTarget.style.borderColor = C.border; }}
           onClick={() => unbanUser(user.id)}>
-          <CheckCircle2 size={15} />
+          <CheckCircle2 size={13} />
         </button>
       )}
       {user.role !== "super_admin" && (
-        <button style={btnStyle(C.red)} title="Supprimer"
+        <button style={btnStyle(C.red)} title="Delete"
           onMouseEnter={e => { e.currentTarget.style.background = `${C.red}18`; e.currentTarget.style.color = C.red; e.currentTarget.style.borderColor = `${C.red}40`; }}
           onMouseLeave={e => { e.currentTarget.style.background = C.surface3; e.currentTarget.style.color = C.text2; e.currentTarget.style.borderColor = C.border; }}
           onClick={() => deleteUser(user.id)}>
-          <Trash2 size={15} />
+          <Trash2 size={13} />
         </button>
       )}
     </div>
@@ -102,55 +106,69 @@ export default function UsersTab({ filteredUsers, search, setSearch, filter, set
   const displayed = filteredUsers.slice(0, 50);
 
   const FILTERS = [
-    { value: "all",      label: "Tous" },
+    { value: "all",      label: "All" },
     { value: "admins",   label: "Admins" },
     { value: "founders", label: "Founders" },
-    { value: "banned",   label: "Bannis" },
-    { value: "pending",  label: "En attente" },
+    { value: "banned",   label: "Banned" },
+    { value: "pending",  label: "Pending" },
   ];
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      style={{ display: "flex", flexDirection: "column", gap: 16, fontFamily: C.font }}
+      style={{ display: "flex", flexDirection: "column", gap: 14, fontFamily: C.font }}
     >
       {/* Search + filter bar */}
       <div style={{
-        display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center",
         background: `linear-gradient(135deg, ${C.surface}, ${C.surface2})`,
         border: `1px solid ${C.border}`,
         borderRadius: 16, padding: "14px 18px",
+        display: "flex", flexDirection: "column", gap: 10,
       }}>
-        <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
-          <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: C.text3 }} />
-          <input
-            type="text"
-            placeholder="Rechercher par nom, email ou ID Free Fire..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{
-              width: "100%", padding: "9px 12px 9px 36px",
-              background: C.surface3, border: `1px solid ${C.border}`,
-              borderRadius: 10, color: C.text, fontSize: 13,
-              outline: "none", fontFamily: C.font, boxSizing: "border-box",
-            }}
-            onFocus={e => e.target.style.borderColor = `${C.purple}60`}
-            onBlur={e => e.target.style.borderColor = C.border}
-          />
-        </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {FILTERS.map(f => (
-            <button key={f.value} onClick={() => setFilter(f.value)}
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ position: "relative", flex: 1, minWidth: 240 }}>
+            <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: C.text3, pointerEvents: "none" }} />
+            <input
+              type="text"
+              placeholder="Search by name, email, FF UID, country, city…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
               style={{
-                padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
-                border: `1px solid ${filter === f.value ? C.purple + "60" : C.border}`,
-                background: filter === f.value ? `${C.purple}18` : "transparent",
-                color: filter === f.value ? C.purple : C.text2,
-                transition: "all 0.15s",
-              }}>
-              {f.label}
-            </button>
+                width: "100%", padding: "9px 12px 9px 36px",
+                background: C.surface3, border: `1px solid ${C.border}`,
+                borderRadius: 10, color: C.text, fontSize: 13,
+                outline: "none", fontFamily: C.font, boxSizing: "border-box",
+              }}
+              onFocus={e => e.target.style.borderColor = `${C.purple}60`}
+              onBlur={e  => e.target.style.borderColor = C.border}
+            />
+          </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {FILTERS.map(f => (
+              <button key={f.value} onClick={() => setFilter(f.value)}
+                style={{
+                  padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                  border: `1px solid ${filter === f.value ? C.purple + "60" : C.border}`,
+                  background: filter === f.value ? `${C.purple}18` : "transparent",
+                  color: filter === f.value ? C.purple : C.text2,
+                  transition: "all 0.15s",
+                }}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* Search hints */}
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          {[
+            { icon: Hash,    color: C.amber, label: "Search by UID" },
+            { icon: MapPin,  color: C.cyan,  label: "Search by country/city" },
+            { icon: Calendar,color: C.purple,label: "Filter by role above" },
+          ].map(({ icon: Icon, color, label }) => (
+            <span key={label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: C.text3 }}>
+              <Icon size={11} style={{ color }} /> {label}
+            </span>
           ))}
         </div>
       </div>
@@ -163,13 +181,15 @@ export default function UsersTab({ filteredUsers, search, setSearch, filter, set
       }}>
         {/* Header */}
         <div style={{
-          display: "grid", gridTemplateColumns: "2fr 120px 140px 160px",
-          padding: "12px 20px",
+          display: "grid",
+          gridTemplateColumns: "minmax(200px,2fr) 100px 130px 90px 80px 140px",
+          padding: "10px 18px",
           borderBottom: `1px solid ${C.border}`,
           background: C.surface3,
+          gap: 8,
         }}>
-          {["Utilisateur", "Rôle", "Wallet", "Actions"].map((h, i) => (
-            <div key={h} style={{ fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: 1, textAlign: i === 3 ? "right" : "left" }}>
+          {["Player", "Role", "Wallet", "UID", "Age", "Actions"].map((h, i) => (
+            <div key={h} style={{ fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: 0.8, textTransform: "uppercase", textAlign: i === 5 ? "right" : "left" }}>
               {h}
             </div>
           ))}
@@ -178,68 +198,102 @@ export default function UsersTab({ filteredUsers, search, setSearch, filter, set
         {/* Rows */}
         {displayed.length === 0 ? (
           <div style={{ padding: "48px", textAlign: "center" }}>
-            <User size={40} style={{ color: C.text3, marginBottom: 12 }} />
-            <p style={{ fontSize: 13, color: C.text3 }}>Aucun utilisateur trouvé</p>
+            <User size={36} style={{ color: C.text3, marginBottom: 10 }} />
+            <p style={{ fontSize: 13, color: C.text3 }}>No users found</p>
           </div>
         ) : (
-          displayed.map((user, i) => (
-            <motion.div
-              key={user.id}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.02 }}
-              style={{
-                display: "grid", gridTemplateColumns: "2fr 120px 140px 160px",
-                padding: "12px 20px", alignItems: "center",
-                borderBottom: i < displayed.length - 1 ? `1px solid ${C.border}` : "none",
-                transition: "background 0.15s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = C.surface3}
-              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-            >
-              {/* User */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                  background: user.avatar_url ? "transparent" : `${C.purple}25`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  overflow: "hidden",
-                }}>
-                  {user.avatar_url
-                    ? <img src={user.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    : <span style={{ fontSize: 14, fontWeight: 800, color: C.purple }}>{(user.display_name || "?")[0].toUpperCase()}</span>
-                  }
+          displayed.map((user, i) => {
+            const ffUID = user.free_fire_uid || user.free_fire_id;
+            const flag  = countryFlag(user.country);
+            return (
+              <motion.div
+                key={user.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.018 }}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "minmax(200px,2fr) 100px 130px 90px 80px 140px",
+                  padding: "10px 18px", alignItems: "center", gap: 8,
+                  borderBottom: i < displayed.length - 1 ? `1px solid ${C.border}` : "none",
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = C.surface3}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                {/* Player */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+                    background: user.avatar_url ? "transparent" : `${C.purple}25`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    overflow: "hidden",
+                  }}>
+                    {user.avatar_url
+                      ? <img src={user.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : <span style={{ fontSize: 13, fontWeight: 800, color: C.purple }}>{(user.display_name || "?")[0].toUpperCase()}</span>
+                    }
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {user.display_name}
+                    </p>
+                    <p style={{ fontSize: 11, color: C.text3, margin: "1px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {user.email}
+                    </p>
+                    {(user.country || user.city) && (
+                      <p style={{ fontSize: 10, color: C.text3, margin: "2px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
+                        {flag && <span style={{ fontSize: 12 }}>{flag}</span>}
+                        {user.city ? `${user.city}, ${user.country || ""}` : user.country}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {user.display_name}
-                  </p>
-                  <p style={{ fontSize: 11, color: C.text3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {user.email}
-                  </p>
+
+                {/* Role */}
+                <div><RoleBadge role={user.role} /></div>
+
+                {/* Wallet */}
+                <div>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: C.amber }}>
+                    {(user.coins || 0).toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: 11, color: C.text3 }}> CP</span>
                 </div>
-              </div>
-              {/* Role */}
-              <div><RoleBadge role={user.role} /></div>
-              {/* Coins */}
-              <div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: C.amber }}>
-                  {(user.coins || 0).toLocaleString()}
-                </span>
-                <span style={{ fontSize: 11, color: C.text3 }}> CP</span>
-              </div>
-              {/* Actions */}
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <ActionButtons user={user} {...actionProps} />
-              </div>
-            </motion.div>
-          ))
+
+                {/* FF UID */}
+                <div>
+                  {ffUID ? (
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: C.cyan, fontWeight: 600, fontFamily: "monospace" }}>
+                      <Hash size={10} style={{ flexShrink: 0 }} />{ffUID}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 11, color: C.text3 }}>—</span>
+                  )}
+                </div>
+
+                {/* Age */}
+                <div>
+                  {user.age ? (
+                    <span style={{ fontSize: 12, color: C.text2, fontWeight: 600 }}>{user.age}y</span>
+                  ) : (
+                    <span style={{ fontSize: 11, color: C.text3 }}>—</span>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <ActionButtons user={user} {...actionProps} />
+                </div>
+              </motion.div>
+            );
+          })
         )}
       </div>
 
       {filteredUsers.length > 50 && (
         <p style={{ fontSize: 12, color: C.text3, textAlign: "center" }}>
-          Affichage des 50 premiers résultats sur {filteredUsers.length}
+          Showing first 50 of {filteredUsers.length} results
         </p>
       )}
     </motion.div>

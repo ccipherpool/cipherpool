@@ -1,8 +1,9 @@
+import { useState, useEffect, useRef } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Trophy, BarChart3, MessageSquare, Users2,
-  ShoppingBag, Wallet, Newspaper, Ticket, TrendingUp,
+  ShoppingBag, Wallet, Newspaper, Ticket,
   ShieldAlert, Zap, LogOut, User, Gift, Star,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
@@ -18,33 +19,50 @@ const NAV_MAIN = [
 ];
 
 const NAV_ICONS = [
-  { path: "/store",        icon: ShoppingBag, label: "Store"       },
-  { path: "/wallet",       icon: Wallet,      label: "Wallet"      },
-  { path: "/daily-rewards",icon: Gift,        label: "Rewards"     },
-  { path: "/achievements", icon: Star,        label: "Achievements"},
-  { path: "/news",         icon: Newspaper,   label: "News"        },
-  { path: "/support",      icon: Ticket,      label: "Support"     },
+  { path: "/store",         icon: ShoppingBag, label: "Store"       },
+  { path: "/wallet",        icon: Wallet,      label: "Wallet"      },
+  { path: "/daily-rewards", icon: Gift,        label: "Rewards"     },
+  { path: "/achievements",  icon: Star,        label: "Achievements"},
+  { path: "/news",          icon: Newspaper,   label: "News"        },
+  { path: "/support",       icon: Ticket,      label: "Support"     },
 ];
 
 export default function TopNav({ profile }) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const p = location.pathname;
+  const navigate    = useNavigate();
+  const location    = useLocation();
+  const p           = location.pathname;
+  const [open, setOpen] = useState(false);
+  const dropRef     = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropRef.current && !dropRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Close dropdown on route change
+  useEffect(() => { setOpen(false); }, [location.pathname]);
 
   const handleLogout = async () => {
+    setOpen(false);
     try { await supabase.auth.signOut({ scope: "local" }); } catch (_) {}
     window.location.replace("/login");
   };
 
-  const isAdmin      = ["admin", "super_admin"].includes(profile?.role);
-  const isSuperAdmin = profile?.role === "super_admin";
+  const isAdmin      = ["admin", "super_admin", "founder", "fondateur"].includes(profile?.role);
+  const isSuperAdmin = ["super_admin", "founder", "fondateur"].includes(profile?.role);
 
   return (
     <nav
       className="cp-topnav hidden md:flex items-center justify-between flex-shrink-0 px-5 relative z-40"
       style={{ height: "58px" }}
     >
-      {/* Main nav */}
+      {/* ── Main nav ── */}
       <div className="flex items-center gap-0.5">
         {NAV_MAIN.map(item => {
           const active = p === item.path || (item.path !== "/dashboard" && p.startsWith(item.path));
@@ -98,7 +116,7 @@ export default function TopNav({ profile }) {
         </div>
       </div>
 
-      {/* Right cluster */}
+      {/* ── Right cluster ── */}
       <div className="flex items-center gap-3">
         <div className="hidden lg:block">
           <SeasonBadge />
@@ -106,12 +124,14 @@ export default function TopNav({ profile }) {
 
         <NotificationBell userId={profile?.id} />
 
-        {/* Profile dropdown */}
-        <div className="relative group">
+        {/* ── Profile dropdown — click-based (desktop bug fix) ── */}
+        <div className="relative" ref={dropRef}>
           <motion.button
             whileTap={{ scale: 0.97 }}
+            onClick={() => setOpen(o => !o)}
             className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 cp-profile-trigger rounded-2xl transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/40"
             aria-label="Profile menu"
+            aria-expanded={open}
           >
             <div
               className="w-7 h-7 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-black text-[10px]"
@@ -124,64 +144,78 @@ export default function TopNav({ profile }) {
               )}
             </div>
             <div className="hidden lg:flex flex-col items-start">
-                <span className="text-sm font-medium text-white/90 leading-none">
+              <span className="text-sm font-medium text-white/90 leading-none">
                 {profile?.username || "Player"}
               </span>
-                <span className="text-xs text-white/38 mt-0.5">
+              <span className="text-xs text-white/38 mt-0.5">
                 Level {profile?.level || 1}
               </span>
             </div>
           </motion.button>
 
-          {/* Dropdown panel — stays dark for contrast */}
-          <div className="absolute right-0 top-full pt-2 opacity-0 translate-y-1 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)] z-[110]">
-            <div className="w-56 cp-dropdown-panel rounded-2xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-white/10 bg-white/[0.03]">
-                <p className="text-xs text-white/35 mb-0.5">Signed in as</p>
-                <p className="text-sm font-medium text-white/85 truncate">{profile?.email}</p>
-                {profile?.role && (
-                  <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-300/10 text-cyan-200 border border-cyan-300/15 capitalize">
-                    {profile.role.replace("_", " ")}
-                  </span>
-                )}
-              </div>
-
-              <div className="p-1.5">
-                <NavLink to="/profile"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-white hover:bg-white/[0.06] transition-all">
-                  <User size={14} /> Profile
-                </NavLink>
-                <NavLink to="/wallet"
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-white hover:bg-white/[0.06] transition-all">
-                  <Wallet size={14} /> Wallet
-                </NavLink>
-
-                {isAdmin && (
-                  <>
-                    <div className="my-1 h-px bg-white/10" />
-                    <NavLink to="/admin"
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-orange-300 hover:bg-orange-400/10 transition-all">
-                      <ShieldAlert size={14} /> Admin Panel
-                    </NavLink>
-                    {isSuperAdmin && (
-                      <NavLink to="/super-admin"
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-red-300 hover:bg-red-400/10 transition-all">
-                        <Zap size={14} /> Root Access
-                      </NavLink>
+          {/* Dropdown panel */}
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 4, scale: 0.97 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute right-0 top-full pt-2 z-[110]"
+              >
+                <div className="w-56 cp-dropdown-panel rounded-2xl overflow-hidden shadow-2xl">
+                  <div className="px-4 py-3 border-b border-white/10 bg-white/[0.03]">
+                    <p className="text-xs text-white/35 mb-0.5">Signed in as</p>
+                    <p className="text-sm font-medium text-white/85 truncate">{profile?.email}</p>
+                    {profile?.role && (
+                      <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-300/10 text-cyan-200 border border-cyan-300/15 capitalize">
+                        {profile.role.replace("_", " ")}
+                      </span>
                     )}
-                  </>
-                )}
+                  </div>
 
-                <div className="my-1 h-px bg-white/10" />
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/45 hover:text-red-300 hover:bg-red-400/10 transition-all"
-                >
-                  <LogOut size={14} /> Sign Out
-                </button>
-              </div>
-            </div>
-          </div>
+                  <div className="p-1.5">
+                    <NavLink to="/profile"
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-white hover:bg-white/[0.06] transition-all">
+                      <User size={14} /> Profile
+                    </NavLink>
+                    <NavLink to="/wallet"
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-white hover:bg-white/[0.06] transition-all">
+                      <Wallet size={14} /> Wallet
+                    </NavLink>
+
+                    {isAdmin && (
+                      <>
+                        <div className="my-1 h-px bg-white/10" />
+                        <NavLink to="/admin"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-orange-300 hover:bg-orange-400/10 transition-all">
+                          <ShieldAlert size={14} /> Admin Panel
+                        </NavLink>
+                        {isSuperAdmin && (
+                          <NavLink to="/super-admin"
+                            onClick={() => setOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/55 hover:text-red-300 hover:bg-red-400/10 transition-all">
+                            <Zap size={14} /> Root Access
+                          </NavLink>
+                        )}
+                      </>
+                    )}
+
+                    <div className="my-1 h-px bg-white/10" />
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/45 hover:text-red-300 hover:bg-red-400/10 transition-all"
+                    >
+                      <LogOut size={14} /> Sign Out
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </nav>
