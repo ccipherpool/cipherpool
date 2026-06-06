@@ -106,22 +106,26 @@ BEGIN
     DELETE FROM public.story_views     WHERE true;
     DELETE FROM public.stories         WHERE true;
     v_log := array_append(v_log, '[SOCIAL] stories cleared ✓');
-  EXCEPTION WHEN undefined_table OR undefined_column THEN
-    v_log := array_append(v_log, '[SOCIAL] stories skipped (table missing)');
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SOCIAL] stories skipped: %s', SQLERRM));
   END;
 
   BEGIN
     DELETE FROM public.user_presence WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     DELETE FROM public.user_mutes    WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     v_log := array_append(v_log, '[SOCIAL] presence/mutes cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── B. Direct messages ────────────────────────────────────────────────
   BEGIN
     DELETE FROM public.private_messages      WHERE true;
     DELETE FROM public.private_conversations WHERE true;
     v_log := array_append(v_log, '[DM] private messages cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── C. Tournament match data (children of matches/tournaments) ─────────
   BEGIN
@@ -129,7 +133,9 @@ BEGIN
     GET DIAGNOSTICS v_rows = ROW_COUNT;
     v_matches_del := v_matches_del + v_rows;
     v_log := array_append(v_log, format('[MATCHES] %s match_participants deleted ✓', v_rows));
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   BEGIN
     DELETE FROM public.match_results      WHERE true;
@@ -137,7 +143,9 @@ BEGIN
     GET DIAGNOSTICS v_rows = ROW_COUNT;
     v_matches_del := v_matches_del + v_rows;
     v_log := array_append(v_log, '[MATCHES] match_results / match_verifications deleted ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   BEGIN
     DELETE FROM public.room_members  WHERE true;
@@ -145,28 +153,36 @@ BEGIN
     GET DIAGNOSTICS v_rows = ROW_COUNT;
     v_messages_del := v_messages_del + v_rows;
     v_log := array_append(v_log, '[ROOMS] room members and messages deleted ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   BEGIN
     DELETE FROM public.tournament_participants WHERE true;
     DELETE FROM public.team_tournaments        WHERE true;
     DELETE FROM public.roster_snapshots        WHERE true;
     v_log := array_append(v_log, '[TOURNAMENTS] participant records deleted ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   BEGIN
     DELETE FROM public.matches WHERE true;
     GET DIAGNOSTICS v_rows = ROW_COUNT;
     v_matches_del := v_matches_del + v_rows;
     v_log := array_append(v_log, format('[MATCHES] %s matches deleted ✓', v_rows));
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── D. Clan war data ──────────────────────────────────────────────────
   BEGIN
     DELETE FROM public.clan_war_contributions WHERE true;
     DELETE FROM public.clan_wars              WHERE true;
     v_log := array_append(v_log, '[CLANS] clan wars deleted ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── E. Clan member data ───────────────────────────────────────────────
   BEGIN
@@ -176,14 +192,18 @@ BEGIN
     v_messages_del := v_messages_del + v_rows;
     DELETE FROM public.clan_members      WHERE true;
     v_log := array_append(v_log, '[CLANS] clan applications/messages/members deleted ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── F. Team member data ───────────────────────────────────────────────
   BEGIN
     DELETE FROM public.team_invites WHERE true;
     DELETE FROM public.team_members WHERE true;
     v_log := array_append(v_log, '[TEAMS] team invites/members deleted ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── G. Tournament-level records ───────────────────────────────────────
   BEGIN
@@ -191,7 +211,9 @@ BEGIN
     GET DIAGNOSTICS v_rows = ROW_COUNT;
     v_tournaments_del := v_rows;
     v_log := array_append(v_log, format('[TOURNAMENTS] %s tournaments deleted ✓', v_rows));
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── H. Clans (top-level) ──────────────────────────────────────────────
   BEGIN
@@ -199,7 +221,9 @@ BEGIN
     GET DIAGNOSTICS v_rows = ROW_COUNT;
     v_clans_del := v_rows;
     v_log := array_append(v_log, format('[CLANS] %s clans deleted ✓', v_rows));
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── I. Teams (top-level) ──────────────────────────────────────────────
   BEGIN
@@ -207,7 +231,9 @@ BEGIN
     GET DIAGNOSTICS v_rows = ROW_COUNT;
     v_teams_del := v_rows;
     v_log := array_append(v_log, format('[TEAMS] %s teams deleted ✓', v_rows));
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── J. Chat messages ──────────────────────────────────────────────────
   BEGIN
@@ -215,23 +241,29 @@ BEGIN
     GET DIAGNOSTICS v_rows = ROW_COUNT;
     v_messages_del := v_messages_del + v_rows;
     v_log := array_append(v_log, format('[CHAT] %s chat messages deleted ✓', v_rows));
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── K. Season snapshots (test data) ───────────────────────────────────
   BEGIN
     DELETE FROM public.season_snapshots WHERE true;
     v_log := array_append(v_log, '[SEASONS] season snapshots cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── L. Admin applications & votes (test applications) ─────────────────
   BEGIN
     DELETE FROM public.admin_application_votes  WHERE voter_id NOT IN (SELECT unnest(v_keep_ids));
     DELETE FROM public.admin_application_notes  WHERE author_id NOT IN (SELECT unnest(v_keep_ids));
-    DELETE FROM public.admin_application_audit  WHERE performed_by NOT IN (SELECT unnest(v_keep_ids));
+    DELETE FROM public.admin_application_audit  WHERE actor_id NOT IN (SELECT unnest(v_keep_ids));
     DELETE FROM public.admin_candidate_scores   WHERE true;
     DELETE FROM public.admin_applications       WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     v_log := array_append(v_log, '[ADMIN] admin applications cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── M. Reports / Moderation ───────────────────────────────────────────
   BEGIN
@@ -242,7 +274,9 @@ BEGIN
     DELETE FROM public.user_reputation_events WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     DELETE FROM public.fair_play_events WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     v_log := array_append(v_log, '[MODERATION] reports and moderation data cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── N. Support tickets ────────────────────────────────────────────────
   BEGIN
@@ -250,7 +284,9 @@ BEGIN
     DELETE FROM public.site_schedule    WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     DELETE FROM public.support_tickets  WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     v_log := array_append(v_log, '[SUPPORT] support tickets cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── O. Community data ────────────────────────────────────────────────
   BEGIN
@@ -260,7 +296,9 @@ BEGIN
     DELETE FROM public.feature_comments   WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     DELETE FROM public.feature_requests   WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     v_log := array_append(v_log, '[COMMUNITY] feature requests / bug reports cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── P. User progression & economy ────────────────────────────────────
   BEGIN
@@ -270,20 +308,26 @@ BEGIN
     DELETE FROM public.user_daily_claims WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     DELETE FROM public.user_season_pass  WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     v_log := array_append(v_log, '[PROGRESSION] user missions/achievements/pass cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   BEGIN
     DELETE FROM public.gift_transactions WHERE
       sender_id   NOT IN (SELECT unnest(v_keep_ids))
       OR receiver_id NOT IN (SELECT unnest(v_keep_ids));
     v_log := array_append(v_log, '[ECONOMY] gift transactions cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   BEGIN
     DELETE FROM public.referral_uses WHERE referred_id NOT IN (SELECT unnest(v_keep_ids));
     DELETE FROM public.referral_codes WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     v_log := array_append(v_log, '[REFERRAL] referral data cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── Q. Notifications ─────────────────────────────────────────────────
   BEGIN
@@ -295,19 +339,25 @@ BEGIN
     GET DIAGNOSTICS v_rows = ROW_COUNT;
     v_notifications_del := v_rows;
     v_log := array_append(v_log, format('[NOTIFICATIONS] cleared ✓'));
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── R. Announcement reads ─────────────────────────────────────────────
   BEGIN
     DELETE FROM public.announcement_reads WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     v_log := array_append(v_log, '[ANNOUNCEMENTS] reads cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── S. User items (inventory) ─────────────────────────────────────────
   BEGIN
     DELETE FROM public.user_items WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     v_log := array_append(v_log, '[ITEMS] user inventories cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── T. Wallets & transactions ─────────────────────────────────────────
   BEGIN
@@ -316,7 +366,9 @@ BEGIN
     GET DIAGNOSTICS v_rows = ROW_COUNT;
     v_wallets_del := v_rows;
     v_log := array_append(v_log, format('[WALLETS] %s non-admin wallets deleted ✓', v_rows));
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── U. Player stats ───────────────────────────────────────────────────
   BEGIN
@@ -324,20 +376,26 @@ BEGIN
     GET DIAGNOSTICS v_rows = ROW_COUNT;
     v_stats_del := v_rows;
     v_log := array_append(v_log, format('[STATS] %s non-admin stat rows deleted ✓', v_rows));
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── V. Deleted accounts table ─────────────────────────────────────────
   BEGIN
     DELETE FROM public.reapproval_requests WHERE true;
     DELETE FROM public.deleted_accounts    WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     v_log := array_append(v_log, '[ACCOUNTS] deleted_accounts cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── W. Admin logs for non-admins ──────────────────────────────────────
   BEGIN
     DELETE FROM public.admin_logs WHERE user_id NOT IN (SELECT unnest(v_keep_ids));
     v_log := array_append(v_log, '[ADMIN] admin_logs for non-admins cleared ✓');
-  EXCEPTION WHEN undefined_table THEN NULL; END;
+  EXCEPTION WHEN OTHERS THEN
+    v_log := array_append(v_log, format('[SKIP] %s (SQLSTATE %s)', SQLERRM, SQLSTATE));
+  END;
 
   -- ── X. Profiles — nullify team/clan FKs to avoid constraint issues ─────
   BEGIN
