@@ -3,7 +3,7 @@ import { supabase } from "../../../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Crown, Calendar, Trophy, AlertTriangle, CheckCircle2,
-  Zap, Plus, Clock, ChevronRight, X, RefreshCw,
+  Zap, Plus, Clock, X, RefreshCw, Trash2, ShieldAlert, Users, Flag,
 } from "lucide-react";
 
 const C = {
@@ -46,6 +46,13 @@ export default function SeasonsTab() {
     reset_coins: true, reset_xp: true, reset_wins: true,
     reset_avatars: false, reset_chat: true, reset_tournaments: true, reset_clans: false,
   });
+
+  // Wipe mode state
+  const [showWipeModal, setShowWipeModal] = useState(false);
+  const [wiping, setWiping] = useState(false);
+  const [wipeSeasonName, setWipeSeasonName] = useState("");
+  const [wipeConfirm1, setWipeConfirm1] = useState("");
+  const [wipeConfirm2, setWipeConfirm2] = useState("");
 
   useEffect(() => { fetchData(); }, []);
 
@@ -109,6 +116,50 @@ export default function SeasonsTab() {
     }
   };
 
+  const runPlatformWipe = async () => {
+    if (wipeConfirm1 !== "CONFIRM" || wipeConfirm2 !== "WIPE" || !wipeSeasonName.trim() || wiping) return;
+    setWiping(true);
+    setResult(null);
+    try {
+      console.log("[PlatformWipe] calling platform_full_wipe with season:", wipeSeasonName);
+      const { data, error } = await supabase.rpc("platform_full_wipe", {
+        p_new_season_name: wipeSeasonName.trim(),
+        p_confirm_wipe:    "WIPE",
+      });
+      console.log("[PlatformWipe] response — data:", data, "| error:", error);
+      if (error) throw new Error(error.message);
+      if (data?.success === false) throw new Error(data?.error || "Wipe failed");
+
+      const log = Array.isArray(data?.log) ? data.log : [];
+      const summary = [
+        data?.users_deleted       ? `${data.users_deleted} users`       : null,
+        data?.teams_deleted       ? `${data.teams_deleted} teams`       : null,
+        data?.clans_deleted       ? `${data.clans_deleted} clans`       : null,
+        data?.tournaments_deleted ? `${data.tournaments_deleted} tournaments` : null,
+        data?.messages_deleted    ? `${data.messages_deleted} messages`  : null,
+      ].filter(Boolean).join(", ");
+
+      setResult({
+        ok:        true,
+        wipe:      true,
+        msg:       `Platform wiped — Season ${data?.season_number} launched. Deleted: ${summary || "all test data"}`,
+        log,
+        hasErrors: false,
+        stats:     data,
+      });
+      setShowWipeModal(false);
+      setWipeSeasonName("");
+      setWipeConfirm1("");
+      setWipeConfirm2("");
+      fetchData();
+    } catch (err) {
+      console.error("[PlatformWipe] error:", err);
+      setResult({ ok: false, msg: err.message || "Platform wipe failed", log: [] });
+    } finally {
+      setWiping(false);
+    }
+  };
+
   const statusBadge = (status) => {
     const map = {
       active:    { label: "Active",    color: C.green },
@@ -150,6 +201,12 @@ export default function SeasonsTab() {
             <RefreshCw size={13} />
           </button>
           <button
+            onClick={() => setShowWipeModal(true)}
+            style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid rgba(239,68,68,0.35)`, background: "rgba(239,68,68,0.08)", color: C.red, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 7 }}
+          >
+            <Trash2 size={13} /> Full Wipe
+          </button>
+          <button
             onClick={() => setShowModal(true)}
             style={{ padding: "7px 16px", borderRadius: 8, border: "none", background: `linear-gradient(135deg, ${C.accent}, #818cf8)`, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 7, boxShadow: `0 0 16px ${C.accent}30` }}
           >
@@ -162,15 +219,31 @@ export default function SeasonsTab() {
       <AnimatePresence>
         {result && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            style={{ marginBottom: 16, borderRadius: 10, overflow: "hidden", border: `1px solid ${result.ok && !result.hasErrors ? "rgba(16,185,129,0.25)" : result.ok && result.hasErrors ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.25)"}` }}
+            style={{ marginBottom: 16, borderRadius: 10, overflow: "hidden", border: `1px solid ${result.wipe ? "rgba(239,68,68,0.4)" : result.ok && !result.hasErrors ? "rgba(16,185,129,0.25)" : result.ok && result.hasErrors ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.25)"}` }}
           >
-            <div style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, background: result.ok && !result.hasErrors ? "rgba(16,185,129,0.08)" : result.ok && result.hasErrors ? "rgba(245,158,11,0.08)" : "rgba(239,68,68,0.08)", color: result.ok && !result.hasErrors ? "#34d399" : result.ok && result.hasErrors ? "#fbbf24" : "#f87171", fontSize: 13, fontWeight: 600 }}>
-              {result.ok && !result.hasErrors ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
+            <div style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, background: result.wipe ? "rgba(239,68,68,0.1)" : result.ok && !result.hasErrors ? "rgba(16,185,129,0.08)" : result.ok && result.hasErrors ? "rgba(245,158,11,0.08)" : "rgba(239,68,68,0.08)", color: result.wipe ? "#f87171" : result.ok && !result.hasErrors ? "#34d399" : result.ok && result.hasErrors ? "#fbbf24" : "#f87171", fontSize: 13, fontWeight: 600 }}>
+              {result.wipe ? <Trash2 size={15} /> : result.ok && !result.hasErrors ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
               {result.msg}
               <button onClick={() => setResult(null)} style={{ marginLeft: "auto", background: "none", border: "none", color: "inherit", cursor: "pointer" }}><X size={14} /></button>
             </div>
+            {/* Wipe stats pills */}
+            {result.wipe && result.stats && (
+              <div style={{ padding: "8px 16px", background: "rgba(0,0,0,0.3)", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {[
+                  { icon: <Users size={10} />, label: "Users",       count: result.stats.users_deleted },
+                  { icon: <Flag size={10} />,  label: "Teams",       count: result.stats.teams_deleted },
+                  { icon: <ShieldAlert size={10} />, label: "Clans", count: result.stats.clans_deleted },
+                  { icon: <Trophy size={10} />, label: "Tournaments", count: result.stats.tournaments_deleted },
+                  { icon: <Zap size={10} />,   label: "Messages",    count: result.stats.messages_deleted },
+                ].filter(d => d.count > 0).map((d, i) => (
+                  <span key={i} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 20, background: "rgba(239,68,68,0.15)", color: "#f87171" }}>
+                    {d.icon} {d.count} {d.label} deleted
+                  </span>
+                ))}
+              </div>
+            )}
             {result.log && result.log.length > 0 && (
-              <div style={{ padding: "8px 16px 10px", background: "rgba(0,0,0,0.3)", maxHeight: 140, overflowY: "auto" }}>
+              <div style={{ padding: "8px 16px 10px", background: "rgba(0,0,0,0.3)", maxHeight: 160, overflowY: "auto" }}>
                 {result.log.map((line, i) => (
                   <div key={i} style={{ fontSize: 10, color: line.includes("FAILED") ? "#f87171" : line.includes("✓") ? "#34d399" : "rgba(255,255,255,0.35)", lineHeight: 1.8, fontFamily: "monospace" }}>
                     {line}
@@ -370,6 +443,134 @@ export default function SeasonsTab() {
           </div>
         )}
       </AnimatePresence>
+      {/* ── WIPE MODAL ── */}
+      <AnimatePresence>
+        {showWipeModal && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", background: "rgba(0,0,0,0.88)", backdropFilter: "blur(8px)" }} onClick={() => setShowWipeModal(false)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              onClick={e => e.stopPropagation()}
+              style={{ width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", background: "#0d0d14", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 16, padding: "28px", boxShadow: "0 24px 64px rgba(0,0,0,0.9), 0 0 0 1px rgba(239,68,68,0.1)" }}
+            >
+              {/* Header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(239,68,68,0.12)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(239,68,68,0.25)" }}>
+                    <Trash2 size={20} color={C.red} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 17, fontWeight: 800, color: C.red, margin: 0 }}>Full Platform Wipe</h3>
+                    <p style={{ fontSize: 11, color: "rgba(239,68,68,0.7)", margin: 0, fontWeight: 600 }}>NUCLEAR OPTION — irreversible</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowWipeModal(false)} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${C.border}`, background: "transparent", color: C.text3, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <X size={14} />
+                </button>
+              </div>
+
+              {/* Warning box */}
+              <div style={{ padding: "16px", borderRadius: 10, background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.25)", marginBottom: 20 }}>
+                <p style={{ fontSize: 12, fontWeight: 800, color: C.red, margin: "0 0 10px", display: "flex", alignItems: "center", gap: 6 }}>
+                  <AlertTriangle size={14} /> What will be DELETED
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px", fontSize: 11, color: "rgba(239,68,68,0.75)" }}>
+                  {["All non-admin users (auth + profile)", "All teams and team members", "All clans and clan members", "All tournaments and matches", "All chat and DM messages", "All wallets and transactions", "All rankings and player stats", "All notifications", "All stories and social data", "All season snapshots"].map((item, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, lineHeight: 1.7 }}>
+                      <span style={{ color: C.red, fontWeight: 700 }}>✕</span> {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* What's kept */}
+              <div style={{ padding: "12px 16px", borderRadius: 10, background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.2)", marginBottom: 20 }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: C.green, margin: "0 0 8px" }}>✓ What will be KEPT</p>
+                <div style={{ display: "flex", gap: "4px 16px", flexWrap: "wrap", fontSize: 11, color: "rgba(16,185,129,0.8)" }}>
+                  {["Super Admin accounts", "Store catalog (items)", "Mission definitions", "Announcements", "Site settings & config", "Season history"].map((item, i) => (
+                    <span key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>✓ {item}</span>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* New season name */}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: C.text2, letterSpacing: 0.8, textTransform: "uppercase", display: "block", marginBottom: 6 }}>
+                    New Season Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={wipeSeasonName}
+                    onChange={e => setWipeSeasonName(e.target.value)}
+                    placeholder="e.g. Season 1 — Official Launch"
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${C.border2}`, background: "#0a0a11", color: C.text, fontSize: 13, outline: "none", fontFamily: C.font, boxSizing: "border-box" }}
+                  />
+                </div>
+
+                {/* Confirm 1 */}
+                <div style={{ padding: "14px", borderRadius: 10, background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(239,68,68,0.85)", margin: "0 0 8px" }}>
+                    Step 1 — Type <strong style={{ color: C.red }}>CONFIRM</strong> to acknowledge you understand this is permanent:
+                  </p>
+                  <input
+                    type="text"
+                    value={wipeConfirm1}
+                    onChange={e => setWipeConfirm1(e.target.value)}
+                    placeholder="CONFIRM"
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${wipeConfirm1 === "CONFIRM" ? "rgba(16,185,129,0.4)" : "rgba(239,68,68,0.3)"}`, background: "#0a0a11", color: C.text, fontSize: 13, outline: "none", fontFamily: "monospace", letterSpacing: 2, boxSizing: "border-box" }}
+                  />
+                </div>
+
+                {/* Confirm 2 */}
+                <div style={{ padding: "14px", borderRadius: 10, background: wipeConfirm1 === "CONFIRM" ? "rgba(239,68,68,0.06)" : "rgba(255,255,255,0.02)", border: `1px solid ${wipeConfirm1 === "CONFIRM" ? "rgba(239,68,68,0.3)" : "rgba(255,255,255,0.06)"}`, opacity: wipeConfirm1 === "CONFIRM" ? 1 : 0.4, transition: "all 0.2s" }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(239,68,68,0.85)", margin: "0 0 8px" }}>
+                    Step 2 — Type <strong style={{ color: C.red }}>WIPE</strong> to execute the platform wipe:
+                  </p>
+                  <input
+                    type="text"
+                    value={wipeConfirm2}
+                    onChange={e => wipeConfirm1 === "CONFIRM" && setWipeConfirm2(e.target.value)}
+                    placeholder="WIPE"
+                    disabled={wipeConfirm1 !== "CONFIRM"}
+                    style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1px solid ${wipeConfirm2 === "WIPE" ? "rgba(239,68,68,0.6)" : "rgba(239,68,68,0.2)"}`, background: "#0a0a11", color: C.text, fontSize: 13, outline: "none", fontFamily: "monospace", letterSpacing: 2, boxSizing: "border-box", cursor: wipeConfirm1 !== "CONFIRM" ? "not-allowed" : "text" }}
+                  />
+                </div>
+
+                {/* Action buttons */}
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => { setShowWipeModal(false); setWipeConfirm1(""); setWipeConfirm2(""); }} style={{ flex: 1, padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, background: "transparent", color: C.text2, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                    Cancel
+                  </button>
+                  <button
+                    onClick={runPlatformWipe}
+                    disabled={!wipeSeasonName.trim() || wipeConfirm1 !== "CONFIRM" || wipeConfirm2 !== "WIPE" || wiping}
+                    style={{
+                      flex: 2, padding: "10px", borderRadius: 8, border: "none",
+                      background: wipeSeasonName.trim() && wipeConfirm1 === "CONFIRM" && wipeConfirm2 === "WIPE" && !wiping
+                        ? "linear-gradient(135deg, #dc2626, #ef4444)"
+                        : C.surface2,
+                      color: wipeSeasonName.trim() && wipeConfirm1 === "CONFIRM" && wipeConfirm2 === "WIPE" && !wiping ? "#fff" : C.text3,
+                      fontSize: 13, fontWeight: 700,
+                      cursor: wipeSeasonName.trim() && wipeConfirm1 === "CONFIRM" && wipeConfirm2 === "WIPE" && !wiping ? "pointer" : "not-allowed",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                      boxShadow: wipeSeasonName.trim() && wipeConfirm1 === "CONFIRM" && wipeConfirm2 === "WIPE" && !wiping ? "0 0 20px rgba(239,68,68,0.4)" : "none",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {wiping
+                      ? <><RefreshCw size={13} style={{ animation: "spin 1s linear infinite" }} /> Wiping platform...</>
+                      : <><Trash2 size={13} /> Execute Full Platform Wipe</>
+                    }
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
     </motion.div>
   );

@@ -95,7 +95,8 @@
       "Bash(Get-Content \"C:\\\\cipherpool\\\\sql\\\\67_season_reset_fix.sql\")",
       "Bash(Select-Object -ExpandProperty Lines)",
       "Bash(Get-Content \"C:\\\\cipherpool\\\\src\\\\components\\\\season\\\\SeasonResetManager.jsx\")",
-      "PowerShell(\\(Get-Content \"C:\\\\cipherpool\\\\sql\\\\67_season_reset_fix.sql\" | Measure-Object -Line\\).Lines; \\(Get-Content \"C:\\\\cipherpool\\\\src\\\\components\\\\season\\\\SeasonResetManager.jsx\" | Measure-Object -Line\\).Lines)"
+      "PowerShell(\\(Get-Content \"C:\\\\cipherpool\\\\sql\\\\67_season_reset_fix.sql\" | Measure-Object -Line\\).Lines; \\(Get-Content \"C:\\\\cipherpool\\\\src\\\\components\\\\season\\\\SeasonResetManager.jsx\" | Measure-Object -Line\\).Lines)",
+      "Bash(Get-ChildItem *)"
     ]
   }
 }
