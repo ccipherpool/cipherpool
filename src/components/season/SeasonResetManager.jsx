@@ -218,6 +218,19 @@ export default function SeasonResetManager({ onClose, onSuccess }) {
     });
   }, []);
 
+  const wipeEverything = useCallback(() => {
+    setConfig(prev => {
+      const next = { ...prev };
+      ALL_OPTIONS.forEach(o => { next[o.key] = true; });
+      next.wipe_everything = true;
+      return next;
+    });
+  }, []);
+
+  const resetToDefaults = useCallback(() => {
+    setConfig(DEFAULT_CONFIG());
+  }, []);
+
   const canLaunch = seasonConfig.name.trim().length >= 2;
 
   // ── Launch sequence ─────────────────────────────────────────────
@@ -233,7 +246,11 @@ export default function SeasonResetManager({ onClose, onSuccess }) {
         p_config:      config,
       });
       if (error) throw error;
-      if (data?.success === false) throw new Error(data?.error || "Unknown error");
+      if (data?.success === false) {
+        setPhase("confirm");
+        setResult({ ok: false, error: data.error || "Unknown error", log: data.log });
+        return;
+      }
 
       setResult(data);
       setPhase("success");
@@ -394,6 +411,38 @@ export default function SeasonResetManager({ onClose, onSuccess }) {
             borderRight: `1px solid ${C.border}`,
             padding: "12px 8px",
           }}>
+            {/* Nuclear presets */}
+            <div style={{ marginBottom: 10, display: "flex", flexDirection: "column", gap: 4 }}>
+              <button
+                onClick={wipeEverything}
+                style={{
+                  width: "100%", padding: "7px 10px", borderRadius: 8, border: "none",
+                  cursor: "pointer", fontWeight: 800, fontSize: 10, letterSpacing: 0.5,
+                  background: config.wipe_everything
+                    ? "linear-gradient(135deg, #ef4444, #7c3aed)"
+                    : "rgba(239,68,68,0.12)",
+                  color: config.wipe_everything ? "#fff" : "#ef4444",
+                  display: "flex", alignItems: "center", gap: 5,
+                  boxShadow: config.wipe_everything ? "0 0 16px rgba(239,68,68,0.35)" : "none",
+                  transition: "all 0.2s",
+                }}
+              >
+                <AlertTriangle size={11} />
+                WIPE EVERYTHING
+              </button>
+              <button
+                onClick={resetToDefaults}
+                style={{
+                  width: "100%", padding: "6px 10px", borderRadius: 8,
+                  border: `1px solid ${C.border}`,
+                  cursor: "pointer", fontWeight: 600, fontSize: 9,
+                  background: "transparent", color: C.text3,
+                }}
+              >
+                Reset to Defaults
+              </button>
+            </div>
+            <div style={{ borderTop: `1px solid ${C.border}`, marginBottom: 8 }} />
             {CATEGORIES.map(cat => (
               <button
                 key={cat.id}
@@ -691,12 +740,27 @@ export default function SeasonResetManager({ onClose, onSuccess }) {
               </div>
 
               {result?.ok === false && (
-                <div style={{
-                  marginTop: 12, padding: "8px 10px", borderRadius: 7,
-                  background: "#ef444415", border: "1px solid #ef444430",
-                  fontSize: 10, color: "#ef4444",
-                }}>
-                  {result.error}
+                <div style={{ marginTop: 12 }}>
+                  <div style={{
+                    padding: "8px 10px", borderRadius: 7,
+                    background: "#ef444415", border: "1px solid #ef444430",
+                    fontSize: 10, color: "#ef4444",
+                  }}>
+                    {result.error}
+                  </div>
+                  {Array.isArray(result.log) && result.log.length > 0 && (
+                    <div style={{
+                      marginTop: 6, padding: "6px 10px", borderRadius: 7,
+                      background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.06)",
+                      maxHeight: 100, overflowY: "auto",
+                    }}>
+                      {result.log.map((line, i) => (
+                        <div key={i} style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", lineHeight: 1.7, fontFamily: "monospace" }}>
+                          {line}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -788,6 +852,24 @@ export default function SeasonResetManager({ onClose, onSuccess }) {
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
               Season {result?.season_number} — {seasonConfig.name}
             </div>
+            <div style={{ fontSize: 11, color: "#10b981" }}>
+              {result?.resets_applied} reset{result?.resets_applied !== 1 ? "s" : ""} applied
+              {result?.snapshots > 0 && ` · ${result.snapshots} players snapshotted`}
+            </div>
+            {Array.isArray(result?.log) && result.log.length > 0 && (
+              <div style={{
+                width: "100%", maxWidth: 380, maxHeight: 160, overflowY: "auto",
+                background: "rgba(0,0,0,0.5)", borderRadius: 8,
+                border: "1px solid rgba(16,185,129,0.2)",
+                padding: "8px 12px",
+              }}>
+                {result.log.map((line, i) => (
+                  <div key={i} style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", lineHeight: 1.7, fontFamily: "monospace" }}>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            )}
             <motion.button
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
