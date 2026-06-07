@@ -496,6 +496,42 @@ function DeliveryReport({ report, onClose }) {
   );
 }
 
+/* ─── Field + Toggle ── defined outside to prevent remount on every render ── */
+function Field({ label, tip, children }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+        <label style={{ fontSize: 10.5, fontWeight: 700, color: C.text3, letterSpacing: 1.2, textTransform: "uppercase" }}>
+          {label}
+        </label>
+        {tip && <span style={{ fontSize: 10, color: C.text3, fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>— {tip}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Toggle({ checked, onChange, label, desc, color = C.cyan }) {
+  return (
+    <div
+      style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 10, background: checked ? `${color}08` : "transparent", border: `1px solid ${checked ? color + "25" : C.border}`, cursor: "pointer", transition: "all 0.14s" }}
+      onClick={() => onChange(!checked)}
+    >
+      <div style={{
+        width: 36, height: 20, borderRadius: 10, position: "relative",
+        background: checked ? `linear-gradient(135deg,${color},#6366f1)` : C.s3,
+        transition: "background 0.2s", flexShrink: 0,
+      }}>
+        <div style={{ position: "absolute", top: 3, left: checked ? 19 : 3, width: 14, height: 14, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }} />
+      </div>
+      <div>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: checked ? C.text : C.text2 }}>{label}</div>
+        {desc && <div style={{ fontSize: 11, color: C.text3 }}>{desc}</div>}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Component ────────────────────────────────────────────── */
 export default function NotificationsTab() {
   const [form, setForm]               = useState(EMPTY_FORM);
@@ -780,43 +816,6 @@ export default function NotificationsTab() {
     >
       {children}
     </button>
-  );
-
-  const Field = ({ label, tip, children }) => (
-    <div style={{ marginBottom: 18 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-        <label style={{ fontSize: 10.5, fontWeight: 700, color: C.text3, letterSpacing: 1.2, textTransform: "uppercase" }}>
-          {label}
-        </label>
-        {tip && <span style={{ fontSize: 10, color: C.text3, fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>— {tip}</span>}
-      </div>
-      {children}
-    </div>
-  );
-
-  const Toggle = ({ checked, onChange, label, desc, color = C.cyan }) => (
-    <div
-      style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 10, background: checked ? `${color}08` : "transparent", border: `1px solid ${checked ? color + "25" : C.border}`, cursor: "pointer", transition: "all 0.14s" }}
-      onClick={() => onChange(!checked)}
-    >
-      <div style={{
-        width: 36, height: 20, borderRadius: 10, position: "relative",
-        background: checked ? `linear-gradient(135deg,${color},#6366f1)` : C.s3,
-        transition: "background 0.2s", flexShrink: 0,
-        boxShadow: checked ? `0 0 10px ${color}40` : "none",
-      }}>
-        <div style={{
-          position: "absolute", top: 2, left: checked ? 18 : 2,
-          width: 16, height: 16, borderRadius: "50%",
-          background: "#fff", transition: "left 0.2s",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
-        }} />
-      </div>
-      <div>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: checked ? C.text : C.text2 }}>{label}</div>
-        {desc && <div style={{ fontSize: 11, color: C.text3 }}>{desc}</div>}
-      </div>
-    </div>
   );
 
   /* ── Group targets by category ── */
