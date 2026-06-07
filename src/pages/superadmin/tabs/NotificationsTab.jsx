@@ -572,7 +572,7 @@ export default function NotificationsTab() {
   const fetchDropdownData = async () => {
     try {
       const [t, c, tm] = await Promise.all([
-        supabase.from("tournaments").select("id,name,status").in("status", ["open","registration_open","active","ongoing","live","ready"]).order("created_at", { ascending: false }).limit(30),
+        supabase.from("tournaments").select("id,name,status").order("created_at", { ascending: false }).limit(100),
         supabase.from("clans").select("id,name,tag").order("name").limit(50).catch(() => ({ data: [] })),
         supabase.from("teams").select("id,name").order("name").limit(50).catch(() => ({ data: [] })),
       ]);
@@ -926,6 +926,7 @@ export default function NotificationsTab() {
             <input
               value={form.title}
               onChange={e => set("title", e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") e.preventDefault(); }}
               placeholder='e.g. "Season 5 Finals Results 🏆"'
               maxLength={80}
               style={{ width: "100%", padding: "10px 13px", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 10, color: C.text, fontSize: 13, outline: "none", fontFamily: C.font, boxSizing: "border-box" }}
@@ -938,13 +939,17 @@ export default function NotificationsTab() {
             <textarea
               value={form.message}
               onChange={e => set("message", e.target.value)}
-              placeholder="Write your notification content here…"
+              onKeyDown={e => e.stopPropagation()}
+              placeholder="Write your notification message… (Enter = new line)"
               maxLength={400}
-              rows={4}
-              style={{ width: "100%", padding: "10px 13px", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 10, color: C.text, fontSize: 13, outline: "none", resize: "vertical", minHeight: 90, fontFamily: C.font, lineHeight: 1.55, boxSizing: "border-box" }}
+              rows={5}
+              style={{ width: "100%", padding: "10px 13px", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 10, color: C.text, fontSize: 13, outline: "none", resize: "vertical", minHeight: 100, fontFamily: C.font, lineHeight: 1.6, boxSizing: "border-box" }}
               className="focus:!border-indigo-500/50"
             />
-            <div style={{ fontSize: 10, color: C.text3, textAlign: "right", marginTop: 3 }}>{form.message.length}/400</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+              <span style={{ fontSize: 10, color: C.text3 }}>Press Enter for a new line · Shift+Enter also works</span>
+              <span style={{ fontSize: 10, color: C.text3 }}>{form.message.length}/400</span>
+            </div>
           </Field>
 
           {/* Type */}
@@ -1145,11 +1150,38 @@ export default function NotificationsTab() {
               {form.targetType === "tournament_participants" && (
                 <motion.div key="tournament" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
                   <div style={{ paddingTop: 4 }}>
-                    <label style={{ fontSize: 10.5, fontWeight: 700, color: C.text3, letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Choose Tournament</label>
-                    <select value={form.tournamentId} onChange={e => set("tournamentId", e.target.value)} style={{ width: "100%", padding: "10px 13px", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 10, color: form.tournamentId ? C.text : C.text3, fontSize: 13, outline: "none", cursor: "pointer" }}>
-                      <option value="">Select a tournament…</option>
-                      {tournaments.map(t => <option key={t.id} value={t.id}>{t.name} — {t.status}</option>)}
+                    <label style={{ fontSize: 10.5, fontWeight: 700, color: "#8b5cf6", letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>
+                      Choose Tournament
+                    </label>
+                    <select
+                      value={form.tournamentId}
+                      onChange={e => set("tournamentId", e.target.value)}
+                      style={{ width: "100%", padding: "10px 13px", background: C.s2, border: `1px solid rgba(139,92,246,0.35)`, borderRadius: 10, color: form.tournamentId ? C.text : C.text3, fontSize: 13, outline: "none", cursor: "pointer" }}
+                    >
+                      <option value="">— Select a tournament —</option>
+                      {tournaments.length === 0 && <option disabled>No tournaments found</option>}
+                      {tournaments.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}  [{(t.status || "unknown").replace(/_/g, " ")}]
+                        </option>
+                      ))}
                     </select>
+                    {form.tournamentId && estimatedCount !== null && (
+                      <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
+                        <CheckCircle size={12} color="#8b5cf6" />
+                        <span style={{ fontSize: 11.5, color: "#a78bfa", fontWeight: 600 }}>
+                          ✓ This notification will be sent to all <strong>{estimatedCount}</strong> registered players of this tournament.
+                        </span>
+                      </div>
+                    )}
+                    {form.tournamentId && estimatedCount === 0 && (
+                      <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
+                        <AlertTriangle size={12} color={C.amber} />
+                        <span style={{ fontSize: 11.5, color: C.amber, fontWeight: 600 }}>
+                          No participants found for this tournament yet.
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
