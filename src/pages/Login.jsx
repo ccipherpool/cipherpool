@@ -44,19 +44,49 @@ export default function Login() {
     <div className="relative min-h-screen w-full flex items-center justify-center px-4 py-12 bg-obsidian-deep">
       <GamingLogin.VideoBackground videoUrl="https://videos.pexels.com/video-files/8128311/8128311-uhd_2560_1440_25fps.mp4" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative z-20 w-full max-w-md"
       >
-        <GamingLogin.LoginForm 
-          onSubmit={handleLogin} 
-          title="COMMAND CENTER" 
-          subtitle="Authorize access to the grid"
-        />
-        
+        {/* Login / Register toggle */}
+        <div style={{
+          display: "flex", borderRadius: "16px 16px 0 0", overflow: "hidden",
+          border: "1px solid rgba(255,255,255,0.09)", borderBottom: "none",
+          background: "rgba(8,8,18,0.9)", backdropFilter: "blur(24px)",
+        }}>
+          <div style={{
+            flex: 1, padding: "15px 0", textAlign: "center",
+            fontSize: 13, fontWeight: 700, color: "#a5b4fc",
+            background: "rgba(99,102,241,0.08)", position: "relative",
+          }}>
+            Log In
+            <div style={{ position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", width: 40, height: 2, borderRadius: 2, background: "#6366f1", boxShadow: "0 0 8px rgba(99,102,241,0.8)" }} />
+          </div>
+          <Link
+            to="/register"
+            style={{
+              flex: 1, padding: "15px 0", textAlign: "center", textDecoration: "none",
+              fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.35)",
+              borderLeft: "1px solid rgba(255,255,255,0.07)",
+              transition: "color 0.2s",
+            }}
+          >
+            Create Account
+          </Link>
+        </div>
+
+        {/* Login form — remove top rounding to connect with toggle */}
+        <div style={{ borderRadius: "0 0 16px 16px", overflow: "hidden" }}>
+          <GamingLogin.LoginForm
+            onSubmit={handleLogin}
+            title="COMMAND CENTER"
+            subtitle="Authorize access to the grid"
+          />
+        </div>
+
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest text-center"

@@ -5,9 +5,9 @@ import { useProfileData } from "../hooks/useProfileData";
 import {
   Settings, X, Upload, Camera, Star, ShieldCheck,
   Trophy, Target, Zap, TrendingUp, Award, GamepadIcon,
-  Instagram, Youtube, MessageCircle, Music2, Globe,
+  Aperture, Play, MessageCircle, Music2, Globe,
   MapPin, Calendar, Hash, CheckCircle2, Clock,
-  ChevronRight, BarChart3, History, Medal,
+  ChevronRight, BarChart3, History, Medal, Swords,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
@@ -211,16 +211,17 @@ export default function Profile() {
 
   const openEdit = () => {
     setEditForm({
-      username:     profile?.username     || "",
-      bio:          profile?.bio          || "",
-      free_fire_uid: profile?.free_fire_uid || profile?.free_fire_id || "",
-      city:         profile?.city         || "",
-      country:      profile?.country      || "",
-      age:          profile?.age          || "",
-      instagram:    profile?.instagram    || "",
-      tiktok:       profile?.tiktok       || "",
-      discord:      profile?.discord      || "",
-      youtube:      profile?.youtube      || "",
+      username:       profile?.username       || "",
+      bio:            profile?.bio            || "",
+      free_fire_uid:  profile?.free_fire_uid  || profile?.free_fire_id || "",
+      free_fire_name: profile?.free_fire_name || "",
+      city:           profile?.city           || "",
+      country:        profile?.country        || "",
+      age:            profile?.age            || "",
+      instagram:      profile?.instagram      || "",
+      tiktok:         profile?.tiktok         || "",
+      discord:        profile?.discord        || "",
+      youtube:        profile?.youtube        || "",
     });
     setAvatarPreview(null); setAvatarFile(null);
     setSelectedStoreAvatar(null); setAvatarMode("photo");
@@ -244,16 +245,17 @@ export default function Profile() {
       }
     }
     const { error } = await supabase.from("profiles").update({
-      username:      editForm.username.trim(),
-      bio:           editForm.bio.trim(),
-      free_fire_uid: editForm.free_fire_uid.trim() || null,
-      city:          editForm.city.trim()          || null,
-      country:       editForm.country.trim()       || null,
-      age:           editForm.age ? Number(editForm.age) : null,
-      instagram:     editForm.instagram.trim()     || null,
-      tiktok:        editForm.tiktok.trim()        || null,
-      discord:       editForm.discord.trim()       || null,
-      youtube:       editForm.youtube.trim()       || null,
+      username:        editForm.username.trim(),
+      bio:             editForm.bio.trim(),
+      free_fire_uid:   editForm.free_fire_uid.trim()  || null,
+      free_fire_name:  editForm.free_fire_name.trim() || null,
+      city:            editForm.city.trim()            || null,
+      country:         editForm.country.trim()         || null,
+      age:             editForm.age ? Number(editForm.age) : null,
+      instagram:       editForm.instagram.trim()       || null,
+      tiktok:          editForm.tiktok.trim()          || null,
+      discord:         editForm.discord.trim()         || null,
+      youtube:         editForm.youtube.trim()         || null,
       ...(avatarUrl !== profile?.avatar_url ? { avatar_url: avatarUrl } : {}),
     }).eq("id", profile.id);
     if (!error) {
@@ -322,22 +324,42 @@ export default function Profile() {
         <div style={{
           background: "rgba(10,10,20,0.97)", backdropFilter: "blur(20px)",
           borderTop: "1px solid rgba(255,255,255,0.07)",
-          padding: "0 24px 24px",
+          padding: "0 20px 24px",
         }}>
-          <div style={{ display: "flex", gap: 20, marginTop: -44, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <div style={{ display: "flex", gap: 16, marginTop: -44, flexWrap: "wrap", alignItems: "flex-end" }}>
 
-            {/* Avatar */}
+            {/* Avatar — clickable to edit */}
             <XpRing progress={xpProgress} size={100}>
-              <div style={{
-                width: 82, height: 82, borderRadius: 18, overflow: "hidden",
-                background: "linear-gradient(135deg, #6366f1, #06b6d4)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontWeight: 800, fontSize: 28, color: "#fff",
-                boxShadow: "0 0 24px rgba(99,102,241,0.4), 0 4px 20px rgba(0,0,0,0.6)",
-              }}>
+              <div
+                onClick={openEdit}
+                title="Change profile photo"
+                style={{
+                  width: 82, height: 82, borderRadius: 18, overflow: "hidden",
+                  background: "linear-gradient(135deg, #6366f1, #06b6d4)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 800, fontSize: 28, color: "#fff",
+                  boxShadow: "0 0 24px rgba(99,102,241,0.4), 0 4px 20px rgba(0,0,0,0.6)",
+                  cursor: "pointer", position: "relative",
+                }}
+                onMouseEnter={e => {
+                  const overlay = e.currentTarget.querySelector(".avatar-overlay");
+                  if (overlay) overlay.style.opacity = "1";
+                }}
+                onMouseLeave={e => {
+                  const overlay = e.currentTarget.querySelector(".avatar-overlay");
+                  if (overlay) overlay.style.opacity = "0";
+                }}
+              >
                 {profile?.avatar_url
                   ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   : (profile?.username?.[0]?.toUpperCase() || "?")}
+                <div className="avatar-overlay" style={{
+                  position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  opacity: 0, transition: "opacity 0.2s",
+                }}>
+                  <Camera size={18} style={{ color: "#fff" }} />
+                </div>
               </div>
             </XpRing>
 
@@ -369,6 +391,12 @@ export default function Profile() {
 
               {/* Meta row */}
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px", marginBottom: 10 }}>
+                {profile?.free_fire_name && (
+                  <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                    <Swords size={11} style={{ color: "#f59e0b" }} />
+                    <span style={{ color: "#fbbf24", fontWeight: 700 }}>{profile.free_fire_name}</span>
+                  </span>
+                )}
                 {ffUID && (
                   <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
                     <Hash size={12} style={{ color: "#6366f1" }} />
@@ -446,17 +474,17 @@ export default function Profile() {
           {/* Social links */}
           {hasSocials && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
-              <SocialLink href={profile.instagram} icon={Instagram}      label="Instagram" color="#e1306c" />
+              <SocialLink href={profile.instagram} icon={Aperture}       label="Instagram" color="#e1306c" />
               <SocialLink href={profile.tiktok}    icon={Music2}         label="TikTok"    color="#69c9d0" />
               <SocialLink href={profile.discord}   icon={MessageCircle}  label="Discord"   color="#5865f2" />
-              <SocialLink href={profile.youtube}   icon={Youtube}        label="YouTube"   color="#ff0000" />
+              <SocialLink href={profile.youtube}   icon={Play}           label="YouTube"   color="#ff0000" />
             </div>
           )}
         </div>
       </motion.div>
 
       {/* ── STATS GRID ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
         {STATS.map((s) => (
           s.raw !== undefined
             ? (
@@ -648,18 +676,49 @@ export default function Profile() {
                 </div>
 
                 <div style={{ padding: 20, maxHeight: "76vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 14 }}>
-                  {/* Avatar */}
+                  {/* Avatar — click photo to upload */}
                   <div style={{ display: "flex", alignItems: "center", gap: 14, padding: 14, borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <div style={{ width: 60, height: 60, borderRadius: 14, overflow: "hidden", flexShrink: 0, background: "linear-gradient(135deg, #6366f1, #06b6d4)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 22, color: "#fff" }}>
+                    <div
+                      onClick={() => avatarInputRef.current?.click()}
+                      title="Click to change photo"
+                      style={{
+                        width: 68, height: 68, borderRadius: 16, overflow: "hidden", flexShrink: 0,
+                        background: "linear-gradient(135deg, #6366f1, #06b6d4)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontWeight: 800, fontSize: 24, color: "#fff",
+                        cursor: "pointer", position: "relative",
+                        boxShadow: "0 0 0 2px rgba(99,102,241,0.4)",
+                        transition: "box-shadow 0.2s",
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.boxShadow = "0 0 0 2px rgba(99,102,241,0.8)";
+                        const ov = e.currentTarget.querySelector(".modal-avatar-overlay");
+                        if (ov) ov.style.opacity = "1";
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.boxShadow = "0 0 0 2px rgba(99,102,241,0.4)";
+                        const ov = e.currentTarget.querySelector(".modal-avatar-overlay");
+                        if (ov) ov.style.opacity = "0";
+                      }}
+                    >
                       {(avatarPreview || selectedStoreAvatar?.item?.image_url || profile?.avatar_url)
                         ? <img src={avatarPreview || selectedStoreAvatar?.item?.image_url || profile?.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                         : (profile?.username?.[0]?.toUpperCase() || "?")}
+                      <div className="modal-avatar-overlay" style={{
+                        position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)",
+                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                        opacity: 0, transition: "opacity 0.2s", gap: 3,
+                      }}>
+                        <Camera size={16} style={{ color: "#fff" }} />
+                        <span style={{ fontSize: 9, color: "#fff", fontWeight: 700, letterSpacing: 0.3 }}>CHANGE</span>
+                      </div>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.5)", margin: "0 0 8px" }}>Profile Photo</p>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", margin: "0 0 4px" }}>Profile Photo</p>
+                      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", margin: "0 0 8px" }}>Click photo or use button below</p>
                       <div style={{ display: "flex", gap: 8 }}>
-                        <button onClick={() => avatarInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
-                          <Camera size={11} /> Upload
+                        <button onClick={() => avatarInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 7, border: "1px solid rgba(99,102,241,0.3)", background: "rgba(99,102,241,0.1)", color: "#a5b4fc", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                          <Upload size={11} /> Upload Photo
                         </button>
                         {storeAvatars.length > 0 && (
                           <button onClick={() => setAvatarMode(m => m === "store" ? "photo" : "store")} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
@@ -688,10 +747,13 @@ export default function Profile() {
                     <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(99,102,241,0.7)", letterSpacing: 1, textTransform: "uppercase", margin: "0 0 12px" }}>Identity</p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       <Field label="Username" value={editForm.username} onChange={e => setEditForm(f => ({ ...f, username: e.target.value }))} placeholder="Enter username" />
-                      <Field label="Free Fire UID" value={editForm.free_fire_uid} onChange={e => setEditForm(f => ({ ...f, free_fire_uid: e.target.value }))} placeholder="Numeric UID (e.g. 123456789)" />
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                        <Field label="Country" value={editForm.country} onChange={e => setEditForm(f => ({ ...f, country: e.target.value }))} placeholder="MA" />
-                        <Field label="City" value={editForm.city} onChange={e => setEditForm(f => ({ ...f, city: e.target.value }))} placeholder="Casablanca" />
+                        <Field label="Free Fire UID" value={editForm.free_fire_uid} onChange={e => setEditForm(f => ({ ...f, free_fire_uid: e.target.value.replace(/\D/g, "") }))} placeholder="123456789" />
+                        <Field label="Free Fire Name" value={editForm.free_fire_name} onChange={e => setEditForm(f => ({ ...f, free_fire_name: e.target.value }))} placeholder="In-game nickname" optional />
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                        <Field label="Country" value={editForm.country} onChange={e => setEditForm(f => ({ ...f, country: e.target.value.toUpperCase().slice(0, 2) }))} placeholder="MA" />
+                        <Field label="City" value={editForm.city} onChange={e => setEditForm(f => ({ ...f, city: e.target.value }))} placeholder="Casablanca" optional />
                       </div>
                       <Field label="Age" value={editForm.age} onChange={e => setEditForm(f => ({ ...f, age: e.target.value }))} placeholder="18" type="number" />
                     </div>
@@ -713,10 +775,10 @@ export default function Profile() {
                   <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(16,185,129,0.04)", border: "1px solid rgba(16,185,129,0.12)" }}>
                     <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(16,185,129,0.6)", letterSpacing: 1, textTransform: "uppercase", margin: "0 0 12px" }}>Social Links (optional)</p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      <Field label="Instagram" value={editForm.instagram} onChange={e => setEditForm(f => ({ ...f, instagram: e.target.value }))} placeholder="https://instagram.com/..." optional />
-                      <Field label="TikTok"    value={editForm.tiktok}    onChange={e => setEditForm(f => ({ ...f, tiktok: e.target.value }))}    placeholder="https://tiktok.com/@..." optional />
+                      <Field label="Instagram" value={editForm.instagram} onChange={e => setEditForm(f => ({ ...f, instagram: e.target.value }))} placeholder="https://instagram.com/yourname" optional />
+                      <Field label="TikTok"    value={editForm.tiktok}    onChange={e => setEditForm(f => ({ ...f, tiktok: e.target.value }))}    placeholder="https://tiktok.com/@yourname" optional />
                       <Field label="Discord"   value={editForm.discord}   onChange={e => setEditForm(f => ({ ...f, discord: e.target.value }))}   placeholder="YourTag#0000 or server link" optional />
-                      <Field label="YouTube"   value={editForm.youtube}   onChange={e => setEditForm(f => ({ ...f, youtube: e.target.value }))}   placeholder="https://youtube.com/..." optional />
+                      <Field label="YouTube"   value={editForm.youtube}   onChange={e => setEditForm(f => ({ ...f, youtube: e.target.value }))}   placeholder="https://youtube.com/yourchannel" optional />
                     </div>
                   </div>
 
