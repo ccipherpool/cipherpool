@@ -507,6 +507,7 @@ export default function NotificationsTab() {
   const [loadingH, setLoadingH]       = useState(true);
   const [stats, setStats]             = useState({ total: 0, today: 0, thisWeek: 0 });
   const [tournaments, setTournaments] = useState([]);
+  const [tournamentsErr, setTournamentsErr] = useState(null);
   const [clans, setClans]             = useState([]);
   const [teams, setTeams]             = useState([]);
   const [showPreview, setShowPreview] = useState(true);
@@ -520,6 +521,12 @@ export default function NotificationsTab() {
 
   useEffect(() => { fetchHistory(); fetchDropdownData(); fetchTemplates(); }, []);
   useEffect(() => { estimateAudience(); }, [form.targetType, form.targetRole, form.tournamentId, form.clanId, form.teamId, selectedUsers]);
+  // Re-fetch tournaments each time the user picks "Tournament Players" (in case mount fetch failed)
+  useEffect(() => {
+    if (form.targetType === "tournament_participants" && tournaments.length === 0) {
+      fetchDropdownData();
+    }
+  }, [form.targetType]);
 
   const fetchTemplates = async () => {
     const { data } = await supabase.from("email_templates").select("*").order("slug");
@@ -570,16 +577,27 @@ export default function NotificationsTab() {
   };
 
   const fetchDropdownData = async () => {
-    try {
-      const [t, c, tm] = await Promise.all([
-        supabase.from("tournaments").select("id,name,status").order("created_at", { ascending: false }).limit(100),
-        supabase.from("clans").select("id,name,tag").order("name").limit(50).catch(() => ({ data: [] })),
-        supabase.from("teams").select("id,name").order("name").limit(50).catch(() => ({ data: [] })),
-      ]);
-      setTournaments(t.data || []);
-      setClans(c.data || []);
-      setTeams(tm.data || []);
-    } catch {}
+    // Fetch tournaments separately so a clans/teams failure can't block it
+    setTournamentsErr(null);
+    const { data: tData, error: tErr } = await supabase
+      .from("tournaments")
+      .select("id,name,status")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (tErr) {
+      console.error("[NotificationsTab] tournaments fetch error:", tErr);
+      setTournamentsErr(tErr.message || "Failed to load tournaments");
+      setTournaments([]);
+    } else {
+      setTournaments(tData || []);
+    }
+
+    const [c, tm] = await Promise.all([
+      supabase.from("clans").select("id,name,tag").order("name").limit(50).catch(() => ({ data: [] })),
+      supabase.from("teams").select("id,name").order("name").limit(50).catch(() => ({ data: [] })),
+    ]);
+    setClans(c.data || []);
+    setTeams(tm.data || []);
   };
 
   const estimateAudience = async () => {
@@ -1153,20 +1171,36 @@ export default function NotificationsTab() {
                     <label style={{ fontSize: 10.5, fontWeight: 700, color: "#8b5cf6", letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>
                       Choose Tournament
                     </label>
-                    <select
-                      value={form.tournamentId}
-                      onChange={e => set("tournamentId", e.target.value)}
-                      style={{ width: "100%", padding: "10px 13px", background: C.s2, border: `1px solid rgba(139,92,246,0.35)`, borderRadius: 10, color: form.tournamentId ? C.text : C.text3, fontSize: 13, outline: "none", cursor: "pointer" }}
-                    >
-                      <option value="">— Select a tournament —</option>
-                      {tournaments.length === 0 && <option disabled>No tournaments found</option>}
-                      {tournaments.map(t => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}  [{(t.status || "unknown").replace(/_/g, " ")}]
-                        </option>
-                      ))}
-                    </select>
-                    {form.tournamentId && estimatedCount !== null && (
+                    <div style={{ display: "flex", gap: 6, alignItems: "stretch" }}>
+                      <select
+                        value={form.tournamentId}
+                        onChange={e => set("tournamentId", e.target.value)}
+                        style={{ flex: 1, padding: "10px 13px", background: C.s2, border: `1px solid rgba(139,92,246,0.35)`, borderRadius: 10, color: form.tournamentId ? C.text : C.text3, fontSize: 13, outline: "none", cursor: "pointer" }}
+                      >
+                        <option value="">— Select a tournament —</option>
+                        {tournamentsErr && <option disabled>⚠ Error loading: {tournamentsErr}</option>}
+                        {!tournamentsErr && tournaments.length === 0 && <option disabled>No tournaments found</option>}
+                        {tournaments.map(t => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}  [{(t.status || "unknown").replace(/_/g, " ")}]
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={fetchDropdownData}
+                        title="Reload tournaments"
+                        style={{ padding: "0 12px", borderRadius: 10, border: `1px solid rgba(139,92,246,0.35)`, background: C.s2, color: "#8b5cf6", cursor: "pointer", display: "flex", alignItems: "center" }}
+                      >
+                        <RefreshCw size={13} />
+                      </button>
+                    </div>
+                    {tournamentsErr && (
+                      <div style={{ marginTop: 6, padding: "7px 12px", borderRadius: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", fontSize: 11.5, color: C.red }}>
+                        {tournamentsErr}
+                      </div>
+                    )}
+                    {form.tournamentId && estimatedCount !== null && estimatedCount > 0 && (
                       <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
                         <CheckCircle size={12} color="#8b5cf6" />
                         <span style={{ fontSize: 11.5, color: "#a78bfa", fontWeight: 600 }}>
