@@ -45,7 +45,7 @@ const EmptySlot = memo(function EmptySlot({ team, seat, role, onChangeSeat, team
       onClick={() => canJoin && onChangeSeat?.(team, seat)}
       title={canJoin ? "Click to take this slot" : undefined}
       style={{
-        height: 70, borderRadius: 8,
+        minHeight: 68, borderRadius: 10,
         border: `1px dashed ${teamColor || "rgba(255,255,255,0.08)"}22`,
         display: "flex", alignItems: "center", justifyContent: "center",
         background: canJoin ? C.empty : "transparent",
@@ -81,18 +81,18 @@ const PlayerCard = memo(function PlayerCard({
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setShowMoveMenu(false); }}
-      onClick={() => !hovered && onSelectPlayer?.(player)}
+      onClick={() => onSelectPlayer?.(player)}
       style={{
-        height: 70, borderRadius: 8,
+        minHeight: 68, borderRadius: 10,
         background: C.card,
         border: `1px solid ${hovered ? color + "35" : C.border}`,
         borderLeft: `3px solid ${player.isReady ? "#10b981" : color}`,
         display: "flex", alignItems: "center",
-        padding: "0 10px 0 9px",
-        gap: 9, cursor: "pointer",
+        padding: "8px 10px 8px 9px",
+        gap: 8, cursor: "pointer",
         transition: "all 0.12s",
         position: "relative", overflow: "hidden",
-        boxShadow: isMe ? `0 0 12px ${color}18` : "none",
+        boxShadow: isMe ? `0 0 14px ${color}22` : "none",
       }}
     >
       {/* Avatar */}
@@ -306,7 +306,7 @@ export default function CompactPlayerGrid({
   // Solo: flat 5-column grid, no team headers
   if (isSolo) {
     return (
-      <div style={gridStyle(5)}>
+      <div className="cp-solo-grid" style={gridStyle(5)}>
         {allSeats.map(s => renderSeat(s))}
       </div>
     );
@@ -325,7 +325,7 @@ export default function CompactPlayerGrid({
               capacity={team.seats.length}
               color={color}
             />
-            <div style={gridStyle(COLS)}>
+            <div className="cp-team-grid" style={gridStyle(COLS)}>
               {team.seats.map(s => renderSeat({ ...s, teamNumber: team.teamNumber, teamColor: color }))}
             </div>
           </div>

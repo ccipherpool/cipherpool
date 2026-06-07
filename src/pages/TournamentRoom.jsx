@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { Menu, X, Users, CheckCircle, Grid, List } from "lucide-react";
+import { Menu, X, Users, CheckCircle, Grid, List, Copy, Check, Eye, EyeOff } from "lucide-react";
 import { useRoomEngine } from "../hooks/useRoomEngine";
 import CompactPlayerGrid from "../components/room/CompactPlayerGrid";
 import RoomSidebar from "../components/room/RoomSidebar";
@@ -25,6 +25,106 @@ const STATUS_META = {
   finished:            { label: "Finished",            color: "#10b981" },
   completed:           { label: "Completed",           color: "#10b981" },
 };
+
+// ── Mobile info bar ───────────────────────────────────────────────────
+function MobileInfoBar({ tournament, currentUserReady, onToggleReady, tStatus, role }) {
+  const [showPass, setShowPass]     = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [passCopied, setPassCopied] = useState(false);
+
+  const copy = (text, setter) => {
+    navigator.clipboard.writeText(text || "").then(() => {
+      setter(true);
+      setTimeout(() => setter(false), 1500);
+    });
+  };
+
+  const isPart        = role === "participant";
+  const inReadyCheck  = tStatus === "ready_check";
+  const mode          = [tournament?.mode, tournament?.game_type].filter(Boolean).join(" · ");
+
+  return (
+    <div className="cp-mobile-bar" style={{
+      display: "none",
+      flexDirection: "column",
+      background: "rgba(9,16,31,0.98)",
+      borderBottom: "1px solid rgba(255,255,255,0.07)",
+      flexShrink: 0,
+    }}>
+      {/* Horizontal scroll strip */}
+      <div style={{ display: "flex", overflowX: "auto", gap: 8, padding: "10px 14px", scrollbarWidth: "none" }}>
+
+        {/* Mode */}
+        {mode && (
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 6, padding: "7px 11px", borderRadius: 10, background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)" }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, textTransform: "uppercase" }}>Mode</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "#a5b4fc" }}>{mode}</span>
+          </div>
+        )}
+
+        {/* Room Code */}
+        <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 7, padding: "7px 11px", borderRadius: 10, background: tournament?.room_code ? "rgba(6,182,212,0.1)" : "rgba(255,255,255,0.04)", border: `1px solid ${tournament?.room_code ? "rgba(6,182,212,0.25)" : "rgba(255,255,255,0.08)"}` }}>
+          <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, textTransform: "uppercase" }}>Code</span>
+          <span style={{ fontSize: 13, fontWeight: 900, color: tournament?.room_code ? "#22d3ee" : "rgba(255,255,255,0.2)", fontFamily: "monospace", letterSpacing: 2 }}>
+            {tournament?.room_code || "—"}
+          </span>
+          {tournament?.room_code && (
+            <button onClick={() => copy(tournament.room_code, setCodeCopied)} style={{ background: "none", border: "none", cursor: "pointer", color: codeCopied ? "#10b981" : "rgba(255,255,255,0.35)", display: "flex", padding: 2 }}>
+              {codeCopied ? <Check size={13} /> : <Copy size={13} />}
+            </button>
+          )}
+        </div>
+
+        {/* Password */}
+        <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 7, padding: "7px 11px", borderRadius: 10, background: tournament?.room_password ? "rgba(245,158,11,0.08)" : "rgba(255,255,255,0.04)", border: `1px solid ${tournament?.room_password ? "rgba(245,158,11,0.25)" : "rgba(255,255,255,0.08)"}` }}>
+          <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, textTransform: "uppercase" }}>Pass</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: tournament?.room_password ? "#fbbf24" : "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>
+            {tournament?.room_password ? (showPass ? tournament.room_password : "••••••••") : "—"}
+          </span>
+          {tournament?.room_password && (
+            <>
+              <button onClick={() => setShowPass(v => !v)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.35)", display: "flex", padding: 2 }}>
+                {showPass ? <EyeOff size={12} /> : <Eye size={12} />}
+              </button>
+              <button onClick={() => copy(tournament.room_password, setPassCopied)} style={{ background: "none", border: "none", cursor: "pointer", color: passCopied ? "#10b981" : "rgba(255,255,255,0.35)", display: "flex", padding: 2 }}>
+                {passCopied ? <Check size={13} /> : <Copy size={13} />}
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Prize */}
+        {tournament?.prize && (
+          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 6, padding: "7px 11px", borderRadius: 10, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,0.35)", letterSpacing: 0.5, textTransform: "uppercase" }}>Prize</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24" }}>{tournament.prize}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Ready Up button */}
+      {isPart && inReadyCheck && (
+        <div style={{ padding: "0 14px 12px" }}>
+          <button
+            onClick={onToggleReady}
+            style={{
+              width: "100%", padding: "13px", borderRadius: 12, border: "none", cursor: "pointer",
+              fontSize: 13, fontWeight: 900, letterSpacing: 0.6,
+              background: currentUserReady
+                ? "linear-gradient(135deg, #10b981, #06b6d4)"
+                : "linear-gradient(135deg, #6366f1, #4f46e5)",
+              color: "#fff",
+              boxShadow: currentUserReady ? "0 4px 18px rgba(16,185,129,0.35)" : "0 4px 18px rgba(99,102,241,0.35)",
+              transition: "all 0.2s",
+            }}
+          >
+            {currentUserReady ? "✓ YOU'RE READY!" : "⚡ TAP TO READY UP"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function TournamentRoom() {
   const { id }   = useParams();
@@ -186,28 +286,28 @@ export default function TournamentRoom() {
           </span>
         </div>
 
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11 }}>
+        <div className="cp-header-center" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 16, overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, flexShrink: 0 }}>
             <Users size={11} color="rgba(255,255,255,0.3)" />
             <span style={{ color: "#6366f1", fontWeight: 700 }}>{members.length}</span>
             <span style={{ color: "rgba(255,255,255,0.25)" }}>/ {tournament?.max_players || "?"}</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, flexShrink: 0 }}>
             <CheckCircle size={11} color="rgba(255,255,255,0.3)" />
             <span style={{ color: readyCount === members.length && members.length > 0 ? "#10b981" : "#f59e0b", fontWeight: 700 }}>{readyCount}</span>
             <span style={{ color: "rgba(255,255,255,0.25)" }}>ready</span>
           </div>
           {countdown !== null && countdown > 0 && isLive && (
-            <span style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 900, letterSpacing: 2, color: countdown <= 60 ? "#ef4444" : "#f1f5f9" }}>
+            <span style={{ fontFamily: "monospace", fontSize: 16, fontWeight: 900, letterSpacing: 2, color: countdown <= 60 ? "#ef4444" : "#f1f5f9", flexShrink: 0 }}>
               {String(Math.floor(countdown / 60)).padStart(2, "0")}:{String(countdown % 60).padStart(2, "0")}
             </span>
           )}
           {role === "organizer" && pendingRequests.length > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#f59e0b", fontWeight: 700 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#f59e0b", fontWeight: 700, flexShrink: 0 }}>
               <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#f59e0b", color: "#000", fontSize: 9, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", animation: "pulse 1s infinite" }}>
                 {pendingRequests.length}
               </span>
-              pending
+              <span className="cp-pending-label">pending</span>
             </div>
           )}
         </div>
@@ -222,6 +322,15 @@ export default function TournamentRoom() {
           </button>
         </div>
       </div>
+
+      {/* ── Mobile info bar ─────────────────────────────────────── */}
+      <MobileInfoBar
+        tournament={tournament}
+        currentUserReady={currentUserReady}
+        onToggleReady={toggleReady}
+        tStatus={tStatus}
+        role={role}
+      />
 
       {/* ── Main body (75 / 25) ─────────────────────────────────── */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
@@ -421,10 +530,21 @@ export default function TournamentRoom() {
       <style>{`
         @keyframes spin  { to { transform: rotate(360deg) } }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .cp-mobile-bar { display: none !important; }
         @media (max-width: 900px) {
           #desk-sidebar { display: none !important; }
           #mob-menu { display: flex !important; }
+          .cp-mobile-bar { display: flex !important; }
+          .cp-solo-grid  { grid-template-columns: repeat(3, 1fr) !important; }
+          .cp-team-grid  { grid-template-columns: repeat(2, 1fr) !important; }
+          .cp-pending-label { display: none; }
         }
+        @media (max-width: 520px) {
+          .cp-solo-grid  { grid-template-columns: repeat(2, 1fr) !important; }
+          .cp-header-center { gap: 10px !important; }
+        }
+        .cp-mobile-bar::-webkit-scrollbar,
+        .cp-mobile-bar div::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );
