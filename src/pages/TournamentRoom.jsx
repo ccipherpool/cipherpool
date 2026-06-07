@@ -9,6 +9,7 @@ import RosterManager from "../components/room/RosterManager";
 import PlayerProfilePanel from "../components/room/PlayerProfilePanel";
 import { AnimatePresence, motion } from "framer-motion";
 import SubmitResultPanel from "../components/room/SubmitResultPanel";
+import MatchLeaderboard from "../components/room/MatchLeaderboard";
 import { MatchStartOverlay } from "../components/room/MatchInstructions";
 import StartMatchModal from "../components/room/Startmatchmodal";
 
@@ -141,6 +142,8 @@ export default function TournamentRoom() {
   const [showStartModal, setShowStartModal]   = useState(false);
   const [mobileSidebar, setMobileSidebar]     = useState(false);
   const [leftTab, setLeftTab]                 = useState("grid");
+  const [activeMatch, setActiveMatch]         = useState(null); // { id, match_number, deadline }
+  const [endingMatch, setEndingMatch]         = useState(false);
 
   const {
     tournament, setTournament,
@@ -420,15 +423,36 @@ export default function TournamentRoom() {
                   </button>
                 </motion.div>
               )}
+
+              {/* Live leaderboard shown when results are in */}
+              {isResults && (
+                <div style={{ marginTop: 20 }}>
+                  <MatchLeaderboard tournamentId={id} currentUserId={user?.id} />
+                </div>
+              )}
+
               {role === "organizer" && isLive && (
                 <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 18, textAlign: "center" }}>
                   <button
+                    disabled={endingMatch}
                     onClick={async () => {
-                      if (!window.confirm("End match and open result submission?")) return;
-                      await supabase.from("tournaments").update({ status: "results", room_status: "results_open", match_end_time: new Date().toISOString() }).eq("id", id);
+                      if (!window.confirm("End match? Players will have 15 minutes to submit their result screenshot.")) return;
+                      setEndingMatch(true);
+                      try {
+                        const { data, error: rpcErr } = await supabase.rpc("end_match", {
+                          p_tournament_id: id,
+                          p_deadline_minutes: 15,
+                        });
+                        if (rpcErr) throw rpcErr;
+                        if (data?.success) setActiveMatch({ id: data.match_id, match_number: data.match_number, deadline: data.deadline });
+                      } catch (e) {
+                        alert("Failed to end match: " + (e.message || String(e)));
+                      } finally {
+                        setEndingMatch(false);
+                      }
                     }}
-                    style={{ padding: "12px 24px", borderRadius: 10, border: "none", cursor: "pointer", background: "linear-gradient(135deg, #ef4444, #7c3aed)", color: "#fff", fontSize: 13, fontWeight: 800, boxShadow: "0 6px 20px rgba(239,68,68,0.3)" }}>
-                    🏁 END MATCH
+                    style={{ padding: "12px 24px", borderRadius: 10, border: "none", cursor: endingMatch ? "not-allowed" : "pointer", opacity: endingMatch ? 0.6 : 1, background: "linear-gradient(135deg, #ef4444, #7c3aed)", color: "#fff", fontSize: 13, fontWeight: 800, boxShadow: "0 6px 20px rgba(239,68,68,0.3)" }}>
+                    {endingMatch ? "⏳ Ending…" : "🏁 END MATCH"}
                   </button>
                 </motion.div>
               )}
@@ -488,7 +512,14 @@ export default function TournamentRoom() {
 
       <AnimatePresence>
         {showSubmit && (
-          <SubmitResultPanel tournamentId={id} userId={user?.id} onClose={() => setShowSubmit(false)} />
+          <SubmitResultPanel
+            tournamentId={id}
+            userId={user?.id}
+            matchId={activeMatch?.id}
+            deadline={activeMatch?.deadline}
+            matchNumber={activeMatch?.match_number}
+            onClose={() => setShowSubmit(false)}
+          />
         )}
       </AnimatePresence>
 
