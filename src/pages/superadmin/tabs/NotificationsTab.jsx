@@ -628,12 +628,11 @@ export default function NotificationsTab() {
       setTournaments(tData || []);
     }
 
-    const [c, tm] = await Promise.all([
-      supabase.from("clans").select("id,name,tag").order("name").limit(50).catch(() => ({ data: [] })),
-      supabase.from("teams").select("id,name").order("name").limit(50).catch(() => ({ data: [] })),
-    ]);
-    setClans(c.data || []);
-    setTeams(tm.data || []);
+    // Supabase query builder is a Thenable, not a full Promise — no .catch() available
+    const { data: cData }  = await supabase.from("clans").select("id,name,tag").order("name").limit(50);
+    const { data: tmData } = await supabase.from("teams").select("id,name").order("name").limit(50);
+    setClans(cData || []);
+    setTeams(tmData || []);
   };
 
   const estimateAudience = async () => {
