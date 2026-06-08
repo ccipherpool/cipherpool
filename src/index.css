@@ -1218,6 +1218,10 @@ input, textarea, select {
   to { --angle: 360deg; }
 }
 
+@keyframes wa-spin {
+  to { transform: rotate(360deg); }
+}
+
 @keyframes glow-pulse {
   0%, 100% { box-shadow: 0 0 20px rgba(139,92,246,0.3), 0 0 40px rgba(139,92,246,0.1); }
   50%       { box-shadow: 0 0 40px rgba(139,92,246,0.7), 0 0 80px rgba(139,92,246,0.3); }

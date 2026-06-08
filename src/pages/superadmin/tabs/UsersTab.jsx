@@ -182,14 +182,14 @@ export default function UsersTab({ filteredUsers, search, setSearch, filter, set
         {/* Header */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "minmax(200px,2fr) 100px 130px 90px 80px 140px",
+          gridTemplateColumns: "minmax(200px,2fr) 100px 130px 90px 80px 110px 140px",
           padding: "10px 18px",
           borderBottom: `1px solid ${C.border}`,
           background: C.surface3,
           gap: 8,
         }}>
-          {["Player", "Role", "Wallet", "UID", "Age", "Actions"].map((h, i) => (
-            <div key={h} style={{ fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: 0.8, textTransform: "uppercase", textAlign: i === 5 ? "right" : "left" }}>
+          {["Player", "Role", "Wallet", "UID", "Age", "WhatsApp", "Actions"].map((h, i) => (
+            <div key={h} style={{ fontSize: 10, fontWeight: 700, color: C.text3, letterSpacing: 0.8, textTransform: "uppercase", textAlign: i === 6 ? "right" : "left" }}>
               {h}
             </div>
           ))}
@@ -213,7 +213,7 @@ export default function UsersTab({ filteredUsers, search, setSearch, filter, set
                 transition={{ delay: i * 0.018 }}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "minmax(200px,2fr) 100px 130px 90px 80px 140px",
+                  gridTemplateColumns: "minmax(200px,2fr) 100px 130px 90px 80px 110px 140px",
                   padding: "10px 18px", alignItems: "center", gap: 8,
                   borderBottom: i < displayed.length - 1 ? `1px solid ${C.border}` : "none",
                   transition: "background 0.15s",
@@ -278,6 +278,24 @@ export default function UsersTab({ filteredUsers, search, setSearch, filter, set
                     <span style={{ fontSize: 12, color: C.text2, fontWeight: 600 }}>{user.age}y</span>
                   ) : (
                     <span style={{ fontSize: 11, color: C.text3 }}>—</span>
+                  )}
+                </div>
+
+                {/* WhatsApp */}
+                <div>
+                  {user.whatsapp_verified ? (
+                    <div>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, color: C.green, background: `${C.green}15`, border: `1px solid ${C.green}30`, borderRadius: 20, padding: "2px 8px" }}>
+                        ✅ Verified
+                      </span>
+                      {user.whatsapp_phone && (
+                        <div style={{ fontSize: 10, color: C.text3, marginTop: 3, fontFamily: "monospace" }}>{user.whatsapp_phone}</div>
+                      )}
+                    </div>
+                  ) : (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: C.text3, background: "rgba(82,82,91,0.15)", border: `1px solid ${C.border}`, borderRadius: 20, padding: "2px 8px" }}>
+                      ⏳ Pending
+                    </span>
                   )}
                 </div>
 

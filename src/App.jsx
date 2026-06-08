@@ -85,7 +85,8 @@ const CommandCenter      = lazy(() => import("./pages/CommandCenter"));
 const AccountRestricted  = lazy(() => import("./pages/AccountRestricted"));
 
 // Notifications
-const Notifications = lazy(() => import("./pages/Notifications"));
+const Notifications     = lazy(() => import("./pages/Notifications"));
+const VerifyWhatsApp    = lazy(() => import("./pages/VerifyWhatsApp"));
 
 // Public
 const PublicTournament = lazy(() => import("./pages/PublicTournament"));
@@ -174,6 +175,11 @@ export default function App() {
             <Route path="/connexion"            element={<Navigate to="/login" replace />} />
             <Route path="/inscription"          element={<Navigate to="/register" replace />} />
             <Route path="/account-restricted"   element={<AccountRestricted />} />
+          </Route>
+
+          {/* ── WhatsApp Verification — requires login, skips WhatsApp gate ── */}
+          <Route element={<ProtectedRoute requireWhatsApp={false}><MainLayout /></ProtectedRoute>}>
+            <Route path="/verify-whatsapp" element={<VerifyWhatsApp />} />
           </Route>
 
           {/* ── USER ── */}

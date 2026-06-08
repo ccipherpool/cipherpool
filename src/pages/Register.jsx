@@ -168,7 +168,7 @@ export default function Register() {
         await refreshCurrentUser?.(authData.user.id);
       }
 
-      navigate("/verify-email", { state: { email } });
+      navigate("/verify-whatsapp");
     } catch (err) {
       setError(err.message);
     } finally {
