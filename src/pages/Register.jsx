@@ -155,7 +155,14 @@ export default function Register() {
         if (authData.session) await refreshCurrentUser?.(authData.user.id);
       }
 
-      navigate("/verify-whatsapp");
+      if (authData.session) {
+        // Email confirmation disabled — user is logged in, go straight to WhatsApp verification
+        navigate("/verify-whatsapp");
+      } else {
+        // Email confirmation enabled — user must confirm email first,
+        // then ProtectedRoute will gate them to /verify-whatsapp automatically
+        navigate("/verify-email", { state: { email: email.trim() } });
+      }
     } catch (err) {
       setError(err.message);
     } finally {

@@ -19,7 +19,7 @@ export default function EmailConfirmed() {
 
   useEffect(() => {
     if (status !== "success") return;
-    if (countdown <= 0) { navigate("/dashboard"); return; }
+    if (countdown <= 0) { navigate("/verify-whatsapp"); return; }
     const t = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(t);
   }, [status, countdown]);
@@ -132,10 +132,10 @@ export default function EmailConfirmed() {
               </div>
 
               <button
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/verify-whatsapp")}
                 className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-500 text-black font-black text-sm transition-all flex items-center justify-center gap-2"
               >
-                Enter CipherPool <ArrowRight size={15} />
+                Continue <ArrowRight size={15} />
               </button>
             </motion.div>
           )}
