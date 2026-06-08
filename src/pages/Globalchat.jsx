@@ -729,32 +729,37 @@ export default function GlobalChat() {
 
           {/* Channel header */}
           <div
-            className="flex items-center gap-3 px-4 h-14 flex-shrink-0 border-b"
+            className="flex items-center gap-3 px-4 h-14 flex-shrink-0 border-b relative overflow-hidden"
             style={{
-              background: "var(--cp-surface-1)",
-              borderColor: "var(--cp-border)",
-              backdropFilter: "blur(20px)",
+              background: "rgba(10,12,26,0.97)",
+              borderColor: "rgba(255,255,255,0.07)",
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
             }}
           >
+            {/* Subtle aurora in header */}
+            <div className="absolute -left-8 top-0 bottom-0 w-40 pointer-events-none opacity-20"
+              style={{ background: "radial-gradient(circle at left center, #7C3AED, transparent 70%)", filter: "blur(16px)" }} />
+
             {/* Channel icon */}
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "var(--cp-accent-dim)", border: "1px solid var(--cp-accent-border)" }}
+              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 relative z-10"
+              style={{ background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)", boxShadow: "0 0 12px rgba(124,58,237,0.2)" }}
             >
-              <Hash size={14} style={{ color: "var(--cp-accent)" }} />
+              <Hash size={14} style={{ color: "#A78BFA" }} />
             </div>
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 relative z-10">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold" style={{ color: "var(--cp-text-1)" }}>global-chat</span>
+                <span className="text-sm font-bold" style={{ color: "rgba(255,255,255,0.9)" }}>global-chat</span>
                 <span
-                  className="hidden sm:inline text-[11px] px-1.5 py-0.5 rounded-md"
-                  style={{ background: "var(--cp-surface-3)", color: "var(--cp-text-4)", border: "1px solid var(--cp-border)" }}
+                  className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-md font-semibold"
+                  style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.28)", border: "1px solid rgba(255,255,255,0.07)" }}
                 >
                   {messages.length} messages
                 </span>
               </div>
-              <p className="text-[11px] hidden sm:block" style={{ color: "var(--cp-text-4)" }}>
+              <p className="text-[10px] hidden sm:block" style={{ color: "rgba(255,255,255,0.28)" }}>
                 CipherPool community — Free Fire esports
               </p>
             </div>
@@ -782,7 +787,11 @@ export default function GlobalChat() {
           <div
             ref={scrollRef}
             className="flex-1 overflow-y-auto overflow-x-hidden"
-            style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(124,58,237,.2) transparent" }}
+            style={{
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(124,58,237,.2) transparent",
+              background: "linear-gradient(180deg, rgba(8,10,22,0.6) 0%, rgba(10,12,26,0.4) 100%)",
+            }}
           >
             <div className="px-4 py-3">
 
@@ -890,9 +899,13 @@ export default function GlobalChat() {
                       <div
                         className="relative text-sm px-3.5 py-2 cursor-pointer"
                         style={{
-                          background: isMe ? "var(--cp-accent-dim)" : "var(--cp-surface-2)",
-                          border: `1px solid ${isMe ? "var(--cp-accent-border)" : "var(--cp-border)"}`,
-                          color: "var(--cp-text-1)",
+                          background: isMe
+                            ? "rgba(124,58,237,0.18)"
+                            : "rgba(255,255,255,0.05)",
+                          border: `1px solid ${isMe ? "rgba(124,58,237,0.35)" : "rgba(255,255,255,0.07)"}`,
+                          backdropFilter: "blur(8px)",
+                          WebkitBackdropFilter: "blur(8px)",
+                          color: "rgba(255,255,255,0.88)",
                           borderRadius: isMe
                             ? (isBurst ? "18px 6px 6px 18px" : "18px 6px 18px 18px")
                             : (isBurst ? "6px 18px 18px 6px" : "6px 18px 18px 18px"),
@@ -965,8 +978,10 @@ export default function GlobalChat() {
           <div
             className="flex-shrink-0 px-4 py-3 border-t"
             style={{
-              background: "var(--cp-surface-1)",
-              borderColor: "var(--cp-border)",
+              background: "rgba(10,12,26,0.95)",
+              borderColor: "rgba(255,255,255,0.06)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
               paddingBottom: "max(12px, env(safe-area-inset-bottom))",
             }}
           >
@@ -1006,8 +1021,10 @@ export default function GlobalChat() {
               <div
                 className="flex items-end gap-2 rounded-2xl px-3 py-2"
                 style={{
-                  background: "var(--cp-surface-2)",
-                  border: "1px solid var(--cp-border)",
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.09)",
+                  boxShadow: "0 0 0 0 rgba(124,58,237,0)",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
               >
                 {/* Emoji button */}
@@ -1068,8 +1085,10 @@ export default function GlobalChat() {
         <div
           className="hidden lg:flex flex-col flex-shrink-0 border-l w-60"
           style={{
-            background: "var(--cp-surface-1)",
-            borderColor: "var(--cp-border)",
+            background: "rgba(8,10,22,0.96)",
+            borderColor: "rgba(255,255,255,0.07)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
           }}
         >
           <OnlinePanelContent

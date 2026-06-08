@@ -230,19 +230,28 @@ export default function TournamentRoom() {
   // ── Loading ──────────────────────────────────────────────────────
   if (authLoading || roomLoading || !accessChecked) {
     return (
-      <div style={{ height: "100vh", background: "#06080f", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14 }}>
-        <div style={{ width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(99,102,241,0.15)", borderTopColor: "#6366f1", animation: "spin 0.8s linear infinite" }} />
-        <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 12, fontFamily: "monospace" }}>Loading room…</p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      <div style={{ height: "100vh", background: "linear-gradient(135deg,#06080f 0%,#09080f 50%,#060a14 100%)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } } @keyframes pulse-ring { 0%{transform:scale(1);opacity:0.4}50%{transform:scale(1.15);opacity:0.1}100%{transform:scale(1);opacity:0.4} }`}</style>
+        <div style={{ position: "relative", width: 52, height: 52 }}>
+          <div style={{ position: "absolute", inset: -6, borderRadius: "50%", border: "1px solid rgba(99,102,241,0.15)", animation: "pulse-ring 2s ease infinite" }} />
+          <div style={{ width: 52, height: 52, borderRadius: "50%", border: "2px solid rgba(99,102,241,0.1)", borderTopColor: "#6366f1", animation: "spin 0.9s linear infinite" }} />
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Loading Match Center</p>
+          <p style={{ color: "rgba(255,255,255,0.2)", fontSize: 11, fontFamily: "monospace", letterSpacing: 2 }}>CONNECTING TO ROOM…</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ height: "100vh", background: "#06080f", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 10 }}>
-        <p style={{ color: "#ef4444", fontSize: 13 }}>⚠ {error}</p>
-        <button onClick={() => window.location.reload()} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "#6366f1", color: "#fff", cursor: "pointer", fontSize: 12 }}>Retry</button>
+      <div style={{ height: "100vh", background: "linear-gradient(135deg,#06080f 0%,#09080f 100%)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
+        <div style={{ width: 48, height: 48, borderRadius: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>⚠</div>
+        <p style={{ color: "#f87171", fontSize: 13, fontWeight: 600 }}>{error}</p>
+        <button onClick={() => window.location.reload()} style={{ padding: "9px 20px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#6366f1,#4f46e5)", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700, letterSpacing: 0.5 }}>
+          Retry
+        </button>
       </div>
     );
   }
@@ -274,10 +283,13 @@ export default function TournamentRoom() {
       {/* ── Header (48px) ─────────────────────────────────────── */}
       <div style={{
         height: 48, flexShrink: 0,
-        background: "#06080f",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        background: "rgba(6,8,15,0.97)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderBottom: "1px solid rgba(255,255,255,0.07)",
         display: "flex", alignItems: "center",
         padding: "0 16px", gap: 14, zIndex: 10,
+        boxShadow: "0 1px 0 rgba(99,102,241,0.08)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 9, flex: "0 0 auto" }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: statusMeta.color, boxShadow: `0 0 6px ${statusMeta.color}` }} />

@@ -147,25 +147,31 @@ export default function Sidebar({ profile }) {
         <div className="p-3 border-t border-white/[0.06] flex-shrink-0">
           <motion.div
             whileHover={{ scale: 1.01 }}
-            className="group cp-user-chip flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-[220ms] cursor-default"
+            className="group cp-user-chip flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-[220ms]"
           >
-            <div
-              className="w-8 h-8 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-semibold text-sm"
-              style={{ background: "linear-gradient(135deg, #8B5CF6, #06B6D4)" }}
+            <NavLink
+              to="/profile"
+              className="flex items-center gap-3 flex-1 min-w-0"
+              style={{ textDecoration: "none" }}
             >
-              {profile?.avatar_url
-                ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                : profile?.username?.[0]?.toUpperCase() || "U"
-              }
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white/85 truncate leading-none">
-                {profile?.username || "Player"}
-              </p>
-              <p className="text-xs text-white/35 mt-0.5">
-                Level {profile?.level || 1}
-              </p>
-            </div>
+              <div
+                className="w-8 h-8 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-semibold text-sm"
+                style={{ background: "linear-gradient(135deg, #8B5CF6, #06B6D4)" }}
+              >
+                {profile?.avatar_url
+                  ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  : profile?.username?.[0]?.toUpperCase() || "U"
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white/85 truncate leading-none">
+                  {profile?.username || "Player"}
+                </p>
+                <p className="text-xs text-white/35 mt-0.5">
+                  Level {profile?.level || 1}
+                </p>
+              </div>
+            </NavLink>
             <button
               onClick={handleLogout}
               className="p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-all duration-200 opacity-0 group-hover:opacity-100 flex-shrink-0"

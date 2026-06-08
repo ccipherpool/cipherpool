@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +31,7 @@ const FILTERS = [
 
 // ─── Tournament card ──────────────────────────────────────────────────────────
 const TCard = ({ t, i }) => {
+  const [hov, setHov] = useState(false);
   const cfg     = STATUS[t.status] || STATUS.published;
   const isLive  = t.status === "live";
   const isOpen  = t.status === "registration_open";
@@ -48,171 +49,120 @@ const TCard = ({ t, i }) => {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: i * 0.045, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-0.5"
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
       style={{
-        background: "var(--cp-surface-1)",
-        borderColor: isLive ? "rgba(239,68,68,.25)" : "var(--cp-border)",
-        boxShadow: isLive ? "0 0 30px rgba(239,68,68,.08)" : "none",
+        position: "relative", display: "flex", flexDirection: "column", overflow: "hidden",
+        borderRadius: 20, border: `1px solid ${isLive ? "rgba(239,68,68,.28)" : hov ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.07)"}`,
+        background: "rgba(10,12,26,0.95)",
+        boxShadow: isLive ? "0 0 32px rgba(239,68,68,.08)" : hov ? "0 16px 40px rgba(0,0,0,0.5)" : "none",
+        transform: hov ? "translateY(-2px)" : "none",
+        transition: "all 0.25s cubic-bezier(0.16,1,0.3,1)",
       }}
     >
-      {/* Top accent bar */}
-      <div
-        className="h-[2px] w-full flex-shrink-0"
-        style={{
-          background: isLive
-            ? "linear-gradient(90deg, #ef4444, #f97316)"
-            : isOpen
-            ? "linear-gradient(90deg, var(--cp-mint), var(--cp-accent))"
-            : "linear-gradient(90deg, rgba(124,58,237,.3), rgba(167,139,250,.2))",
-        }}
-      />
+      {/* Top accent line */}
+      <div style={{
+        height: 2, flexShrink: 0,
+        background: isLive
+          ? "linear-gradient(90deg, #ef4444, #f97316)"
+          : isOpen
+          ? "linear-gradient(90deg, #10b981, #7C3AED)"
+          : `linear-gradient(90deg, ${cfg.dot}60, transparent)`,
+      }} />
 
-      {/* Banner area */}
-      <div className="relative h-36 flex-shrink-0 overflow-hidden">
+      {/* Banner */}
+      <div style={{ position: "relative", height: 140, flexShrink: 0, overflow: "hidden" }}>
         {t.banner_url ? (
-          <img
-            src={t.banner_url}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
+          <img src={t.banner_url} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.7s", transform: hov ? "scale(1.06)" : "scale(1)" }} />
         ) : (
-          <div
-            className="absolute inset-0"
-            style={{
-              background: isLive
-                ? "linear-gradient(135deg, rgba(239,68,68,.1) 0%, rgba(249,115,22,.05) 100%)"
-                : "linear-gradient(135deg, rgba(124,58,237,.08) 0%, rgba(6,182,212,.04) 100%)",
-            }}
-          />
+          <div style={{
+            position: "absolute", inset: 0,
+            background: isLive
+              ? "linear-gradient(135deg, rgba(20,4,4,0.98), rgba(60,10,4,0.96))"
+              : "linear-gradient(135deg, rgba(8,6,24,0.98), rgba(20,8,48,0.96))",
+          }} />
         )}
+        {/* Bottom gradient */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(10,12,26,1) 0%, rgba(0,0,0,0.4) 55%, rgba(0,0,0,0.1) 100%)" }} />
 
-        {/* Gradient overlay for readability */}
-        <div
-          className="absolute inset-0"
-          style={{ background: "linear-gradient(to top, var(--cp-surface-1) 0%, rgba(0,0,0,.5) 50%, rgba(0,0,0,.2) 100%)" }}
-        />
-
-        {/* Faint background icon */}
-        <Trophy
-          size={56}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.06] transition-opacity group-hover:opacity-[0.12]"
-          style={{ color: cfg.color }}
-        />
+        {/* Bg icon */}
+        <Trophy size={52} style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", color: cfg.color, opacity: hov ? 0.12 : 0.06, transition: "opacity 0.25s" }} />
 
         {/* Status badge */}
-        <div
-          className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full backdrop-blur-sm border"
-          style={{
-            background: "rgba(0,0,0,.55)",
-            borderColor: `${cfg.dot}33`,
-          }}
-        >
-          <span
-            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-            style={{
-              background: cfg.dot,
-              boxShadow: cfg.glow ? `0 0 6px ${cfg.glow}` : "none",
-            }}
-          />
-          {isLive && (
-            <span
-              className="absolute w-1.5 h-1.5 rounded-full animate-ping opacity-40"
-              style={{ background: cfg.dot }}
-            />
-          )}
-          <span className="text-[10px] font-semibold" style={{ color: cfg.color }}>{cfg.label}</span>
+        <div style={{ position: "absolute", top: 10, right: 10, display: "flex", alignItems: "center", gap: 5, padding: "3px 9px 3px 7px", borderRadius: 20, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", border: `1px solid ${cfg.dot}30` }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: cfg.dot, boxShadow: cfg.glow ? `0 0 6px ${cfg.glow}` : "none", flexShrink: 0 }} />
+          {isLive && <span style={{ position: "absolute", width: 6, height: 6, borderRadius: "50%", background: cfg.dot, left: 7, opacity: 0.4 }} />}
+          <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color, letterSpacing: 0.3 }}>{cfg.label}</span>
         </div>
 
-        {/* Prize pool badge (top-left) */}
+        {/* Prize badge */}
         {t.prize_coins > 0 && (
-          <div
-            className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-lg backdrop-blur-sm border"
-            style={{ background: "rgba(0,0,0,.55)", borderColor: "rgba(245,158,11,.3)" }}
-          >
-            <span className="text-[9px]">🏆</span>
-            <span className="text-[10px] font-semibold" style={{ color: "var(--cp-gold)" }}>
-              {t.prize_coins.toLocaleString()} CP
-            </span>
+          <div style={{ position: "absolute", top: 10, left: 10, display: "flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 20, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)", border: "1px solid rgba(245,158,11,0.28)" }}>
+            <span style={{ fontSize: 9 }}>🏆</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#f59e0b" }}>{t.prize_coins.toLocaleString()} CP</span>
           </div>
         )}
 
-        {/* Tournament name */}
-        <div className="absolute bottom-3 left-3 right-3">
-          <h3
-            className="text-sm font-semibold leading-tight truncate transition-colors group-hover:text-violet-300"
-            style={{ color: "var(--cp-text-1)" }}
-          >
+        {/* Name */}
+        <div style={{ position: "absolute", bottom: 10, left: 12, right: 12 }}>
+          <h3 style={{ fontSize: 13, fontWeight: 700, color: "#f8fafc", lineHeight: 1.3, transition: "color 0.2s", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {t.name}
           </h3>
         </div>
       </div>
 
-      {/* Card body */}
-      <div className="p-4 flex-1 flex flex-col gap-3">
+      {/* Body */}
+      <div style={{ padding: "14px", flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
           {[
-            { label: "Prize",  value: t.prize_coins > 0 ? `${t.prize_coins.toLocaleString()} CP` : "—",      color: "var(--cp-gold)" },
-            { label: "Entry",  value: t.entry_fee === 0 ? "FREE" : `${t.entry_fee} CP`,                       color: t.entry_fee === 0 ? "var(--cp-mint)" : "var(--cp-text-2)" },
-            { label: "Mode",   value: t.mode || "SOLO",                                                        color: "var(--cp-cyan)" },
+            { label: "Prize",  value: t.prize_coins > 0 ? `${t.prize_coins.toLocaleString()} CP` : "—", color: "#f59e0b" },
+            { label: "Entry",  value: t.entry_fee === 0 ? "FREE" : `${t.entry_fee} CP`,                  color: t.entry_fee === 0 ? "#10b981" : "rgba(255,255,255,0.6)" },
+            { label: "Mode",   value: t.mode || "SOLO",                                                   color: "#06b6d4" },
           ].map(s => (
-            <div
-              key={s.label}
-              className="flex flex-col items-center py-2 rounded-xl border"
-              style={{ background: "var(--cp-surface-2)", borderColor: "var(--cp-border)" }}
-            >
-              <p className="text-[9px] font-medium uppercase tracking-wider mb-0.5" style={{ color: "var(--cp-text-4)" }}>
-                {s.label}
-              </p>
-              <p className="text-[11px] font-semibold truncate" style={{ color: s.color }}>
-                {s.value}
-              </p>
+            <div key={s.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 4px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <p style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 3 }}>{s.label}</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: s.color, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{s.value}</p>
             </div>
           ))}
         </div>
 
         {/* Players progress */}
         <div>
-          <div className="flex justify-between items-center mb-1.5">
-            <div className="flex items-center gap-1.5">
-              <Users size={11} style={{ color: "var(--cp-text-4)" }} />
-              <span className="text-[10px]" style={{ color: "var(--cp-text-4)" }}>Players</span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <Users size={10} style={{ color: "rgba(255,255,255,0.3)" }} />
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 500 }}>Players</span>
             </div>
-            <span className="text-[11px] font-semibold tabular-nums" style={{ color: "var(--cp-text-2)" }}>
-              {t.current_players ?? 0}
-              <span style={{ color: "var(--cp-text-4)" }}>/{t.max_players ?? "∞"}</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>
+              {t.current_players ?? 0}<span style={{ color: "rgba(255,255,255,0.25)" }}>/{t.max_players ?? "∞"}</span>
             </span>
           </div>
-          <div
-            className="h-1.5 rounded-full overflow-hidden"
-            style={{ background: "var(--cp-surface-3)" }}
-          >
+          <div style={{ height: 5, borderRadius: 5, background: "rgba(255,255,255,0.05)", overflow: "hidden" }}>
             <motion.div
-              className="h-full rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: i * 0.04 + 0.1 }}
-              style={{
-                background: progress >= 100
-                  ? "var(--cp-gold)"
-                  : "linear-gradient(90deg, var(--cp-accent), #a78bfa)",
-              }}
+              style={{ height: "100%", borderRadius: 5, background: progress >= 100 ? "#f59e0b" : "linear-gradient(90deg, #7C3AED, #a78bfa)" }}
             />
           </div>
         </div>
 
         {/* CTA */}
-        <Link to={`/tournaments/${t.id}`} className="mt-auto">
+        <Link to={`/tournaments/${t.id}`} style={{ marginTop: "auto", textDecoration: "none" }}>
           <button
-            className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:scale-[1.015] active:scale-[0.98]"
-            style={
-              isDone
-                ? { background: "var(--cp-surface-3)", color: "var(--cp-text-4)", border: "1px solid var(--cp-border)", cursor: t.status === "cancelled" ? "not-allowed" : "pointer" }
+            style={{
+              width: "100%", padding: "10px", borderRadius: 12, fontSize: 13, fontWeight: 700,
+              cursor: t.status === "cancelled" ? "not-allowed" : "pointer",
+              transition: "all 0.2s",
+              ...(isDone
+                ? { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.35)", border: "1px solid rgba(255,255,255,0.07)" }
                 : isLive
-                ? { background: "linear-gradient(135deg,#ef4444,#f97316)", color: "#fff", boxShadow: "0 4px 20px rgba(239,68,68,.25)" }
-                : { background: "linear-gradient(135deg,var(--cp-accent),#9333ea)", color: "#fff", boxShadow: "0 4px 20px var(--cp-accent-glow)" }
-            }
+                ? { background: "linear-gradient(135deg,#ef4444,#f97316)", color: "#fff", boxShadow: "0 4px 20px rgba(239,68,68,0.3)", border: "none" }
+                : { background: "linear-gradient(135deg,#7C3AED,#4f46e5)", color: "#fff", boxShadow: "0 4px 20px rgba(124,58,237,0.3)", border: "none" }
+              )
+            }}
           >
             {btnLabel}
           </button>
@@ -274,63 +224,59 @@ export default function Tournaments() {
   const openCount = tournaments.filter(t => t.status === "registration_open").length;
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 40 }}>
 
-      {/* ── Header ── */}
+      {/* ── Hero Header ── */}
       <motion.div
-        initial={{ opacity: 0, y: -8 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-col md:flex-row md:items-end justify-between gap-4"
+        style={{
+          position: "relative", borderRadius: 20, overflow: "hidden",
+          background: "linear-gradient(135deg, rgba(8,6,24,0.98), rgba(20,8,48,0.96), rgba(4,18,40,0.97))",
+          border: "1px solid rgba(255,255,255,0.08)", padding: "24px 28px",
+        }}
       >
-        <div>
-          {/* Status pills */}
-          <div className="flex items-center gap-2 mb-3">
-            {liveCount > 0 && (
-              <span
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border"
-                style={{ background: "rgba(239,68,68,.08)", borderColor: "rgba(239,68,68,.25)", color: "#ef4444" }}
-              >
-                <Radio size={9} />
-                {liveCount} Live
+        {/* Aurora orbs */}
+        <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(124,58,237,0.2)", filter: "blur(60px)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -20, left: "40%", width: 160, height: 160, borderRadius: "50%", background: "rgba(6,182,212,0.12)", filter: "blur(50px)", pointerEvents: "none" }} />
+
+        <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+          <div>
+            {/* Status pills */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              {liveCount > 0 && (
+                <span style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.28)", color: "#f87171", fontSize: 10, fontWeight: 700 }}>
+                  <Radio size={9} /> {liveCount} Live
+                </span>
+              )}
+              {openCount > 0 && (
+                <span style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", color: "#10b981", fontSize: 10, fontWeight: 700 }}>
+                  <Zap size={9} /> {openCount} Open
+                </span>
+              )}
+            </div>
+
+            <h1 style={{ fontSize: "clamp(22px,3.5vw,32px)", fontWeight: 800, color: "#f8fafc", margin: "0 0 5px", fontFamily: "'Space Grotesk', sans-serif", letterSpacing: "-0.02em" }}>
+              Tournament{" "}
+              <span style={{ background: "linear-gradient(135deg, #a78bfa, #67e8f9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                Arena
               </span>
-            )}
-            {openCount > 0 && (
-              <span
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border"
-                style={{ background: "var(--cp-mint-dim)", borderColor: "rgba(16,185,129,.25)", color: "var(--cp-mint)" }}
-              >
-                <Zap size={9} />
-                {openCount} Open
-              </span>
-            )}
+            </h1>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.38)", margin: 0 }}>Compete, win, and claim your rewards</p>
           </div>
 
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ color: "var(--cp-text-1)" }}>
-            Tournament{" "}
-            <span style={{
-              background: "linear-gradient(135deg, var(--cp-accent), #a78bfa)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}>
-              Arena
-            </span>
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--cp-text-3)" }}>
-            Compete, win, and claim your rewards
-          </p>
-        </div>
-
-        {/* Search */}
-        <div className="relative max-w-xs w-full md:w-auto">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--cp-text-4)" }} />
-          <input
-            type="text"
-            placeholder="Search tournaments…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="cp-input pl-9 w-full md:w-52 text-sm"
-          />
+          {/* Search */}
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <Search size={13} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", pointerEvents: "none" }} />
+            <input
+              type="text"
+              placeholder="Search tournaments…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ padding: "9px 12px 9px 36px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.06)", color: "#f8fafc", fontSize: 13, outline: "none", width: 200, fontFamily: "inherit" }}
+            />
+          </div>
         </div>
       </motion.div>
 
@@ -339,7 +285,8 @@ export default function Tournaments() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.4 }}
-        className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
+        style={{ display: "flex", alignItems: "center", gap: 8, overflowX: "auto", paddingBottom: 2 }}
+        className="scrollbar-hide"
       >
         {FILTERS.map(f => {
           const active = filter === f.key;
@@ -347,18 +294,20 @@ export default function Tournaments() {
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className="relative px-4 py-2 rounded-xl text-xs font-medium flex-shrink-0 border transition-all duration-200"
-              style={active
-                ? { background: "var(--cp-accent-dim)", borderColor: "var(--cp-accent-border)", color: "var(--cp-accent)" }
-                : { background: "var(--cp-surface-2)", borderColor: "var(--cp-border)", color: "var(--cp-text-3)" }
-              }
+              style={{
+                padding: "7px 16px", borderRadius: 12, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                flexShrink: 0, border: "1px solid", transition: "all 0.18s",
+                background: active ? "rgba(124,58,237,0.15)" : "rgba(255,255,255,0.04)",
+                borderColor: active ? "rgba(124,58,237,0.35)" : "rgba(255,255,255,0.08)",
+                color: active ? "#a78bfa" : "rgba(255,255,255,0.45)",
+              }}
             >
               {f.label}
             </button>
           );
         })}
         {search && (
-          <span className="text-[10px] font-medium ml-1 flex-shrink-0" style={{ color: "var(--cp-text-4)" }}>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontWeight: 500, flexShrink: 0, marginLeft: 4 }}>
             {filtered.length} result{filtered.length !== 1 && "s"}
           </span>
         )}
@@ -375,18 +324,15 @@ export default function Tournaments() {
             key="empty"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="cp-card py-20 text-center"
+            style={{ borderRadius: 20, padding: "80px 20px", textAlign: "center", background: "rgba(12,14,28,0.9)", border: "1px solid rgba(255,255,255,0.07)" }}
           >
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ background: "var(--cp-surface-2)", border: "1px solid var(--cp-border)" }}
-            >
-              <Sword size={24} style={{ color: "var(--cp-text-4)" }} />
+            <div style={{ width: 52, height: 52, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <Sword size={22} style={{ color: "rgba(255,255,255,0.25)" }} />
             </div>
-            <p className="text-sm font-medium" style={{ color: "var(--cp-text-3)" }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.5)", margin: "0 0 4px" }}>
               {search ? "No tournaments match your search" : "No tournaments found"}
             </p>
-            <p className="text-xs mt-1" style={{ color: "var(--cp-text-4)" }}>
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", margin: 0 }}>
               {search ? "Try a different search" : "Check back soon — new tournaments are added regularly"}
             </p>
           </motion.div>
