@@ -27,6 +27,7 @@ const Dashboard   = lazy(() => import("./pages/Dashboard"));
 const Tournaments = lazy(() => import("./pages/Tournaments"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const Profile     = lazy(() => import("./pages/Profile"));
+const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Support     = lazy(() => import("./pages/Support"));
 const Wallet      = lazy(() => import("./pages/Wallet"));
 const GlobalChat  = lazy(() => import("./pages/Globalchat"));
@@ -189,6 +190,7 @@ export default function App() {
             <Route path="/arena"         element={<Navigate to="/tournaments" replace />} />
             <Route path="/leaderboard"   element={<Leaderboard />} />
             <Route path="/profile"       element={<Profile />} />
+            <Route path="/profile/:id"   element={<UserProfile />} />
             <Route path="/support"       element={<Support />} />
             <Route path="/wallet"        element={<Wallet />} />
             <Route path="/chat"          element={<GlobalChat />} />
