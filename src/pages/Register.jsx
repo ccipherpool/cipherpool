@@ -61,7 +61,7 @@ const STEP_LABELS = ["Gaming ID", "Location"];
 // ══════════════════════════════════════════════════════════════════════════════
 export default function Register() {
   const navigate = useNavigate();
-  const { refreshCurrentUser } = useAuth();
+  const { refreshCurrentUser, setUser } = useAuth();
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -152,16 +152,20 @@ export default function Register() {
         };
         await supabase.from("profiles").upsert(profileUpdate, { onConflict: "id" });
         await supabase.from("wallets").upsert({ user_id: authData.user.id, balance: 50 }, { onConflict: "user_id" });
-        if (authData.session) await refreshCurrentUser?.(authData.user.id);
-      }
 
-      if (authData.session) {
-        // Email confirmation disabled — user is logged in, go straight to WhatsApp verification
-        navigate("/verify-whatsapp");
-      } else {
-        // Email confirmation enabled — user must confirm email first,
-        // then ProtectedRoute will gate them to /verify-whatsapp automatically
-        navigate("/verify-email", { state: { email: email.trim() } });
+        if (authData.session) {
+          // Email confirmation disabled — session is live immediately.
+          // Set user in context NOW (before onAuthStateChange fires async)
+          // so ProtectedRoute never sees user=null on the next render.
+          setUser(authData.user);
+          await refreshCurrentUser?.(authData.user.id);
+          navigate("/verify-whatsapp");
+        } else {
+          // Email confirmation enabled — no session yet.
+          // Send user to check-email page; after confirmation ProtectedRoute
+          // gates them to /verify-whatsapp automatically (whatsapp_verified=false).
+          navigate("/verify-email", { state: { email: email.trim() } });
+        }
       }
     } catch (err) {
       setError(err.message);

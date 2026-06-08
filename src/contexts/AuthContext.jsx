@@ -192,6 +192,7 @@ export function AuthProvider({ children }) {
       refreshCurrentUser,
       refreshProfile: refreshCurrentUser,
       refreshEconomyData,
+      setUser,
     }}>
       {children}
     </AuthContext.Provider>
