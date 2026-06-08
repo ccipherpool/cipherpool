@@ -289,8 +289,15 @@ export default function DeletedAccountsTab() {
     setAction(true);
     const { data, error } = await supabase.rpc("approve_reapproval", { p_request_id: requestId });
     setAction(false);
+    // Diagnostic: log RPC result so we can confirm profile was actually updated
+    console.log("[approve_reapproval] result:", { data, error });
     if (error || !data?.success) { showMsg("error", error?.message || data?.error || "Failed"); return; }
-    showMsg("success", "Account approved — user can now log in normally");
+    if (data?.rows_updated === 0) {
+      showMsg("error", `Approved request but profile not found (rows_updated=0, email=${data?.email}, new_user_id=${data?.new_user_id}). Check DB.`);
+      fetchData();
+      return;
+    }
+    showMsg("success", `Account approved — ${data?.rows_updated} profile(s) activated`);
     fetchData();
   };
 

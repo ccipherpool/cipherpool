@@ -79,6 +79,7 @@ export function AuthProvider({ children }) {
       setAccountStatus(status);
       if (status === "banned" || status === "pending_reapproval") {
         const currentPath = window.location.pathname;
+        console.warn(`[AuthContext] Blocking user — account_status="${status}", profile_id="${nextProfile?.id}", path="${currentPath}"`);
         if (!currentPath.startsWith("/account-restricted")) {
           // Sign out banned accounts immediately; keep session for pending_reapproval so they can see their info
           if (status === "banned") {
