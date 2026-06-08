@@ -56,7 +56,7 @@ export default function SubmitResultPanel({
   useEffect(() => {
     if (matchId || !tournamentId) return;
     supabase
-      .from("matches")
+      .from("tournament_matches")
       .select("id")
       .eq("tournament_id", tournamentId)
       .order("created_at", { ascending: false })

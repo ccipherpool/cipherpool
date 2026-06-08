@@ -248,17 +248,19 @@ export default function Profile() {
 
   const openEdit = () => {
     setEditForm({
-      username:       profile?.username       || "",
-      bio:            profile?.bio            || "",
-      free_fire_uid:  profile?.free_fire_uid  || profile?.free_fire_id || "",
-      free_fire_name: profile?.free_fire_name || "",
-      city:           profile?.city           || "",
-      country:        profile?.country        || "",
-      age:            profile?.age            || "",
-      instagram:      profile?.instagram      || "",
-      tiktok:         profile?.tiktok         || "",
-      discord:        profile?.discord        || "",
-      youtube:        profile?.youtube        || "",
+      username:          profile?.username          || "",
+      bio:               profile?.bio               || "",
+      free_fire_uid:     profile?.free_fire_uid     || profile?.free_fire_id || "",
+      free_fire_name:    profile?.free_fire_name    || "",
+      city:              profile?.city              || "",
+      country:           profile?.country           || "",
+      age:               profile?.age               || "",
+      instagram:         profile?.instagram         || "",
+      tiktok:            profile?.tiktok            || "",
+      discord:           profile?.discord           || "",
+      youtube:           profile?.youtube           || "",
+      phone_number:      profile?.phone_number      || "",
+      whatsapp_enabled:  profile?.whatsapp_enabled  ?? false,
     });
     setAvatarPreview(null); setAvatarFile(null);
     setSelectedStoreAvatar(null); setAvatarMode("photo");
@@ -289,10 +291,12 @@ export default function Profile() {
       city:            editForm.city.trim()            || null,
       country:         editForm.country.trim()         || null,
       age:             editForm.age ? Number(editForm.age) : null,
-      instagram:       editForm.instagram.trim()       || null,
-      tiktok:          editForm.tiktok.trim()          || null,
-      discord:         editForm.discord.trim()         || null,
-      youtube:         editForm.youtube.trim()         || null,
+      instagram:         editForm.instagram.trim()         || null,
+      tiktok:            editForm.tiktok.trim()            || null,
+      discord:           editForm.discord.trim()           || null,
+      youtube:           editForm.youtube.trim()           || null,
+      phone_number:      editForm.phone_number?.trim()     || null,
+      whatsapp_enabled:  editForm.whatsapp_enabled         ?? false,
       ...(avatarUrl !== profile?.avatar_url ? { avatar_url: avatarUrl } : {}),
     }).eq("id", profile.id);
     if (!error) {
@@ -949,6 +953,19 @@ export default function Profile() {
                       <Field label="Discord"   value={editForm.discord}   onChange={e => setEditForm(f => ({ ...f, discord: e.target.value }))}   placeholder="YourTag#0000" optional />
                       <Field label="YouTube"   value={editForm.youtube}   onChange={e => setEditForm(f => ({ ...f, youtube: e.target.value }))}   placeholder="https://youtube.com/yourchannel" optional />
                     </div>
+                  </div>
+
+                  {/* WhatsApp */}
+                  <div style={{ padding: "12px 14px", borderRadius: 10, background: "rgba(37,211,102,0.03)", border: "1px solid rgba(37,211,102,0.12)" }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: "rgba(37,211,102,0.55)", letterSpacing: 1, textTransform: "uppercase", margin: "0 0 12px" }}>WhatsApp Alerts (optional)</p>
+                    <Field label="Phone Number" value={editForm.phone_number} onChange={e => setEditForm(f => ({ ...f, phone_number: e.target.value }))} placeholder="+212600000000" optional />
+                    <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, cursor: "pointer" }}>
+                      <div style={{ position: "relative", width: 36, height: 20, borderRadius: 10, background: editForm.whatsapp_enabled ? "rgba(37,211,102,0.7)" : "rgba(255,255,255,0.12)", transition: "background 0.2s", flexShrink: 0 }}
+                        onClick={() => setEditForm(f => ({ ...f, whatsapp_enabled: !f.whatsapp_enabled }))}>
+                        <div style={{ position: "absolute", top: 3, left: editForm.whatsapp_enabled ? 19 : 3, width: 14, height: 14, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+                      </div>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Receive WhatsApp Alerts</span>
+                    </label>
                   </div>
 
                   {/* Actions */}

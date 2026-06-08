@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../../lib/supabase";
+import { sendWhatsApp } from "../../../lib/twilio";
 import {
   Send, Bell, Users, Trophy, ShieldCheck, Star,
   Megaphone, AlertTriangle, Zap, RefreshCw,
@@ -549,11 +550,15 @@ export default function NotificationsTab() {
   const [showPreview, setShowPreview] = useState(true);
   const [estimatedCount, setEstimatedCount] = useState(null);
   const [deliveryReport, setDeliveryReport] = useState(null);
-  const [activeView, setActiveView]   = useState("broadcast"); // "broadcast" | "templates" | "logs"
+  const [activeView, setActiveView]   = useState("broadcast"); // "broadcast" | "templates" | "logs" | "whatsapp"
   const [templates, setTemplates]     = useState([]);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [emailLogs, setEmailLogs]     = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [waPhone, setWaPhone]         = useState("");
+  const [waMessage, setWaMessage]     = useState("");
+  const [waSending, setWaSending]     = useState(false);
+  const [waResult, setWaResult]       = useState(null);
 
   useEffect(() => { fetchHistory(); fetchDropdownData(); fetchTemplates(); }, []);
   useEffect(() => { estimateAudience(); }, [form.targetType, form.targetRole, form.tournamentId, form.clanId, form.teamId, selectedUsers]);
@@ -838,13 +843,14 @@ export default function NotificationsTab() {
       {/* ── View tabs ───────────────────────────────────── */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, padding: "4px", background: C.s2, borderRadius: 10, width: "fit-content" }}>
         {[
-          { id: "broadcast", label: "Broadcast", icon: <Bell size={12} /> },
+          { id: "broadcast", label: "Broadcast",       icon: <Bell size={12} /> },
           { id: "templates", label: "Email Templates", icon: <Mail size={12} /> },
           { id: "logs",      label: "Email Logs",      icon: <MailCheck size={12} /> },
+          { id: "whatsapp",  label: "WhatsApp Test",   icon: <span style={{ fontSize: 12 }}>💬</span> },
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => { setActiveView(tab.id); if (tab.id === "logs") fetchEmailLogs(); }}
+            onClick={() => { setActiveView(tab.id); if (tab.id === "logs") fetchEmailLogs(); setWaResult(null); }}
             style={{
               display: "flex", alignItems: "center", gap: 6,
               padding: "7px 14px", borderRadius: 8, border: "none", cursor: "pointer",
@@ -1563,6 +1569,71 @@ export default function NotificationsTab() {
                 </span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── WhatsApp Test view ───────────────────────────── */}
+      {activeView === "whatsapp" && (
+        <div style={{ maxWidth: 520 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(37,211,102,0.12)", border: "1px solid rgba(37,211,102,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
+              💬
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>WhatsApp Test</div>
+              <div style={{ fontSize: 11, color: C.text3 }}>Send a test WhatsApp message via Twilio</div>
+            </div>
+          </div>
+
+          <div style={{ background: C.surface, border: `1px solid ${C.b2}`, borderRadius: 14, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+                Phone Number (international format)
+              </label>
+              <input
+                value={waPhone}
+                onChange={e => setWaPhone(e.target.value)}
+                placeholder="+212600000000"
+                style={{ width: "100%", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 8, color: C.text, fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
+                Message
+              </label>
+              <textarea
+                value={waMessage}
+                onChange={e => setWaMessage(e.target.value)}
+                placeholder="Type your WhatsApp message…"
+                rows={4}
+                style={{ width: "100%", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 8, color: C.text, fontSize: 13, padding: "9px 12px", outline: "none", resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }}
+              />
+            </div>
+
+            {waResult && (
+              <div style={{ padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: waResult.success ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", color: waResult.success ? C.green : C.red, border: `1px solid ${waResult.success ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}` }}>
+                {waResult.success ? `✅ Sent! SID: ${waResult.sid}` : `❌ Failed: ${waResult.error}`}
+              </div>
+            )}
+
+            <button
+              disabled={waSending || !waPhone.trim() || !waMessage.trim()}
+              onClick={async () => {
+                setWaSending(true);
+                setWaResult(null);
+                const result = await sendWhatsApp({ phone: waPhone.trim(), message: waMessage.trim() });
+                setWaResult(result);
+                setWaSending(false);
+              }}
+              style={{ padding: "10px 20px", borderRadius: 9, border: "none", background: waSending || !waPhone.trim() || !waMessage.trim() ? "rgba(37,211,102,0.15)" : "rgba(37,211,102,0.8)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: waSending || !waPhone.trim() || !waMessage.trim() ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}
+            >
+              💬 {waSending ? "Sending…" : "Send WhatsApp"}
+            </button>
+          </div>
+
+          <div style={{ marginTop: 14, padding: 14, borderRadius: 10, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.15)", fontSize: 11, color: C.amber, lineHeight: 1.7 }}>
+            <strong>Requirements:</strong> The recipient must first message your Twilio sandbox number (or be in an approved WhatsApp Business template). Phone must be in E.164 format (e.g. +212XXXXXXXXX).
           </div>
         </div>
       )}
