@@ -555,13 +555,24 @@ export default function NotificationsTab() {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [emailLogs, setEmailLogs]     = useState([]);
   const [logsLoading, setLogsLoading] = useState(false);
-  const [waPhone, setWaPhone]         = useState("");
-  const [waMessage, setWaMessage]     = useState("");
-  const [waSending, setWaSending]     = useState(false);
-  const [waResult, setWaResult]       = useState(null);
+  // ── WhatsApp Broadcast ──────────────────────────────────────────────
+  const [waForm, setWaForm]           = useState({ message: "", targetType: "all_users", targetRole: "", tournamentId: "", clanId: "", teamId: "" });
+  const [waSelUsers, setWaSelUsers]   = useState([]);
+  const [waEstCount, setWaEstCount]   = useState(null);
+  const [waBcasting, setWaBcasting]   = useState(false);
+  const [waReport, setWaReport]       = useState(null);
+  const [waHistory, setWaHistory]     = useState([]);
+  const [waLoadingH, setWaLoadingH]   = useState(false);
+  const [waShowDev, setWaShowDev]     = useState(false);
+  // Dev test (hidden under "Developer" section)
+  const [waDevPhone, setWaDevPhone]   = useState("");
+  const [waDevMsg, setWaDevMsg]       = useState("");
+  const [waDevSending, setWaDevSending] = useState(false);
+  const [waDevResult, setWaDevResult] = useState(null);
 
   useEffect(() => { fetchHistory(); fetchDropdownData(); fetchTemplates(); }, []);
   useEffect(() => { estimateAudience(); }, [form.targetType, form.targetRole, form.tournamentId, form.clanId, form.teamId, selectedUsers]);
+  useEffect(() => { if (activeView === "whatsapp") estimateWaAudience(); }, [waForm.targetType, waForm.targetRole, waForm.tournamentId, waForm.clanId, waForm.teamId, waSelUsers, activeView]);
   // Re-fetch tournaments each time the user picks "Tournament Players" (in case mount fetch failed)
   useEffect(() => {
     if (form.targetType === "tournament_participants" && tournaments.length === 0) {
@@ -721,6 +732,117 @@ export default function NotificationsTab() {
     }
   };
 
+  /* ─── WhatsApp Broadcast helpers ─────────────────────────── */
+  const setWa = (k, v) => setWaForm(p => ({ ...p, [k]: v }));
+
+  const estimateWaAudience = async () => {
+    try {
+      const wa = (q) => q
+        .eq("whatsapp_verified", true)
+        .not("whatsapp_number", "is", null)
+        .neq("account_status", "banned")
+        .neq("account_status", "deleted");
+      let count = null;
+      if (waForm.targetType === "all_users") {
+        const { count: c } = await wa(supabase.from("profiles").select("*", { count: "exact", head: true }));
+        count = c;
+      } else if (waForm.targetType === "online_users") {
+        const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+        const { data: pres } = await supabase.from("user_presence").select("user_id").in("status", ["online","idle"]).gte("last_seen", cutoff);
+        if (!pres?.length) { count = 0; }
+        else { const { count: c } = await wa(supabase.from("profiles").select("*", { count: "exact", head: true }).in("id", pres.map(p => p.user_id))); count = c; }
+      } else if (waForm.targetType === "admins") {
+        const { count: c } = await wa(supabase.from("profiles").select("*", { count: "exact", head: true }).in("role", ["admin","super_admin","founder","fondateur"]));
+        count = c;
+      } else if (waForm.targetType === "founders") {
+        const { count: c } = await wa(supabase.from("profiles").select("*", { count: "exact", head: true }).in("role", ["founder","fondateur"]));
+        count = c;
+      } else if (waForm.targetType === "specific_role" && waForm.targetRole) {
+        const { count: c } = await wa(supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", waForm.targetRole));
+        count = c;
+      } else if (waForm.targetType === "specific_users") {
+        if (!waSelUsers.length) count = 0;
+        else { const { count: c } = await wa(supabase.from("profiles").select("*", { count: "exact", head: true }).in("id", waSelUsers.map(u => u.id))); count = c; }
+      } else if (waForm.targetType === "tournament_participants" && waForm.tournamentId) {
+        const { data: tp } = await supabase.from("tournament_participants").select("user_id").eq("tournament_id", waForm.tournamentId);
+        if (!tp?.length) count = 0;
+        else { const { count: c } = await wa(supabase.from("profiles").select("*", { count: "exact", head: true }).in("id", tp.map(p => p.user_id))); count = c; }
+      } else if (waForm.targetType === "clan_members" && waForm.clanId) {
+        const { data: cm } = await supabase.from("clan_members").select("user_id").eq("clan_id", waForm.clanId).catch(() => ({ data: null }));
+        if (!cm?.length) count = 0;
+        else { const { count: c } = await wa(supabase.from("profiles").select("*", { count: "exact", head: true }).in("id", cm.map(m => m.user_id))); count = c; }
+      } else if (waForm.targetType === "team_members" && waForm.teamId) {
+        const { data: tm } = await supabase.from("team_members").select("user_id").eq("team_id", waForm.teamId).catch(() => ({ data: null }));
+        if (!tm?.length) count = 0;
+        else { const { count: c } = await wa(supabase.from("profiles").select("*", { count: "exact", head: true }).in("id", tm.map(m => m.user_id))); count = c; }
+      }
+      setWaEstCount(count);
+    } catch { setWaEstCount(null); }
+  };
+
+  const fetchWaHistory = async () => {
+    setWaLoadingH(true);
+    try {
+      const { data } = await supabase.from("whatsapp_broadcasts").select("*").order("created_at", { ascending: false }).limit(20);
+      setWaHistory(data || []);
+    } catch { /* table may not exist yet */ } finally { setWaLoadingH(false); }
+  };
+
+  const handleWaBroadcast = async () => {
+    if (!waForm.message.trim()) { showMsg(false, "Message is required."); return; }
+    if (waForm.targetType === "specific_users"          && !waSelUsers.length)     { showMsg(false, "Select at least one user."); return; }
+    if (waForm.targetType === "specific_role"           && !waForm.targetRole)     { showMsg(false, "Select a role."); return; }
+    if (waForm.targetType === "tournament_participants" && !waForm.tournamentId)   { showMsg(false, "Select a tournament."); return; }
+    if (waForm.targetType === "clan_members"            && !waForm.clanId)         { showMsg(false, "Select a clan."); return; }
+    if (waForm.targetType === "team_members"            && !waForm.teamId)         { showMsg(false, "Select a team."); return; }
+
+    setWaBcasting(true);
+    setWaReport(null);
+    try {
+      const filters = {};
+      if (waForm.targetType === "specific_role")           filters.role           = waForm.targetRole;
+      if (waForm.targetType === "tournament_participants") filters.tournament_id  = waForm.tournamentId;
+      if (waForm.targetType === "clan_members")            filters.clan_id        = waForm.clanId;
+      if (waForm.targetType === "team_members")            filters.team_id        = waForm.teamId;
+      if (waForm.targetType === "specific_users")          filters.user_ids       = waSelUsers.map(u => u.id);
+
+      const token = await getToken();
+      const { data, error } = await supabase.functions.invoke("send-whatsapp-broadcast", {
+        body:    { message: waForm.message.trim(), target_type: waForm.targetType, target_filters: filters },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (error) { const d = await extractFnError(error); throw new Error(d); }
+      if (!data?.success) throw new Error(data?.error || "Broadcast failed");
+      setWaReport(data);
+      setWaForm(p => ({ ...p, message: "" }));
+      setWaSelUsers([]);
+      await fetchWaHistory();
+    } catch (err) {
+      showMsg(false, err.message || "WhatsApp broadcast failed.");
+    } finally {
+      setWaBcasting(false);
+    }
+  };
+
+  const handleWaDevTest = async () => {
+    if (!waDevPhone.trim() || !waDevMsg.trim()) return;
+    setWaDevSending(true);
+    setWaDevResult(null);
+    try {
+      const token = await getToken();
+      const { data, error } = await supabase.functions.invoke("send-whatsapp-broadcast", {
+        body:    { test_phone: waDevPhone.trim(), test_message: waDevMsg.trim() },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (error) { const d = await extractFnError(error); throw new Error(d); }
+      setWaDevResult(data);
+    } catch (err) {
+      setWaDevResult({ success: false, error: err.message });
+    } finally {
+      setWaDevSending(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!form.title.trim() || !form.message.trim()) { showMsg(false, "Title and message are required."); return; }
     if (!form.sendInApp && !form.sendEmail) { showMsg(false, "Enable at least one delivery channel (in-app or email)."); return; }
@@ -846,11 +968,11 @@ export default function NotificationsTab() {
           { id: "broadcast", label: "Broadcast",       icon: <Bell size={12} /> },
           { id: "templates", label: "Email Templates", icon: <Mail size={12} /> },
           { id: "logs",      label: "Email Logs",      icon: <MailCheck size={12} /> },
-          { id: "whatsapp",  label: "WhatsApp Test",   icon: <span style={{ fontSize: 12 }}>💬</span> },
+          { id: "whatsapp",  label: "WhatsApp",          icon: <span style={{ fontSize: 12 }}>💬</span> },
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => { setActiveView(tab.id); if (tab.id === "logs") fetchEmailLogs(); setWaResult(null); }}
+            onClick={() => { setActiveView(tab.id); if (tab.id === "logs") fetchEmailLogs(); if (tab.id === "whatsapp") fetchWaHistory(); setWaDevResult(null); }}
             style={{
               display: "flex", alignItems: "center", gap: 6,
               padding: "7px 14px", borderRadius: 8, border: "none", cursor: "pointer",
@@ -1573,70 +1695,332 @@ export default function NotificationsTab() {
         </div>
       )}
 
-      {/* ── WhatsApp Test view ───────────────────────────── */}
-      {activeView === "whatsapp" && (
-        <div style={{ maxWidth: 520 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(37,211,102,0.12)", border: "1px solid rgba(37,211,102,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-              💬
-            </div>
+      {/* ── WhatsApp Broadcast view ──────────────────────── */}
+      {activeView === "whatsapp" && (<>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(37,211,102,0.12)", border: "1px solid rgba(37,211,102,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>💬</div>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>WhatsApp Test</div>
-              <div style={{ fontSize: 11, color: C.text3 }}>Send a test WhatsApp message via Twilio</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>WhatsApp Broadcast Center</div>
+              <div style={{ fontSize: 11, color: C.text3 }}>Send to any audience · only verified WhatsApp numbers receive messages</div>
             </div>
           </div>
+          <button onClick={fetchWaHistory} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.border}`, background: "transparent", color: C.text3, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} className="hover:!bg-white/5">
+            <RefreshCw size={13} />
+          </button>
+        </div>
 
-          <div style={{ background: C.surface, border: `1px solid ${C.b2}`, borderRadius: 14, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
-            <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
-                Phone Number (international format)
-              </label>
-              <input
-                value={waPhone}
-                onChange={e => setWaPhone(e.target.value)}
-                placeholder="+212600000000"
-                style={{ width: "100%", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 8, color: C.text, fontSize: 13, padding: "9px 12px", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
-              />
+        {/* Delivery report */}
+        <AnimatePresence>
+          {waReport && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              style={{ marginBottom: 16, padding: "14px 18px", borderRadius: 12, background: "rgba(37,211,102,0.06)", border: "1px solid rgba(37,211,102,0.2)", position: "relative" }}
+            >
+              <button onClick={() => setWaReport(null)} style={{ position: "absolute", top: 10, right: 10, background: "none", border: "none", color: C.text3, cursor: "pointer" }}><X size={12} /></button>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#25d366", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                <CheckCircle size={12} /> WhatsApp Broadcast Sent
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                {[
+                  { label: "Total",  value: waReport.total,  color: C.text2 },
+                  { label: "Sent",   value: waReport.sent,   color: "#25d366" },
+                  { label: "Failed", value: waReport.failed, color: waReport.failed > 0 ? C.red : C.text3 },
+                ].map(s => (
+                  <div key={s.label} style={{ background: C.s2, borderRadius: 9, padding: "10px 14px", border: `1px solid ${C.border}` }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.value}</div>
+                    <div style={{ fontSize: 10, color: C.text3, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              {waReport.note && <div style={{ marginTop: 8, fontSize: 11, color: C.amber }}>{waReport.note}</div>}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 18 }}>
+
+          {/* LEFT: Compose */}
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "22px 24px" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: C.text2, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
+              <Send size={12} color="#25d366" /> Compose WhatsApp Message
             </div>
-            <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 5 }}>
-                Message
+
+            {/* Message */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ fontSize: 10.5, fontWeight: 700, color: C.text3, letterSpacing: 1.2, textTransform: "uppercase", display: "block", marginBottom: 8 }}>
+                Message <span style={{ color: C.text3, fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>— supports *bold*, _italic_, emoji</span>
               </label>
               <textarea
-                value={waMessage}
-                onChange={e => setWaMessage(e.target.value)}
-                placeholder="Type your WhatsApp message…"
-                rows={4}
-                style={{ width: "100%", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 8, color: C.text, fontSize: 13, padding: "9px 12px", outline: "none", resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }}
+                value={waForm.message}
+                onChange={e => setWa("message", e.target.value)}
+                placeholder="Write your WhatsApp message…&#10;&#10;*Bold text* · _italic_ · 🔥 emoji supported"
+                maxLength={1000}
+                rows={7}
+                style={{ width: "100%", padding: "10px 13px", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 10, color: C.text, fontSize: 13, outline: "none", resize: "vertical", minHeight: 140, fontFamily: "inherit", lineHeight: 1.6, boxSizing: "border-box" }}
+                className="focus:!border-green-500/40"
               />
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+                <span style={{ fontSize: 10, color: C.text3 }}>{waForm.message.length}/1000</span>
+              </div>
             </div>
 
-            {waResult && (
-              <div style={{ padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: waResult.success ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", color: waResult.success ? C.green : C.red, border: `1px solid ${waResult.success ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}` }}>
-                {waResult.success ? `✅ Sent! SID: ${waResult.sid}` : `❌ Failed: ${waResult.error}`}
+            {/* Audience */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ fontSize: 10.5, fontWeight: 700, color: C.text3, letterSpacing: 1.2, textTransform: "uppercase", display: "block", marginBottom: 10 }}>
+                Target Audience <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>— only users with verified WhatsApp</span>
+              </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 12 }}>
+                {targetGroups.map(group => (
+                  <div key={group.label}>
+                    <div style={{ fontSize: 9.5, color: C.text3, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6, paddingLeft: 2 }}>{group.label}</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                      {group.items.map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => { setWa("targetType", t.id); setWaSelUsers([]); }}
+                          style={{
+                            padding: "9px 12px", borderRadius: 10, textAlign: "left",
+                            border: `1px solid ${waForm.targetType === t.id ? t.color + "45" : C.border}`,
+                            background: waForm.targetType === t.id ? t.color + "0c" : "transparent",
+                            cursor: "pointer", display: "flex", alignItems: "center", gap: 10, transition: "all 0.14s",
+                          }}
+                          className="hover:!bg-white/[0.025]"
+                        >
+                          <div style={{ width: 28, height: 28, borderRadius: 7, background: waForm.targetType === t.id ? t.color + "18" : C.s3, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.14s" }}>
+                            <t.icon size={12} color={waForm.targetType === t.id ? t.color : C.text3} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: waForm.targetType === t.id ? C.text : C.text2 }}>{t.label}</div>
+                            <div style={{ fontSize: 10.5, color: C.text3 }}>{t.desc}</div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            {waForm.targetType === t.id && waEstCount !== null && (
+                              <span style={{ fontSize: 10, fontWeight: 700, color: "#25d366", background: "rgba(37,211,102,0.1)", border: "1px solid rgba(37,211,102,0.2)", padding: "1px 8px", borderRadius: 20 }}>
+                                ~{waEstCount.toLocaleString()} 💬
+                              </span>
+                            )}
+                            {waForm.targetType === t.id && <ArrowRight size={11} color={t.color} />}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
 
-            <button
-              disabled={waSending || !waPhone.trim() || !waMessage.trim()}
-              onClick={async () => {
-                setWaSending(true);
-                setWaResult(null);
-                const result = await sendWhatsApp({ phone: waPhone.trim(), message: waMessage.trim() });
-                setWaResult(result);
-                setWaSending(false);
+              {/* Sub-selectors */}
+              <AnimatePresence>
+                {waForm.targetType === "specific_role" && (
+                  <motion.div key="wa-role" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
+                    <div style={{ paddingTop: 4 }}>
+                      <label style={{ fontSize: 10.5, fontWeight: 700, color: C.text3, letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Choose Role</label>
+                      <select value={waForm.targetRole} onChange={e => setWa("targetRole", e.target.value)} style={{ width: "100%", padding: "10px 13px", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 10, color: waForm.targetRole ? C.text : C.text3, fontSize: 13, outline: "none", cursor: "pointer" }}>
+                        <option value="">Select a role…</option>
+                        {ROLE_OPTIONS.map(r => <option key={r.v} value={r.v}>{r.l}</option>)}
+                      </select>
+                    </div>
+                  </motion.div>
+                )}
+                {waForm.targetType === "tournament_participants" && (
+                  <motion.div key="wa-tournament" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
+                    <div style={{ paddingTop: 4 }}>
+                      <label style={{ fontSize: 10.5, fontWeight: 700, color: "#8b5cf6", letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Choose Tournament</label>
+                      <select value={waForm.tournamentId} onChange={e => setWa("tournamentId", e.target.value)} style={{ width: "100%", padding: "10px 13px", background: C.s2, border: "1px solid rgba(139,92,246,0.35)", borderRadius: 10, color: waForm.tournamentId ? C.text : C.text3, fontSize: 13, outline: "none", cursor: "pointer" }}>
+                        <option value="">— Select a tournament —</option>
+                        {tournaments.map(t => <option key={t.id} value={t.id}>{t.name} [{(t.status || "").replace(/_/g," ")}]</option>)}
+                      </select>
+                    </div>
+                  </motion.div>
+                )}
+                {waForm.targetType === "clan_members" && (
+                  <motion.div key="wa-clan" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
+                    <div style={{ paddingTop: 4 }}>
+                      <label style={{ fontSize: 10.5, fontWeight: 700, color: C.text3, letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Choose Clan</label>
+                      <select value={waForm.clanId} onChange={e => setWa("clanId", e.target.value)} style={{ width: "100%", padding: "10px 13px", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 10, color: waForm.clanId ? C.text : C.text3, fontSize: 13, outline: "none", cursor: "pointer" }}>
+                        <option value="">Select a clan…</option>
+                        {clans.map(c => <option key={c.id} value={c.id}>[{c.tag}] {c.name}</option>)}
+                      </select>
+                    </div>
+                  </motion.div>
+                )}
+                {waForm.targetType === "team_members" && (
+                  <motion.div key="wa-team" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
+                    <div style={{ paddingTop: 4 }}>
+                      <label style={{ fontSize: 10.5, fontWeight: 700, color: C.text3, letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Choose Team</label>
+                      <select value={waForm.teamId} onChange={e => setWa("teamId", e.target.value)} style={{ width: "100%", padding: "10px 13px", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 10, color: waForm.teamId ? C.text : C.text3, fontSize: 13, outline: "none", cursor: "pointer" }}>
+                        <option value="">Select a team…</option>
+                        {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                      </select>
+                    </div>
+                  </motion.div>
+                )}
+                {waForm.targetType === "specific_users" && (
+                  <motion.div key="wa-users" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
+                    <div style={{ paddingTop: 4 }}>
+                      <label style={{ fontSize: 10.5, fontWeight: 700, color: C.green, letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 8 }}>Search &amp; Pick Users</label>
+                      <UserPicker
+                        selectedUsers={waSelUsers}
+                        onSelect={u => setWaSelUsers(p => p.find(x => x.id === u.id) ? p : [...p, u])}
+                        onRemove={id => setWaSelUsers(p => p.filter(u => u.id !== id))}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Send button */}
+            <motion.button
+              whileTap={!waBcasting && waForm.message.trim() ? { scale: 0.98 } : {}}
+              onClick={handleWaBroadcast}
+              disabled={waBcasting || !waForm.message.trim()}
+              style={{
+                width: "100%", padding: "14px", borderRadius: 12, border: "none",
+                background: waBcasting || !waForm.message.trim()
+                  ? "rgba(37,211,102,0.15)"
+                  : "linear-gradient(135deg, #128c7e 0%, #25d366 100%)",
+                color: waBcasting || !waForm.message.trim() ? "rgba(255,255,255,0.3)" : "#fff",
+                fontSize: 13, fontWeight: 800,
+                cursor: waBcasting ? "wait" : !waForm.message.trim() ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                boxShadow: !waBcasting && waForm.message.trim() ? "0 4px 24px rgba(37,211,102,0.3)" : "none",
+                transition: "all 0.2s", letterSpacing: "0.05em", textTransform: "uppercase",
               }}
-              style={{ padding: "10px 20px", borderRadius: 9, border: "none", background: waSending || !waPhone.trim() || !waMessage.trim() ? "rgba(37,211,102,0.15)" : "rgba(37,211,102,0.8)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: waSending || !waPhone.trim() || !waMessage.trim() ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 8 }}
             >
-              💬 {waSending ? "Sending…" : "Send WhatsApp"}
-            </button>
+              {waBcasting ? (
+                <><div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid #fff", borderRadius: "50%", animation: "nt-spin 0.8s linear infinite" }} /> Sending…</>
+              ) : (
+                <>💬 Send WhatsApp Broadcast
+                  {waEstCount !== null && (
+                    <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>
+                      · {waEstCount.toLocaleString()} recipient{waEstCount !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                </>
+              )}
+            </motion.button>
           </div>
 
-          <div style={{ marginTop: 14, padding: 14, borderRadius: 10, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.15)", fontSize: 11, color: C.amber, lineHeight: 1.7 }}>
-            <strong>Requirements:</strong> The recipient must first message your Twilio sandbox number (or be in an approved WhatsApp Business template). Phone must be in E.164 format (e.g. +212XXXXXXXXX).
+          {/* RIGHT: Preview + History */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+            {/* WhatsApp chat preview */}
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden" }}>
+              <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, fontSize: 10.5, fontWeight: 800, color: C.text2, letterSpacing: "0.1em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 7 }}>
+                <Eye size={12} color="#25d366" /> Message Preview
+              </div>
+              <div style={{ padding: 14, background: "#0a1a0f" }}>
+                {/* Chat header */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, padding: "8px 12px", background: "#128c7e", borderRadius: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#075e54", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⚡</div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#fff" }}>CipherPool Arena</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)" }}>WhatsApp Business</div>
+                  </div>
+                </div>
+                {/* Message bubble */}
+                <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                  <div style={{ maxWidth: "85%", background: "#1f2c34", borderRadius: "0 12px 12px 12px", padding: "10px 14px", boxShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>
+                    <div style={{ fontSize: 12.5, color: "#e9edef", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                      {waForm.message || <span style={{ color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>Your message will appear here…</span>}
+                    </div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", textAlign: "right", marginTop: 4 }}>
+                      {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} ✓✓
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Broadcast History */}
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, flex: 1, overflow: "hidden" }}>
+              <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 7, fontSize: 10.5, fontWeight: 800, color: C.text2, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                <Clock size={12} color="#25d366" /> Sent History
+              </div>
+              <div style={{ maxHeight: 340, overflowY: "auto" }}>
+                {waLoadingH ? (
+                  <div style={{ display: "flex", justifyContent: "center", padding: "32px 0" }}>
+                    <div style={{ width: 20, height: 20, border: "2px solid rgba(37,211,102,0.2)", borderTop: "2px solid #25d366", borderRadius: "50%", animation: "nt-spin 0.8s linear infinite" }} />
+                  </div>
+                ) : waHistory.length === 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "40px 16px" }}>
+                    <span style={{ fontSize: 28 }}>💬</span>
+                    <p style={{ fontSize: 12, color: C.text3, margin: 0 }}>No WhatsApp broadcasts yet</p>
+                  </div>
+                ) : waHistory.map(b => (
+                  <div key={b.id} style={{ display: "flex", gap: 10, padding: "11px 14px", alignItems: "flex-start", borderBottom: `1px solid ${C.border}` }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(37,211,102,0.1)", border: "1px solid rgba(37,211,102,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 14 }}>💬</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, color: C.text, display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden", marginBottom: 3 }}>
+                        {b.message}
+                      </div>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 9.5, fontWeight: 600, padding: "1px 6px", borderRadius: 5, background: "rgba(37,211,102,0.1)", color: "#25d366" }}>
+                          {(b.target_type || "").replace(/_/g, " ")}
+                        </span>
+                        <span style={{ fontSize: 10, color: C.green }}>✓ {b.sent_count} sent</span>
+                        {b.failed_count > 0 && <span style={{ fontSize: 10, color: C.red }}>✗ {b.failed_count} failed</span>}
+                        <span style={{ fontSize: 10, color: C.text3 }}>{new Date(b.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Developer Test Section */}
+        <div style={{ marginTop: 20 }}>
+          <button
+            onClick={() => setWaShowDev(p => !p)}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: "transparent", color: C.text3, cursor: "pointer", fontSize: 11, fontWeight: 600 }}
+          >
+            <FlaskConical size={11} />
+            {waShowDev ? "Hide" : "Show"} Developer Test
+            <ChevronDown size={11} style={{ transform: waShowDev ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+          </button>
+          <AnimatePresence>
+            {waShowDev && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
+                <div style={{ marginTop: 10, background: C.surface, border: `1px solid ${C.b2}`, borderRadius: 12, padding: 16, maxWidth: 480 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: C.text3, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 12 }}>Single Message Test</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <input
+                      value={waDevPhone}
+                      onChange={e => setWaDevPhone(e.target.value)}
+                      placeholder="+212600000000"
+                      style={{ width: "100%", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 8, color: C.text, fontSize: 12, padding: "8px 11px", outline: "none", boxSizing: "border-box" }}
+                    />
+                    <textarea
+                      value={waDevMsg}
+                      onChange={e => setWaDevMsg(e.target.value)}
+                      placeholder="Test message…"
+                      rows={3}
+                      style={{ width: "100%", background: C.s2, border: `1px solid ${C.b2}`, borderRadius: 8, color: C.text, fontSize: 12, padding: "8px 11px", outline: "none", resize: "vertical", boxSizing: "border-box" }}
+                    />
+                    {waDevResult && (
+                      <div style={{ padding: "8px 12px", borderRadius: 7, fontSize: 12, fontWeight: 600, background: waDevResult.success ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.08)", color: waDevResult.success ? C.green : C.red, border: `1px solid ${waDevResult.success ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)"}` }}>
+                        {waDevResult.success ? "✅ Sent successfully" : `❌ ${waDevResult.error}`}
+                      </div>
+                    )}
+                    <button
+                      disabled={waDevSending || !waDevPhone.trim() || !waDevMsg.trim()}
+                      onClick={handleWaDevTest}
+                      style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: waDevSending || !waDevPhone.trim() || !waDevMsg.trim() ? "rgba(37,211,102,0.12)" : "rgba(37,211,102,0.6)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                    >
+                      💬 {waDevSending ? "Sending…" : "Send Test"}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </>)}
     </motion.div>
   );
 }
