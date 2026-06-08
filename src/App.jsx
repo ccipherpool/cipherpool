@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, Component } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Link, Outlet } from "react-router-dom";
 import { Button } from "./components/ui/Button";
 import { NotificationProvider } from "./components/NotificationSystem";
@@ -99,10 +99,59 @@ function PageLoader() {
   );
 }
 
+// ── Chunk error boundary — catches stale-deploy "Failed to fetch module" errors
+class ChunkErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(err) {
+    // Only catch module loading / chunk errors
+    const msg = err?.message || "";
+    if (msg.includes("Failed to fetch") || msg.includes("dynamically imported") || msg.includes("Loading chunk")) {
+      return { hasError: true };
+    }
+    return null;
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          height: "100vh", display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 16,
+          background: "rgba(6,8,15,0.98)", color: "rgba(255,255,255,0.8)",
+          fontFamily: "Inter, system-ui, sans-serif",
+        }}>
+          <div style={{ fontSize: 36 }}>🔄</div>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>New version available</p>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 20 }}>
+              The site was updated. Please refresh to continue.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                padding: "10px 28px", borderRadius: 10, border: "none",
+                background: "linear-gradient(135deg,#7C3AED,#06B6D4)",
+                color: "#fff", fontSize: 13, fontWeight: 700,
+                cursor: "pointer", letterSpacing: "0.05em",
+              }}
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <NotificationProvider>
+      <ChunkErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Routes>
 
@@ -228,6 +277,7 @@ export default function App() {
 
         </Routes>
       </Suspense>
+      </ChunkErrorBoundary>
       </NotificationProvider>
     </BrowserRouter>
   );

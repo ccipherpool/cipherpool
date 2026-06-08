@@ -3,8 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../lib/supabase";
 import { Upload, CheckCircle, AlertCircle, Users, X, Clock, Shield, Trophy, Crosshair, ImageIcon } from "lucide-react";
 
-const BR_PTS = { 1:12, 2:9, 3:8, 4:7, 5:6, 6:5, 7:4, 8:3, 9:2, 10:1 };
-const calcPoints = (rank, kills) => (BR_PTS[parseInt(rank)] || 0) + (parseInt(kills) || 0);
+const BR_PTS = { 1:15, 2:12, 3:10, 4:8, 5:7, 6:6, 7:5, 8:4, 9:3, 10:2 };
+const calcPoints = (rank, kills) => {
+  const r = parseInt(rank);
+  const placePts = r >= 1 && r <= 10 ? (BR_PTS[r] || 0) : r > 10 ? 1 : 0;
+  return placePts + (parseInt(kills) || 0);
+};
 
 async function hashFile(file) {
   try {
@@ -45,7 +49,24 @@ export default function SubmitResultPanel({
   const [submissionCount, setSubmissionCount] = useState(0);
   const [expectedCount, setExpectedCount]     = useState(0);
   const [verifying, setVerifying]   = useState(false);
+  const [fetchedMatchId, setFetchedMatchId] = useState(null);
   const fileRef = useRef(null);
+
+  // When matchId isn't passed (participant's browser), fetch the active match from DB
+  useEffect(() => {
+    if (matchId || !tournamentId) return;
+    supabase
+      .from("matches")
+      .select("id")
+      .eq("tournament_id", tournamentId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => { if (data?.id) setFetchedMatchId(data.id); });
+  }, [tournamentId, matchId]);
+
+  const effectiveMatchId = matchId || fetchedMatchId;
+
   const secsLeft = useDeadlineCountdown(deadline);
   const isExpired = deadline && secsLeft === 0;
 
@@ -57,11 +78,10 @@ export default function SubmitResultPanel({
 
   useEffect(() => {
     if (!tournamentId || !userId) return;
-    const matchFilter = matchId ? `, match_id=eq.${matchId}` : "";
     supabase.from("match_results").select("id,placement,kills,points,status,submitted_at")
       .eq("tournament_id", tournamentId).eq("user_id", userId)
       .then(({ data }) => {
-        const row = matchId ? data?.find(r => r.match_id === matchId) : data?.[0];
+        const row = effectiveMatchId ? data?.find(r => r.match_id === effectiveMatchId) : data?.[0];
         if (row) { setExisting(row); setDone(true); }
       });
 
@@ -110,7 +130,7 @@ export default function SubmitResultPanel({
     try {
       const hash = await hashFile(screenshot);
       const ext  = screenshot.name.split(".").pop() || "jpg";
-      const path = `${tournamentId}/${userId}_${matchId || "m0"}_${Date.now()}.${ext}`;
+      const path = `${tournamentId}/${userId}_${effectiveMatchId || "m0"}_${Date.now()}.${ext}`;
       setProgress(30);
 
       const { error: upErr } = await supabase.storage.from("screenshots")
@@ -127,7 +147,7 @@ export default function SubmitResultPanel({
         p_rank:           pNum,
         p_kills:          kNum,
         p_screenshot_url: url,
-        p_match_id:       matchId || null,
+        p_match_id:       effectiveMatchId || null,
         p_image_hash:     hash || null,
       });
       setProgress(100);
@@ -319,10 +339,10 @@ export default function SubmitResultPanel({
             <motion.div initial={{ opacity:0,y:-5 }} animate={{ opacity:1,y:0 }}
               style={{ marginBottom:14,padding:"11px 14px",borderRadius:9,
                 background:"rgba(99,102,241,0.07)",border:"1px solid rgba(99,102,241,0.18)" }}>
-              <div style={{ display:"flex",justifyContent:"space-around" }}>
+              <div style={{ display:"flex",justifyContent:"space-around",marginBottom:8 }}>
                 <div style={{ textAlign:"center" }}>
                   <div style={{ fontSize:22,fontWeight:900,color:"#f59e0b" }}>{pts}</div>
-                  <div style={{ fontSize:9,color:"#52525b",letterSpacing:1 }}>POINTS</div>
+                  <div style={{ fontSize:9,color:"#52525b",letterSpacing:1 }}>TOTAL PTS</div>
                 </div>
                 <div style={{ width:1,background:"rgba(255,255,255,0.06)" }}/>
                 <div style={{ textAlign:"center" }}>
@@ -330,13 +350,25 @@ export default function SubmitResultPanel({
                   <div style={{ fontSize:9,color:"#52525b",letterSpacing:1 }}>EST. CP</div>
                 </div>
               </div>
+              <div style={{ fontSize:10,color:"rgba(255,255,255,0.25)",textAlign:"center" }}>
+                {(() => {
+                  const r = parseInt(placement);
+                  const placePts = r <= 10 ? (BR_PTS[r] || 0) : 1;
+                  const kPts = parseInt(kills) || 0;
+                  return `#${r} placement (${placePts} pts) + ${kPts} kills (${kPts} pts)`;
+                })()}
+              </div>
             </motion.div>
           )}
 
           {/* Screenshot upload */}
           <div style={{ marginBottom:14 }}>
-            <div style={{ fontSize:10,color:"#52525b",fontWeight:700,letterSpacing:1,marginBottom:8,display:"flex",alignItems:"center",gap:5 }}>
-              <ImageIcon size={10}/> SCREENSHOT (REQUIRED)
+            <div style={{ fontSize:10,color:"#52525b",fontWeight:700,letterSpacing:1,marginBottom:6,display:"flex",alignItems:"center",gap:5 }}>
+              <ImageIcon size={10}/> FREE FIRE SCREENSHOT (REQUIRED)
+            </div>
+            <div style={{ marginBottom:8,padding:"7px 10px",borderRadius:7,background:"rgba(245,158,11,0.06)",border:"1px solid rgba(245,158,11,0.18)",display:"flex",alignItems:"center",gap:6 }}>
+              <span style={{ fontSize:14 }}>🔫</span>
+              <span style={{ fontSize:10,color:"#fbbf24" }}>Must be your Free Fire end-of-match results screen. Other screenshots will be rejected.</span>
             </div>
             <div onClick={() => fileRef.current?.click()} style={{
               border:`2px dashed ${preview?"rgba(16,185,129,0.5)":"rgba(99,102,241,0.3)"}`,
