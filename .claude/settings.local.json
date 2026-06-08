@@ -98,7 +98,8 @@
       "PowerShell(\\(Get-Content \"C:\\\\cipherpool\\\\sql\\\\67_season_reset_fix.sql\" | Measure-Object -Line\\).Lines; \\(Get-Content \"C:\\\\cipherpool\\\\src\\\\components\\\\season\\\\SeasonResetManager.jsx\" | Measure-Object -Line\\).Lines)",
       "Bash(Get-ChildItem *)",
       "Bash(Remove-Item \"C:\\\\cipherpool\\\\sql\\\\77_communication_center.sql\" -Force)",
-      "Bash(Write-Host \"deleted\")"
+      "Bash(Write-Host \"deleted\")",
+      "Bash(supabase *)"
     ]
   }
 }
