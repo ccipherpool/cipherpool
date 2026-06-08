@@ -3,8 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Eye, EyeOff, Mail, Lock, User, Hash, MapPin, Calendar,
-  Aperture, Play, MessageCircle, Music2, ChevronRight,
-  ChevronLeft, Check, Zap, AlertCircle, Gamepad2, Swords,
+  ChevronRight, ChevronLeft, Check, Zap, AlertCircle, Gamepad2, Swords,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
@@ -57,7 +56,7 @@ const Input = ({ icon: Icon, iconColor = "#6366f1", type = "text", placeholder, 
   </div>
 );
 
-const STEP_LABELS = ["Gaming ID", "Location", "Socials"];
+const STEP_LABELS = ["Gaming ID", "Location"];
 
 // ══════════════════════════════════════════════════════════════════════════════
 export default function Register() {
@@ -82,11 +81,6 @@ export default function Register() {
   const [city, setCity]       = useState("");
   const [age, setAge]         = useState("");
 
-  // Step 3
-  const [instagram, setInstagram] = useState("");
-  const [tiktok, setTiktok]       = useState("");
-  const [discord, setDiscord]     = useState("");
-  const [youtube, setYoutube]     = useState("");
 
   const [fieldErrors, setFieldErrors] = useState({});
 
@@ -118,17 +112,14 @@ export default function Register() {
       if (Object.keys(errs).length) { setFieldErrors(errs); return; }
       setFieldErrors({});
       setStep(2);
-    } else if (step === 2) {
-      const errs = validateStep2();
-      if (Object.keys(errs).length) { setFieldErrors(errs); return; }
-      setFieldErrors({});
-      setStep(3);
     }
   };
 
   const submit = async () => {
     if (loading) return;
     setError(null);
+    const errs = validateStep2();
+    if (Object.keys(errs).length) { setFieldErrors(errs); return; }
     setLoading(true);
     try {
       const redirectUrl = `${window.location.origin}/email-confirmed`;
@@ -147,25 +138,21 @@ export default function Register() {
         throw new Error("Un compte avec cet email existe déjà.");
       }
 
-      if (authData.user && authData.session) {
+      if (authData.user) {
         const profileUpdate = {
-          id:              authData.user.id,
-          username:        username.trim(),
-          email:           email.trim(),
-          role:            "user",
-          free_fire_uid:   uid.trim() || null,
-          free_fire_name:  ffName.trim() || null,
-          country:         country.trim() || null,
-          city:            city.trim() || null,
-          age:             age ? Number(age) : null,
-          instagram:       instagram.trim() || null,
-          tiktok:          tiktok.trim() || null,
-          discord:         discord.trim() || null,
-          youtube:         youtube.trim() || null,
+          id:             authData.user.id,
+          username:       username.trim(),
+          email:          email.trim(),
+          role:           "user",
+          free_fire_uid:  uid.trim() || null,
+          free_fire_name: ffName.trim() || null,
+          country:        country.trim() || null,
+          city:           city.trim() || null,
+          age:            age ? Number(age) : null,
         };
         await supabase.from("profiles").upsert(profileUpdate, { onConflict: "id" });
         await supabase.from("wallets").upsert({ user_id: authData.user.id, balance: 50 }, { onConflict: "user_id" });
-        await refreshCurrentUser?.(authData.user.id);
+        if (authData.session) await refreshCurrentUser?.(authData.user.id);
       }
 
       navigate("/verify-whatsapp");
@@ -178,7 +165,7 @@ export default function Register() {
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      if (step < 3) nextStep();
+      if (step < 2) nextStep();
       else submit();
     }
   };
@@ -247,14 +234,14 @@ export default function Register() {
                 const active = step === n;
                 const done = step > n;
                 return (
-                  <div key={n} style={{ display: "flex", alignItems: "center", flex: n < 3 ? 1 : "none" }}>
+                  <div key={n} style={{ display: "flex", alignItems: "center", flex: n < 2 ? 1 : "none" }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
                       <StepDot n={n} active={active} done={done} />
                       <span style={{ fontSize: 10, fontWeight: 600, color: done || active ? "#a5b4fc" : "rgba(255,255,255,0.2)", letterSpacing: 0.3, whiteSpace: "nowrap" }}>
                         {label}
                       </span>
                     </div>
-                    {n < 3 && <StepLine done={done} />}
+                    {n < 2 && <StepLine done={done} />}
                   </div>
                 );
               })}
@@ -364,33 +351,6 @@ export default function Register() {
                     />
                   </div>
 
-                  <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-                    <button onClick={() => setStep(1)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
-                      <ChevronLeft size={15} /> Back
-                    </button>
-                    <button onClick={nextStep} style={{ flex: 2, padding: "11px 0", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                      Continue <ChevronRight size={16} />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ── Step 3: Socials ── */}
-              {step === 3 && (
-                <motion.div key="s3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.22 }}>
-                  <div style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)", marginBottom: 14 }}>
-                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", margin: 0 }}>
-                      All social links are <span style={{ color: "#6ee7b7", fontWeight: 700 }}>optional</span> — you can skip this step.
-                    </p>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <Input icon={Aperture}      placeholder="Instagram URL (optional)" value={instagram} onChange={e => setInstagram(e.target.value)} iconColor="#e1306c" />
-                    <Input icon={Music2}        placeholder="TikTok URL (optional)"    value={tiktok}    onChange={e => setTiktok(e.target.value)}    iconColor="#69c9d0" />
-                    <Input icon={MessageCircle} placeholder="Discord tag or link"      value={discord}   onChange={e => setDiscord(e.target.value)}   iconColor="#5865f2" />
-                    <Input icon={Play}          placeholder="YouTube URL (optional)"   value={youtube}   onChange={e => setYoutube(e.target.value)}   iconColor="#ff0000" />
-                  </div>
-
                   {error && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{
                       display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 12px", borderRadius: 10,
@@ -402,7 +362,7 @@ export default function Register() {
                   )}
 
                   <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-                    <button onClick={() => setStep(2)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+                    <button onClick={() => setStep(1)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
                       <ChevronLeft size={15} /> Back
                     </button>
                     <button onClick={submit} disabled={loading} style={{
@@ -415,9 +375,6 @@ export default function Register() {
                       {loading ? "Creating…" : (<>Join Arena <Zap size={14} /></>)}
                     </button>
                   </div>
-                  <button onClick={submit} disabled={loading} style={{ width: "100%", marginTop: 10, padding: "8px 0", borderRadius: 8, border: "none", background: "transparent", color: "rgba(255,255,255,0.25)", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>
-                    Skip socials and finish
-                  </button>
                 </motion.div>
               )}
 
