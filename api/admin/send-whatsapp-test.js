@@ -85,11 +85,17 @@ export default async function handler(req, res) {
   }
 
   // ── Send WhatsApp ──────────────────────────────────────────────────────────
+  // Strip any accidental "whatsapp:" prefix from env var — the code adds it
+  const fromNumber = TWILIO_FROM.replace(/^whatsapp:/i, "");
+  const toNumber   = phone.trim().replace(/^whatsapp:/i, "");
+
+  console.log("[whatsapp-test] from:", `whatsapp:${fromNumber}`, "to:", `whatsapp:${toNumber}`);
+
   try {
     const client = twilio(TWILIO_SID, TWILIO_TOKEN);
     const msg = await client.messages.create({
-      from: `whatsapp:${TWILIO_FROM}`,
-      to:   `whatsapp:${phone}`,
+      from: `whatsapp:${fromNumber}`,
+      to:   `whatsapp:${toNumber}`,
       body: message,
     });
     console.log("[whatsapp-test] sent — SID:", msg.sid);
