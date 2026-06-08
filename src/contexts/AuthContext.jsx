@@ -77,6 +77,27 @@ export function AuthProvider({ children }) {
       // Enforce account_status guard
       const status = nextProfile?.account_status || "active";
       setAccountStatus(status);
+
+      if (status === "pending_reapproval") {
+        // Safety check: admin may have approved the request but the profile wasn't
+        // updated (stale new_user_id bug). Call the heal RPC which bypasses RLS
+        // and updates profiles by email if an approved request exists.
+        const { data: healResult } = await supabase.rpc("check_and_heal_reapproval");
+        if (healResult?.healed) {
+          console.log("[AuthContext] Auto-healed pending_reapproval → active");
+          const healedProfile = { ...nextProfile, account_status: "active" };
+          setProfile(healedProfile);
+          setAccountStatus("active");
+          return {
+            profile: healedProfile,
+            wallet: walletData,
+            balance: walletData.balance || 0,
+            userItems: itemRows,
+            equippedItems: equipped,
+          };
+        }
+      }
+
       if (status === "banned" || status === "pending_reapproval") {
         const currentPath = window.location.pathname;
         console.warn(`[AuthContext] Blocking user — account_status="${status}", profile_id="${nextProfile?.id}", path="${currentPath}"`);
