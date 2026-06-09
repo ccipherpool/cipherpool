@@ -99,7 +99,8 @@
       "Bash(Get-ChildItem *)",
       "Bash(Remove-Item \"C:\\\\cipherpool\\\\sql\\\\77_communication_center.sql\" -Force)",
       "Bash(Write-Host \"deleted\")",
-      "Bash(supabase *)"
+      "Bash(supabase *)",
+      "Bash(curl *)"
     ]
   }
 }
