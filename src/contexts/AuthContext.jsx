@@ -98,6 +98,18 @@ export function AuthProvider({ children }) {
         }
       }
 
+      // Force-logout accounts that were deleted while the user was logged in.
+      // The admin edge function sets account_status='deleted' before hard-deleting
+      // the auth user. The realtime subscription fires, calls refreshCurrentUser,
+      // and we catch 'deleted' here to immediately sign out + redirect to /login.
+      if (status === "deleted") {
+        console.warn("[AuthContext] Account deleted by admin — forcing sign out");
+        await supabase.auth.signOut();
+        clearUserData();
+        window.location.replace("/login");
+        return null;
+      }
+
       if (status === "banned" || status === "pending_reapproval") {
         const currentPath = window.location.pathname;
         console.warn(`[AuthContext] Blocking user — account_status="${status}", profile_id="${nextProfile?.id}", path="${currentPath}"`);

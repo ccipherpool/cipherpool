@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 
-// Twilio Sandbox config — set these in .env
-const SANDBOX_NUMBER  = import.meta.env.VITE_TWILIO_SANDBOX_NUMBER  || "14155238886";
-const SANDBOX_JOINCODE = import.meta.env.VITE_TWILIO_SANDBOX_JOINCODE || "join sandbox-join-code";
+const SANDBOX_NUMBER   = import.meta.env.VITE_TWILIO_SANDBOX_NUMBER   || "14155238886";
+const SANDBOX_JOINCODE = import.meta.env.VITE_TWILIO_SANDBOX_JOINCODE || "join cipherpool";
+const RESEND_COOLDOWN  = 60;
 
 const C = {
   bg:      "#020617",
@@ -22,7 +22,7 @@ const C = {
 
 // ── Step dots ─────────────────────────────────────────────────
 function Steps({ current }) {
-  const labels = ["Numéro", "Connexion", "Terminé"];
+  const labels = ["Numéro", "Code OTP", "Terminé"];
   return (
     <div style={{ display: "flex", alignItems: "center", marginBottom: 28 }}>
       {labels.map((label, i) => {
@@ -62,19 +62,41 @@ function Steps({ current }) {
   );
 }
 
+function ErrorBox({ error, onClose }) {
+  if (!error) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+      style={{
+        display: "flex", alignItems: "flex-start", gap: 8,
+        padding: "10px 12px", borderRadius: 10, marginBottom: 14,
+        background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+      }}
+    >
+      <span style={{ fontSize: 14 }}>❌</span>
+      <p style={{ flex: 1, fontSize: 12, color: "#f87171", margin: 0, lineHeight: 1.5 }}>{error}</p>
+      <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(239,68,68,0.5)", cursor: "pointer", fontSize: 16, padding: 0 }}>×</button>
+    </motion.div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════
 export default function VerifyWhatsApp() {
   const navigate = useNavigate();
   const { user, profile, refreshCurrentUser } = useAuth();
 
-  // step: 1=enter phone, 2=open whatsapp + confirm, 3=success
-  const [step,     setStep]     = useState(1);
-  const [phone,    setPhone]    = useState("");
-  const [saving,   setSaving]   = useState(false);
-  const [error,    setError]    = useState(null);
-  const [opened,   setOpened]   = useState(false);
+  // step: 1=enter phone+send OTP, 2=enter OTP code, 3=success
+  const [step,      setStep]      = useState(1);
+  const [phone,     setPhone]     = useState("");
+  const [code,      setCode]      = useState("");
+  const [sending,   setSending]   = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [error,     setError]     = useState(null);
+  const [countdown, setCountdown] = useState(0);
+  const codeInputRef              = useRef(null);
+  const timerRef                  = useRef(null);
 
-  // Guards
+  // Auth guards
   useEffect(() => {
     if (user === null) navigate("/login", { replace: true });
   }, [user, navigate]);
@@ -83,63 +105,92 @@ export default function VerifyWhatsApp() {
     if (profile?.whatsapp_verified) navigate("/dashboard", { replace: true });
   }, [profile, navigate]);
 
-  // Pre-fill from profile if available
+  // Pre-fill phone from profile if available
   useEffect(() => {
     if (profile?.whatsapp_number && !phone) setPhone(profile.whatsapp_number);
   }, [profile]);
 
-  // ── Step 1: Save phone and advance ───────────────────────────
-  const handlePhoneNext = async () => {
+  // Countdown timer for resend button
+  const startCountdown = () => {
+    setCountdown(RESEND_COOLDOWN);
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) { clearInterval(timerRef.current); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+  useEffect(() => () => clearInterval(timerRef.current), []);
+
+  // ── Step 1: Send OTP via edge function ───────────────────────
+  const handleSendCode = async () => {
     setError(null);
     const normalized = phone.trim().replace(/\s+/g, "");
     if (!/^\+\d{8,15}$/.test(normalized)) {
       setError("Format invalide — ex: +212600000000");
       return;
     }
-    setSaving(true);
+    setSending(true);
     try {
-      const { error: upErr } = await supabase
-        .from("profiles")
-        .update({ whatsapp_number: normalized })
-        .eq("id", user.id);
-      if (upErr) throw new Error(upErr.message);
+      const { data, error: fnErr } = await supabase.functions.invoke("whatsapp-otp", {
+        body: { action: "send", phone: normalized },
+      });
+      if (fnErr) throw new Error(fnErr.message || "Échec de l'envoi");
+      if (data?.error) throw new Error(data.error);
       setPhone(normalized);
+      setCode("");
       setStep(2);
+      startCountdown();
+      setTimeout(() => codeInputRef.current?.focus(), 200);
     } catch (e) {
-      setError(e.message);
+      setError(e.message || "Impossible d'envoyer le code. Assurez-vous d'avoir rejoint la sandbox WhatsApp.");
     } finally {
-      setSaving(false);
+      setSending(false);
     }
   };
 
-  // ── Step 2: Open WhatsApp with pre-filled join code ──────────
-  const waLink = `https://wa.me/${SANDBOX_NUMBER}?text=${encodeURIComponent(SANDBOX_JOINCODE)}`;
-
-  const handleOpenWhatsApp = () => {
-    window.open(waLink, "_blank");
-    setOpened(true);
-  };
-
-  // ── Step 2 confirm: mark verified and redirect ───────────────
-  const handleConfirmConnected = async () => {
-    setSaving(true);
+  // ── Step 2: Verify OTP code ───────────────────────────────────
+  const handleVerify = async () => {
     setError(null);
+    const trimmed = code.trim();
+    if (!/^\d{6}$/.test(trimmed)) {
+      setError("Le code doit contenir exactement 6 chiffres.");
+      return;
+    }
+    setVerifying(true);
     try {
-      const { error: upErr } = await supabase
-        .from("profiles")
-        .update({
-          whatsapp_verified:    true,
-          whatsapp_verified_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
-      if (upErr) throw new Error(upErr.message);
+      const { data, error: fnErr } = await supabase.functions.invoke("whatsapp-otp", {
+        body: { action: "verify", phone, code: trimmed },
+      });
+      if (fnErr) throw new Error(fnErr.message || "Échec de la vérification");
+      if (data?.error) throw new Error(data.error);
       await refreshCurrentUser?.();
       setStep(3);
       setTimeout(() => navigate("/dashboard", { replace: true }), 2400);
     } catch (e) {
-      setError(e.message);
+      setError(e.message || "Code incorrect ou expiré.");
     } finally {
-      setSaving(false);
+      setVerifying(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (countdown > 0 || sending) return;
+    setError(null);
+    setSending(true);
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke("whatsapp-otp", {
+        body: { action: "send", phone },
+      });
+      if (fnErr) throw new Error(fnErr.message);
+      if (data?.error) throw new Error(data.error);
+      setCode("");
+      startCountdown();
+    } catch (e) {
+      setError(e.message || "Impossible d'envoyer le code.");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -180,7 +231,7 @@ export default function VerifyWhatsApp() {
               💬
             </div>
             <h1 style={{ fontSize: 20, fontWeight: 800, color: C.text, margin: "0 0 5px", letterSpacing: -0.3 }}>
-              Connecter WhatsApp
+              Vérifier WhatsApp
             </h1>
             <p style={{ fontSize: 12, color: C.text2, margin: 0 }}>
               Requis pour recevoir les notifications du tournoi
@@ -198,13 +249,30 @@ export default function VerifyWhatsApp() {
                   initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.22 }}>
 
+                  {/* Sandbox join notice */}
                   <div style={{
-                    padding: "10px 14px", borderRadius: 10, marginBottom: 18,
+                    padding: "12px 14px", borderRadius: 10, marginBottom: 18,
                     background: "rgba(37,211,102,0.05)", border: "1px solid rgba(37,211,102,0.15)",
                   }}>
-                    <p style={{ fontSize: 11.5, color: C.text2, margin: 0, lineHeight: 1.6 }}>
-                      Entrez votre numéro WhatsApp. Il sera utilisé pour vous notifier des tournois et des annonces importantes.
+                    <div style={{ fontSize: 11, fontWeight: 800, color: C.green, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 8 }}>
+                      Étape préalable — rejoindre la sandbox
+                    </div>
+                    <p style={{ fontSize: 12, color: C.text2, margin: "0 0 10px", lineHeight: 1.6 }}>
+                      Envoyez <strong style={{ color: C.text, fontFamily: "monospace" }}>{SANDBOX_JOINCODE}</strong> à notre numéro WhatsApp pour activer les messages.
                     </p>
+                    <a
+                      href={`https://wa.me/${SANDBOX_NUMBER}?text=${encodeURIComponent(SANDBOX_JOINCODE)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 6,
+                        padding: "7px 12px", borderRadius: 8,
+                        background: "rgba(37,211,102,0.12)", border: "1px solid rgba(37,211,102,0.25)",
+                        color: C.green, fontSize: 12, fontWeight: 700, textDecoration: "none",
+                      }}
+                    >
+                      💬 Rejoindre via WhatsApp
+                    </a>
                   </div>
 
                   <label style={{
@@ -212,7 +280,7 @@ export default function VerifyWhatsApp() {
                     textTransform: "uppercase", letterSpacing: "0.06em",
                     display: "block", marginBottom: 6,
                   }}>
-                    Numéro WhatsApp
+                    Votre numéro WhatsApp
                   </label>
 
                   <div style={{ position: "relative", marginBottom: 6 }}>
@@ -224,7 +292,7 @@ export default function VerifyWhatsApp() {
                       type="tel"
                       value={phone}
                       onChange={e => { setPhone(e.target.value); setError(null); }}
-                      onKeyDown={e => e.key === "Enter" && handlePhoneNext()}
+                      onKeyDown={e => e.key === "Enter" && handleSendCode()}
                       placeholder="+212600000000"
                       style={{
                         width: "100%", padding: "12px 14px 12px 46px",
@@ -243,156 +311,123 @@ export default function VerifyWhatsApp() {
                     Format international — ex: +212 (Maroc), +213 (Algérie), +216 (Tunisie)
                   </p>
 
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                      style={{
-                        display: "flex", alignItems: "flex-start", gap: 8,
-                        padding: "10px 12px", borderRadius: 10, marginBottom: 14,
-                        background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
-                      }}
-                    >
-                      <span style={{ fontSize: 14 }}>❌</span>
-                      <p style={{ flex: 1, fontSize: 12, color: "#f87171", margin: 0, lineHeight: 1.5 }}>{error}</p>
-                      <button onClick={() => setError(null)} style={{ background: "none", border: "none", color: "rgba(239,68,68,0.5)", cursor: "pointer", fontSize: 16, padding: 0 }}>×</button>
-                    </motion.div>
-                  )}
+                  <ErrorBox error={error} onClose={() => setError(null)} />
 
                   <button
-                    onClick={handlePhoneNext}
-                    disabled={saving || !phone.trim()}
+                    onClick={handleSendCode}
+                    disabled={sending || !phone.trim()}
                     style={{
                       width: "100%", padding: "13px 0", borderRadius: 12, border: "none",
-                      background: saving || !phone.trim()
+                      background: sending || !phone.trim()
                         ? "rgba(37,211,102,0.15)"
                         : "linear-gradient(135deg, #128c7e, #25d366)",
-                      color: saving || !phone.trim() ? "rgba(255,255,255,0.3)" : "#fff",
+                      color: sending || !phone.trim() ? "rgba(255,255,255,0.3)" : "#fff",
                       fontSize: 14, fontWeight: 800,
-                      cursor: saving ? "wait" : !phone.trim() ? "not-allowed" : "pointer",
-                      boxShadow: !saving && phone.trim() ? "0 4px 20px rgba(37,211,102,0.25)" : "none",
+                      cursor: sending ? "wait" : !phone.trim() ? "not-allowed" : "pointer",
+                      boxShadow: !sending && phone.trim() ? "0 4px 20px rgba(37,211,102,0.25)" : "none",
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                       transition: "all 0.2s",
                     }}
                   >
-                    {saving ? (
-                      <><div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "wa-spin 0.7s linear infinite" }} /> Enregistrement…</>
-                    ) : "Continuer →"}
+                    {sending ? (
+                      <><div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "wa-spin 0.7s linear infinite" }} /> Envoi du code…</>
+                    ) : "📨 Envoyer le code de vérification"}
                   </button>
                 </motion.div>
               )}
 
-              {/* ── Step 2: Open WhatsApp ── */}
+              {/* ── Step 2: Enter OTP code ── */}
               {step === 2 && (
                 <motion.div key="s2"
                   initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.22 }}>
 
-                  {/* Instructions */}
                   <div style={{
-                    padding: "14px 16px", borderRadius: 12, marginBottom: 20,
+                    padding: "12px 14px", borderRadius: 10, marginBottom: 20,
                     background: "rgba(37,211,102,0.05)", border: "1px solid rgba(37,211,102,0.15)",
                   }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: C.green, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10 }}>
-                      Comment connecter WhatsApp
-                    </div>
-                    {[
-                      { n: 1, text: "Cliquez sur « Ouvrir WhatsApp » ci-dessous" },
-                      { n: 2, text: "Le message de connexion est pré-rempli automatiquement" },
-                      { n: 3, text: "Appuyez simplement sur Envoyer dans WhatsApp" },
-                      { n: 4, text: "Revenez ici et cliquez « J'ai envoyé le message »" },
-                    ].map(s => (
-                      <div key={s.n} style={{ display: "flex", gap: 10, marginBottom: s.n < 4 ? 8 : 0, alignItems: "flex-start" }}>
-                        <div style={{
-                          width: 20, height: 20, borderRadius: "50%", flexShrink: 0, marginTop: 1,
-                          background: "rgba(37,211,102,0.15)", border: "1px solid rgba(37,211,102,0.25)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 10, fontWeight: 800, color: C.green,
-                        }}>
-                          {s.n}
-                        </div>
-                        <p style={{ fontSize: 12, color: C.text2, margin: 0, lineHeight: 1.5 }}>{s.text}</p>
-                      </div>
-                    ))}
+                    <p style={{ fontSize: 12, color: C.text2, margin: 0, lineHeight: 1.6 }}>
+                      Un code à 6 chiffres a été envoyé via WhatsApp au{" "}
+                      <strong style={{ color: C.text, fontFamily: "monospace" }}>{phone}</strong>.
+                      Entrez-le ci-dessous pour confirmer votre numéro.
+                    </p>
                   </div>
 
-                  {/* Message preview */}
-                  <div style={{
-                    padding: "10px 14px", borderRadius: 10, marginBottom: 20,
-                    background: "#0a1a0f", border: "1px solid rgba(37,211,102,0.15)",
+                  <label style={{
+                    fontSize: 10, fontWeight: 700, color: C.text3,
+                    textTransform: "uppercase", letterSpacing: "0.06em",
+                    display: "block", marginBottom: 6,
                   }}>
-                    <div style={{ fontSize: 10, color: "rgba(37,211,102,0.6)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>
-                      Message pré-rempli
-                    </div>
-                    <div style={{
-                      display: "inline-block", background: "#1f2c34",
-                      borderRadius: "0 10px 10px 10px", padding: "8px 12px",
-                    }}>
-                      <span style={{ fontSize: 14, color: "#e9edef", fontFamily: "monospace", letterSpacing: 0.5 }}>
-                        {SANDBOX_JOINCODE}
-                      </span>
-                    </div>
-                  </div>
+                    Code de vérification (6 chiffres)
+                  </label>
 
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                      style={{
-                        display: "flex", alignItems: "flex-start", gap: 8,
-                        padding: "10px 12px", borderRadius: 10, marginBottom: 14,
-                        background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
-                      }}
-                    >
-                      <span style={{ fontSize: 14 }}>❌</span>
-                      <p style={{ flex: 1, fontSize: 12, color: "#f87171", margin: 0, lineHeight: 1.5 }}>{error}</p>
-                      <button onClick={() => setError(null)} style={{ background: "none", border: "none", color: "rgba(239,68,68,0.5)", cursor: "pointer", fontSize: 16, padding: 0 }}>×</button>
-                    </motion.div>
-                  )}
-
-                  {/* Primary CTA */}
-                  <button
-                    onClick={handleOpenWhatsApp}
+                  <input
+                    ref={codeInputRef}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    value={code}
+                    onChange={e => { setCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(null); }}
+                    onKeyDown={e => e.key === "Enter" && code.length === 6 && handleVerify()}
+                    placeholder="000000"
                     style={{
-                      width: "100%", padding: "14px 0", borderRadius: 12, border: "none",
-                      background: "linear-gradient(135deg, #128c7e, #25d366)",
-                      color: "#fff", fontSize: 15, fontWeight: 800,
-                      cursor: "pointer",
-                      boxShadow: "0 4px 24px rgba(37,211,102,0.3)",
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                      marginBottom: 12, transition: "opacity 0.2s",
+                      width: "100%", padding: "16px 14px",
+                      background: "rgba(255,255,255,0.04)",
+                      border: `1.5px solid ${error ? "rgba(239,68,68,0.4)" : C.border2}`,
+                      borderRadius: 12, color: C.text, fontSize: 28, fontWeight: 800,
+                      outline: "none", fontFamily: "monospace", boxSizing: "border-box",
+                      letterSpacing: 10, textAlign: "center", marginBottom: 6,
+                      transition: "border-color 0.2s",
+                    }}
+                    onFocus={e => { e.target.style.borderColor = "rgba(37,211,102,0.5)"; }}
+                    onBlur={e  => { e.target.style.borderColor = error ? "rgba(239,68,68,0.4)" : C.border2; }}
+                  />
+
+                  <p style={{ fontSize: 11, color: C.text3, margin: "0 0 16px" }}>
+                    Ce code expire dans 10 minutes. Maximum 5 tentatives.
+                  </p>
+
+                  <ErrorBox error={error} onClose={() => setError(null)} />
+
+                  <button
+                    onClick={handleVerify}
+                    disabled={verifying || code.length !== 6}
+                    style={{
+                      width: "100%", padding: "13px 0", borderRadius: 12, border: "none",
+                      background: verifying || code.length !== 6
+                        ? "rgba(37,211,102,0.15)"
+                        : "linear-gradient(135deg, #128c7e, #25d366)",
+                      color: verifying || code.length !== 6 ? "rgba(255,255,255,0.3)" : "#fff",
+                      fontSize: 14, fontWeight: 800,
+                      cursor: verifying ? "wait" : code.length !== 6 ? "not-allowed" : "pointer",
+                      boxShadow: !verifying && code.length === 6 ? "0 4px 20px rgba(37,211,102,0.25)" : "none",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      marginBottom: 14, transition: "all 0.2s",
                     }}
                   >
-                    <span style={{ fontSize: 20 }}>💬</span>
-                    Ouvrir WhatsApp
+                    {verifying ? (
+                      <><div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "wa-spin 0.7s linear infinite" }} /> Vérification…</>
+                    ) : "✅ Confirmer le code"}
                   </button>
 
-                  {/* Confirm button — appears once they've opened WA */}
-                  <AnimatePresence>
-                    {opened && (
-                      <motion.button
-                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                        onClick={handleConfirmConnected}
-                        disabled={saving}
-                        style={{
-                          width: "100%", padding: "13px 0", borderRadius: 12,
-                          border: "1px solid rgba(37,211,102,0.3)",
-                          background: saving ? "rgba(37,211,102,0.08)" : "rgba(37,211,102,0.1)",
-                          color: saving ? "rgba(255,255,255,0.3)" : C.green,
-                          fontSize: 14, fontWeight: 800,
-                          cursor: saving ? "wait" : "pointer",
-                          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                          transition: "all 0.2s",
-                        }}
-                      >
-                        {saving ? (
-                          <><div style={{ width: 14, height: 14, border: "2px solid rgba(37,211,102,0.3)", borderTopColor: C.green, borderRadius: "50%", animation: "wa-spin 0.7s linear infinite" }} /> Vérification…</>
-                        ) : "✅ J'ai envoyé le message"}
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
-
-                  <div style={{ textAlign: "center", marginTop: 14 }}>
+                  {/* Resend + change number */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <button
-                      onClick={() => { setStep(1); setOpened(false); setError(null); }}
+                      onClick={handleResend}
+                      disabled={countdown > 0 || sending}
+                      style={{
+                        background: "none", border: "none", padding: 0,
+                        fontSize: 12, fontWeight: 600,
+                        color: countdown > 0 || sending ? C.text3 : C.green,
+                        cursor: countdown > 0 || sending ? "default" : "pointer",
+                        textDecoration: countdown > 0 ? "none" : "underline",
+                      }}
+                    >
+                      {sending ? "Envoi…" : countdown > 0 ? `Renvoyer dans ${countdown}s` : "Renvoyer le code"}
+                    </button>
+                    <button
+                      onClick={() => { setStep(1); setCode(""); setError(null); clearInterval(timerRef.current); setCountdown(0); }}
                       style={{ background: "none", border: "none", fontSize: 12, color: C.text3, cursor: "pointer", textDecoration: "underline" }}
                     >
                       ← Changer de numéro
@@ -416,10 +451,10 @@ export default function VerifyWhatsApp() {
                     🎉
                   </motion.div>
                   <h2 style={{ fontSize: 20, fontWeight: 800, color: C.text, margin: "0 0 8px" }}>
-                    WhatsApp connecté !
+                    WhatsApp vérifié !
                   </h2>
                   <p style={{ fontSize: 13, color: C.text2, margin: "0 0 24px", lineHeight: 1.6 }}>
-                    Vous recevrez désormais les notifications des tournois sur WhatsApp. Redirection…
+                    Votre numéro a été confirmé. Vous recevrez désormais les notifications des tournois sur WhatsApp.
                   </p>
                   <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
                     <motion.div
@@ -436,7 +471,7 @@ export default function VerifyWhatsApp() {
         </div>
 
         <p style={{ textAlign: "center", fontSize: 10, color: C.text3, marginTop: 18, letterSpacing: 0.5, textTransform: "uppercase" }}>
-          © 2026 CipherPool Arena · Notifications via WhatsApp
+          © 2026 CipherPool Arena · Vérification sécurisée via OTP WhatsApp
         </p>
       </motion.div>
 

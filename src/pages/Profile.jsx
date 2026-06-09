@@ -255,6 +255,7 @@ export default function Profile() {
       city:              profile?.city              || "",
       country:           profile?.country           || "",
       age:               profile?.age               || "",
+      gender:            profile?.gender            || "",
       instagram:         profile?.instagram         || "",
       tiktok:            profile?.tiktok            || "",
       discord:           profile?.discord           || "",
@@ -291,6 +292,7 @@ export default function Profile() {
       city:            editForm.city.trim()            || null,
       country:         editForm.country.trim()         || null,
       age:             editForm.age ? Number(editForm.age) : null,
+      gender:          editForm.gender || null,
       instagram:         editForm.instagram.trim()         || null,
       tiktok:            editForm.tiktok.trim()            || null,
       discord:           editForm.discord.trim()           || null,
@@ -929,6 +931,19 @@ export default function Profile() {
                         <Field label="City" value={editForm.city} onChange={e => setEditForm(f => ({ ...f, city: e.target.value }))} placeholder="Casablanca" optional />
                       </div>
                       <Field label="Age" value={editForm.age} onChange={e => setEditForm(f => ({ ...f, age: e.target.value }))} placeholder="18" type="number" />
+                      <div>
+                        <label style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 0.8, textTransform: "uppercase", display: "block", marginBottom: 5 }}>Genre <span style={{ color: "rgba(255,255,255,0.2)", fontWeight: 400, textTransform: "none" }}>(optionnel)</span></label>
+                        <select
+                          value={editForm.gender}
+                          onChange={e => setEditForm(f => ({ ...f, gender: e.target.value }))}
+                          style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.09)", background: "#06080f", color: editForm.gender ? "#f1f5f9" : "rgba(255,255,255,0.3)", fontSize: 13, outline: "none", fontFamily: "inherit" }}
+                        >
+                          <option value="">Préférer ne pas dire</option>
+                          <option value="male">Homme</option>
+                          <option value="female">Femme</option>
+                          <option value="prefer_not_to_say">Préférer ne pas dire</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
 

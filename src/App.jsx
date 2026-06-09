@@ -89,6 +89,10 @@ const AccountRestricted  = lazy(() => import("./pages/AccountRestricted"));
 const Notifications     = lazy(() => import("./pages/Notifications"));
 const VerifyWhatsApp    = lazy(() => import("./pages/VerifyWhatsApp"));
 
+// Community
+const Players       = lazy(() => import("./pages/Players"));
+const PlayerProfile = lazy(() => import("./pages/PlayerProfile"));
+
 // Public
 const PublicTournament = lazy(() => import("./pages/PublicTournament"));
 
@@ -200,6 +204,8 @@ export default function App() {
             <Route path="/achievements"  element={<Achievements />} />
             <Route path="/daily-rewards"  element={<DailyRewards />} />
             <Route path="/notifications"  element={<Notifications />} />
+            <Route path="/players"        element={<Players />} />
+            <Route path="/player/:username" element={<PlayerProfile />} />
 
             <Route path="/tournois"      element={<Navigate to="/tournaments" replace />} />
             <Route path="/boutique"      element={<Navigate to="/store" replace />} />
