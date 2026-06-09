@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// All three headers required — browser preflight fails if ANY is absent.
-// Missing Access-Control-Allow-Methods was the root cause of the CORS block.
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -18,7 +16,6 @@ function json(body: unknown, status = 200) {
 }
 
 serve(async (req) => {
-  // Preflight — browser sends OPTIONS first; must respond 200 with CORS headers.
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS });
   }
@@ -72,6 +69,8 @@ serve(async (req) => {
       return json({ error: "User not found in auth system" }, 404);
     }
 
+    const targetEmail = targetAuthData.user.email?.toLowerCase() ?? "";
+
     // ── 5. Protect founders — only another founder can delete one ─────────
     const { data: targetProfile } = await admin
       .from("profiles")
@@ -93,13 +92,33 @@ serve(async (req) => {
     });
     if (banErr) throw new Error("Failed to ban user: " + banErr.message);
 
-    // ── 7. Archive + soft-delete profile via RPC ──────────────────────────
-    const { data: archiveResult, error: archiveErr } = await admin.rpc("archive_and_delete_user", {
-      p_user_id: userId,
-      p_reason:  reason ?? null,
+    // ── 7. Snapshot full profile ──────────────────────────────────────────
+    const { data: profileSnapshot } = await admin
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    // ── 7a. Archive to deleted_accounts (bypasses RLS via service role) ───
+    // NOTE: we do NOT use archive_and_delete_user RPC here because that RPC
+    // checks auth.uid() which is NULL when called from service role. Instead
+    // we perform the exact same steps directly.
+    const { error: archiveErr } = await admin.from("deleted_accounts").insert({
+      email:            targetEmail,
+      user_id:          userId,
+      username:         targetProfile?.username ?? targetProfile?.full_name ?? null,
+      deleted_by:       caller.id,
+      reason:           reason ?? null,
+      profile_snapshot: profileSnapshot ?? {},
     });
-    if (archiveErr) throw new Error("Archive failed: " + archiveErr.message);
-    if (!archiveResult?.success) throw new Error(archiveResult?.error ?? "Archive failed");
+    if (archiveErr) throw new Error("Failed to archive user: " + archiveErr.message);
+
+    // ── 7b. Soft-delete profile (fires realtime → force-logout on all clients) ─
+    const { error: softDeleteErr } = await admin
+      .from("profiles")
+      .update({ account_status: "deleted" })
+      .eq("id", userId);
+    if (softDeleteErr) throw new Error("Failed to soft-delete profile: " + softDeleteErr.message);
 
     // ── 8. Audit log ──────────────────────────────────────────────────────
     await admin.from("admin_logs").insert([{
@@ -107,7 +126,7 @@ serve(async (req) => {
       action:   "delete_user_secure",
       details: {
         target_user:      userId,
-        target_email:     archiveResult.email,
+        target_email:     targetEmail,
         target_username:  targetProfile?.username ?? targetProfile?.full_name ?? null,
         reason:           reason ?? null,
         banned_first:     true,
@@ -115,13 +134,17 @@ serve(async (req) => {
     }]);
 
     // ── 9. Hard-delete from auth (cascades sessions / refresh tokens) ─────
+    // This is the authoritative step: removes auth.users record so the email
+    // cannot be used to log in again (only fresh registration with re-approval flow).
     const { error: deleteErr } = await admin.auth.admin.deleteUser(userId);
     if (deleteErr) {
-      // Log but don't fail — profile is already archived and user is banned
-      console.error("auth.admin.deleteUser error (non-fatal):", deleteErr.message);
+      // Profile is already soft-deleted and user is banned — log the failure but
+      // still return success to the caller since the account is functionally gone.
+      // A background cleanup job can handle orphaned auth rows.
+      console.error("auth.admin.deleteUser failed (non-fatal, user is banned+soft-deleted):", deleteErr.message);
     }
 
-    return json({ success: true, email: archiveResult.email });
+    return json({ success: true, email: targetEmail });
 
   } catch (err) {
     console.error("delete-user error:", err);

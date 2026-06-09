@@ -6,6 +6,7 @@ import {
   ArrowLeft, Users, Trophy, Calendar, Zap, Shield, Info,
   CheckCircle, Clock, AlertCircle, Copy, Check, Share2,
   Star, ChevronRight, Timer, Target, Swords, Crown,
+  Edit3, X, User, Gamepad2, MapPin, AlertTriangle,
 } from "lucide-react";
 
 // ─── Status config ─────────────────────────────────────────────────────────────
@@ -22,7 +23,6 @@ const STATUS_MAP = {
   cancelled:         { label: "CANCELLED",    color: "#f43f5e",               glow: "rgba(244,63,94,0.25)",     bg: "rgba(244,63,94,0.08)"     },
 };
 
-// ─── Tournament progression stages ────────────────────────────────────────────
 const TIMELINE_STAGES = [
   { key: "registration_open", label: "Registration" },
   { key: "ready",             label: "Check-In"     },
@@ -32,7 +32,7 @@ const TIMELINE_STAGES = [
 ];
 const STAGE_ORDER = { registration_open: 0, full: 0, ready: 1, live: 2, results_pending: 3, completed: 4, archived: 4 };
 
-// ─── Countdown hook ──────────────────────────────────────────────────────────
+// ─── Countdown hook ────────────────────────────────────────────────────────────
 function useCountdown(target) {
   const [time, setTime] = useState({ d: 0, h: 0, m: 0, s: 0, past: false });
   useEffect(() => {
@@ -53,7 +53,7 @@ function useCountdown(target) {
   return time;
 }
 
-// ─── Copied button ─────────────────────────────────────────────────────────────
+// ─── Copy button ───────────────────────────────────────────────────────────────
 function CopyBtn({ text }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
@@ -71,31 +71,231 @@ function CopyBtn({ text }) {
   );
 }
 
-// ─── Tab nav ──────────────────────────────────────────────────────────────────
+// ─── Tab nav ───────────────────────────────────────────────────────────────────
 const TABS = [
-  { key: "overview", label: "Overview",  icon: Target   },
-  { key: "prizes",   label: "Prizes",    icon: Trophy   },
-  { key: "players",  label: "Players",   icon: Users    },
-  { key: "rules",    label: "Rules",     icon: Shield   },
-  { key: "info",     label: "Info",      icon: Info     },
+  { key: "overview", label: "Overview",  icon: Target  },
+  { key: "prizes",   label: "Prizes",    icon: Trophy  },
+  { key: "players",  label: "Players",   icon: Users   },
+  { key: "rules",    label: "Rules",     icon: Shield  },
+  { key: "info",     label: "Info",      icon: Info    },
+];
+
+// ─── Countdown display ─────────────────────────────────────────────────────────
+function CountdownDisplay({ time, label, color = "#06B6D4", urgent = false }) {
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      {label && (
+        <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: urgent ? "#f43f5e" : "rgba(255,255,255,0.28)" }}>
+          {label}
+        </span>
+      )}
+      <div className="flex items-center gap-1.5">
+        {[
+          { v: time.d, l: "D" },
+          { v: time.h, l: "H" },
+          { v: time.m, l: "M" },
+          { v: time.s, l: "S" },
+        ].map(({ v, l }) => (
+          <div key={l} className="flex items-baseline gap-0.5">
+            <span className="text-xl font-black tabular-nums" style={{ color, fontFamily: "monospace" }}>
+              {String(v).padStart(2, "0")}
+            </span>
+            <span className="text-[9px] font-bold" style={{ color: "rgba(255,255,255,0.25)" }}>{l}</span>
+            {l !== "S" && <span className="text-sm font-bold mx-0.5" style={{ color: "rgba(255,255,255,0.15)" }}>:</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Registration confirmation modal ─────────────────────────────────────────
+function JoinConfirmModal({ profile, tournament, onConfirm, onCancel, loading }) {
+  const free = (tournament?.entry_fee || 0) === 0;
+  const hasFfInfo = profile?.free_fire_name && profile?.free_fire_uid;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
+      onClick={onCancel}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-md relative overflow-hidden rounded-2xl"
+        style={{ background: "rgba(8,10,24,0.99)", border: "1px solid rgba(124,58,237,0.35)" }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Top accent */}
+        <div className="absolute top-0 left-0 right-0 h-[2px]"
+          style={{ background: "linear-gradient(90deg,transparent,#7C3AED,#06B6D4,transparent)" }} />
+
+        {/* Aurora glow */}
+        <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-56 h-56 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle,rgba(124,58,237,0.12),transparent 65%)", filter: "blur(24px)" }} />
+
+        <div className="relative z-10 p-6">
+          {/* Close */}
+          <button
+            onClick={onCancel}
+            className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+            style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.4)" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.4)"; }}
+          >
+            <X size={14} />
+          </button>
+
+          {/* Header */}
+          <div className="mb-5">
+            <h2 className="text-lg font-black mb-1" style={{ color: "#fff", fontFamily: "Orbitron,monospace" }}>
+              Confirm Registration
+            </h2>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
+              Review your info before joining <span style={{ color: "#A78BFA", fontWeight: 700 }}>{tournament.name}</span>
+            </p>
+          </div>
+
+          {/* Player info card */}
+          <div className="rounded-xl p-4 mb-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <p className="text-[9px] font-black uppercase tracking-widest mb-3" style={{ color: "rgba(255,255,255,0.25)" }}>
+              YOUR PROFILE
+            </p>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0"
+                style={{ background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.25)" }}>
+                {profile?.avatar_url
+                  ? <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : <div className="w-full h-full flex items-center justify-center" style={{ color: "#A78BFA", fontSize: 18 }}>
+                      {profile?.username?.[0]?.toUpperCase() || "?"}
+                    </div>
+                }
+              </div>
+              <div>
+                <p className="font-bold text-sm" style={{ color: "#fff" }}>{profile?.username || "Unknown"}</p>
+                {profile?.country && (
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>{profile.country}{profile.city ? `, ${profile.city}` : ""}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg p-2.5" style={{ background: hasFfInfo ? "rgba(6,182,212,0.06)" : "rgba(244,63,94,0.06)", border: `1px solid ${hasFfInfo ? "rgba(6,182,212,0.15)" : "rgba(244,63,94,0.2)"}` }}>
+                <p className="text-[8px] font-bold uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.22)" }}>FF NAME</p>
+                <p className="text-xs font-bold truncate" style={{ color: hasFfInfo ? "#06B6D4" : "#f43f5e" }}>
+                  {profile?.free_fire_name || "Not set"}
+                </p>
+              </div>
+              <div className="rounded-lg p-2.5" style={{ background: hasFfInfo ? "rgba(6,182,212,0.06)" : "rgba(244,63,94,0.06)", border: `1px solid ${hasFfInfo ? "rgba(6,182,212,0.15)" : "rgba(244,63,94,0.2)"}` }}>
+                <p className="text-[8px] font-bold uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.22)" }}>FF UID</p>
+                <p className="text-xs font-bold font-mono truncate" style={{ color: hasFfInfo ? "#06B6D4" : "#f43f5e" }}>
+                  {profile?.free_fire_uid || "Not set"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Warning if FF info missing */}
+          {!hasFfInfo && (
+            <div className="flex items-start gap-2.5 p-3 rounded-xl mb-4"
+              style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.22)" }}>
+              <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" style={{ color: "#f59e0b" }} />
+              <div>
+                <p className="text-xs font-semibold mb-1" style={{ color: "#f59e0b" }}>
+                  Free Fire info incomplete
+                </p>
+                <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  You can still register, but complete your FF name and UID in your profile to avoid disqualification.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Tournament summary */}
+          <div className="rounded-xl p-4 mb-5" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "rgba(255,255,255,0.22)" }}>ENTRY FEE</p>
+                <p className="text-lg font-black" style={{ color: free ? "#10b981" : "#f43f5e", fontFamily: "Orbitron,monospace" }}>
+                  {free ? "FREE" : `${tournament.entry_fee} CP`}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[9px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "rgba(255,255,255,0.22)" }}>PRIZE POOL</p>
+                <p className="text-lg font-black" style={{ color: "#f97316", fontFamily: "Orbitron,monospace" }}>
+                  {(tournament.prize_coins || 0).toLocaleString()} CP
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-3">
+            {!hasFfInfo && (
+              <Link
+                to="/profile"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all duration-200"
+                style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)", color: "#f59e0b", textDecoration: "none" }}
+              >
+                <Edit3 size={13} /> Edit Profile
+              </Link>
+            )}
+            <button
+              onClick={onConfirm}
+              disabled={loading}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all duration-200"
+              style={{
+                background: loading ? "rgba(255,255,255,0.04)" : "linear-gradient(135deg,#7C3AED,#06B6D4)",
+                color: loading ? "rgba(255,255,255,0.3)" : "#fff",
+                boxShadow: loading ? "none" : "0 6px 24px rgba(124,58,237,0.4)",
+                border: "none",
+                cursor: loading ? "wait" : "pointer",
+              }}
+            >
+              {loading
+                ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                : <><CheckCircle size={13} /> Confirm Registration</>
+              }
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Registration progress steps ──────────────────────────────────────────────
+const PROGRESS_STEPS = [
+  { key: "join",    label: "Register"  },
+  { key: "approve", label: "Approval"  },
+  { key: "ready",   label: "Check-In"  },
+  { key: "play",    label: "Play"      },
 ];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function TournamentDetails() {
   const { id }       = useParams();
   const navigate     = useNavigate();
-  const [tournament, setTournament]  = useState(null);
+  const [tournament, setTournament]   = useState(null);
   const [userRequest, setUserRequest] = useState(null);
-  const [loading,    setLoading]     = useState(true);
-  const [requesting, setRequesting]  = useState(false);
-  const [profile,    setProfile]     = useState(null);
-  const [isApproved, setIsApproved]  = useState(false);
-  const [error,      setError]       = useState("");
-  const [tab,        setTab]         = useState("overview");
-  const [copied,     setCopied]      = useState(false);
+  const [loading,     setLoading]     = useState(true);
+  const [requesting,  setRequesting]  = useState(false);
+  const [profile,     setProfile]     = useState(null);
+  const [isApproved,  setIsApproved]  = useState(false);
+  const [error,       setError]       = useState("");
+  const [tab,         setTab]         = useState("overview");
+  const [copied,      setCopied]      = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const tabBarRef = useRef(null);
 
-  const countdown = useCountdown(tournament?.start_date);
+  const countdown            = useCountdown(tournament?.start_date);
+  const regDeadlineCountdown = useCountdown(tournament?.start_date);
 
   useEffect(() => { fetchData(); }, [id]);
 
@@ -120,6 +320,7 @@ export default function TournamentDetails() {
     if (!profile) { navigate("/login"); return; }
     setError("");
     setRequesting(true);
+    setShowJoinModal(false);
     try {
       const { data, error: e } = await supabase.rpc("join_tournament", { p_tournament_id: id });
       if (e) { setError(e.message); return; }
@@ -151,6 +352,11 @@ export default function TournamentDetails() {
   const alreadyDone   = ["completed", "archived", "cancelled"].includes(tournament.status);
   const isLive        = tournament.status === "live";
   const currentStage  = STAGE_ORDER[tournament.status] ?? 0;
+  const isEliminated  = userRequest?.status === "eliminated";
+
+  // Registration deadline = start_date (proxy: reg closes when tournament begins)
+  const regUrgent = !regDeadlineCountdown.past &&
+    (regDeadlineCountdown.d === 0 && regDeadlineCountdown.h < 2);
 
   const RULES = [
     "No cheating, hacks, or emulators are allowed.",
@@ -160,18 +366,50 @@ export default function TournamentDetails() {
     ...(tournament.rules ? [tournament.rules] : []),
   ];
 
+  // ── Current user registration step ──
+  const regStep = isEliminated ? -1
+    : isApproved ? 1
+    : userRequest?.status === "pending" ? 0
+    : userRequest?.status === "rejected" ? -2
+    : null;
+
   // ── CTA button ──
   const CtaButton = ({ compact = false }) => {
     const h  = compact ? "42px" : "52px";
     const fs = compact ? 10 : 11;
 
-    if (isApproved) return (
+    if (isApproved && !["completed","archived","cancelled","live"].includes(tournament.status)) return (
       <Link to={`/tournaments/${id}/room`}
         className="flex items-center justify-center gap-2 w-full font-bold rounded-xl transition-all duration-200"
         style={{ height: h, fontSize: fs, letterSpacing: "0.1em", color: "#000", textDecoration: "none", background: "linear-gradient(135deg,#10b981,#059669)", boxShadow: "0 6px 24px rgba(16,185,129,0.4)" }}
       >
         <Zap size={15} /> {compact ? "ENTER ROOM" : "ENTER MATCH CENTER"}
       </Link>
+    );
+    if (isApproved && isLive) return (
+      <Link to={`/tournaments/${id}/room`}
+        className="flex items-center justify-center gap-2 w-full font-bold rounded-xl transition-all duration-200"
+        style={{ height: h, fontSize: fs, letterSpacing: "0.1em", color: "#fff", textDecoration: "none",
+          background: "linear-gradient(135deg,#06b6d4,#0284c7)",
+          boxShadow: "0 6px 24px rgba(6,182,212,0.4)",
+          animation: "live-pulse 2s ease infinite",
+        }}
+      >
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff", animation: "live-pulse 1.4s ease infinite" }} />
+        {compact ? "WATCH LIVE" : "LIVE — ENTER ROOM"}
+      </Link>
+    );
+    if (isEliminated) return (
+      <div className="flex items-center justify-center w-full rounded-xl"
+        style={{ height: h, fontSize: fs, letterSpacing: "0.12em", color: "#f43f5e", background: "rgba(244,63,94,0.07)", border: "1px solid rgba(244,63,94,0.2)" }}>
+        ELIMINATED
+      </div>
+    );
+    if (userRequest?.status === "rejected") return (
+      <div className="flex items-center justify-center gap-2 w-full rounded-xl"
+        style={{ height: h, fontSize: fs, letterSpacing: "0.1em", color: "#f43f5e", background: "rgba(244,63,94,0.07)", border: "1px solid rgba(244,63,94,0.2)" }}>
+        <X size={14} /> REGISTRATION DECLINED
+      </div>
     );
     if (alreadyDone) return (
       <div className="flex items-center justify-center w-full rounded-xl"
@@ -182,17 +420,25 @@ export default function TournamentDetails() {
     if (notOpenYet) return (
       <div className="flex items-center justify-center gap-2 w-full rounded-xl"
         style={{ height: h, fontSize: fs, letterSpacing: "0.1em", color: "#f97316", background: "rgba(249,115,22,0.07)", border: "1px solid rgba(249,115,22,0.2)" }}>
-        <Clock size={14} /> REGISTRATION CLOSED
+        <Clock size={14} /> COMING SOON
       </div>
     );
     if (userRequest?.status === "pending") return (
-      <div className="flex items-center justify-center gap-2 w-full rounded-xl"
+      <div className="flex flex-col items-center justify-center gap-1 w-full rounded-xl"
         style={{ height: h, fontSize: fs, letterSpacing: "0.1em", color: "#f97316", background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.22)" }}>
-        <Clock size={14} /> PENDING APPROVAL
+        <div className="flex items-center gap-1.5">
+          <Clock size={14} /> PENDING APPROVAL
+        </div>
+        {!compact && <span className="text-[9px] opacity-60">Staff will review your request</span>}
       </div>
     );
     return (
-      <button onClick={requestToJoin} disabled={requesting || !canRegister} className="w-full rounded-xl font-bold transition-all duration-200"
+      <button onClick={() => {
+        if (!profile) { navigate("/login"); return; }
+        setShowJoinModal(true);
+      }}
+        disabled={requesting || !canRegister}
+        className="w-full rounded-xl font-bold transition-all duration-200"
         style={{ height: h, fontSize: fs, letterSpacing: "0.1em", border: "none", cursor: (requesting || !canRegister) ? "not-allowed" : "pointer",
           background: !canRegister ? "rgba(255,255,255,0.04)" : "linear-gradient(135deg,#7C3AED,#06B6D4)",
           color: !canRegister ? "rgba(255,255,255,0.2)" : "#fff",
@@ -214,8 +460,21 @@ export default function TournamentDetails() {
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes flow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-        @keyframes live-pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+        @keyframes live-pulse{0%,100%{opacity:1}50%{opacity:0.55}}
       `}</style>
+
+      {/* ── Join Confirm Modal ── */}
+      <AnimatePresence>
+        {showJoinModal && tournament && profile && (
+          <JoinConfirmModal
+            profile={profile}
+            tournament={tournament}
+            onConfirm={requestToJoin}
+            onCancel={() => setShowJoinModal(false)}
+            loading={requesting}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── Back ── */}
       <motion.button
@@ -277,6 +536,17 @@ export default function TournamentDetails() {
               style={{ color: "#f97316", background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.2)" }}>
               FREE FIRE
             </span>
+            {/* My registration status badge */}
+            {userRequest && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider"
+                style={{
+                  color:  isApproved ? "#10b981" : isEliminated ? "#f43f5e" : userRequest.status === "rejected" ? "#f43f5e" : "#f97316",
+                  background: isApproved ? "rgba(16,185,129,0.1)" : isEliminated ? "rgba(244,63,94,0.1)" : "rgba(249,115,22,0.08)",
+                  border: `1px solid ${isApproved ? "rgba(16,185,129,0.3)" : isEliminated ? "rgba(244,63,94,0.3)" : "rgba(249,115,22,0.22)"}`,
+                }}>
+                {isApproved ? "✓ REGISTERED" : isEliminated ? "ELIMINATED" : userRequest.status === "rejected" ? "DECLINED" : "⏳ PENDING"}
+              </span>
+            )}
           </div>
 
           {/* Title + prize */}
@@ -306,26 +576,20 @@ export default function TournamentDetails() {
 
           {/* Countdown + stats row */}
           <div className="mt-5 flex flex-col md:flex-row gap-4 items-start md:items-center">
-            {/* Countdown */}
+            {/* Countdown to start */}
             {tournament.start_date && !countdown.past && (
               <div className="flex items-center gap-3">
                 <Timer size={13} style={{ color: "rgba(255,255,255,0.3)" }} />
-                <div className="flex items-center gap-1.5">
-                  {[
-                    { v: countdown.d, l: "D" },
-                    { v: countdown.h, l: "H" },
-                    { v: countdown.m, l: "M" },
-                    { v: countdown.s, l: "S" },
-                  ].map(({ v, l }) => (
-                    <div key={l} className="flex items-baseline gap-0.5">
-                      <span className="text-lg font-black tabular-nums" style={{ color: "#06B6D4", fontFamily: "monospace" }}>
-                        {String(v).padStart(2, "0")}
-                      </span>
-                      <span className="text-[9px] font-bold" style={{ color: "rgba(255,255,255,0.25)" }}>{l}</span>
-                      {l !== "S" && <span className="text-sm font-bold mx-0.5" style={{ color: "rgba(255,255,255,0.15)" }}>:</span>}
-                    </div>
-                  ))}
-                </div>
+                <CountdownDisplay
+                  time={countdown}
+                  color={canRegister && regUrgent ? "#f43f5e" : "#06B6D4"}
+                />
+                {canRegister && !countdown.past && (
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+                    style={{ color: regUrgent ? "#f43f5e" : "rgba(255,255,255,0.3)", background: regUrgent ? "rgba(244,63,94,0.1)" : "transparent", border: regUrgent ? "1px solid rgba(244,63,94,0.25)" : "none" }}>
+                    {regUrgent ? "⚠ CLOSING SOON" : "REG. CLOSES AT START"}
+                  </span>
+                )}
               </div>
             )}
 
@@ -336,7 +600,7 @@ export default function TournamentDetails() {
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl"
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <Users size={11} style={{ color: "rgba(255,255,255,0.4)" }} />
-                <span className="text-[11px] font-semibold tabular-nums" style={{ color: "rgba(255,255,255,0.75)" }}>
+                <span className="text-[11px] font-semibold tabular-nums" style={{ color: full ? "#f59e0b" : "rgba(255,255,255,0.75)" }}>
                   {tournament.current_players}/{tournament.max_players}
                 </span>
               </div>
@@ -361,6 +625,71 @@ export default function TournamentDetails() {
         </div>
       </motion.div>
 
+      {/* ── Registration progress bar (shown when user has a registration) ── */}
+      {userRequest && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          className="rounded-2xl px-5 py-4 mb-5"
+          style={{ background: "rgba(10,12,26,0.96)", border: "1px solid rgba(255,255,255,0.07)" }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.25)" }}>
+              REGISTRATION STATUS
+            </span>
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+              style={{
+                color: isApproved ? "#10b981" : isEliminated ? "#f43f5e" : userRequest.status === "rejected" ? "#f43f5e" : "#f97316",
+                background: isApproved ? "rgba(16,185,129,0.1)" : isEliminated ? "rgba(244,63,94,0.08)" : userRequest.status === "rejected" ? "rgba(244,63,94,0.08)" : "rgba(249,115,22,0.08)",
+                border: `1px solid ${isApproved ? "rgba(16,185,129,0.25)" : isEliminated ? "rgba(244,63,94,0.2)" : "rgba(249,115,22,0.2)"}`,
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              {isApproved ? "Approved" : isEliminated ? "Eliminated" : userRequest.status === "rejected" ? "Declined" : "Pending"}
+            </span>
+          </div>
+
+          {/* Progress steps */}
+          <div className="flex items-center gap-0">
+            {PROGRESS_STEPS.map((step, i) => {
+              const done    = regStep !== null && regStep > i;
+              const current = regStep === i;
+              const future  = regStep === null || regStep < i;
+              const failed  = isEliminated || userRequest.status === "rejected";
+
+              return (
+                <div key={step.key} className="flex items-center flex-1 min-w-0">
+                  <div className="flex flex-col items-center gap-1">
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300"
+                      style={{
+                        background: done ? "#10b981" : (current && !failed) ? "#7C3AED" : failed && i === 0 ? "rgba(244,63,94,0.2)" : "rgba(255,255,255,0.06)",
+                        border: (current && !failed) ? "2px solid #A78BFA" : done ? "none" : `1px solid ${failed && i === 0 ? "rgba(244,63,94,0.3)" : "rgba(255,255,255,0.1)"}`,
+                        boxShadow: (current && !failed) ? "0 0 10px rgba(124,58,237,0.4)" : "none",
+                      }}
+                    >
+                      {done ? <Check size={10} className="text-white" /> : (
+                        <span className="text-[9px] font-bold" style={{ color: (current && !failed) ? "#E9D5FF" : "rgba(255,255,255,0.2)" }}>
+                          {i + 1}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[8px] font-semibold whitespace-nowrap"
+                      style={{ color: done ? "#10b981" : (current && !failed) ? "#A78BFA" : "rgba(255,255,255,0.2)" }}>
+                      {step.label}
+                    </span>
+                  </div>
+                  {i < PROGRESS_STEPS.length - 1 && (
+                    <div className="flex-1 h-[2px] mx-1 mb-3.5 rounded-full"
+                      style={{ background: done ? "#10b981" : "rgba(255,255,255,0.06)" }} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
       {/* ── Tournament Timeline ── */}
       <motion.div
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
@@ -368,10 +697,8 @@ export default function TournamentDetails() {
         style={{ background: "rgba(10,12,26,0.96)", border: "1px solid rgba(255,255,255,0.07)" }}
       >
         {TIMELINE_STAGES.map((stage, i) => {
-          const stageOrder = i;
-          const done    = currentStage > stageOrder;
-          const current = currentStage === stageOrder;
-          const future  = currentStage < stageOrder;
+          const done    = currentStage > i;
+          const current = currentStage === i;
 
           return (
             <div key={stage.key} className="flex items-center flex-shrink-0">
@@ -390,15 +717,14 @@ export default function TournamentDetails() {
                     </span>
                   )}
                 </div>
-                <span className="text-[9px] font-semibold whitespace-nowrap" style={{ color: done ? "#10b981" : current ? "#A78BFA" : "rgba(255,255,255,0.2)" }}>
+                <span className="text-[9px] font-semibold whitespace-nowrap"
+                  style={{ color: done ? "#10b981" : current ? "#A78BFA" : "rgba(255,255,255,0.2)" }}>
                   {stage.label}
                 </span>
               </div>
               {i < TIMELINE_STAGES.length - 1 && (
-                <div
-                  className="h-[2px] w-10 md:w-16 mx-1 flex-shrink-0 rounded-full mb-3.5"
-                  style={{ background: done ? "#10b981" : "rgba(255,255,255,0.07)" }}
-                />
+                <div className="h-[2px] w-10 md:w-16 mx-1 flex-shrink-0 rounded-full mb-3.5"
+                  style={{ background: done ? "#10b981" : "rgba(255,255,255,0.07)" }} />
               )}
             </div>
           );
@@ -448,13 +774,13 @@ export default function TournamentDetails() {
                   {/* Fill bar */}
                   <div className="rounded-2xl p-5" style={{ background: "rgba(10,12,26,0.95)", border: "1px solid rgba(255,255,255,0.07)" }}>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.3)" }}>PLAYERS</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.3)" }}>SLOTS FILLED</span>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-black tabular-nums" style={{ color: full ? "#f43f5e" : "#06B6D4" }}>{pct}%</span>
                         <span className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{tournament.current_players}/{tournament.max_players}</span>
                       </div>
                     </div>
-                    <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
@@ -463,15 +789,23 @@ export default function TournamentDetails() {
                         style={{
                           background: full
                             ? "linear-gradient(90deg,#f43f5e,#b91c1c)"
+                            : pct > 75
+                            ? "linear-gradient(90deg,#f59e0b,#f97316)"
                             : "linear-gradient(90deg,#7C3AED,#06B6D4)",
                           backgroundSize: "200% 100%",
                           animation: "flow 2s linear infinite",
                         }}
                       />
                     </div>
-                    {full && (
-                      <p className="mt-2 text-xs" style={{ color: "#f43f5e" }}>⚠️ This tournament is full</p>
-                    )}
+                    <div className="flex items-center justify-between mt-2">
+                      {full ? (
+                        <p className="text-xs" style={{ color: "#f43f5e" }}>⚠️ Tournament is full</p>
+                      ) : pct > 75 ? (
+                        <p className="text-xs" style={{ color: "#f59e0b" }}>🔥 Filling fast — {tournament.max_players - tournament.current_players} spots left</p>
+                      ) : (
+                        <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>{tournament.max_players - tournament.current_players} spots available</p>
+                      )}
+                    </div>
                   </div>
 
                   {/* 4-stat grid */}
@@ -565,10 +899,23 @@ export default function TournamentDetails() {
                       {tournament.current_players || 0} / {tournament.max_players || 0}
                     </span>
                   </div>
-                  <div className="py-10 flex flex-col items-center gap-3 opacity-40">
-                    <Users size={32} style={{ color: "rgba(255,255,255,0.2)" }} />
-                    <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>Player roster loads when tournament begins</p>
+                  {/* Fill visualization */}
+                  <div className="grid grid-cols-8 gap-1.5 mb-4">
+                    {Array.from({ length: tournament.max_players || 0 }, (_, i) => (
+                      <div key={i}
+                        className="aspect-square rounded-lg transition-all duration-200"
+                        style={{
+                          background: i < (tournament.current_players || 0)
+                            ? "rgba(16,185,129,0.35)"
+                            : "rgba(255,255,255,0.04)",
+                          border: `1px solid ${i < (tournament.current_players || 0) ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.06)"}`,
+                        }}
+                      />
+                    ))}
                   </div>
+                  <p className="text-xs text-center" style={{ color: "rgba(255,255,255,0.25)" }}>
+                    Full roster visible to participants after tournament begins
+                  </p>
                 </div>
               )}
 
@@ -602,7 +949,7 @@ export default function TournamentDetails() {
                       { label: "Organizer",     value: "CipherPool Staff"  },
                       { label: "Format",        value: tournament.mode || "Solo" },
                       { label: "Platform",      value: "Free Fire Mobile"  },
-                      { label: "Map",           value: "Bermuda"           },
+                      { label: "Map",           value: tournament.map || "Bermuda" },
                       { label: "Game Type",     value: tournament.game_type || tournament.mode || "Battle Royale" },
                       { label: "Start Date",    value: tournament.start_date ? new Date(tournament.start_date).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "TBA" },
                       { label: "Max Players",   value: tournament.max_players || "TBA" },
@@ -640,6 +987,21 @@ export default function TournamentDetails() {
               REGISTRATION
             </p>
 
+            {/* Registration deadline countdown in sidebar */}
+            {canRegister && tournament.start_date && !regDeadlineCountdown.past && (
+              <div className="mb-4 relative z-10 text-center p-3 rounded-xl"
+                style={{ background: regUrgent ? "rgba(244,63,94,0.07)" : "rgba(255,255,255,0.03)", border: `1px solid ${regUrgent ? "rgba(244,63,94,0.2)" : "rgba(255,255,255,0.06)"}` }}>
+                <p className="text-[8px] font-black uppercase tracking-widest mb-1.5" style={{ color: regUrgent ? "#f43f5e" : "rgba(255,255,255,0.25)" }}>
+                  {regUrgent ? "⚠ REGISTRATION CLOSING" : "REG. OPEN UNTIL START"}
+                </p>
+                <CountdownDisplay
+                  time={regDeadlineCountdown}
+                  color={regUrgent ? "#f43f5e" : "#06B6D4"}
+                  urgent={regUrgent}
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2.5 mb-4 relative z-10">
               <div className="text-center p-3 rounded-xl" style={{ background: "rgba(249,115,22,0.07)", border: "1px solid rgba(249,115,22,0.18)" }}>
                 <p className="text-[8px] font-bold uppercase tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.25)" }}>PRIZE</p>
@@ -667,6 +1029,17 @@ export default function TournamentDetails() {
             <div className="relative z-10">
               <CtaButton />
             </div>
+
+            {/* Edit profile reminder for pending registrations */}
+            {userRequest?.status === "pending" && (
+              <Link to="/profile" className="flex items-center justify-center gap-1.5 mt-3 text-[10px] font-semibold transition-colors relative z-10"
+                style={{ color: "rgba(255,255,255,0.28)", textDecoration: "none" }}
+                onMouseEnter={e => e.currentTarget.style.color = "#06B6D4"}
+                onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.28)"}
+              >
+                <Edit3 size={10} /> Update your FF info
+              </Link>
+            )}
 
             {!profile && (
               <p className="text-center text-xs mt-3 relative z-10" style={{ color: "rgba(255,255,255,0.28)" }}>

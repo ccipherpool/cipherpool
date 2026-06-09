@@ -18,6 +18,14 @@ function otp6(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// Twilio error codes that mean "phone not opted into sandbox"
+const SANDBOX_NOT_JOINED_CODES = new Set([
+  63016,  // Channel not opted in
+  63017,  // Channel opted out (unsubscribed)
+  21610,  // Not currently reachable via WhatsApp
+  21211,  // Invalid To number
+]);
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -25,14 +33,13 @@ serve(async (req) => {
   try {
     const { action, phone, code } = await req.json();
 
-    // ── Privileged client (bypasses RLS) ─────────────────────
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // ── Verify caller JWT ─────────────────────────────────────
+    // Verify caller JWT
     const callerClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -43,11 +50,14 @@ serve(async (req) => {
 
     // ══════════════════════════════════════════════════════════
     // ACTION: send — generate OTP, store it, send via Twilio
+    //   Returns { success: true } if Twilio accepts the send.
+    //   Twilio acceptance implicitly proves the number joined the sandbox.
+    //   Returns { error: "NOT_IN_SANDBOX" } if Twilio rejects with an opt-in error.
     // ══════════════════════════════════════════════════════════
     if (action === "send") {
       const normalized = (phone ?? "").trim();
       if (!/^\+\d{8,15}$/.test(normalized)) {
-        return json({ error: "Format invalide. Utilisez +212XXXXXXXXX" }, 400);
+        return json({ error: "INVALID_PHONE", message: "Format invalide — ex: +212600000000" }, 400);
       }
 
       // Rate-limit: max 3 sends per 10 minutes per user
@@ -58,7 +68,7 @@ serve(async (req) => {
         .gt("created_at", new Date(Date.now() - 10 * 60 * 1000).toISOString());
 
       if ((count ?? 0) >= 3) {
-        return json({ error: "Trop de tentatives. Attendez 10 minutes." }, 429);
+        return json({ error: "RATE_LIMIT", message: "Trop de tentatives. Attendez 10 minutes." }, 429);
       }
 
       // Invalidate any active codes for this user
@@ -69,7 +79,7 @@ serve(async (req) => {
         .eq("used", false);
 
       // Generate + store new code
-      const newCode  = otp6();
+      const newCode   = otp6();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
       const { error: insertErr } = await admin
@@ -77,15 +87,15 @@ serve(async (req) => {
         .insert({ user_id: user.id, phone: normalized, code: newCode, expires_at: expiresAt });
       if (insertErr) throw new Error("DB insert failed: " + insertErr.message);
 
-      // Save phone to profile immediately (so broadcasts can use it even before verify)
+      // Save phone to profile
       await admin.from("profiles").update({ whatsapp_number: normalized }).eq("id", user.id);
 
-      // ── Send via Twilio WhatsApp ──────────────────────────
+      // ── Attempt Twilio send ───────────────────────────────
       const twilioSid   = Deno.env.get("TWILIO_ACCOUNT_SID")!;
       const twilioToken = Deno.env.get("TWILIO_AUTH_TOKEN")!;
-      const twilioFrom  = Deno.env.get("TWILIO_WHATSAPP_FROM")!; // "whatsapp:+14155238886"
+      const twilioFrom  = Deno.env.get("TWILIO_WHATSAPP_FROM")!;
 
-      const msgBody = `🎮 *CipherPool Arena*\n\nVotre code de vérification WhatsApp :\n\n*${newCode}*\n\nCe code expire dans 10 minutes.\nNe le partagez pas.`;
+      const msgBody = `🎮 *CipherPool Arena*\n\nVotre code de vérification :\n\n*${newCode}*\n\nExpire dans 10 minutes. Ne le partagez pas.`;
 
       const twilioRes = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
@@ -104,11 +114,35 @@ serve(async (req) => {
       );
 
       if (!twilioRes.ok) {
-        const t = await twilioRes.json().catch(() => ({}));
-        console.error("Twilio error:", t);
+        const t = await twilioRes.json().catch(() => ({})) as { code?: number; message?: string };
+        console.error("Twilio send error:", t);
+
+        // Mark the stored code as used since we couldn't send it
+        await admin.from("whatsapp_verification_codes")
+          .update({ used: true }).eq("user_id", user.id).eq("used", false);
+
+        // Detect "not in sandbox" — Twilio codes 63016, 63017, 21610 etc.
+        const msg = (t.message ?? "").toLowerCase();
+        const isNotJoined =
+          SANDBOX_NOT_JOINED_CODES.has(t.code ?? 0) ||
+          msg.includes("opt") ||
+          msg.includes("not join") ||
+          msg.includes("not subscribed") ||
+          msg.includes("unsubscribed") ||
+          msg.includes("channel not");
+
+        if (isNotJoined) {
+          return json({
+            error:   "NOT_IN_SANDBOX",
+            message: "Ce numéro n'a pas rejoint la sandbox WhatsApp. Envoyez d'abord « join cipherpool » via WhatsApp.",
+            code:    t.code,
+          }, 400);
+        }
+
         throw new Error(t.message ?? "Échec de l'envoi WhatsApp");
       }
 
+      // Twilio accepted → sandbox join confirmed
       return json({ success: true });
 
     // ══════════════════════════════════════════════════════════
@@ -119,10 +153,9 @@ serve(async (req) => {
       const input      = (code ?? "").trim();
 
       if (input.length !== 6 || !/^\d{6}$/.test(input)) {
-        return json({ error: "Code invalide (6 chiffres requis)" }, 400);
+        return json({ error: "INVALID_CODE", message: "Code invalide (6 chiffres requis)" }, 400);
       }
 
-      // Fetch active code
       const { data: row, error: rowErr } = await admin
         .from("whatsapp_verification_codes")
         .select("*")
@@ -135,23 +168,22 @@ serve(async (req) => {
         .maybeSingle();
 
       if (rowErr || !row) {
-        return json({ error: "Code expiré ou introuvable. Demandez-en un nouveau." }, 400);
+        return json({ error: "CODE_NOT_FOUND", message: "Code expiré ou introuvable. Demandez-en un nouveau." }, 400);
       }
 
-      // Max-attempts guard (5 tries per code)
       if (row.attempts >= 5) {
         await admin.from("whatsapp_verification_codes").update({ used: true }).eq("id", row.id);
-        return json({ error: "Trop de tentatives. Demandez un nouveau code." }, 429);
+        return json({ error: "MAX_ATTEMPTS", message: "Trop de tentatives. Demandez un nouveau code." }, 429);
       }
 
       if (row.code !== input) {
         await admin.from("whatsapp_verification_codes")
           .update({ attempts: row.attempts + 1 }).eq("id", row.id);
         const left = 4 - row.attempts;
-        return json({ error: `Code incorrect. ${left} tentative${left !== 1 ? "s" : ""} restante${left !== 1 ? "s" : ""}.` }, 400);
+        return json({ error: "WRONG_CODE", message: `Code incorrect. ${left} tentative${left !== 1 ? "s" : ""} restante${left !== 1 ? "s" : ""}.` }, 400);
       }
 
-      // ✅ Correct code — mark used + verify profile
+      // ✅ Correct — mark used + verify profile
       await admin.from("whatsapp_verification_codes").update({ used: true }).eq("id", row.id);
       await admin.from("profiles").update({
         whatsapp_verified:    true,
@@ -162,11 +194,11 @@ serve(async (req) => {
       return json({ success: true });
 
     } else {
-      return json({ error: "Unknown action" }, 400);
+      return json({ error: "UNKNOWN_ACTION" }, 400);
     }
 
   } catch (err) {
     console.error("whatsapp-otp:", err);
-    return json({ error: err instanceof Error ? err.message : "Erreur interne" }, 500);
+    return json({ error: "INTERNAL_ERROR", message: err instanceof Error ? err.message : "Erreur interne" }, 500);
   }
 });
