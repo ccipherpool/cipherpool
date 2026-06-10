@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 
 const SANDBOX_NUMBER   = import.meta.env.VITE_TWILIO_SANDBOX_NUMBER   || "14155238886";
-const SANDBOX_JOINCODE = import.meta.env.VITE_TWILIO_SANDBOX_JOINCODE || "join cipherpool";
+const SANDBOX_JOINCODE = import.meta.env.VITE_TWILIO_SANDBOX_JOINCODE || "join threw-mathematics";
 const RESEND_COOLDOWN  = 60;
 
 const C = {

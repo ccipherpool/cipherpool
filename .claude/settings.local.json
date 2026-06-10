@@ -100,7 +100,10 @@
       "Bash(Remove-Item \"C:\\\\cipherpool\\\\sql\\\\77_communication_center.sql\" -Force)",
       "Bash(Write-Host \"deleted\")",
       "Bash(supabase *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(python -c \"import sys,json; msgs=json.load\\(sys.stdin\\)['messages']; [print\\(m['from'], m['body'], m['status']\\) for m in msgs]\")",
+      "Bash(npx vercel *)",
+      "Bash(git check-ignore *)"
     ]
   }
 }

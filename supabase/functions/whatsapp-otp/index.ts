@@ -134,7 +134,7 @@ serve(async (req) => {
         if (isNotJoined) {
           return json({
             error:   "NOT_IN_SANDBOX",
-            message: "Ce numéro n'a pas rejoint la sandbox WhatsApp. Envoyez d'abord « join cipherpool » via WhatsApp.",
+            message: "Ce numéro n'a pas rejoint la sandbox WhatsApp. Envoyez d'abord « join threw-mathematics » via WhatsApp.",
             code:    t.code,
           }, 400);
         }
