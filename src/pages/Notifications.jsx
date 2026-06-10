@@ -4,11 +4,12 @@ import { useNavigate } from "react-router-dom";
 import {
   Bell, Search, CheckCheck, Trophy, Megaphone, AlertTriangle,
   RefreshCw, Info, Gift, Zap, ShieldCheck, Star, Filter,
-  Settings, X, ChevronDown, ArrowLeft,
+  Settings, X, ChevronDown, ArrowLeft, Trash2,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../features/notifications/useNotifications";
+import NotificationDetailModal from "../components/NotificationDetailModal";
 
 /* ─── Constants ────────────────────────────────────────────────── */
 const TYPE_META = {
@@ -199,7 +200,7 @@ export default function NotificationsPage() {
   const navigate  = useNavigate();
   const {
     notifications, unreadCount, loading,
-    markRead, markAllRead, refresh,
+    markRead, markAllRead, deleteNotification, refresh,
     preferences, updatePreferences,
   } = useNotifications(user?.id);
 
@@ -208,6 +209,7 @@ export default function NotificationsPage() {
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [showPrefs, setShowPrefs]           = useState(false);
   const [showFilter, setShowFilter]         = useState(false);
+  const [selectedNotif, setSelectedNotif]   = useState(null);
 
   const filtered = notifications.filter(n => {
     if (tab === "unread" && n.read) return false;
@@ -528,10 +530,7 @@ export default function NotificationsPage() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }}
-                          onClick={() => {
-                            if (!n.read) markRead(n.id);
-                            if (n.action_url) window.location.href = n.action_url;
-                          }}
+                          onClick={() => setSelectedNotif(n)}
                           style={{
                             padding: "14px 18px",
                             background: n.read
@@ -542,7 +541,7 @@ export default function NotificationsPage() {
                               : `1px solid rgba(99,102,241,0.12)`,
                             borderRadius: 16,
                             display: "flex", gap: 14, alignItems: "flex-start",
-                            cursor: n.action_url ? "pointer" : n.read ? "default" : "pointer",
+                            cursor: "pointer",
                             position: "relative", overflow: "hidden",
                             transition: "all 0.15s",
                           }}
@@ -605,27 +604,42 @@ export default function NotificationsPage() {
                               {n.content}
                             </p>
 
-                            {/* Tags */}
-                            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                              <span style={{
-                                fontSize: 10, fontWeight: 600, padding: "2px 8px",
-                                borderRadius: 6, background: meta.bg,
-                                color: meta.color, letterSpacing: 0.3,
-                                textTransform: "capitalize",
-                              }}>
-                                {n.category}
-                              </span>
-                              {n.action_url && (
-                                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>
-                                  · click to open
+                            {/* Tags + delete */}
+                            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
+                              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                                <span style={{
+                                  fontSize: 10, fontWeight: 600, padding: "2px 8px",
+                                  borderRadius: 6, background: meta.bg,
+                                  color: meta.color, letterSpacing: 0.3,
+                                  textTransform: "capitalize",
+                                }}>
+                                  {n.category}
                                 </span>
-                              )}
-                              {!n.read && (
-                                <span style={{ fontSize: 10, color: meta.color, display: "flex", alignItems: "center", gap: 3 }}>
-                                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: meta.color, display: "inline-block" }} />
-                                  New
-                                </span>
-                              )}
+                                {!n.read && (
+                                  <span style={{ fontSize: 10, color: meta.color, display: "flex", alignItems: "center", gap: 3 }}>
+                                    <span style={{ width: 5, height: 5, borderRadius: "50%", background: meta.color, display: "inline-block" }} />
+                                    New
+                                  </span>
+                                )}
+                                {n.action_url && (
+                                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>
+                                    · tap to view
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                onClick={e => { e.stopPropagation(); deleteNotification(n.id); }}
+                                title="Delete"
+                                style={{
+                                  width: 26, height: 26, borderRadius: 7, border: "none",
+                                  background: "rgba(239,68,68,0.07)",
+                                  color: "rgba(239,68,68,0.45)", cursor: "pointer",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  flexShrink: 0, transition: "all 0.15s",
+                                }}
+                              >
+                                <Trash2 size={11} />
+                              </button>
                             </div>
                           </div>
                         </motion.div>
@@ -656,6 +670,16 @@ export default function NotificationsPage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Notification Detail Modal */}
+      {selectedNotif && (
+        <NotificationDetailModal
+          notification={selectedNotif}
+          onClose={() => setSelectedNotif(null)}
+          onMarkRead={markRead}
+          onDelete={deleteNotification}
+        />
+      )}
     </div>
   );
 }

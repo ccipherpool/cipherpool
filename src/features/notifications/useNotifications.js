@@ -153,6 +153,20 @@ export function useNotifications(userId) {
     }
   }, [userId]);
 
+  // ── deleteNotification ──────────────────────────────────────────
+  const deleteNotification = useCallback(async (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    try {
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
+    } catch {
+      // Best-effort
+    }
+  }, [userId]);
+
   // ── updatePreferences ───────────────────────────────────────────
   const updatePreferences = useCallback(async (prefs) => {
     setPreferences(prev => ({ ...prev, ...prefs }));
@@ -179,6 +193,7 @@ export function useNotifications(userId) {
     dismissToast,
     markRead,
     markAllRead,
+    deleteNotification,
     refresh: fetchAll,
     preferences,
     updatePreferences,

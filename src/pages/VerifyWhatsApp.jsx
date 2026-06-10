@@ -181,6 +181,8 @@ export default function VerifyWhatsApp() {
       if (data?.error) throw new Error(data.message || data.error);
       await refreshCurrentUser?.();
       setPage(3);
+      // Fire welcome WhatsApp message non-blocking
+      supabase.functions.invoke("send-welcome-notification", { body: {} }).catch(() => {});
       setTimeout(() => navigate("/dashboard", { replace: true }), 2600);
     } catch (e) {
       setError(e.message || "Code incorrect ou expiré.");

@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabase";
 
-// ── helpers ─────────────────────────────────────────────────────────
+const ADMIN_ROLES = ["admin", "super_admin", "founder", "fondateur", "staff"];
+
+function isAdminRole(role) {
+  return ADMIN_ROLES.includes(role ?? "");
+}
+
+// Find next available slot for organizer-side slot assignment
 function findNextSlot(tournament, members) {
   if (!tournament) return { team: 1, seat: 1 };
   const { mode, game_type, cs_format, max_players } = tournament;
@@ -15,35 +21,41 @@ function findNextSlot(tournament, members) {
   }
   for (let t = 1; t <= numTeams; t++) {
     for (let s = 1; s <= teamSize; s++) {
-      if (!members.some(m => m.team_number === t && m.seat_number === s)) {
-        return { team: t, seat: s };
-      }
+      const occupied = members.some(m => {
+        if (m.team_number !== t || m.seat_number !== s) return false;
+        return !isAdminRole(m.profiles?.role);
+      });
+      if (!occupied) return { team: t, seat: s };
     }
   }
   return { team: 1, seat: members.length + 1 };
 }
 
 export function useRoomEngine(id, user, authLoading) {
-  const [tournament, setTournament]       = useState(null);
-  const [members, setMembers]             = useState([]);
-  const [pendingRequests, setPending]     = useState([]);
-  const [messages, setMessages]           = useState([]);
-  const [role, setRole]                   = useState("spectator");
-  const [loading, setLoading]             = useState(true);
-  const [error, setError]                 = useState(null);
-  const [readyCount, setReadyCount]       = useState(0);
-  const [countdown, setCountdown]         = useState(null);
-  const [swapRequest, setSwapRequest]     = useState(null);
-  const [incomingSwap, setIncomingSwap]   = useState(null);
-  const retryRef                          = useRef(0);
+  const [tournament, setTournament]     = useState(null);
+  const [members, setMembers]           = useState([]);
+  const [pendingRequests, setPending]   = useState([]);
+  const [messages, setMessages]         = useState([]);
+  const [role, setRole]                 = useState("spectator");
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState(null);
+  const [readyCount, setReadyCount]     = useState(0);
+  const [countdown, setCountdown]       = useState(null);
+  const [swapRequest, setSwapRequest]   = useState(null);
+  const [incomingSwap, setIncomingSwap] = useState(null);
+  const retryRef                        = useRef(0);
 
-  // ── member query ──────────────────────────────────────────────────
+  // Include role from profiles so we can compute realPlayerCount
   const MEMBER_SELECT = `
     id, user_id, team_number, seat_number, is_ready, created_at,
     profiles!room_members_user_id_fkey (
-      full_name, username, free_fire_id, avatar_url
+      full_name, username, free_fire_id, avatar_url, role
     )
   `;
+
+  // Only real players (no admins, no banned/deleted) count
+  const realPlayerMembers = members.filter(m => !isAdminRole(m.profiles?.role));
+  const realPlayerCount   = realPlayerMembers.length;
 
   const refreshMembers = useCallback(async () => {
     const { data } = await supabase
@@ -52,8 +64,9 @@ export function useRoomEngine(id, user, authLoading) {
       .eq("tournament_id", id)
       .order("team_number", { ascending: true })
       .order("seat_number",  { ascending: true });
-    setMembers(data || []);
-    setReadyCount((data || []).filter(m => m.is_ready).length);
+    const all = data || [];
+    setMembers(all);
+    setReadyCount(all.filter(m => m.is_ready).length);
   }, [id]);
 
   const refreshPending = useCallback(async () => {
@@ -71,7 +84,7 @@ export function useRoomEngine(id, user, authLoading) {
     setPending(data || []);
   }, [id]);
 
-  // ── initial load ──────────────────────────────────────────────────
+  // ── Initial load ──────────────────────────────────────────────────
   useEffect(() => {
     if (authLoading || !id || !user) return;
 
@@ -81,36 +94,26 @@ export function useRoomEngine(id, user, authLoading) {
         setError(null);
 
         const { data: t, error: tErr } = await supabase
-          .from("tournaments")
-          .select("*")
-          .eq("id", id)
-          .single();
+          .from("tournaments").select("*").eq("id", id).single();
         if (tErr) throw tErr;
         setTournament(t);
 
-        // Restore countdown when live
         if (t.status === "live" && t.end_time) {
           const rem = Math.max(0, Math.floor((new Date(t.end_time) - new Date()) / 1000));
           setCountdown(rem);
           if (rem > 0) {
             let secs = rem;
-            const iv = setInterval(() => {
-              secs -= 1;
-              setCountdown(secs);
-              if (secs <= 0) clearInterval(iv);
-            }, 1000);
+            const iv = setInterval(() => { secs--; setCountdown(secs); if (secs <= 0) clearInterval(iv); }, 1000);
           }
         }
 
         const { data: ms, error: msErr } = await supabase
-          .from("room_members")
-          .select(MEMBER_SELECT)
-          .eq("tournament_id", id)
-          .order("team_number", { ascending: true })
-          .order("seat_number",  { ascending: true });
+          .from("room_members").select(MEMBER_SELECT).eq("tournament_id", id)
+          .order("team_number", { ascending: true }).order("seat_number", { ascending: true });
         if (msErr) throw msErr;
-        setMembers(ms || []);
-        setReadyCount((ms || []).filter(m => m.is_ready).length);
+        const all = ms || [];
+        setMembers(all);
+        setReadyCount(all.filter(m => m.is_ready).length);
 
         // Determine role
         if (t.created_by === user.id) {
@@ -118,15 +121,14 @@ export function useRoomEngine(id, user, authLoading) {
         } else {
           const { data: p } = await supabase
             .from("profiles").select("role").eq("id", user.id).maybeSingle();
-          if (["admin","super_admin","founder"].includes(p?.role)) {
+          if (isAdminRole(p?.role)) {
             setRole("organizer");
-          } else if ((ms || []).some(m => m.user_id === user.id)) {
+          } else if (all.some(m => m.user_id === user.id)) {
             setRole("participant");
           } else {
             setRole("spectator");
           }
         }
-
       } catch (err) {
         setError(err.message);
       } finally {
@@ -137,12 +139,11 @@ export function useRoomEngine(id, user, authLoading) {
     load();
   }, [id, user, authLoading]);
 
-  // Load pending requests once role is known
   useEffect(() => {
     if (role === "organizer") refreshPending();
   }, [role, refreshPending]);
 
-  // ── messages ──────────────────────────────────────────────────────
+  // ── Messages ──────────────────────────────────────────────────────
   useEffect(() => {
     if (loading || !id || role === "spectator") return;
     supabase
@@ -156,7 +157,7 @@ export function useRoomEngine(id, user, authLoading) {
       .then(({ data }) => setMessages(data || []));
   }, [id, role, loading]);
 
-  // ── realtime subscriptions ────────────────────────────────────────
+  // ── Realtime subscriptions ────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
     const ch = supabase
@@ -176,7 +177,6 @@ export function useRoomEngine(id, user, authLoading) {
     return () => supabase.removeChannel(ch);
   }, [id, refreshMembers]);
 
-  // Organizer: watch tournament_participants for new pending requests
   useEffect(() => {
     if (!id || role !== "organizer") return;
     const ch = supabase
@@ -189,7 +189,6 @@ export function useRoomEngine(id, user, authLoading) {
     return () => supabase.removeChannel(ch);
   }, [id, role, refreshPending]);
 
-  // Messages realtime
   useEffect(() => {
     if (!id || role === "spectator") return;
     const ch = supabase
@@ -209,33 +208,29 @@ export function useRoomEngine(id, user, authLoading) {
     return () => supabase.removeChannel(ch);
   }, [id, role]);
 
-  // ── swap broadcast ────────────────────────────────────────────────
+  // ── Swap broadcast ────────────────────────────────────────────────
   useEffect(() => {
     if (!id || !user) return;
     const ch = supabase
       .channel(`swap-${id}`)
       .on("broadcast", { event: "swap_request" }, ({ payload }) => {
         const me = members.find(m => m.user_id === user.id);
-        if (me && payload.toTeam === me.team_number && payload.toSeat === me.seat_number && payload.fromUserId !== user.id) {
+        if (me && payload.toTeam === me.team_number && payload.toSeat === me.seat_number && payload.fromUserId !== user.id)
           setIncomingSwap(payload);
-        }
       })
       .on("broadcast", { event: "swap_cancelled" }, ({ payload }) => {
         setIncomingSwap(prev => prev?.fromUserId === payload.fromUserId ? null : prev);
       })
       .on("broadcast", { event: "swap_response" }, ({ payload }) => {
         if (payload.toUserId !== user.id) return;
-        if (payload.accepted) {
-          doSwapExecution(payload.fromTeam, payload.fromSeat, payload.toTeam, payload.toSeat);
-        } else {
-          setSwapRequest(null);
-        }
+        if (payload.accepted) doSwapExecution(payload.fromTeam, payload.fromSeat, payload.toTeam, payload.toSeat);
+        else setSwapRequest(null);
       })
       .subscribe();
     return () => supabase.removeChannel(ch);
-  }, [id, user, members, incomingSwap]);
+  }, [id, user, members]);
 
-  // ── team structure ────────────────────────────────────────────────
+  // ── Team structure ────────────────────────────────────────────────
   const generateTeamStructure = () => {
     if (!tournament) return [];
     const { mode, max_players, game_type, cs_format } = tournament;
@@ -247,33 +242,35 @@ export function useRoomEngine(id, user, authLoading) {
       teamSize = mode === "squad" ? 4 : mode === "duo" ? 2 : 1;
       numTeams = Math.ceil((max_players || 16) / teamSize);
     }
+    // Only include non-admin players in the grid
+    const playerMembers = members.filter(m => !isAdminRole(m.profiles?.role));
     return Array.from({ length: numTeams }, (_, ti) => ({
       teamNumber: ti + 1,
       seats: Array.from({ length: teamSize }, (_, si) => {
-        const m = members.find(m => m.team_number === ti + 1 && m.seat_number === si + 1);
+        const m = playerMembers.find(m => m.team_number === ti + 1 && m.seat_number === si + 1);
         return {
           seatNumber: si + 1,
           player: m ? {
-            id:          m.user_id,
-            full_name:   m.profiles?.full_name || m.profiles?.username || "Player",
+            id:           m.user_id,
+            full_name:    m.profiles?.full_name || m.profiles?.username || "Player",
             free_fire_id: m.profiles?.free_fire_id || "",
-            avatar_url:  m.profiles?.avatar_url || null,
-            isReady:     m.is_ready || false,
+            avatar_url:   m.profiles?.avatar_url || null,
+            isReady:      m.is_ready || false,
           } : null,
         };
       }),
     }));
   };
 
-  // ── actions ───────────────────────────────────────────────────────
+  // ── Actions ───────────────────────────────────────────────────────
   const approvePlayer = async (userId) => {
     if (role !== "organizer") return;
     const { data, error } = await supabase.rpc("approve_tournament_participant", {
       p_tournament_id: id,
-      p_user_id: userId,
+      p_user_id:       userId,
     });
     if (error || !data?.success) {
-      // Fallback: do it client-side
+      // Fallback: client-side with admin exclusion
       const { team, seat } = findNextSlot(tournament, members);
       await supabase.from("tournament_participants")
         .update({ status: "approved", approved_by: user.id, approved_at: new Date().toISOString() })
@@ -282,6 +279,17 @@ export function useRoomEngine(id, user, authLoading) {
         { tournament_id: id, user_id: userId, team_number: team, seat_number: seat, is_ready: false },
         { onConflict: "tournament_id,user_id", ignoreDuplicates: true }
       );
+    } else if (data?.success) {
+      // Trigger WhatsApp notification (non-blocking)
+      supabase.functions.invoke("send-seat-notification", {
+        body: {
+          user_id:       userId,
+          tournament_id: id,
+          seat_number:   data.seat_number,
+          team_number:   data.team_number,
+          type:          "registration_approved",
+        },
+      }).catch(() => {});
     }
     await Promise.all([refreshMembers(), refreshPending()]);
   };
@@ -290,7 +298,7 @@ export function useRoomEngine(id, user, authLoading) {
     if (role !== "organizer") return;
     const { data, error } = await supabase.rpc("reject_tournament_participant", {
       p_tournament_id: id,
-      p_user_id: userId,
+      p_user_id:       userId,
     });
     if (error || !data?.success) {
       await supabase.from("tournament_participants")
@@ -302,11 +310,10 @@ export function useRoomEngine(id, user, authLoading) {
 
   const movePlayer = async (userId, teamNumber, seatNumber) => {
     if (role !== "organizer") return;
-    const occupied = members.find(m => m.team_number === teamNumber && m.seat_number === seatNumber && m.user_id !== userId);
-    if (occupied) {
-      alert("That slot is already taken.");
-      return;
-    }
+    const occupied = members.find(m =>
+      m.team_number === teamNumber && m.seat_number === seatNumber && m.user_id !== userId
+    );
+    if (occupied) { alert("That slot is already taken."); return; }
     const { error } = await supabase.from("room_members")
       .update({ team_number: teamNumber, seat_number: seatNumber })
       .eq("tournament_id", id).eq("user_id", userId);
@@ -317,16 +324,14 @@ export function useRoomEngine(id, user, authLoading) {
   const forceReady = async (userId, ready = true) => {
     if (role !== "organizer") return;
     const { error } = await supabase.from("room_members")
-      .update({ is_ready: ready })
-      .eq("tournament_id", id).eq("user_id", userId);
+      .update({ is_ready: ready }).eq("tournament_id", id).eq("user_id", userId);
     if (!error) refreshMembers();
   };
 
   const updateTournamentStatus = async (newStatus) => {
     if (role !== "organizer") return;
     const { error } = await supabase.from("tournaments")
-      .update({ status: newStatus, updated_at: new Date().toISOString() })
-      .eq("id", id);
+      .update({ status: newStatus, updated_at: new Date().toISOString() }).eq("id", id);
     if (error) alert("Status update failed: " + error.message);
     else setTournament(prev => ({ ...prev, status: newStatus }));
   };
@@ -355,8 +360,7 @@ export function useRoomEngine(id, user, authLoading) {
     setMembers(prev => prev.map(m => m.user_id === user.id ? { ...m, is_ready: next } : m));
     setReadyCount(prev => next ? prev + 1 : prev - 1);
     const { error } = await supabase.from("room_members")
-      .update({ is_ready: next })
-      .eq("tournament_id", id).eq("user_id", user.id);
+      .update({ is_ready: next }).eq("tournament_id", id).eq("user_id", user.id);
     if (error) {
       setMembers(prev => prev.map(m => m.user_id === user.id ? cur : m));
       setReadyCount(prev => cur.is_ready ? prev + 1 : prev - 1);
@@ -395,7 +399,11 @@ export function useRoomEngine(id, user, authLoading) {
       end_time:        endTime.toISOString(),
       result_deadline: deadline.toISOString(),
     }).eq("id", id);
-    setTournament(prev => ({ ...prev, status: "live", room_status: "live", start_time: now.toISOString(), end_time: endTime.toISOString(), result_deadline: deadline.toISOString(), match_duration: durationMinutes }));
+    setTournament(prev => ({
+      ...prev, status: "live", room_status: "live",
+      start_time: now.toISOString(), end_time: endTime.toISOString(),
+      result_deadline: deadline.toISOString(), match_duration: durationMinutes,
+    }));
     let secs = durationMinutes * 60;
     setCountdown(secs);
     const iv = setInterval(() => { secs--; setCountdown(secs); if (secs <= 0) clearInterval(iv); }, 1000);
@@ -406,24 +414,20 @@ export function useRoomEngine(id, user, authLoading) {
     await supabase.from("room_members").delete().eq("tournament_id", id).eq("user_id", userId);
   };
 
-  const closeRegistration = async () => {
-    await updateTournamentStatus("registration_closed");
-  };
+  const closeRegistration  = async () => updateTournamentStatus("registration_closed");
 
   const generateSlots = async () => {
     if (role !== "organizer" || !tournament) return;
     const { mode, game_type, cs_format, max_players } = tournament;
-    let teamSize, numTeams;
+    let teamSize;
     if (game_type === "cs") {
-      numTeams = 2;
       teamSize = cs_format === "1v1" ? 1 : cs_format === "2v2" ? 2 : 4;
     } else {
       teamSize = mode === "squad" ? 4 : mode === "duo" ? 2 : 1;
-      numTeams = Math.ceil((max_players || 16) / teamSize);
     }
     let slot = 1;
     const updates = [];
-    for (const m of members) {
+    for (const m of members.filter(mem => !isAdminRole(mem.profiles?.role))) {
       const teamNum = Math.ceil(slot / teamSize);
       const seatNum = ((slot - 1) % teamSize) + 1;
       updates.push(
@@ -440,32 +444,27 @@ export function useRoomEngine(id, user, authLoading) {
   const lockParticipants = async () => {
     if (role !== "organizer") return;
     await supabase.from("tournament_participants")
-      .update({ status: "locked" })
-      .eq("tournament_id", id).eq("status", "pending");
+      .update({ status: "locked" }).eq("tournament_id", id).eq("status", "pending");
     refreshPending();
   };
 
   const startReadyCheck = async () => {
     if (role !== "organizer") return;
-    await supabase.from("room_members")
-      .update({ is_ready: false })
-      .eq("tournament_id", id);
+    await supabase.from("room_members").update({ is_ready: false }).eq("tournament_id", id);
     await updateTournamentStatus("ready_check");
     refreshMembers();
   };
 
   const removeNotReady = async () => {
     if (role !== "organizer") return;
-    const notReady = members.filter(m => !m.is_ready);
+    const notReady = members.filter(m => !m.is_ready && !isAdminRole(m.profiles?.role));
     await Promise.all(
-      notReady.map(m =>
-        supabase.from("room_members").delete().eq("tournament_id", id).eq("user_id", m.user_id)
-      )
+      notReady.map(m => supabase.from("room_members").delete().eq("tournament_id", id).eq("user_id", m.user_id))
     );
     refreshMembers();
   };
 
-  // ── swap helpers ──────────────────────────────────────────────────
+  // ── Swap helpers ──────────────────────────────────────────────────
   const requestSwap = async (toTeam, toSeat, toPlayer) => {
     if (role !== "participant") return;
     const me = members.find(m => m.user_id === user.id);
@@ -509,13 +508,13 @@ export function useRoomEngine(id, user, authLoading) {
   return {
     tournament, setTournament,
     members, teams,
+    realPlayerCount,
     pendingRequests,
     messages,
     role,
     loading, error,
     readyCount, countdown,
     swapRequest, incomingSwap,
-    // actions
     approvePlayer, rejectPlayer, movePlayer, forceReady,
     updateTournamentStatus,
     changeSeat, toggleReady,

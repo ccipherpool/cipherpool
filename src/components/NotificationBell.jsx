@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useNotifications } from "../features/notifications/useNotifications";
 import NotificationToast from "../features/notifications/NotificationToast";
+import NotificationDetailModal from "./NotificationDetailModal";
 
 const TYPE_META = {
   achievement:    { icon: Trophy,       color: "#f59e0b", bg: "rgba(245,158,11,0.1)"    },
@@ -43,14 +44,15 @@ function timeAgo(str) {
 }
 
 export default function NotificationBell({ userId }) {
-  const [open, setOpen] = useState(false);
-  const [filter, setFilter] = useState("all");
+  const [open, setOpen]               = useState(false);
+  const [filter, setFilter]           = useState("all");
+  const [selected, setSelected]       = useState(null);
   const ref = useRef(null);
 
   const {
     notifications, unreadCount, loading,
     toastQueue, dismissToast,
-    markRead, markAllRead,
+    markRead, markAllRead, deleteNotification,
   } = useNotifications(userId);
 
   // Close on outside click
@@ -72,6 +74,15 @@ export default function NotificationBell({ userId }) {
   return (
     <>
       <NotificationToast toastQueue={toastQueue} onDismiss={dismissToast} />
+
+      {selected && (
+        <NotificationDetailModal
+          notification={selected}
+          onClose={() => setSelected(null)}
+          onMarkRead={markRead}
+          onDelete={deleteNotification}
+        />
+      )}
 
       <div ref={ref} className="relative">
         {/* Bell Button */}
@@ -281,10 +292,7 @@ export default function NotificationBell({ userId }) {
                         initial={{ opacity: 0, x: 6 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: Math.min(i * 0.025, 0.25) }}
-                        onClick={() => {
-                          if (!n.read) markRead(n.id);
-                          if (n.action_url) { window.location.href = n.action_url; setOpen(false); }
-                        }}
+                        onClick={() => { setSelected(n); setOpen(false); }}
                         style={{
                           display: "flex", gap: 10, padding: "11px 14px",
                           cursor: n.action_url ? "pointer" : n.read ? "default" : "pointer",
